@@ -783,6 +783,100 @@
     const fx = o.eye ? dot([78, -66], 4, o.eye, 0.45) : '';
     return compose(F, s, fx, Object.assign({ aura: false }, o), P, 60);
   }
+  /* ---------- Vorthrax: a fully painted fantasy dragon ----------
+     Three-quarter pose facing right: horned, crested skull with open jaws; spined neck; scaled chest with
+     plated belly; thick hind legs and clawed forelegs; bat-like wings with finger bones, membrane gradients
+     and tears; a long tapering tail with a blade. Fire glows through the throat and chest. */
+  function dragonModel(o, P, r) {
+    const F = Ctx(P), fire = o.fire || '#ff7a1a', ec = o.eye || '#ffe27a';
+    const sc = o.tone || '#8c2a18', scD = mix(sc, '#140608', 0.55), scL = mix(sc, '#ffb060', 0.35), belly = o.belly || '#d8a860', horn = '#e6d8b8', memC = mix(sc, fire, 0.5);
+    const spine = (a, b, h, w) => { const u = unit(sub(b, a)), n = perp(u), m = lerp(a, b, 0.5); return shape(F, `M${pt(sum(a, mul(n, 0)))}Q${pt(sum(m, mul(n, -h)))} ${pt(b)}L${pt(sum(lerp(a, b, 0.5), mul(n, w * 0.1)))}Z`, F.hor(scD, 'cloth'), ' stroke-width=".6"'); };
+    const scales = (box, dens) => A.strokeTex(r, box, 'scale', { rim: scL, dark: scD, texK: 2.2 }, dens || 30);
+    let s = '';
+    // ---- far wing ----
+    const wing = (k, far) => {
+      const sh = [-14 * k, -40], el = [-62 * k, -106], wr = [-108 * k, -140];
+      const tips = [[-166 * k, -118], [-156 * k, -62], [-132 * k, -12], [-84 * k, 14]];
+      const memPts = [sh, el, wr, tips[0], [-130 * k, -92], tips[1], [-120 * k, -46], tips[2], [-96 * k, -12], tips[3], [-44 * k, -8], [-12 * k, 2]];
+      let mem = `M${pt(sh)}L${pt(el)}L${pt(wr)}L${pt(tips[0])}`;
+      for (let i = 0; i < 3; i++) mem += `Q${pt(memPts[4 + i * 2])} ${pt(tips[i + 1])}`;
+      mem += `Q${pt(memPts[10])} ${pt(memPts[11])}Z`;
+      const gid = nid();
+      F.defs.push(`<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${-40 * k}" y1="-120" x2="${-150 * k}" y2="-20"><stop offset="0" stop-color="${mix(sc, '#1a0606', 0.5)}"/><stop offset=".4" stop-color="${mix(memC, '#3a0a0a', 0.35)}"/><stop offset=".8" stop-color="${memC}"/><stop offset="1" stop-color="${mix(memC, fire, 0.55)}"/></linearGradient>`);
+      let w = `<path d="${mem}" fill="url(#${gid})" stroke="${OL}" stroke-width="1" opacity="${far ? 0.82 : 0.95}"/>`;
+      const cid = nid(); F.defs.push(`<clipPath id="${cid}"><path d="${mem}"/></clipPath>`);
+      let inner = '';
+      for (const t of tips) { inner += line(wr, t, '#2a0a0a', 2.4, 0.5) + line(wr, t, mix(memC, '#ffd0a0', 0.4), 0.8, 0.45); for (let j = 1; j < 4; j++) { const q = lerp(wr, t, j / 4), n = perp(unit(sub(t, wr))); inner += qd(q, sum(lerp(wr, t, j / 4 + 0.1), mul(n, 9 * k)), sum(lerp(wr, t, j / 4 + 0.22), mul(n, 14 * k)), '#2a0a0a', 0.6, 0.4); } }
+      inner += `<ellipse cx="${n1(-130 * k)}" cy="-60" rx="28" ry="42" fill="${fire}" opacity=".28" filter="url(#b8)"/><path d="M${pt(sh)}L${pt(el)}L${pt(wr)}L${pt([-60 * k, -40])}Z" fill="#000" opacity=".28" filter="url(#b4)"/>` + ao(wr, 14, 10, 0.9) + ao(el, 12, 9, 0.8);
+      for (let i = 0; i < 3; i++) { const t = tips[i + 1], q = lerp(wr, t, 0.78 + i * 0.06); inner += `<path d="M${pt(q)}l${n1(3 * k)},-6l${n1(2 * k)},8z" fill="#000" opacity=".5"/>`; }
+      w += `<g clip-path="url(#${cid})">${inner}</g>`;
+      // arm bones
+      w += limb(F, sh, el, 15, 10, sc, 'cloth', 0.15) + limb(F, el, wr, 10, 6.4, sc, 'cloth', 0.1);
+      const cl = (pnt, d) => shape(F, `M${pt(add(pnt, -2, 0))}Q${pt(add(pnt, d[0] * 0.5, d[1] * 0.5 - 4))} ${pt(sum(pnt, d))}Q${pt(add(pnt, d[0] * 0.5, d[1] * 0.5 + 1))} ${pt(add(pnt, 2, 1))}Z`, F.hor(horn, 'skin'), ' stroke-width=".5"');
+      w += cl(wr, [-9 * k, -12]) + cl(el, [-5 * k, -10]);
+      for (const t of tips) w += cl(t, [-3 * k, 7]);
+      return w;
+    };
+    s += wing(-1, true);
+    // ---- tail ----
+    const tail = A.tube([-8, 30], [-62, 70], [-128, 36], [-162, 74], 22, 3, 24);
+    s += shape(F, tail.d, F.lin([-80, 80], [-80, 20], sc, 'cloth')) + clipped(F, tail.d, scales([-170, 20, 0, 90], 26) + `<path d="M-14,38Q-70,66 -140,56" stroke="${belly}" stroke-width="7" fill="none" opacity=".55"/><path d="M-10,22Q-70,36 -130,34" stroke="${scD}" stroke-width="5" fill="none" opacity=".5"/>`);
+    tail.pts.forEach((q, i) => { if (i % 2 === 0 && i < 20) s += spine([q.x + q.nx * q.w * 0.9, q.y + q.ny * q.w * 0.9], [q.x + q.nx * q.w * 0.9 - 6, q.y + q.ny * q.w * 0.9 + 1], 7 - i * 0.25, q.w); });
+    s += shape(F, `M-158,70l-18,-10l4,14l-14,10l24,2l6,8z`, F.rad(scD)) + line([-160, 72], [-172, 66], hil2(sc), 0.8, 0.6);
+    // ---- far legs ----
+    const legFar = mix(sc, '#1a1030', 0.4);
+    s += limb(F, [-16, 14], [-40, 44], 26, 16, legFar, 'cloth', 0.2) + limb(F, [-40, 44], [-30, 70], 15, 11, legFar, 'cloth', 0.1);
+    s += shape(F, cr([[-40, 66], [-20, 64], [-8, 72], [-46, 74]], true, 0.6), F.rad(legFar)) + [-36, -26, -16].map(x => `<path d="M${x},72l-3,8l7,-6z" fill="${horn}" stroke="${OL}" stroke-width=".5"/>`).join('');
+    // ---- near wing (behind the body) ----
+    s += wing(1, false);
+    // ---- body ----
+    const body = cr([[-30, -44], [-6, -58], [24, -50], [40, -22], [42, 10], [30, 36], [4, 46], [-24, 38], [-38, 10], [-40, -18]], true, 0.95);
+    s += shape(F, body, F.lin([-40, 30], [40, -50], sc, 'cloth'));
+    let bin = scales([-42, -60, 44, 48], 20) + ao([-30, -10], 16, 26, 0.9) + ao([30, 30], 12, 14, 0.7);
+    for (let i = 0; i < 8; i++) { const y = -36 + i * 10, hw = 16 - Math.abs(i - 3) * 2; bin += `<path d="M${n1(8 - hw)},${n1(y)}Q${n1(10)},${n1(y + 5)} ${n1(8 + hw)},${n1(y)}L${n1(8 + hw)},${n1(y + 7)}Q${n1(10)},${n1(y + 12)} ${n1(8 - hw)},${n1(y + 7)}Z" fill="${F.hor(belly, 'cloth')}" stroke="${OL}" stroke-width=".7"/>` + qd([8 - hw + 2, y + 1.6], [10, y + 6.4], [8 + hw - 2, y + 1.6], hil2(belly), 0.6, 0.5); }
+    bin += `<ellipse cx="6" cy="-10" rx="16" ry="26" fill="${fire}" opacity=".35" filter="url(#b8)"/>` + `<path d="M-2,-30L8,-14L-4,4L8,22" stroke="${fire}" stroke-width="2.6" fill="none" opacity=".7" filter="url(#b1)"/><path d="M-2,-30L8,-14L-4,4L8,22" stroke="#fff0b0" stroke-width=".9" fill="none" opacity=".8"/>`;
+    s += clipped(F, body, bin);
+    // ---- neck ----
+    const neck = A.tube([6, -44], [10, -80], [48, -92], [42, -124], 26, 14, 18);
+    s += shape(F, neck.d, F.lin([0, -70], [60, -110], sc, 'cloth'));
+    let nin = scales([-10, -130, 70, -40], 22);
+    neck.pts.forEach((q, i) => { if (i % 2 === 1 && i < 17) nin += `<path d="M${n1(q.x - q.nx * q.w * 0.95)},${n1(q.y - q.ny * q.w * 0.95)}Q${n1(q.x - q.nx * q.w * 0.5 + 2)},${n1(q.y - q.ny * q.w * 0.5 + 4)} ${n1(q.x - q.nx * q.w * 0.05)},${n1(q.y - q.ny * q.w * 0.05)}" stroke="${belly}" stroke-width="3.6" fill="none" opacity=".8"/>`; });
+    nin += `<path d="M14,-56Q30,-88 42,-112" stroke="${fire}" stroke-width="8" fill="none" opacity=".45" filter="url(#b4)"/>` + ao([8, -46], 16, 7, 0.9);
+    s += clipped(F, neck.d, nin);
+    neck.pts.forEach((q, i) => { if (i % 2 === 0 && i > 0 && i < 17) s += spine([q.x + q.nx * q.w * 0.95, q.y + q.ny * q.w * 0.95], [q.x + q.nx * q.w * 0.95 - 7, q.y + q.ny * q.w * 0.95 - 5], 9, q.w); });
+    // ---- near legs ----
+    s += limb(F, [16, 12], [40, 46], 28, 17, sc, 'cloth', 0.22) + limb(F, [40, 46], [34, 72], 16, 12, sc, 'cloth', 0.1);
+    s += shape(F, cr([[18, 68], [52, 66], [62, 74], [12, 76]], true, 0.6), F.rad(sc)) + [24, 36, 48, 58].map(x => `<path d="M${x},74l-4,9l9,-7z" fill="${horn}" stroke="${OL}" stroke-width=".5"/>`).join('');
+    s += limb(F, [26, -20], [54, 2], 15, 10, sc, 'cloth', 0.12) + limb(F, [54, 2], [58, 22], 10, 7.5, sc, 'cloth', 0.05);
+    s += shape(F, cr([[50, 18], [68, 16], [72, 26], [52, 28]], true, 0.6), F.rad(sc)) + [56, 64, 70].map(x => `<path d="M${x},26l-2,8l7,-6z" fill="${horn}" stroke="${OL}" stroke-width=".5"/>`).join('');
+    // ---- head ----
+    const head = cr([[26, -118], [32, -136], [48, -146], [68, -142], [84, -132], [96, -120], [94, -112], [80, -108], [64, -106], [50, -104], [36, -108]], true, 0.9);
+    const jaw = cr([[40, -106], [62, -104], [86, -100], [100, -92], [96, -84], [78, -86], [56, -92], [42, -98]], true, 0.85);
+    s += shape(F, jaw, F.lin([40, -84], [90, -104], mix(sc, '#000', 0.2), 'cloth')) + clipped(F, jaw, `<path d="M44,-100Q70,-98 96,-90" stroke="${belly}" stroke-width="5" fill="none" opacity=".6"/>`);
+    s += `<path d="M46,-104Q70,-96 94,-92Q72,-100 48,-106Z" fill="#2a0404"/><ellipse cx="70" cy="-99" rx="20" ry="4" fill="${fire}" opacity=".85" filter="url(#b2)"/>`;
+    for (const [x, y] of [[48, -101], [56, -99], [66, -97], [78, -95], [88, -93]]) s += `<path d="M${x},${y}l1.8,4.6l2.2,-4.2z" fill="#f4eed8" stroke="${OL}" stroke-width=".4"/>`;
+    s += shape(F, head, F.lin([30, -104], [80, -146], sc, 'cloth'));
+    s += clipped(F, head, scales([24, -150, 100, -100], 18) + `<path d="M34,-110Q60,-104 94,-112" stroke="${scD}" stroke-width="2" fill="none" opacity=".5"/>` + qd([50, -140], [72, -142], [90, -128], scL, 2, 0.5));
+    for (const [x, y] of [[50, -106], [60, -105], [72, -105], [84, -107], [92, -110]]) s += `<path d="M${x},${y}l1.8,-5l2.4,5z" fill="#f4eed8" stroke="${OL}" stroke-width=".4"/>`;
+    s += dot([94, -118], 2, '#2a0404') + dot([97, -119], 1.6, '#2a0404') + qd([84, -116], [92, -121], [100, -116], hil(sc), 0.8, 0.6);
+    // eye, brow ridge
+    s += `<path d="M58,-128Q66,-134 74,-128Q66,-123 58,-128Z" fill="${ec}" stroke="${OL}" stroke-width=".6"/>` + `<ellipse cx="67" cy="-128" rx="1.4" ry="3.2" fill="#140404"/>` + dot([64, -129.6], 0.9, '#fff', 0.8) + dot([66, -128], 5.5, ec, 0.4) + qd([54, -132], [66, -138], [78, -130], scD, 2.2);
+    // horns and crest
+    const h1 = A.tube([38, -140], [22, -150], [8, -156], [-6, -174], 7, 1.2, 14), h2 = A.tube([50, -144], [42, -160], [34, -170], [30, -190], 6, 1.2, 14), h3 = A.tube([30, -130], [20, -134], [12, -138], [2, -146], 4, 1, 10);
+    for (const h of [h1, h2, h3]) { s += shape(F, h.d, F.hor(horn, 'skin')); for (let i = 2; i < h.pts.length - 2; i += 3) { const q = h.pts[i]; s += line([q.x + q.nx * q.w, q.y + q.ny * q.w], [q.x - q.nx * q.w, q.y - q.ny * q.w], '#7a6a50', 0.7, 0.8); } }
+    for (let i = 0; i < 4; i++) s += spine([40 - i * 4, -136 + i * 2], [34 - i * 4, -142 + i * 2], 7 - i, 6);
+    s += `<path d="M86,-134l6,-10l2,12z M76,-140l3,-9l4,10z" fill="${horn}" stroke="${OL}" stroke-width=".5"/>`;
+    s += ao([40, -120], 14, 8, 0.8, 30);
+    // ---- breath ----
+    let fx = '';
+    if (o.breath) fx += `<path d="M98,-96Q150,-74 200,-10L240,-50Q170,-100 102,-106Z" fill="${fire}" opacity=".5" filter="url(#b8)"/><path d="M98,-96Q144,-76 184,-28L210,-52Q160,-94 102,-104Z" fill="${fire}" opacity=".7" filter="url(#b4)"/><path d="M100,-98Q138,-80 170,-40L188,-58Q148,-90 102,-104Z" fill="#ffd27a" opacity=".85" filter="url(#b2)"/><path d="M102,-100Q130,-84 150,-58" stroke="#fff6d0" stroke-width="3" fill="none" opacity=".9" filter="url(#b1)"/>` + [[130, -64], [150, -50], [120, -90], [165, -40]].map(([x, y]) => dot([x, y], 2 + r() * 3, '#ffe9a0', 0.9)).join('');
+    else fx += `<ellipse cx="96" cy="-96" rx="10" ry="4" fill="${fire}" opacity=".8" filter="url(#b1)"/>`;
+    fx += dot([66, -128], 9, ec, 0.3) + `<ellipse cx="6" cy="-10" rx="22" ry="30" fill="${fire}" opacity=".16" filter="url(#b8)"/>`;
+    return compose(F, s, fx, Object.assign({ auraCol: fire, auraOp: 0.35 }, o), P, 80);
+  }
+  const dragonOld = L.dragon;
+  L.dragon = function (o, P, r) { return o.legacy || o.spectral ? dragonOld(o, P, r) : dragonModel(o, P, r || A.rng(5)); };
+
   const beastOld = L.beast;
   L.beast = function (o, P, r) {
     if (!o.legacy && !o.spectral && (o.t === 'wolf' || o.t === 'lynx')) return wolfModel(o, P, r || A.rng(3));
