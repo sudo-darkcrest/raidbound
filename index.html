@@ -623,6 +623,7 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
 <pattern id="pFeather" width="10" height="8" patternUnits="userSpaceOnUse"><path d="M0,8Q5,0 10,8M5,8L5,1.8" stroke="${P.rim}" stroke-width=".5" fill="none" opacity=".45"/><path d="M-5,4Q0,-4 5,4M5,4Q10,-4 15,4" stroke="#000" stroke-width=".6" fill="none" opacity=".3"/></pattern>
 <pattern id="pBark" width="10" height="24" patternUnits="userSpaceOnUse"><path d="M2,0q2,6 0,12t0,12M7,0q-2,7 .5,13t-.5,11" stroke="#000" stroke-width="1.1" fill="none" opacity=".45"/><path d="M4.4,0q1.5,6 0,12t0,12" stroke="${P.rim}" stroke-width=".5" fill="none" opacity=".35"/></pattern>
 <pattern id="pRock" width="22" height="18" patternUnits="userSpaceOnUse"><path d="M0,7L6,9L11,5L17,8L22,6M8,9L9,18M16,8L14,0M3,14L9,13" stroke="#000" stroke-width=".9" fill="none" opacity=".45"/><path d="M0,6.2L6,8.2L11,4.2L17,7.2L22,5.2" stroke="${P.rim}" stroke-width=".5" fill="none" opacity=".35"/></pattern>
+<radialGradient id="aoG"><stop offset="0" stop-color="#0a0410" stop-opacity=".5"/><stop offset=".55" stop-color="#0a0410" stop-opacity=".2"/><stop offset="1" stop-color="#0a0410" stop-opacity="0"/></radialGradient>
 <filter id="whiteF" x="-5%" y="-5%" width="110%" height="110%"><feFlood flood-color="#fff"/><feComposite in2="SourceAlpha" operator="in"/></filter>
 <filter id="rimF" x="-20%" y="-20%" width="140%" height="140%"><feMorphology in="SourceAlpha" operator="dilate" radius="1.1" result="d"/><feGaussianBlur in="d" stdDeviation="1" result="b"/><feFlood flood-color="${P.rim}"/><feComposite in2="b" operator="in"/></filter>
 <filter id="auraF" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur in="SourceAlpha" stdDeviation="9"/><feComponentTransfer><feFuncA type="linear" slope="1.4"/></feComponentTransfer><feComposite in="SourceGraphic" operator="out" result="b"/><feFlood flood-color="${P.glow}"/><feComposite in2="b" operator="in"/></filter>
@@ -2496,9 +2497,34 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
     };
   }
   const shape = (F, d, fill, ex) => `<path d="${d}" fill="${fill}" stroke="${OL}"${ex && ex.includes('stroke-width') ? '' : ` stroke-width="${F.ow}"`} stroke-linejoin="round"${ex || ''}/>`;
-  function limb(F, a, b, wa, wb, col, kind, bulge) {
-    const n = litN(a, b), m = lerp(a, b, 0.5), hw = Math.max(wa, wb) * 0.62;
-    return shape(F, limbD(a, b, wa, wb, bulge), F.lin(sum(m, mul(n, -hw)), sum(m, mul(n, hw)), col, kind));
+  // soft ambient-occlusion blot: darkens where forms meet (joints, under arms, under chin)
+  const ao = (p, rx, ry, op, rot) => `<ellipse cx="${n1(p[0])}" cy="${n1(p[1])}" rx="${n1(rx)}" ry="${n1(ry || rx * 0.6)}" fill="url(#aoG)" opacity="${op || 1}"${rot ? ` transform="rotate(${n1(rot)} ${n1(p[0])} ${n1(p[1])})"` : ''}/>`;
+  const angOf = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+  function limb(F, a, b, wa, wb, col, kind, bulge, opt) {
+    opt = opt || {};
+    const n = litN(a, b), m = lerp(a, b, 0.5), hw = Math.max(wa, wb) * 0.62, u = unit(sub(b, a));
+    const d = limbD(a, b, wa, wb, bulge), cid = nid();
+    F.defs.push(`<clipPath id="${cid}"><path d="${d}"/></clipPath>`);
+    let s = shape(F, d, F.lin(sum(m, mul(n, -hw)), sum(m, mul(n, hw)), col, kind));
+    let inner = '';
+    // core shadow and reflected light on the dark side, specular stripe on the lit side
+    const sa = sum(a, mul(n, -wa * 0.36)), sb = sum(b, mul(n, -wb * 0.36)), sm = sum(m, mul(n, -(wa + wb) / 2 * (1 + (bulge || 0.12)) * 0.38));
+    inner += qd(sa, sm, sb, mix(col, '#1a1030', 0.62), (wa + wb) * 0.16, 0.5);
+    inner += qd(sum(a, mul(n, -wa * 0.47)), sum(m, mul(n, -(wa + wb) / 2 * 0.52)), sum(b, mul(n, -wb * 0.47)), mix(col, F.P.rim, 0.5), 0.7, 0.35);
+    const la = sum(a, mul(n, wa * 0.3)), lb = sum(b, mul(n, wb * 0.3)), lm = sum(m, mul(n, (wa + wb) / 2 * (1 + (bulge || 0.12)) * 0.34));
+    inner += qd(lerp(la, lb, 0.08), lm, lerp(la, lb, 0.92), kind === 'metal' ? '#ffffff' : hil2(col), kind === 'metal' ? 1.2 : 0.8, kind === 'metal' ? 0.7 : 0.45);
+    if (kind === 'skin' && !opt.noMuscle) {
+      // a muscle belly line and a tendon toward the far joint
+      inner += qd(lerp(a, b, 0.18), sum(lerp(a, b, 0.5), mul(n, -(wa + wb) * 0.08)), lerp(a, b, 0.72), shd(col), 0.7, 0.4);
+      inner += line(sum(lerp(a, b, 0.7), mul(n, wb * 0.12)), sum(lerp(a, b, 0.96), mul(n, wb * 0.18)), shd(col), 0.55, 0.4);
+    }
+    if (kind === 'metal') inner += qd(sum(lerp(a, b, 0.1), mul(n, -wa * 0.1)), sum(m, mul(n, -(wa + wb) * 0.05)), sum(lerp(a, b, 0.9), mul(n, -wb * 0.1)), mix(F.P.sky[2], '#ffffff', 0.4), 0.6, 0.3);
+    // ambient occlusion where this segment meets its joints
+    if (!opt.noAO) inner += ao(a, wa * 0.75, wa * 0.3, 0.9, angOf(a, b) + 90) + ao(b, wb * 0.7, wb * 0.28, 0.6, angOf(a, b) + 90);
+    s += `<g clip-path="url(#${cid})">${inner}</g>`;
+    // heavier ink on the shadow edge
+    s += qd(sum(a, mul(n, -wa * 0.5)), sum(m, mul(n, -(wa + wb) / 2 * (1 + (bulge || 0.12)) * 0.5)), sum(b, mul(n, -wb * 0.5)), OL, F.ow * 0.9, 0.7);
+    return s;
   }
   function band(F, a, b, t0, t1, wa, wb, col, kind, grow) {
     const n = litN(a, b), m = lerp(a, b, (t0 + t1) / 2), hw = Math.max(wa, wb) * 0.66;
@@ -2573,7 +2599,7 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
     const col = mat === 'plate' ? K.metal : mat === 'hide' ? K.fur : mat === 'bone' ? K.bone : K.leather2;
     const kind = mat === 'plate' ? 'metal' : 'cloth';
     let s = shape(F, cr([P(-4.6, -13.6), P(3.8, -14), P(4.6, -7.6), P(9.6, -5), P(13.4, -2.2), P(13, 0.6), P(-5.2, 0.6), P(-5.7, -5.4)], true, 0.8), F.rad(col, kind));
-    s += line(P(-5.2, -0.4), P(13, -0.4), '#120a06', 1.9);
+    s += line(P(-5.2, -0.4), P(13, -0.4), '#120a06', 1.9) + qd(P(5.2, -8), P(6.6, -4), P(7, -0.6), shd2(col), 0.7, 0.6) + qd(P(7.4, -6.4), P(9.2, -3.2), P(9.4, -0.6), shd2(col), 0.5, 0.4) + ao(P(0, -13), 5 * lw, 2.4 * lw, 0.9);
     if (mat === 'plate') {
       for (let i = 0; i < 3; i++) s += qd(P(3 + i * 3, -9 + i * 1.6), P(5 + i * 3, -6.4 + i * 1.6), P(5.4 + i * 3, -3 + i), OL, 0.7, 0.8);
       s += qd(P(8, -5.4), P(11, -4.4), P(13, -1.6), hil2(col), 0.9, 0.8) + line(P(-4.4, -13.4), P(3.8, -13.8), K.trim, 1.3);
@@ -2667,6 +2693,8 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
       const t = i / 6, a = [pv[0] - hw * 0.95 + 1.9 * hw * 0.95 * t, top + 6], b = [pv[0] - fl * 0.9 + 1.8 * fl * 0.9 * t, -2], m = [(a[0] + b[0]) / 2 + (r() - 0.5) * 7, (a[1] + b[1]) / 2];
       inner += qd(a, m, b, shd2(K.cloth), i % 2 ? 2.6 : 1.4, 0.55) + (i % 2 ? qd(add(a, 1.8, 0), add(m, 2.2, 0), add(b, 2.4, 0), hil(K.cloth), 0.8, 0.5) : '');
     }
+    for (let i = 0; i < 14; i++) { const x0 = pv[0] - fl * 0.92 + i * 3.2, y0 = -8 - (i % 3) * 5; inner += line([x0, y0], [x0 - 2.2, y0 - 12 - (i % 2) * 6], shd2(K.cloth), 0.45, 0.4); }
+    for (let i = 0; i < 10; i++) { const x0 = pv[0] + fl * 0.45 + i * 2.6, y0 = -6 - (i % 3) * 4; inner += line([x0, y0], [x0 + 1.6, y0 - 10 - (i % 2) * 5], shd2(K.cloth), 0.4, 0.35); }
     inner += `<path d="${cr(hem.map(p => add(p, 0, -3.2)), false)}" stroke="${K.trim}" stroke-width="2.6" fill="none"/><path d="${cr(hem.map(p => add(p, 0, -3.2)), false)}" stroke="${shd2(K.trim)}" stroke-width=".9" fill="none" stroke-dasharray="2 2.4"/>`;
     s += `<g clip-path="url(#${cid})">${inner}</g>`;
     return s;
@@ -2725,6 +2753,9 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
       for (let i = 0; i < 5; i++) { const y = ch[1] - 9 + i * 5.2, hw = (12.6 - i * 1.1) * w; for (const sd of [-1, 1]) inner += `<path d="M${n1(ch[0])},${n1(y)}Q${n1(ch[0] + sd * hw)},${n1(y - 2)} ${n1(ch[0] + sd * hw * 0.9)},${n1(y + 4)}" stroke="${OL}" stroke-width="3" fill="none"/><path d="M${n1(ch[0])},${n1(y)}Q${n1(ch[0] + sd * hw)},${n1(y - 2)} ${n1(ch[0] + sd * hw * 0.9)},${n1(y + 4)}" stroke="${K.bone}" stroke-width="1.9" fill="none"/>`; }
       inner += `<path d="${cr([add(pv, -10 * w, -6), add(pv, 0, -9), add(pv, 10 * w, -6), add(pv, 6 * w, 2), add(pv, 0, -1), add(pv, -6 * w, 2)], true, 0.8)}" fill="${F.rad(K.bone)}" stroke="${OL}" stroke-width=".8"/>`;
     }
+    inner += ao(add(J.sL, 1, 6), 7 * w, 5, 0.8, 40) + ao(add(J.sR, -1, 6), 7 * w, 5, 0.8, -40) + ao(add(nk, 0, 7), 9 * w, 4, 0.75) + ao(add(pv, 0, -4), 11 * w, 3.4, 0.5);
+    // the near arm's cast shadow on the flank
+    inner += `<path d="${cr([add(J.sR, -3, 6), add(J.sR, -9 * w, 12), add(pv, 6 * w, -8), add(pv, 10 * w, -14)], true, 0.6)}" fill="#000" opacity=".16" filter="url(#b2)"/>`;
     s += `<g clip-path="url(#${cid})">${inner}<path d="${d}" fill="url(#figSide)" opacity=".55"/></g>`;
     // gorget / collar
     if (mat === 'plate') s += shape(F, `M${pt(add(nk, -8.6 * w, 5))}Q${pt(add(nk, 0, 13))} ${pt(add(nk, 8.6 * w, 5))}L${pt(add(nk, 6 * w, 0.6))}Q${pt(add(nk, 0, 7))} ${pt(add(nk, -6 * w, 0.6))}Z`, F.rad(K.metal, 'metal')) + qd(add(nk, -8.2 * w, 5.4), add(nk, 0, 13.2), add(nk, 8.2 * w, 5.4), K.trim, 1.1);
@@ -2815,11 +2846,27 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
         s += `<ellipse cx="${n1(p[0])}" cy="${n1(p[1])}" rx="${n1(r * k * 1.15)}" ry="${n1(r * k * 0.72)}" fill="#f6efe2" stroke="${OL}" stroke-width=".4"/>` + dot(add(p, r * k * 0.2, 0), r * k * 0.6, iris) + dot(add(p, r * k * 0.25, 0), r * k * 0.3, '#120a06') + dot(add(p, r * k * 0.05, -r * k * 0.25), r * k * 0.2, '#fff');
       }
     }
+    // eyelids, iris highlight, lower-lid line, cheekbone and nostril
+    for (const [x, y, r] of eyes) {
+      const p = C(x, y);
+      s += qd(add(p, -r * k * 1.15, 0), add(p, 0, -r * k * 0.9), add(p, r * k * 1.15, 0), OL, 0.6, 0.8) + qd(add(p, -r * k * 1.05, r * k * 0.2), add(p, 0, r * k * 0.85), add(p, r * k * 1.05, r * k * 0.2), shd2(skin), 0.4, 0.55);
+      s += qd(add(p, -r * k * 1.3, -r * k * 0.5), add(p, 0, -r * k * 1.4), add(p, r * k * 1.3, -r * k * 0.5), shd(skin), 0.5, 0.45);
+    }
+    if (race !== 'minotaur' && race !== 'fish') {
+      s += qd(C(6.6, 0.4), C(9.6, 1.6), C(9.4, 3.8), hil2(skin), 0.6, 0.35) + dot(C(8.4, 2), 0.45 * k, shd2(skin), 0.6);
+      s += qd(C(3, 3.6), C(5.2, 2.4), C(7.6, 3.2), hil(skin), 0.7, 0.35) + qd(C(-1, 5.2), C(1.4, 6.4), C(3.2, 5.6), shd(skin), 0.5, 0.4);
+      s += qd(C(2.4, 8.4), C(5, 9.8), C(7.8, 8.6), shd(skin), 0.5, 0.35);
+      if (race === 'dwarf' || race === 'human' || race === 'giant') s += line(C(-0.8, -1.4), C(-1.6, 0.4), shd(skin), 0.4, 0.5) + line(C(0.4, -0.6), C(-0.4, 1.4), shd(skin), 0.4, 0.35) + qd(C(8.2, 3.8), C(8.8, 5.4), C(8, 6.6), shd(skin), 0.45, 0.45);
+    }
+    // neck tendons and the shadow under the jaw
+    s += `<path d="${cr([C(-6, 6), C(2, 10.4), C(9, 7)], false)}" stroke="${shd2(skin)}" stroke-width="2.6" fill="none" opacity=".35"/>` + line(C(1, 10.6), C(0, 15), shd(skin), 0.7, 0.4) + line(C(4.6, 10.2), C(4.8, 15), hil(skin), 0.6, 0.35);
     // brows
     const heavy = race === 'orc' || race === 'minotaur' || race === 'dwarf' || race === 'giant';
     const bc = race === 'orc' ? shd2(skin) : mix(K.hair, '#000', 0.2);
     s += qd(C(0, heavy ? -4.6 : -4.8), C(2.4, heavy ? -6.4 : -5.8), C(4.6, heavy ? -4.4 : -5), bc, heavy ? 2 : 1.1) + qd(C(5.6, heavy ? -4.8 : -5.2), C(7.4, heavy ? -6 : -5.6), C(9, heavy ? -4.2 : -4.4), bc, heavy ? 1.8 : 1);
     if (race === 'orc') s += qd(C(-0.4, -5.2), C(5, -7.4), C(10, -4.6), shd2(skin), 1.6, 0.8);
+    // individual brow hairs
+    for (let i = 0; i < 5; i++) s += line(C(0.4 + i * 1, -4.9 - (i < 3 ? i * 0.4 : (4 - i) * 0.4)), C(0.9 + i * 1, -5.9 - (i < 3 ? i * 0.4 : (4 - i) * 0.4)), bc, 0.4, 0.7) + line(C(5.8 + i * 0.7, -5.1 - (i < 2 ? i * 0.3 : 0.4)), C(6.2 + i * 0.7, -6 - (i < 2 ? i * 0.3 : 0.4)), bc, 0.35, 0.6);
     // nose, mouth, jaw
     if (race !== 'minotaur' && race !== 'fish') s += qd(C(7.2, -1.6), C(8.6, 0.6), C(8.2, 1.8), shd2(skin), 0.8, 0.8) + qd(C(6, 2.4), C(7.2, 2.8), C(8.4, 2), shd2(skin), 0.7, 0.7);
     if (race === 'goblin') { s += `<path d="${cr([C(2.6, 5), C(6, 6.8), C(9, 4.6), C(8.4, 6.8), C(5, 8.2)], true, 0.8)}" fill="#3a0e10" stroke="${OL}" stroke-width=".5"/>`; for (let i = 0; i < 4; i++) s += `<path d="M${pt(C(3.6 + i * 1.4, 5.6))}l${n1(0.6 * k)},${n1(1.2 * k)}l${n1(0.6 * k)},${n1(-1.1 * k)}z" fill="#f4eed8"/>`; }
@@ -2865,11 +2912,11 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
       }
       case 'horned': {
         if (race !== 'dwarf' && race !== 'skeleton') s += cap();
-        const h1 = A.tube(H(-7, -6), H(-17, -7), H(-24, -17), H(-19, -28), 5 * k, 0.8, 16), h2 = A.tube(H(6, -9), H(15, -13), H(19, -23), H(13, -31), 4.4 * k, 0.8, 16);
+        const h1 = A.tube(H(-7, -9), H(-17, -10), H(-24, -20), H(-19, -31), 5 * k, 0.8, 16), h2 = A.tube(H(6, -12), H(15, -16), H(19, -26), H(13, -34), 4.4 * k, 0.8, 16);
         for (const h of [h1, h2]) { s += shape(F, h.d, F.hor('#ece0c0', 'skin')); [3, 5, 7].forEach(i => { const q = h.pts[i]; s += line([q.x + q.nx * q.w, q.y + q.ny * q.w], [q.x - q.nx * q.w, q.y - q.ny * q.w], '#7a6a50', 0.8, 0.9); }); }
-        s += shape(F, cr([H(-9.6, -0.6), H(-9, -7.6), H(0, -12.4), H(8.6, -9.4), H(10.2, -3), H(10.6, -0.4), H(0, 0.8)], true, 0.85), F.lin(H(-10, 0), H(10, -12), K.metal, 'metal'));
-        s += `<path d="${cr([H(-9.8, -1), H(0, 0.4), H(10.6, -1)], false)}" stroke="${K.trim}" stroke-width="2.2" fill="none"/>` + [-6, -1, 4, 8.4].map(x => rivet(H(x, -0.4), 0.7 * k)).join('');
-        s += shape(F, `M${pt(H(7.4, -1))}L${pt(H(9.2, -1))}L${pt(H(8.8, 5.6))}L${pt(H(7.8, 5.6))}Z`, F.hor(K.metal, 'metal'), ' stroke-width=".6"') + line(H(4, -11.8), H(4.8, -1), hil2(K.metal), 0.7, 0.8);
+        s += shape(F, cr([H(-9.8, -4.6), H(-9.2, -9.6), H(0, -14), H(8.8, -11), H(10.4, -6.4), H(10.8, -4.2), H(0, -3.2)], true, 0.85), F.lin(H(-10, -4), H(10, -14), K.metal, 'metal'));
+        s += `<path d="${cr([H(-10, -4.8), H(0, -3.6), H(10.8, -4.8)], false)}" stroke="${K.trim}" stroke-width="2.2" fill="none"/>` + [-6, -1, 4, 8.4].map(x => rivet(H(x, -4.4), 0.7 * k)).join('');
+        s += shape(F, `M${pt(H(7.6, -4.4))}L${pt(H(9.4, -4.4))}L${pt(H(9.2, 1.4))}L${pt(H(8, 1.4))}Z`, F.hor(K.metal, 'metal'), ' stroke-width=".6"') + line(H(4, -13.4), H(4.8, -4.2), hil2(K.metal), 0.7, 0.8);
         break;
       }
       case 'wizard': {
@@ -2980,6 +3027,9 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
     for (let i = 2; i >= 1; i--) { const y = pr * 0.24 + i * pr * 0.32, ww = pr * (1.02 - i * 0.12); s += shape(F, `M${pt(add(c, -ww, y - pr * 0.18))}Q${pt(add(c, 0, y - pr * 0.42))} ${pt(add(c, ww, y - pr * 0.18))}L${pt(add(c, ww * 0.94, y + pr * 0.1))}Q${pt(add(c, 0, y - pr * 0.12))} ${pt(add(c, -ww * 0.94, y + pr * 0.1))}Z`, F.rad(col, 'metal'), ' stroke-width=".7"') + qd(add(c, -ww * 0.9, y + pr * 0.06), add(c, 0, y - pr * 0.16), add(c, ww * 0.9, y + pr * 0.06), K.trim, 0.8, 0.9); }
     const dome = cr([add(c, -pr * 1.06, pr * 0.32), add(c, -pr * 0.9, -pr * 0.46), add(c, 0, -pr * 0.98), add(c, pr * 0.9, -pr * 0.46), add(c, pr * 1.06, pr * 0.32), add(c, pr * 0.55, pr * 0.56), add(c, 0, pr * 0.46), add(c, -pr * 0.55, pr * 0.56)], true, 0.95);
     s += shape(F, dome, F.rad(col, 'metal'));
+    s += `<path d="${cr([add(c, -pr * 0.86, -pr * 0.36), add(c, -pr * 0.3, -pr * 0.84), add(c, pr * 0.3, -pr * 0.84)], false)}" stroke="#ffffff" stroke-width="1.6" fill="none" opacity=".45"/>` + `<path d="${cr([add(c, -pr * 0.96, pr * 0.24), add(c, -pr * 0.84, -pr * 0.42), add(c, 0, -pr * 0.92), add(c, pr * 0.84, -pr * 0.42), add(c, pr * 0.98, pr * 0.24)], false)}" stroke="${shd2(col)}" stroke-width=".9" fill="none" opacity=".6"/>`;
+    s += `<path d="${cr([add(c, pr * 0.2, -pr * 0.2), add(c, pr * 0.55, -pr * 0.5), add(c, pr * 0.78, -pr * 0.2)], false)}" stroke="${mix(F.P.sky[2], '#ffffff', 0.5)}" stroke-width="2" fill="none" opacity=".22"/>`;
+    for (const sd of [-1, 1]) s += `<path d="M${pt(add(c, sd * pr * 0.34, -pr * 0.1))}c${n1(sd * pr * 0.12)},${n1(-pr * 0.22)} ${n1(sd * pr * 0.36)},${n1(-pr * 0.2)} ${n1(sd * pr * 0.38)},${n1(pr * 0.02)}c0,${n1(pr * 0.14)} ${n1(-sd * pr * 0.12)},${n1(pr * 0.18)} ${n1(-sd * pr * 0.2)},${n1(pr * 0.1)}" stroke="${K.trim}" stroke-width=".7" fill="none" opacity=".8"/>`;
     s += `<path d="${cr([add(c, -pr * 1.02, pr * 0.28), add(c, -pr * 0.5, pr * 0.5), add(c, 0, pr * 0.42), add(c, pr * 0.5, pr * 0.5), add(c, pr * 1.02, pr * 0.28)], false)}" stroke="${K.trim}" stroke-width="1.6" fill="none"/>`;
     s += qd(add(c, -pr * 0.1, -pr * 0.94), add(c, side * pr * 0.1, -pr * 0.2), add(c, 0, pr * 0.42), OL, 1.2, 0.9) + qd(add(c, pr * 0.02, -pr * 0.94), add(c, side * pr * 0.1 + 0.8, -pr * 0.2), add(c, 0.9, pr * 0.42), hil2(col), 0.6, 0.9);
     s += rivet(add(c, -pr * 0.62, pr * 0.1), 0.9) + rivet(add(c, pr * 0.62, pr * 0.1), 0.9) + rivet(add(c, -pr * 0.3, -pr * 0.6), 0.8) + rivet(add(c, pr * 0.3, -pr * 0.6), 0.8);
@@ -2993,16 +3043,27 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
     const kind = mat === 'plate' ? 'metal' : 'skin', Q = (a, b) => sum(sum(hn, mul(u, a * lw)), mul(n, b * lw));
     let s = '';
     if (mat === 'plate') s += shape(F, cr([Q(-6, -4.6), Q(-0.6, -5.4), Q(-0.6, 5.4), Q(-6, 4.6)], true, 0.5), F.lin(Q(-3, -5), Q(-3, 5), K.metal, 'metal')) + line(Q(-1.2, -5), Q(-1.2, 5), K.trim, 1.1);
+    // a finger: two phalanges with a knuckle crease, bending by `bend` radians at the middle joint
+    const finger = (base, dir, len, w, bend) => {
+      const d1 = unit(dir), mid = sum(base, mul(d1, len * 0.55)), c = Math.cos(bend), sn = Math.sin(bend), d2 = [d1[0] * c - d1[1] * sn, d1[0] * sn + d1[1] * c], tip = sum(mid, mul(d2, len * 0.45));
+      let f = shape(F, limbD(base, mid, w, w * 0.9, 0.05), F.hor(col, kind), ' stroke-width=".5"') + shape(F, limbD(mid, tip, w * 0.9, w * 0.7, 0), F.hor(col, kind), ' stroke-width=".5"');
+      f += dot(mid, w * 0.42, shd(col), 0.55) + qd(sum(mid, mul(perp(d1), -w * 0.4)), sum(mid, mul(d1, 0.3)), sum(mid, mul(perp(d1), w * 0.4)), shd2(col), 0.45, 0.8);
+      if (mat !== 'plate') f += dot(sum(tip, mul(d2, -w * 0.15)), w * 0.3, mix(col, '#ffffff', 0.4), 0.5) + line(sum(tip, mul(d2, w * 0.1)), sum(tip, mul(d2, -w * 0.5)), mix(col, '#2a1a10', 0.5), 0.4, 0.6);
+      return f;
+    };
     if (open) {
       s += shape(F, cr([Q(-1, -3.2), Q(3, -3.6), Q(4.4, 0), Q(3, 3.6), Q(-1, 3.2)], true, 0.9), F.rad(col, kind), ' stroke-width=".7"');
-      for (const a of [-0.55, -0.18, 0.18, 0.52]) { const d = [Math.cos(a), Math.sin(a)], b = Q(3.4, a * 4.4), tip = sum(b, mul(sum(mul(u, d[0]), mul(n, d[1])), 4.6 * lw)); s += shape(F, limbD(b, tip, 1.7 * lw, 1.3 * lw, 0), F.hor(col, kind), ' stroke-width=".55"'); }
-      const tb = Q(0.6, -3.4), tt = sum(tb, mul(sum(mul(u, 0.4), mul(n, -0.9)), 4 * lw)); s += shape(F, limbD(tb, tt, 1.9 * lw, 1.4 * lw, 0), F.hor(col, kind), ' stroke-width=".55"');
+      for (const [a, i] of [[-0.55, 0], [-0.18, 1], [0.18, 2], [0.52, 3]]) { const d = sum(mul(u, Math.cos(a)), mul(n, Math.sin(a))), b = Q(3.4, a * 4.4); s += finger(b, d, (i === 3 ? 4 : 4.8) * lw, 1.6 * lw, (i % 2 ? -0.35 : -0.5)); }
+      s += finger(Q(0.6, -3.4), sum(mul(u, 0.4), mul(n, -0.9)), 4 * lw, 1.8 * lw, 0.4);
+      for (const b of [-2.2, -0.7, 0.8, 2.3]) s += dot(Q(3.4, b), 0.5 * lw, shd(col), 0.5);
       return s;
     }
     s += shape(F, cr([Q(-1.4, -3.6), Q(3.4, -3.8), Q(5.2, -1.8), Q(5.2, 2), Q(3.4, 3.8), Q(-1.4, 3.6), Q(-2.4, 0)], true, 0.9), F.rad(col, kind));
-    for (const b of [-1.9, 0, 1.9]) s += line(Q(3.2, b), Q(5.1, b), shd2(col), 0.6, 0.9);
-    s += qd(Q(2.4, -3.4), Q(3.4, 0), Q(2.4, 3.4), shd2(col), 0.7, 0.8) + shape(F, cr([Q(0, -3.8), Q(3.2, -4.6), Q(4.4, -3.2), Q(1.6, -2.4)], true, 0.8), F.rad(col, kind), ' stroke-width=".5"');
-    if (mat === 'plate') s += rivet(Q(4.2, -1.2), 0.6) + rivet(Q(4.2, 1.4), 0.6);
+    // curled fingers: visible knuckle ridge then short lower phalanges folding under
+    for (const b of [-2.6, -0.9, 0.8, 2.5]) { const kn = Q(4.6, b); s += dot(kn, 0.75 * lw, mix(col, '#ffffff', 0.35), 0.55) + qd(Q(3.4, b - 0.7), Q(5.3, b), Q(3.4, b + 0.7), shd2(col), 0.6, 0.8) + line(Q(4.9, b + 0.1), Q(3.6, b + 0.9), shd(col), 0.5, 0.6); }
+    s += qd(Q(2.4, -3.4), Q(3.4, 0), Q(2.4, 3.4), shd2(col), 0.7, 0.8) + shape(F, cr([Q(0, -3.8), Q(3.2, -4.6), Q(4.4, -3.2), Q(1.6, -2.4)], true, 0.8), F.rad(col, kind), ' stroke-width=".5"') + dot(Q(2.2, -3.6), 0.55 * lw, shd(col), 0.5);
+    s += line(Q(-1, -2.6), Q(1.6, -3.2), shd(col), 0.5, 0.45) + line(Q(-1.2, 0.6), Q(2, 0.2), shd(col), 0.45, 0.35) + ao(Q(-1.6, 0), 2 * lw, 3.2 * lw, 0.7);
+    if (mat === 'plate') s += rivet(Q(4.2, -1.2), 0.6) + rivet(Q(4.2, 1.4), 0.6) + line(Q(0.2, -3.4), Q(0.4, 3.4), OL, 0.5, 0.6);
     return s;
   }
   function weaponPart(F, o, P, t, h, ang, isOff) {
@@ -3077,7 +3138,8 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
   function paw(F, p, col, big, claws) {
     const k = big || 1;
     let s = shape(F, cr([add(p, -6 * k, -1), add(p, -5 * k, -6 * k), add(p, 3 * k, -6.6 * k), add(p, 8 * k, -2.6 * k), add(p, 8 * k, 0.6), add(p, -6 * k, 0.6)], true, 0.8), F.rad(col));
-    for (const dx of [0, 3, 6]) s += line(add(p, dx * k, -3 * k), add(p, dx * k + 0.6, 0.2), mix(col, '#000', 0.5), 0.6, 0.8);
+    for (const dx of [0, 3, 6]) s += line(add(p, dx * k, -3 * k), add(p, dx * k + 0.6, 0.2), mix(col, '#000', 0.5), 0.6, 0.8) + dot(add(p, dx * k + 1.4, -3.4 * k), 0.9 * k, mix(col, '#ffffff', 0.3), 0.5);
+    s += qd(add(p, -5 * k, -5 * k), add(p, 0, -3.2 * k), add(p, 7 * k, -3.4 * k), mix(col, '#000', 0.45), 0.7, 0.6) + dot(add(p, -4.6 * k, -7 * k), 1 * k, mix(col, '#000', 0.35), 0.8) + ao(add(p, 0, -6.4 * k), 6 * k, 2 * k, 0.8);
     if (claws) for (const dx of [1.4, 4.4, 7.4]) s += `<path d="M${pt(add(p, dx * k, -0.6))}l${n1(2.4 * k)},${n1(1.6 * k)}l${n1(-2 * k)},${n1(0.2 * k)}z" fill="#f0e6cc" stroke="${OL}" stroke-width=".4"/>`;
     return s;
   }
@@ -3095,7 +3157,7 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
     // body
     const bd = cr([[-60, -62], [-40, -72], [-10, -70], [20, -74], [40, -82], [52, -72], [56, -52], [48, -34], [22, -31], [-10, -34], [-40, -36], [-60, -40], [-67, -52]], true, 0.92);
     s += shape(F, bd, F.lin([0, -28], [12, -84], fur, 'cloth'));
-    s += clipped(F, bd, `<ellipse cx="8" cy="-31" rx="50" ry="9" fill="${cream}" opacity=".8"/><ellipse cx="-10" cy="-74" rx="50" ry="11" fill="${dark}" opacity=".55"/>` + A.strokeTex(r, [-70, -84, 58, -30], 'fur', { rim: hil2(fur), dark, texK: 2 }, 34) + `<path d="M-40,-58Q-30,-50 -36,-42M10,-60Q18,-52 14,-44" stroke="${dark}" stroke-width="1.2" fill="none" opacity=".6"/>`);
+    s += clipped(F, bd, `<ellipse cx="8" cy="-31" rx="50" ry="9" fill="${cream}" opacity=".8"/>` + ao([-50, -46], 16, 12, 0.9) + ao([40, -60], 14, 12, 0.8) + `<path d="M-20,-70Q-6,-50 -16,-36M20,-72Q34,-56 26,-40" stroke="${dark}" stroke-width="1.6" fill="none" opacity=".45"/><path d="M-58,-52Q-46,-56 -40,-50M30,-56Q42,-62 50,-56" stroke="${hil2(fur)}" stroke-width="1" fill="none" opacity=".45"/>` + `<ellipse cx="-10" cy="-74" rx="50" ry="11" fill="${dark}" opacity=".55"/>` + A.strokeTex(r, [-70, -84, 58, -30], 'fur', { rim: hil2(fur), dark, texK: 2 }, 34) + `<path d="M-40,-58Q-30,-50 -36,-42M10,-60Q18,-52 14,-44" stroke="${dark}" stroke-width="1.2" fill="none" opacity=".6"/>`);
     if (lynx) for (let i = 0; i < 14; i++) s += clipped(F, bd, dot([-56 + (i * 37) % 104, -66 + (i * 13) % 26], 2.2, '#4a2a14', 0.65));
     // near legs: haunch and foreleg
     const hd = cr([[-34, -66], [-56, -64], [-68, -46], [-62, -30], [-50, -30], [-38, -44]], true, 0.9);
@@ -3125,7 +3187,7 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
     s += limb(F, [-46, -40], [-54, -6], 22, 15, far, 'cloth', 0.12) + paw(F, [-52, 0], far, 1.5);
     const bd = cr([[-70, -34], [-76, -58], [-58, -76], [-30, -86], [-4, -92], [20, -86], [40, -78], [52, -66], [56, -50], [48, -34], [24, -28], [-4, -28], [-34, -28], [-58, -28]], true, 0.92);
     s += shape(F, bd, F.lin([0, -26], [10, -94], fur, 'cloth'));
-    s += clipped(F, bd, `<ellipse cx="-10" cy="-84" rx="46" ry="12" fill="${dark}" opacity=".45"/>` + A.strokeTex(r, [-78, -94, 58, -28], 'fur', { rim: hil2(fur), dark, texK: 2.1 }, 26));
+    s += clipped(F, bd, `<ellipse cx="-10" cy="-84" rx="46" ry="12" fill="${dark}" opacity=".45"/>` + ao([-48, -40], 20, 14, 0.9) + ao([38, -46], 18, 14, 0.9) + `<path d="M-30,-82Q-10,-60 -20,-36M14,-84Q30,-66 22,-40M-70,-50Q-56,-44 -40,-50" stroke="${dark}" stroke-width="1.8" fill="none" opacity=".4"/>` + A.strokeTex(r, [-78, -94, 58, -28], 'fur', { rim: hil2(fur), dark, texK: 2.1 }, 26));
     const hd = cr([[-40, -70], [-62, -66], [-72, -46], [-66, -30], [-50, -28], [-38, -44]], true, 0.9);
     s += shape(F, hd, F.rad(fur)) + clipped(F, hd, A.strokeTex(r, [-74, -72, -36, -26], 'fur', { rim: hil2(fur), dark, texK: 2 }, 22));
     s += limb(F, [-58, -34], [-56, -6], 18, 15, fur, 'cloth', 0.1) + paw(F, [-55, 0], fur, 1.5, true);
