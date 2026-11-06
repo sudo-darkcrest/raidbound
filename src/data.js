@@ -347,7 +347,7 @@
       ],
       deck: [['tailswipe', 2], ['searingbreath', 2], ['cinderrain', 2], ['whelps', 3], ['magmaguard', 1], ['wingbuffet', 2], ['roar', 1], ['ignite', 2], ['devour', 1], ['emberfeast', 1], ['scorchclaw', 2], ['meltarmor', 1]],
       treasure: ['cinderfang', 'tyrantheart', 'hatchling'],
-      art: { s: 'volcano', L: [['dragon', { x: 150, y: 140, s: 0.82, breath: 1 }]] },
+      art: { s: 'volcano', img: 'vorthrax', L: [['dragon', { x: 150, y: 140, s: 0.82, breath: 1 }]] },
       theme: '#ff6a2a',
     },
     tide: {
