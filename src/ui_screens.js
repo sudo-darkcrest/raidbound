@@ -20,13 +20,19 @@
   const TITLE_ART = { s: 'volcano', L: [['glow', { x: 150, y: 120, r: 90, c: '#ff6a1a', op: 0.35 }], ['dragon', { x: 196, y: 108, s: 0.62, breath: 1 }], ['fig', { race: 'human', pose: 'heroic', w: 'sword', off: 'shield', helm: 'great', cape: 1, capeCol: '#1a2a5a', x: 70, y: 214, s: 0.5, wGlow: '#fff6c0' }], ['fig', { race: 'orc', pose: 'charge', w: 'axe', x: 106, y: 216, s: 0.45 }], ['fig', { race: 'elf', pose: 'castF', robe: 1, helm: 'hair', glowR: '#c8a0ff', x: 32, y: 214, s: 0.42 }]], p: 'embers', pn: 50 };
   U.title = function () {
     const wins = Object.values(save.wins).reduce((a, b) => a + b, 0);
-    const el = U.show('title', `<img class="bgart" alt="" src="${U.art(TITLE_ART, 'title')}"><div class="veil"></div>
+    const bg = (RB.ART.GEN && RB.ART.GEN.title_wide) || U.art(TITLE_ART, 'title');
+    const raids = Object.values(R).map(r => `<button class="traid" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="tbody"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div>${(save.wins[r.id] || 0) ? `<div class="done">Conquered ${save.wins[r.id]}×</div>` : ''}</div></button>`).join('');
+    const el = U.show('title', `<img class="bgart" alt="" src="${bg}"><div class="veil"></div>
       <div class="center"><h1 class="logo">Raidbound</h1><p class="tagline">Gather your party. Build your deck. Bring down the raid boss.</p>
       <div class="menu"><button class="btn primary" data-go="setup">Begin a raid</button>
       <div class="row"><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
+      <div class="traids">${raids}</div>
       ${wins ? `<div class="wins">Raids conquered: ${wins} · Cards collected: ${Object.keys(save.owned).filter(k => save.owned[k] > 0).length}</div>` : ''}</div>`);
-    el.onclick = e => { const b = e.target.closest('[data-go]'); if (b) U[b.dataset.go](); };
+    el.onclick = e => {
+      const r = e.target.closest('[data-raid]'); if (r) { U.setupState.raid = r.dataset.raid; return U.setup(); }
+      const b = e.target.closest('[data-go]'); if (b) U[b.dataset.go]();
+    };
   };
 
   /* ---------------- raid setup ---------------- */

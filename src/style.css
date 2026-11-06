@@ -32,8 +32,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gilt-h
 
 /* ---------- title ---------- */
 #title { display: grid; place-items: center; }
-#title .bgart { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .9; }
-#title .veil { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 55%, rgba(10, 14, 31, .1), rgba(10, 14, 31, .85) 75%); }
+#title .bgart { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
+#title .veil { position: absolute; inset: 0; background: radial-gradient(ellipse 45% 60% at 50% 48%, rgba(10, 14, 31, .5), rgba(10, 14, 31, .12) 60%, rgba(10, 14, 31, .55) 100%), linear-gradient(180deg, rgba(10, 14, 31, .25), transparent 30%, transparent 60%, rgba(10, 14, 31, .9)); }
 #title .center { position: relative; text-align: center; }
 .logo { font-family: var(--f-display); font-weight: 900; font-size: clamp(4rem, 11vw, 9rem); line-height: .9; margin: 0; letter-spacing: .01em;
   background: linear-gradient(180deg, #fff6d4 0%, #f2c76a 40%, #a8701e 70%, #f7d98a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -43,7 +43,17 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gilt-h
 .menu .btn { min-width: 16rem; }
 .menu .row { display: flex; gap: .7rem; }
 .menu .row .btn { min-width: 7.6rem; }
-.wins { margin-top: 1.4rem; color: var(--muted); font-size: .9rem; }
+.wins { margin-top: 1rem; color: var(--muted); font-size: .9rem; text-shadow: 0 1px 4px #000; }
+.traids { display: flex; gap: .9rem; justify-content: center; margin-top: 2.2rem; }
+.traid { position: relative; width: 13.5rem; padding: 0; border: 1px solid rgba(212, 166, 74, .45); border-radius: 6px; overflow: hidden; background: #0d1124; cursor: pointer; text-align: left; color: var(--text); font-family: var(--f-body); box-shadow: 0 10px 30px rgba(0, 0, 0, .7); transition: transform .15s, box-shadow .15s; }
+.traid:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 0 0 1px var(--gilt), 0 14px 34px rgba(0, 0, 0, .8); }
+.traid img { display: block; width: 100%; aspect-ratio: 300/220; object-fit: cover; }
+.traid .chip.tier { position: absolute; top: .5rem; left: .5rem; }
+.traid .tbody { padding: .5rem .7rem .6rem; }
+.traid h4 { margin: 0; font-family: var(--f-sc); font-size: 1rem; color: var(--gilt-hi); line-height: 1.15; }
+.traid .boss { color: var(--muted); font-size: .82rem; }
+.traid .done { color: #9fe3a0; font-size: .78rem; margin-top: .2rem; }
+@media (max-width: 760px) { .traids { flex-wrap: wrap; } .traid { width: 10rem; } }
 
 /* ---------- generic page (setup, collection, vault, rules) ---------- */
 .page { max-width: 1280px; margin: 0 auto; padding: 1.4rem 2rem 4rem; }
