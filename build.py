@@ -1,5 +1,5 @@
 import base64, pathlib, sys
-src = pathlib.Path(__file__).parent / 'src'
+src = pathlib.Path('src')
 fonts = [('Grenze Gotisch', 500, 'normal', 'grenze-gotisch-latin-500-normal.woff2'), ('Grenze Gotisch', 700, 'normal', 'grenze-gotisch-latin-700-normal.woff2'), ('Grenze Gotisch', 900, 'normal', 'grenze-gotisch-latin-900-normal.woff2'),
          ('Alegreya', 400, 'normal', 'alegreya-latin-400-normal.woff2'), ('Alegreya', 400, 'italic', 'alegreya-latin-400-italic.woff2'), ('Alegreya', 700, 'normal', 'alegreya-latin-700-normal.woff2'),
          ('Alegreya SC', 700, 'normal', 'alegreya-sc-latin-700-normal.woff2'), ('Alegreya SC', 800, 'normal', 'alegreya-sc-latin-800-normal.woff2')]
@@ -26,5 +26,5 @@ html = f"""<!DOCTYPE html>
 </body>
 </html>
 """
-out = pathlib.Path(__file__).parent / 'index.html'; out.write_text(html)
+out = pathlib.Path('dist/raidbound.html'); out.write_text(html)
 print(out, round(len(html)/1024), 'KB')

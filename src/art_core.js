@@ -554,9 +554,10 @@
     const seed = spec.seed != null ? spec.seed : hash(key || JSON.stringify(spec).slice(0, 200));
     const r = mulberry(seed);
     const P = A.pal(spec.s || 'void', spec.pal);
-    if (spec.img && A.GEN && A.GEN[spec.img]) {
+    const gk = spec.img || (key && key.indexOf(':') > 0 ? key.split(':')[1] : null);
+    if (gk && A.GEN && A.GEN[gk] && spec.img !== false) {
       // a painted (generated) illustration replaces the scene and layers; the house vignette and grain still apply
-      const body = `<image href="${A.GEN[spec.img]}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"/><rect width="${W}" height="${H}" fill="url(#vig)"/><rect width="${W}" height="${H}" filter="url(#grain)" opacity=".3"/>`;
+      const body = `<image href="${A.GEN[gk]}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"/><rect width="${W}" height="${H}" fill="url(#vig)"/><rect width="${W}" height="${H}" filter="url(#grain)" opacity=".3"/>`;
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${defs(P)}${body}</svg>`;
     }
     let body = scene(spec.s || 'void', r, P, spec);
