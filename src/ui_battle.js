@@ -15,6 +15,19 @@
   const human = p => p && !p.auto && (!net || net.mine(p.idx));
   const myTurn = () => E && E.g.phase === 'main' && human(E.g.players[E.g.turn]) && !view.busy && !E.g.over;
   const fp = () => E.g.players[view.focus] || E.g.players[0];
+  // #37: whose eyes is this screen? Only that hero's hand is ever shown face up.
+  function viewerIdx() {
+    const g = E.g;
+    if (g.cfg.bossPlayer) return -1;
+    if (net) return g.cfg.party.findIndex(s => s.owner === net.id);
+    const humans = g.players.filter(q => !q.auto);
+    if (!humans.length) return -1;
+    if (view.lastHuman == null || !g.players[view.lastHuman] || g.players[view.lastHuman].auto) view.lastHuman = humans[0].idx;
+    return view.lastHuman;
+  }
+  const localHumans = () => net ? 1 : E.g.players.filter(q => !q.auto).length;
+  const seesHand = q => q && q.idx === viewerIdx() && view.curtain == null;
+  const homeFocus = () => { const v = viewerIdx(); return v >= 0 ? v : E.g.turn; };
 
   function unitHTML(kind, o) {
     // o: {ref, name, img, atk, hp, max, kws:[], cls:[], buffA, title}
@@ -30,7 +43,7 @@
     const g = E.g, B = g.boss, raid = g.raid;
     const p = fp();
     const active = g.players[g.turn];
-    const canAct = myTurn() && p === active;
+    const canAct = myTurn() && p === active && view.curtain == null;
     const valid = new Set((view.mode ? view.mode.valid : []).map(E.refId));
     const tcls = ref => valid.has(ref) ? (view.mode.friendly ? ' friendly-t' : ' targetable') : '';
     // boss
@@ -58,13 +71,14 @@
     const heroCard = `<div class="herocard ${p.hero.ex ? 'ex' : ''} ${dead ? 'dead' : ''} ${heroCan && !view.mode ? 'can' : ''}${tcls('hero' + p.idx)}" data-ref="hero${p.idx}" data-act="hero" tabindex="0" aria-label="${esc(hd.name)}, ${E.heroHp(p)} health">
       <img alt="" src="${U.cardArt(p.hero.master || p.heroId)}"><div class="tags">${tags}</div>
       ${heroAtk > 0 ? `<div class="hatk" title="Attack with weapon">${heroAtk}</div>` : ''}<div class="hhp ${E.heroHp(p) <= 8 ? 'low' : ''}">${Math.max(0, E.heroHp(p))}</div>${p.hero.shield ? `<div class="shield" title="Ward: prevents the next ${p.hero.shield} damage">◈ ${p.hero.shield}</div>` : ''}
-      <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max health</small></div></div>${powerBtn}${petImg}`;
+      <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max HP</small></div></div>${powerBtn}${petImg}`;
     const gslot = (e, label, val, act, can) => e ? `<div class="gslot has ${e.ex ? 'ex' : ''} ${can ? 'can' : ''}" data-act="${act}" data-gid="${e.c.uid}" data-card="${e.c.id}"><img alt="" src="${U.cardArt(e.c.id)}"><span class="gn"><b>${esc(C[e.c.id].name)}</b>${label}</span><span class="gv">${val}</span></div>` : '';
     let gear = p.weapon ? gslot(p.weapon, `Strike ${C[p.weapon.c.id].strike}${p.weapon.ex ? ' · used' : ''}`, '⚔ ' + C[p.weapon.c.id].atk, 'weapon', false) : `<div class="gslot">No weapon</div>`;
     for (const slot of Object.keys(RB.SLOTS)) if (p.armor[slot]) { const d = C[p.armor[slot].c.id]; gear += gslot(p.armor[slot], `${RB.SLOTS[slot]} · pay ${d.use}${p.armor[slot].ex ? ' · used' : ''}`, '⛨ ' + d.def, 'armor', false); }
     for (const it of p.items) { const d = C[it.c.id]; gear += gslot(it, d.use ? (it.ex ? 'Used this turn' : 'Click to use') : 'Item', d.use ? (d.use.cost ? d.use.cost + '◆' : '') : '', 'item', canAct && E.itemReady(p, it)); }
     if (!Object.keys(p.armor).length && !p.items.length) gear += `<div class="gslot">No armor or items</div>`;
-    const resCards = p.res.map((r, i) => {
+    const resOrder = p.res.map((r, i) => i).sort((a, b) => ((p.res[a].quest || p.res[a].loc) ? 1 : 0) - ((p.res[b].quest || p.res[b].loc) ? 1 : 0));
+    const resCards = resOrder.map(i => { const r = p.res[i];
       const d = C[r.c.id];
       if (r.quest || r.loc) { const can = canAct && (r.quest ? E.questReady(p, r) : E.locationReady(p, r)); return `<div class="rcard ${r.ex ? 'ex' : ''}" data-act="res" data-ri="${i}" data-card="${r.c.id}"><div class="mini ${r.loc ? 'loc' : ''} ${r.done ? 'done' : ''} ${can ? 'can' : ''}" title="${esc(d.name)}"><img alt="" src="${U.cardArt(r.c.id)}"><span class="q">${r.done ? 'Completed' : esc(d.name)}</span></div></div>`; }
       return `<div class="rcard ${r.ex ? 'ex' : ''}" title="${r.ex ? 'Exhausted resource' : 'Ready resource'}"><div class="cardback"></div></div>`;
@@ -75,13 +89,22 @@
     }).join('') || `<span class="empty">${dead ? 'Fallen.' : 'No allies yet. Play ally cards to build your party.'}</span>`;
     // hand
     const n = p.hand.length, mid = (n - 1) / 2;
-    const hand = p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; return `<div class="hc ${playable ? 'play' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
+    const showHand = seesHand(p);
+    const hand = !showHand ? p.hand.map((c, i) => `<div class="hc back" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)"><div class="cardback"></div></div>`).join('') : p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; return `<div class="hc ${playable ? 'play' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
     const status = g.over ? '' : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
     // roster
+    const vIdx = viewerIdx();
     const roster = g.players.map(q => {
       const qd = E.pdef(q), pct = Math.max(0, E.heroHp(q)) / E.heroMax(q) * 100;
       const chips = q === p ? '' : q.allies.map(a => `<span class="rchip${tcls(a.uid)}" data-ref="${a.uid}" title="${esc(E.allyDef(a).name)}">${esc(E.allyDef(a).name.split(' ')[0])} ${E.allyAtk(q, a)}/${E.allyMax(q, a) - a.damage}</span>`).join('');
-      return `<div class="rmember ${q === active && g.phase !== 'boss' ? 'active' : ''} ${q.hero.dead ? 'dead' : ''}" data-focus="${q.idx}"><img class="herochip${q === p ? '' : tcls('hero' + q.idx)}" ${q === p ? '' : `data-ref="hero${q.idx}"`} alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div><div class="rn">${esc(qd.name)}${q.auto ? ' (AI)' : ''}</div><div class="rbar"><i style="width:${pct}%"></i></div><div class="rmeta">${Math.max(0, E.heroHp(q))}/${E.heroMax(q)} health${q.hero.shield ? ` · ward ${q.hero.shield}` : ''} · threat ${q.threat} · ${q.hand.length} in hand</div>${chips}</div></div>`;
+      const gearIcons = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
+      const backs = `<span class="rhand" title="${q.hand.length} cards in hand${q.idx === vIdx ? '' : ' (hidden)'}">${'<i></i>'.repeat(Math.min(q.hand.length, 10))}<b>${q.hand.length}</b></span>`;
+      const played = ((view.played || {})[q.idx] || []).map(c => `<img class="rplay ${c.holo ? 'holo' : ''}" alt="" src="${U.cardArt(c.id)}" data-card="${c.id}">`).join('');
+      const tag = q.idx === vIdx ? ' <span class="youtag">You</span>' : q.auto ? ' <span class="aitag">AI</span>' : '';
+      const who = net && E.g.cfg.party[q.idx].name ? `<div class="rplayer">${esc(E.g.cfg.party[q.idx].name)}</div>` : '';
+      return `<div class="rmember ${q === active && g.phase !== 'boss' ? 'active' : ''} ${q.hero.dead ? 'dead' : ''} ${q === p ? 'viewing' : ''}" data-focus="${q.idx}" title="Click to look at ${esc(qd.name)}'s side of the table"><img class="herochip${q === p ? '' : tcls('hero' + q.idx)}" ${q === p ? '' : `data-ref="hero${q.idx}"`} alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="rbody"><div class="rn">${esc(qd.name)}${tag}</div>${who}<div class="rbar"><i style="width:${pct}%"></i><span>${Math.max(0, E.heroHp(q))}/${E.heroMax(q)}</span></div>
+        <div class="rmeta">${backs}${q.hero.shield ? `<span class="rward">◈ ${q.hero.shield}</span>` : ''}<span>threat ${q.threat}</span>${gearIcons ? `<span class="rgears">${gearIcons}</span>` : ''}</div>
+        ${chips ? `<div class="rchips">${chips}</div>` : ''}${played ? `<div class="rplayed"><small>Played this turn</small>${played}</div>` : ''}</div></div>`;
     }).join('');
     const logHTML = g.log.slice(-120).map(e => `<div class="${e.cls}">${esc(e.msg)}</div>`).join('');
 
@@ -92,11 +115,12 @@
       <div class="bossarea ${raid.id}"><div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="bn"><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span></div></div>
         <div class="bossinfo"><div class="hpbar"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div>${ticks}<div class="txt">${Math.max(0, E.bossHp())} / ${B.maxHp}</div></div>
           <div class="bossrow">${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip" style="color:#ffd27a">Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
-          <div class="minions">${minions}</div></div></div>
-      <div class="playerzone"><div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
+          ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}<div class="minions" style="--mn:${B.minions.length}">${minions}</div></div></div>
+      <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
         <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
-      <div class="handbar"><div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) ? '' : 'other'}">${hand}</div>
+      <div class="handbar"><div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) && showHand ? '' : 'other'} ${showHand ? '' : 'hidden'}">${hand}${!showHand && view.curtain == null ? `<div class="handnote">${esc(E.pdef(p).name)}'s hand · ${p.hand.length} card${p.hand.length === 1 ? '' : 's'} · hidden</div>` : ''}</div>
+        ${view.curtain != null && view.curtain === p.idx ? `<div class="curtain"><b>${esc(E.pdef(p).name)}'s turn</b><span>Pass the computer to ${esc(E.pdef(p).name)}'s player. Everyone else, look away!</span><button class="btn primary" data-act="reveal">Show my hand</button></div>` : ''}
         <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
@@ -154,6 +178,15 @@
     document.body.appendChild(o);
     return wait(ms).then(() => o.remove());
   }
+  // #40: a card someone else played shrinks into their row in the Party panel
+  function flyToRoster(id, pi) {
+    const tgt = root && root.querySelector(`.rmember[data-focus="${pi}"]`); if (!tgt) return;
+    const r = tgt.getBoundingClientRect(), f = document.createElement('div');
+    f.className = 'flycard'; f.innerHTML = U.cardHTML(id);
+    document.body.appendChild(f);
+    const fr = f.getBoundingClientRect();
+    f.animate([{ transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { transform: `translate(${r.left + r.width * 0.75 - innerWidth / 2 - fr.width / 2}px, ${r.top + r.height / 2 - innerHeight / 2 - fr.height / 2}px) scale(.12)`, opacity: .2 }], { duration: Math.max(150, 520 * speed()), easing: 'cubic-bezier(.5,0,.8,.4)', fill: 'forwards' }).onfinish = () => f.remove();
+  }
   async function anim(type, d) {
     if (net && net.replaying) { schedule(); return; }
     if (!root) return;
@@ -180,10 +213,17 @@
         case 'death': { U.sfx.death(); const el = elFor(d.ref); if (el) el.classList.add('dying'); await wait(450); break; }
         case 'heroDeath': { U.sfx.heroDeath(); banner(E.pdef(E.g.players[+d.ref.replace('hero', '')]).name + ' has fallen', 'boss', null, 1600); await wait(1200); break; }
         case 'summon': { U.sfx.summon(); const el = elFor(d.ref); if (el && el.animate) el.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1 }, { transform: 'none' }], { duration: 320 * speed() }); await wait(260); break; }
-        case 'play': { if (C[d.id] && C[d.id].type === 'ability') U.sfx.spell(); else U.sfx.card(); const byAI = !human(E.g.players[d.p]); if (speed() > 0.2 || byAI) await reveal(U.cardHTML(d.id, { holo: d.holo }), byAI ? 1700 : 800, null, byAI ? E.pdef(E.g.players[d.p]).name : null); break; }
-        case 'bossCard': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 2600, null, E.raid.short + ' plays'); break; }
+        case 'play': { if (C[d.id] && C[d.id].type === 'ability') U.sfx.spell(); else U.sfx.card();
+          view.played = view.played || {}; (view.played[d.p] = view.played[d.p] || []).push({ id: d.id, holo: d.holo });
+          const q = E.g.players[d.p], other = !human(q) || q.idx !== viewerIdx();
+          const who = other ? (q.auto ? E.pdef(q).name + ' (AI)' : (E.g.cfg.party[q.idx].name && net ? E.g.cfg.party[q.idx].name + ' · ' : '') + E.pdef(q).name) + ' plays' : null;
+          if (speed() > 0.2 || other) { await reveal(U.cardHTML(d.id, { holo: d.holo }), other ? 1700 : 800, null, who); if (other) flyToRoster(d.id, d.p); }
+          break; }
+        case 'bossCard': { U.sfx.bossReveal(); if (view.bossRound !== E.g.round) { view.bossRound = E.g.round; view.bossPlayed = []; } view.bossPlayed.push(d.id); await reveal(U.cardHTML(d.id), 2600, null, E.raid.short + ' plays'); break; }
         case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
-        case 'turn': { const p = E.g.players[d.p]; view.focus = d.p; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
+        case 'turn': { const p = E.g.players[d.p];
+          if (!p.auto && !net && !E.g.cfg.bossPlayer) { if (localHumans() > 1 && view.lastHuman !== d.p) view.curtain = d.p; view.lastHuman = d.p; }
+          view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
         case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
         case 'counter': await wait(250); break;
         case 'banner': banner(d.text, d.kind, null, 1300); await wait(1000); break;
@@ -342,7 +382,7 @@
     if (!E) return;
     if (E.g.over) return endScreen();
     const g = E.g;
-    if (g.phase === 'main') view.focus = g.turn;
+    if (g.phase === 'main') { const a = g.players[g.turn]; if (human(a) && !g.cfg.bossPlayer) view.focus = g.turn; else if (view.focus == null) view.focus = homeFocus(); }
     render();
   }
   function startTargeting(label, valid, friendly, go) {
@@ -419,6 +459,7 @@
     const t = e.target;
     const act = t.closest('[data-act]');
     if (act && act.dataset.act === 'cancel') { view.mode = null; return render(); }
+    if (act && act.dataset.act === 'reveal') { view.curtain = null; view.focus = E.g.turn; return render(); }
     if (act && act.dataset.act === 'quit') return leave();
     if (act && act.dataset.act === 'rulesref') return U.dialog(`<h3>${esc(E.raid.name)}</h3><ul style="padding-left:1.1rem;color:#d8ccb0;line-height:1.5">${E.raid.rules.map(r => `<li><b style="color:var(--vellum)">${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul><p style="font-size:.92rem">Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.</p><div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok' });
     if (act && act.dataset.act === 'speed') { const s = save.settings; s.speed = s.speed === 1 ? 0.55 : s.speed > 0.3 ? 0.15 : 1; U.persist(); return render(); }

@@ -571,3 +571,56 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .botpick { margin: .25rem 0; font: inherit; font-size: .82rem; padding: .2rem .3rem; background: #0c0a08; color: var(--text); border: 1px solid var(--gilt-lo); border-radius: 4px; max-width: 100%; }
 .addseat.small { padding: .6rem; font-size: .95rem; }
 .addseat.small { min-height: 0; width: 100%; }
+
+/* ---------- #37 / #40 battle UI pass ---------- */
+/* boss side: minions stay on one row and shrink to fit instead of spilling onto the heroes */
+.minions { flex-wrap: nowrap; overflow-x: auto; overflow-y: visible; padding: .7rem .3rem .5rem; scrollbar-width: thin; }
+.minions .unit.minion { flex: 0 0 auto; --uw: clamp(78px, min(calc((100% - 1rem) / var(--mn, 4)), 15vh), 140px); }
+.minions .unit.minion { width: clamp(78px, calc((52vw - 2rem) / max(var(--mn, 4), 4)), 140px); }
+.bossplayed { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; font-size: .8rem; }
+.bossplayed small { color: var(--muted); margin-right: .2rem; }
+.bossplayed .bpc { padding: .1rem .45rem; border-radius: 3px; background: rgba(90, 16, 20, .6); border: 1px solid #8a1a24; color: #ffd8c8; font-family: var(--f-sc); cursor: help; }
+/* resources: overlapping stack so a long row never wraps */
+.restray { flex-wrap: nowrap; overflow: visible; }
+.restray .rcard + .rcard:not(:has(.mini)) { margin-left: -1.6rem; }
+.restray .rcard:has(.mini) { margin-left: .35rem; }
+.restray .rcard:hover { z-index: 20; }
+/* hidden hands */
+.hand.hidden .hc { cursor: default; }
+.hand .hc.back .cardback { --cw: var(--hw); transform: translateY(45%); box-shadow: 0 6px 16px rgba(0, 0, 0, .6); }
+.hand.hidden .hc:hover { transform: none !important; }
+.handnote { position: absolute; left: 50%; bottom: .4rem; transform: translateX(-50%); padding: .2rem .7rem; border-radius: 99px; background: rgba(5, 8, 18, .85); border: 1px solid var(--gilt-lo); color: var(--muted); font-family: var(--f-sc); font-size: .82rem; white-space: nowrap; z-index: 25; }
+.curtain { position: absolute; left: 1rem; right: 12.5rem; bottom: .6rem; top: -1rem; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; border-radius: 10px; border: 1px solid var(--gilt); background: linear-gradient(180deg, rgba(14, 18, 40, .97), rgba(6, 8, 20, .97)); box-shadow: 0 -10px 40px rgba(0, 0, 0, .6); text-align: center; }
+.curtain b { font-family: var(--f-display); font-size: 1.8rem; color: var(--gilt-hi); }
+.curtain span { color: var(--muted); }
+.viewbar { grid-column: 1 / -1; display: flex; align-items: center; gap: .7rem; padding: .3rem .7rem; border-radius: 5px; background: rgba(40, 60, 110, .35); border: 1px solid rgba(154, 216, 255, .35); font-size: .9rem; color: #d8ecff; }
+.viewbar .btn { margin-left: auto; }
+/* party panel */
+.rmember { cursor: pointer; transition: border-color .15s, background .15s; }
+.rmember:hover { border-color: rgba(212, 166, 74, .45); }
+.rmember.viewing { background: rgba(40, 60, 110, .3); }
+.rmember .rbody { min-width: 0; }
+.rmember .youtag, .rmember .aitag { font-size: .62rem; padding: 0 .3rem; border-radius: 3px; vertical-align: middle; }
+.rmember .youtag { background: #1e5a4a; color: #b8ffe8; }
+.rmember .aitag { background: #3a3a50; color: #d8d8f0; }
+.rmember .rplayer { font-size: .72rem; color: #9ad8ff; }
+.rmember .rbar { position: relative; height: .85rem; }
+.rmember .rbar span { position: absolute; inset: 0; display: grid; place-items: center; font-size: .62rem; font-family: var(--f-sc); color: #fff; text-shadow: 0 1px 1px #000; }
+.rmember .rmeta { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem .55rem; }
+.rhand { display: inline-flex; align-items: center; }
+.rhand i { width: .55rem; height: .8rem; margin-right: -.22rem; border-radius: 1px; border: 1px solid var(--gilt-lo); background: var(--back, linear-gradient(#2c3c7a, #121a3e)); background-size: cover; box-shadow: 1px 0 1px rgba(0, 0, 0, .6); }
+.rhand b { margin-left: .4rem; font-weight: 600; color: var(--vellum); }
+.rward { color: #9ad8ff; }
+.rgears { display: inline-flex; gap: .15rem; }
+.rmember img.rgear { width: 1.5rem; height: 1.1rem; object-fit: cover; border-radius: 2px; border: 1px solid var(--gilt-lo); cursor: help; }
+.rchips { display: flex; flex-wrap: wrap; gap: .2rem; margin-top: .2rem; }
+.rplayed { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem; margin-top: .3rem; padding-top: .25rem; border-top: 1px dashed rgba(212, 166, 74, .2); }
+.rplayed small { width: 100%; font-size: .66rem; color: var(--gilt-hi); font-family: var(--f-sc); letter-spacing: .04em; }
+.rmember img.rplay { width: 2.3rem; height: 1.7rem; object-fit: cover; border-radius: 2px; border: 1px solid var(--gilt); cursor: help; animation: rplayin .5s ease-out; }
+.rmember img.rplay.holo { border-color: #d8b8ff; box-shadow: 0 0 6px #b080ff; }
+@keyframes rplayin { from { transform: scale(2); opacity: 0; } to { transform: none; opacity: 1; } }
+.flycard { position: fixed; left: 50%; top: 50%; z-index: 80; pointer-events: none; transform: translate(-50%, -50%); }
+.flycard .card { --cw: clamp(200px, 18vw, 270px); }
+.roster { max-height: 55vh; }
+.gearcol { grid-template-columns: repeat(2, max-content); }
+.gslot { width: auto; min-width: 11.2rem; }
