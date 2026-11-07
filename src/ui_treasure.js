@@ -70,8 +70,7 @@
       <div class="body"><img class="art ${o.wide ? 'wide' : ''}" alt="" src="${art}"><div class="shade"></div><div class="shine"></div>
         <div class="plogo"><b>Raidbound</b><span>Trading Card Game</span></div>
         <div class="ribbon"><b>${esc(o.title || 'Booster Pack')}</b><span>${esc(o.set || 'Frontier Set')}</span><small>${esc(o.count || '5 random cards')}</small></div>
-        ${o.burst === false ? '' : `<div class="burst"><span>Look for<br>holofoils!</span></div>`}
-        <div class="fine">${o.fine || '5 cards per pack<br>At least two Frontier set cards<br>(one uncommon or better)'}</div></div>
+</div>
       <div class="crimp bottom"></div></div>`;
   };
 

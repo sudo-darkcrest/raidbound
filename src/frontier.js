@@ -125,12 +125,12 @@
     power: { name: 'Sunhorn Charge', text: 'Deal 5 damage to an enemy. Heal 5 damage from your hero.', target: 'enemy', tags: ['dmg', 'heal'], dmg: 5, run: async (E, c) => { await E.dmg(c.target, 5, { p: c.p, kind: 'power' }); await E.heal(E.heroT(c.p), 5); } },
     art: { s: 'holy', L: [['fx', { t: 'holy', x: 150, wings: 0, wy: 100 }], glow(150, 110, 110, '#ffe890', 0.45), fig({ race: 'minotaur', pose: 'heroic', w: 'hammer', off: 'round', pauld: 'plate', cape: 1, capeCol: '#7a3010', wGlow: '#fff0a0', x: 150, y: 214, s: 0.86, emblem: '#ffd060', cloth: '#c8801a' })] } });
   hero('zizzik', { name: 'Zizzik Sparkwhistle', fac: 'clans', race: 'Goblin', cls: 'mage', spec: 'Sparkwright', profs: ['engineering', 'alchemy'], hp: 30,
-    unlock: { how: 'gold:300', text: 'Buy for 300 gold in the Market' },
+    unlock: { how: 'gold:1000', text: 'Buy for 1,000 gold in the Market' },
     flavor: '"Safety goggles are for people who plan to miss."',
     power: { name: 'Overcharged Rocket', text: 'Deal 4 damage to each enemy. Your hero takes 1 damage.', target: 'none', tags: ['aoe'], dmg: 4, run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 4, { p: c.p, kind: 'power' }); await E.dmg(E.heroT(c.p), 1, { kind: 'effect' }); } },
     art: { s: 'forge', p: 'embers', pn: 50, L: [glow(200, 110, 80, '#ffb040', 0.6), ['fx', { t: 'fireball', x: 220, y: 100, c: '#ffb040', ang: 30 }], fig({ race: 'goblin', pose: 'castF', off: 'wand', helm: 'hood', robe: 1, glowR: '#ffd060', x: 120, y: 212, s: 1.08, cloth: '#c86a1a', eye: '#ffd060' })] } });
   hero('seraphine', { name: 'Seraphine Vale', fac: 'concord', race: 'Human', cls: 'priest', spec: 'Lightwarden', profs: ['herbalism', 'tailoring'], hp: 30,
-    unlock: { how: 'gold:300', text: 'Buy for 300 gold in the Market' },
+    unlock: { how: 'gold:1000', text: 'Buy for 1,000 gold in the Market' },
     flavor: '"Hold the line a little longer. I\'ve got you."',
     power: { name: 'Sanctuary', text: 'Heal 4 damage from each friendly hero and ally. Prevent the next 3 damage to each friendly hero.', target: 'none', tags: ['healAll', 'shield'], run: async (E, c) => { for (const t of E.friendlyChars()) await E.heal(t, 4); for (const h of E.heroes()) E.shield(h, 3); } },
     art: { s: 'temple', L: [['fx', { t: 'holy', x: 150, wings: 1, wy: 100 }], glow(150, 120, 110, '#fff6c0', 0.5), fig({ pose: 'pray', robe: 1, helm: 'hair', glowL: '#fff6c0', glowR: '#fff6c0', x: 150, y: 212, s: 0.86, cloth: '#ece4d0', trim: '#d8a840', hairCol: '#c87a3a', gem: '#ffe890' })] } });
@@ -160,11 +160,13 @@
   RB.PACK_PRICE = 100;
   RB.goldFor = (g, win) => {
     const bossDmg = Math.max(g.players.reduce((s, p) => s + (p.stats.bossDmg || 0), 0), Math.min(g.boss.damage, g.boss.maxHp));
+    // #43: slower gold so packs (100) take a couple of raids and heroes (1,000) are a real goal
     const parts = [
-      ['Victory', win ? 60 : 15],
-      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.5)],
-      ['Minions destroyed', g.minionsKilled * 6],
-      ['Healing done', Math.round((g.stats.healed || 0) * 0.4)],
+      ['Victory', win ? 25 : 5],
+      // the party splits the spoils, so bigger groups don't earn more each
+      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.15 / g.players.length)],
+      ['Minions destroyed', Math.round(g.minionsKilled * 2 / g.players.length)],
+      ['Healing done', Math.round((g.stats.healed || 0) * 0.1 / g.players.length)],
     ];
     let total = parts.reduce((s, x) => s + x[1], 0);
     if (g.cfg.difficulty === 'heroic') { const b = Math.round(total * 0.25); parts.push(['Heroic bonus', b]); total += b; }
