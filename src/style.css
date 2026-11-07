@@ -414,3 +414,7 @@ body.back-lynx .cardback { --back: repeating-linear-gradient(60deg, #cfefff 0 8p
   .unit { --uw: clamp(76px, 6.4vw, 96px); }
   .handbar { --hw: clamp(108px, 9vw, 132px); }
 }
+
+/* sound settings */
+.audioset .vrow { display: grid; grid-template-columns: 11rem 1fr 4.5rem; align-items: center; gap: 1rem; margin: .5rem 0; }
+.audioset input[type=range] { width: 100%; accent-color: var(--gilt); }

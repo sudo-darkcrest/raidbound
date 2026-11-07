@@ -9,7 +9,7 @@
 
   /* ---------- persistence (per-browser; safe if storage is unavailable) ---------- */
   const KEY = 'raidbound.save.v1';
-  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, settings: { speed: 1, sound: true, autoDefend: true, pauseForInstants: true }, seen: false });
+  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
   let save = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) save = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
   // base collection: two of every core card
@@ -159,35 +159,7 @@
     });
   };
 
-  /* ---------- sound: tiny synthesized effects (WebAudio) ---------- */
-  let ac = null;
-  function ctx() { if (!save.settings.sound) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; } return ac; }
-  function tone(f, dur, type, vol, slide) {
-    const a = ctx(); if (!a) return;
-    const o = a.createOscillator(), g = a.createGain(); o.type = type || 'sine'; o.frequency.value = f;
-    if (slide) o.frequency.exponentialRampToValueAtTime(slide, a.currentTime + dur);
-    g.gain.setValueAtTime(vol || 0.12, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
-    o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + dur);
-  }
-  function noise(dur, vol, freq) {
-    const a = ctx(); if (!a) return;
-    const b = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), d = b.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-    const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; f.type = 'bandpass'; f.frequency.value = freq || 1200; g.gain.value = vol || 0.2;
-    s.connect(f).connect(g).connect(a.destination); s.start();
-  }
-  U.sfx = {
-    card: () => noise(0.18, 0.18, 2400),
-    hit: () => { noise(0.14, 0.35, 380); tone(90, 0.18, 'triangle', 0.18, 50); },
-    heal: () => { tone(660, 0.25, 'sine', 0.08); setTimeout(() => tone(990, 0.3, 'sine', 0.06), 90); },
-    block: () => tone(520, 0.12, 'square', 0.04, 300),
-    boss: () => { tone(70, 0.9, 'sawtooth', 0.09, 45); noise(0.6, 0.12, 200); },
-    win: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.5, 'triangle', 0.09), i * 140)),
-    lose: () => [392, 330, 262, 196].forEach((f, i) => setTimeout(() => tone(f, 0.6, 'triangle', 0.08), i * 200)),
-    flip: () => noise(0.12, 0.15, 3200),
-    death: () => { noise(0.4, 0.25, 260); tone(140, 0.4, 'sawtooth', 0.06, 60); },
-    power: () => { tone(330, 0.6, 'triangle', 0.08, 880); noise(0.4, 0.08, 4000); },
-  };
+  /* sound and music live in audio.js (RB.AUDIO / U.sfx) */
 
   /* ---------- loot codes ---------- */
   const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

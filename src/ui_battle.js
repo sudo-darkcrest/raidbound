@@ -132,10 +132,11 @@
     view.lock++;
     try {
       switch (type) {
-        case 'dmg': { U.sfx.hit(); floater(d.ref, '-' + d.amount, 'dmg'); const el = elFor(d.ref); if (el) { el.classList.remove('hitflash'); void el.offsetWidth; el.classList.add('hitflash'); } await wait(420); break; }
+        case 'dmg': { U.sfx.hit(d.amount); floater(d.ref, '-' + d.amount, 'dmg'); const el = elFor(d.ref); if (el) { el.classList.remove('hitflash'); void el.offsetWidth; el.classList.add('hitflash'); } await wait(420); break; }
         case 'heal': { U.sfx.heal(); floater(d.ref, '+' + d.amount, 'heal'); const el = elFor(d.ref); if (el) el.classList.add('healflash'); await wait(380); break; }
         case 'shield': case 'armor': U.sfx.block(); floater(d.ref, (type === 'armor' ? '⛨ ' : '◈ ') + d.amount + ' blocked', 'block'); await wait(320); break;
         case 'attack': {
+          U.sfx.swing();
           const a = elFor(d.from), t = elFor(d.to);
           if (a && t) {
             const ra = a.getBoundingClientRect(), rt = t.getBoundingClientRect();
@@ -148,19 +149,19 @@
           await wait(380); break;
         }
         case 'death': { U.sfx.death(); const el = elFor(d.ref); if (el) el.classList.add('dying'); await wait(450); break; }
-        case 'heroDeath': { U.sfx.death(); banner(E.pdef(E.g.players[+d.ref.replace('hero', '')]).name + ' has fallen', 'boss', null, 1600); await wait(1200); break; }
-        case 'summon': { const el = elFor(d.ref); if (el && el.animate) el.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1 }, { transform: 'none' }], { duration: 320 * speed() }); await wait(260); break; }
-        case 'play': { U.sfx.card(); if (speed() > 0.2) await reveal(U.cardHTML(d.id, { holo: d.holo }), 750); break; }
-        case 'bossCard': { U.sfx.boss(); await reveal(U.cardHTML(d.id), 1500); break; }
-        case 'phase': U.sfx.boss(); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
+        case 'heroDeath': { U.sfx.heroDeath(); banner(E.pdef(E.g.players[+d.ref.replace('hero', '')]).name + ' has fallen', 'boss', null, 1600); await wait(1200); break; }
+        case 'summon': { U.sfx.summon(); const el = elFor(d.ref); if (el && el.animate) el.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1 }, { transform: 'none' }], { duration: 320 * speed() }); await wait(260); break; }
+        case 'play': { if (C[d.id] && C[d.id].type === 'ability') U.sfx.spell(); else U.sfx.card(); if (speed() > 0.2) await reveal(U.cardHTML(d.id, { holo: d.holo }), 750); break; }
+        case 'bossCard': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 1500); break; }
+        case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
         case 'turn': { const p = E.g.players[d.p]; view.focus = d.p; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
-        case 'bossTurn': U.sfx.boss(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
+        case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
         case 'counter': await wait(250); break;
         case 'banner': banner(d.text, d.kind, null, 1300); await wait(1000); break;
         case 'power': U.sfx.power(); banner(d.name, '', 'Hero power', 1200); await wait(900); break;
-        case 'quest': U.sfx.win(); banner('Quest complete', '', C[d.id].name, 1200); await wait(800); break;
-        case 'master': U.sfx.power(); banner(C[d.id].name, '', 'A Master Hero rises', 1600); await wait(1200); break;
-        case 'bossDeath': U.sfx.win(); banner(E.raid.short + ' is defeated!', '', null, 2200); await wait(1600); break;
+        case 'quest': U.sfx.quest(); banner('Quest complete', '', C[d.id].name, 1200); await wait(800); break;
+        case 'master': U.sfx.master(); banner(C[d.id].name, '', 'A Master Hero rises', 1600); await wait(1200); break;
+        case 'bossDeath': U.sfx.roar(E.raid.id); RB.AUDIO.music(null); banner(E.raid.short + ' is defeated!', '', null, 2200); await wait(1600); break;
         case 'resource': await wait(120); break;
         default: break;
       }
@@ -368,6 +369,7 @@
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
     U.currentGame = E;
+    RB.AUDIO.music(cfg.raid || (E.raid && E.raid.id));
     root.onclick = onClick;
     root.onmouseover = onOver;
     root.onmouseleave = () => U.hidePreview();
@@ -387,7 +389,7 @@
     const g = E.g, win = g.over === 'win';
     if (g.over === 'abandon') return;
     const raid = g.raid;
-    if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; U.persist(); U.sfx.win(); } else U.sfx.lose();
+    if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; U.persist(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
     const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${g.stats.dmgDealt}</b>damage dealt</div><div><b>${g.stats.cardsPlayed}</b>cards played</div><div><b>${g.players.filter(p => !p.hero.dead).length}/${g.players.length}</b>heroes standing</div></div>`;
     const heroic = g.cfg.difficulty === 'heroic';
     const el = U.show('end', win
