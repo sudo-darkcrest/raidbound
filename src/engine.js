@@ -15,7 +15,7 @@
     const g = {
       raid, cfg, round: 1, partyFury: 0, drawPerTurn: cfg.drawPerTurn || 2, turn: 0, phase: 'setup', over: null, log: [], minionsKilled: 0, window: false,
       settings: Object.assign({ autoDefend: true, pauseForInstants: true }, cfg.settings || {}),
-      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0 },
+      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0, healed: 0 },
     };
     const H = {
       anim: hooks.anim || noop, update: hooks.update || (() => { }), ask: hooks.ask || null,
@@ -26,7 +26,7 @@
     cfg.party.forEach((seat, i) => {
       const deck = shuffle(seat.deck.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
-        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto,
+        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
         hero: { master: null, damage: 0, shield: 0, tempAtk: 0, ex: false, elusive: false, taunt: false, powerUsed: false, dead: false, pet: seat.pet || null },
         deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [],
         resPlayed: false, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
@@ -35,7 +35,7 @@
     const n = g.players.length;
     g.partyFury = n >= 2 ? 1 : 0;
     const heroic = cfg.difficulty === 'heroic';
-    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1)) * (heroic ? 1.3 : 1));
+    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1)) * (heroic ? 1.3 : 1) * (cfg.bossPlayer ? 1.15 : 1));
     const bdeck = [];
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
@@ -161,6 +161,7 @@
       const h = Math.min(cur, amount);
       if (h <= 0) return 0;
       if (target.t === 'boss') g.boss.damage -= h; else if (target.t === 'minion') target.m.damage -= h; else if (target.t === 'hero') target.p.hero.damage -= h; else target.a.damage -= h;
+      if (target.t === 'hero' || target.t === 'ally') g.stats.healed += h;
       await H.anim('heal', { ref: refId(target), amount: h });
       H.update();
       return h;
@@ -498,9 +499,24 @@
         if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); H.update(); if (g.over) return; }
       }
       const k = B.cardsPerTurn + Math.max(0, alive().length - 1);
-      for (let i = 0; i < k && !g.over; i++) {
-        if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); }
-        const id = B.deck.pop();
+      const drawBoss = () => { if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); } return B.deck.pop(); };
+      if (cfg.bossPlayer && H.ask) {
+        // #25: the player is the boss — keep a hand and choose which cards to play
+        B.hand = B.hand || [];
+        while (B.hand.length < k + 2 && (B.deck.length || B.grave.length)) B.hand.push(drawBoss());
+        H.update();
+        for (let i = 0; i < k && !g.over && B.hand.length; i++) {
+          let idx = await H.ask('bossPick', { hand: B.hand.slice(), left: k - i });
+          if (idx == null || !B.hand[idx]) idx = 0;
+          const id = B.hand.splice(idx, 1)[0];
+          await playBossCard(id);
+          if (g.over) return;
+        }
+      } else for (let i = 0; i < k && !g.over; i++) {
+        await playBossCard(drawBoss());
+        if (g.over) return;
+      }
+      async function playBossCard(id) {
         const bc = BC[id];
         B.lastCard = id;
         log(`${raid.short} plays ${bc.name}: ${bc.text}`, 'boss');
@@ -511,6 +527,7 @@
         else { await bc.run(api); B.grave.push(id); }
         H.update();
       }
+      if (g.over) return;
       // minions attack (the boss holds back on the opening round)
       if (g.round === 1) { log(`${raid.short} is still taking your measure — no attacks this round.`, 'boss'); }
       else for (const m of [...B.minions]) {
@@ -577,6 +594,12 @@
       let target = null;
       const taunt = heroes.find(p => p.hero.taunt);
       if (taunt) target = T.hero(taunt);
+      else if (cfg.bossPlayer && H.ask) {
+        const pool = [...heroes.map(T.hero), ...allies];
+        if (!pool.length) return;
+        const v = await H.ask('bossTarget', { from: d.name, ref: m.uid, atk: minAtk(m), options: pool });
+        target = v != null && pool[v] ? pool[v] : pick(pool);
+      }
       else if (d.ai === 'allies' && allies.length) target = pick(allies);
       else if (d.ai === 'lowest' && heroes.length) target = T.hero(heroes.reduce((a, b) => heroHp(a) <= heroHp(b) ? a : b));
       else { const pool = [...heroes.map(T.hero), ...allies]; target = pick(pool); }
@@ -588,8 +611,13 @@
     async function bossStrike() {
       const B = g.boss;
       if (B.stunned) { B.stunned = false; log(`${raid.short} is stunned and can't strike!`, 'def'); await H.anim('banner', { text: `${raid.short} is stunned`, kind: 'def' }); return; }
-      const target = threatTarget();
+      let target = threatTarget();
       if (!target) { log(`${raid.short} finds no one to strike.`, 'def'); return; }
+      if (cfg.bossPlayer && H.ask && !target.hero.taunt) {
+        const pool = alive().filter(p => !p.hero.elusive);
+        const v = await H.ask('bossTarget', { from: raid.short, ref: 'boss', atk: raid.strike + B.strikeBonus, options: pool.map(T.hero), strike: true });
+        if (v != null && pool[v]) target = pool[v];
+      }
       await resolveEnemyAttack(raid.short, raid.strike + B.strikeBonus, T.hero(target), 'boss', true);
     }
 

@@ -481,6 +481,58 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .pbar { height: 10px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: .8rem; border: 1px solid var(--gilt-lo); }
 .pbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gilt-lo), var(--gilt-hi)); transition: width .2s; }
 
+/* ---------- #26 locked heroes, #27 gold + Market ---------- */
+.heropick { grid-template-columns: repeat(4, 1fr); }
+.heropick button.locked img { filter: grayscale(1) brightness(.45); }
+.heropick button.locked { cursor: help; border-style: dashed; }
+.lockicon { position: absolute; left: 50%; top: 38%; width: 22px; height: 26px; transform: translate(-50%, -50%); background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'%3E%3Cpath d='M6 12V8a6 6 0 0 1 12 0v4' fill='none' stroke='%23f6dc95' stroke-width='2.6'/%3E%3Crect x='3' y='12' width='18' height='14' rx='2.5' fill='%23d4a64a' stroke='%233a2208' stroke-width='1.4'/%3E%3Ccircle cx='12' cy='18' r='2' fill='%233a2208'/%3E%3Crect x='11' y='18' width='2' height='5' fill='%233a2208'/%3E%3C/svg%3E"); filter: drop-shadow(0 2px 3px #000); }
+.goldchip { display: inline-flex; align-items: center; gap: .3em; font-family: var(--f-sc); color: #ffe7a0; padding: 0 .45em; border-radius: 99px; background: rgba(60, 36, 4, .7); border: 1px solid var(--gilt); font-size: .85em; margin-left: .35em; }
+.goldchip::before { content: ''; width: .95em; height: .95em; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff6c0, #f0c040 40%, #8a5a10); box-shadow: inset 0 0 0 1px #6a3a08; }
+.goldchip.big { font-size: 1.15rem; padding: .2em .7em; }
+.goldbox { margin: 1rem auto; max-width: 560px; padding: .8rem 1rem; border: 1px solid var(--gilt); border-radius: 8px; background: linear-gradient(180deg, rgba(70, 44, 8, .55), rgba(20, 12, 2, .7)); text-align: center; }
+.goldbox .gtitle { font-family: var(--f-sc); font-size: 1.5rem; color: #ffe7a0; }
+.goldbox .gtitle span { font-size: .9rem; color: var(--muted); }
+.goldbox .gparts { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem 1rem; margin: .4rem 0 .6rem; font-size: .92rem; color: var(--text); }
+.goldbox .gparts b { color: #ffe7a0; }
+.goldbox .gnote { font-size: .85rem; color: var(--muted); }
+.boosterrow { display: grid; grid-template-columns: 260px 1fr; gap: 1.4rem; align-items: center; }
+.boosterrow .pack { margin: 0 auto; }
+.pack.booster { background: linear-gradient(135deg, #7ad0e0, #1a5a7a 30%, #bfeaff 45%, #0e3a5a 60%, #5ab0d0 80%, #0a2a40); box-shadow: 0 30px 60px rgba(0, 0, 0, .7), 0 0 0 2px #9ae8ff; }
+.mheroes { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: .9rem; }
+.mhero { display: grid; grid-template-columns: 120px 1fr; gap: .8rem; padding: .7rem; border: 1px solid rgba(212, 166, 74, .3); border-radius: 8px; background: rgba(10, 8, 6, .55); }
+.mhero img { width: 120px; aspect-ratio: 300/220; object-fit: cover; border-radius: 5px; border: 1px solid var(--gilt-lo); }
+.mhero:not(.open) img { filter: grayscale(.85) brightness(.6); }
+.mhero h4 { margin: 0; font-family: var(--f-sc); color: var(--gilt-hi); }
+.mhero .sub { font-size: .82rem; color: var(--muted); }
+.mhero p { margin: .35rem 0 .5rem; font-size: .88rem; }
+.mhero .chip.ok { color: var(--verd-hi); border-color: var(--verd-hi); }
+@media (max-width: 700px) { .boosterrow { grid-template-columns: 1fr; } }
+/* #25 boss mode target picker */
+.tpicks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .6rem; margin: .8rem 0; }
+.tpick { display: flex; flex-direction: column; gap: .2rem; padding: .4rem; text-align: left; border: 1px solid rgba(212, 166, 74, .35); border-radius: 6px; background: rgba(10, 8, 6, .7); color: var(--text); cursor: pointer; font-family: var(--f-body); }
+.tpick:hover, .tpick:focus { border-color: var(--ember-hi); box-shadow: 0 0 0 1px var(--ember-hi), 0 0 18px rgba(255, 122, 74, .4); }
+.tpick img { width: 100%; aspect-ratio: 300/220; object-fit: cover; border-radius: 4px; }
+.tpick b { font-family: var(--f-sc); color: var(--gilt-hi); font-size: .9rem; }
+.tpick span { font-size: .78rem; color: var(--muted); }
+.turnctl.bossmode .btn { display: none; } .turnctl.bossmode .hint { font-size: .95rem; color: var(--ember-hi); }
+/* #29 online */
+.netcols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+@media (max-width: 800px) { .netcols { grid-template-columns: 1fr; } }
+.netbox { padding: 1rem; border: 1px solid rgba(212, 166, 74, .3); border-radius: 8px; background: rgba(10, 8, 6, .55); }
+.netform input, .codein { font: inherit; padding: .45rem .6rem; border-radius: 5px; border: 1px solid var(--gilt-lo); background: #0c0a08; color: var(--text); }
+.codein { font-family: var(--f-sc); font-size: 1.5rem; letter-spacing: .3em; width: 9em; text-transform: uppercase; margin-right: .6rem; }
+.codebar { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; padding: .8rem 1rem; border: 1px solid var(--gilt); border-radius: 8px; background: rgba(40, 26, 6, .6); }
+.codebar .sp { flex: 1; }
+.bigcode { font-family: var(--f-sc); font-size: 2.6rem; letter-spacing: .25em; color: var(--gilt-hi); text-shadow: 0 0 18px rgba(246, 220, 149, .4); }
+.netplayers { display: grid; gap: .5rem; }
+.netp { display: grid; grid-template-columns: 90px 1fr auto; gap: .7rem; align-items: center; padding: .45rem; border: 1px solid rgba(212, 166, 74, .25); border-radius: 6px; background: rgba(10, 8, 6, .6); }
+.netp.me { border-color: var(--verd-hi); }
+.netp img { width: 90px; aspect-ratio: 300/220; object-fit: cover; border-radius: 4px; }
+.netp .sub, #online .sub { font-size: .82rem; color: var(--muted); }
+.netstatus { color: var(--gilt-hi); min-height: 1.2em; }
+.neterr { color: var(--danger); }
+.netwait { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 60; padding: .5rem 1rem; border-radius: 99px; background: rgba(10, 20, 30, .92); border: 1px solid #9ae8ff; color: #d8f4ff; font-size: .95rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .6); }
+
 </style>
 </head>
 <body>
@@ -3806,7 +3858,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const g = {
       raid, cfg, round: 1, partyFury: 0, drawPerTurn: cfg.drawPerTurn || 2, turn: 0, phase: 'setup', over: null, log: [], minionsKilled: 0, window: false,
       settings: Object.assign({ autoDefend: true, pauseForInstants: true }, cfg.settings || {}),
-      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0 },
+      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0, healed: 0 },
     };
     const H = {
       anim: hooks.anim || noop, update: hooks.update || (() => { }), ask: hooks.ask || null,
@@ -3817,7 +3869,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     cfg.party.forEach((seat, i) => {
       const deck = shuffle(seat.deck.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
-        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto,
+        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
         hero: { master: null, damage: 0, shield: 0, tempAtk: 0, ex: false, elusive: false, taunt: false, powerUsed: false, dead: false, pet: seat.pet || null },
         deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [],
         resPlayed: false, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
@@ -3826,7 +3878,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const n = g.players.length;
     g.partyFury = n >= 2 ? 1 : 0;
     const heroic = cfg.difficulty === 'heroic';
-    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1)) * (heroic ? 1.3 : 1));
+    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1)) * (heroic ? 1.3 : 1) * (cfg.bossPlayer ? 1.15 : 1));
     const bdeck = [];
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
@@ -3952,6 +4004,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       const h = Math.min(cur, amount);
       if (h <= 0) return 0;
       if (target.t === 'boss') g.boss.damage -= h; else if (target.t === 'minion') target.m.damage -= h; else if (target.t === 'hero') target.p.hero.damage -= h; else target.a.damage -= h;
+      if (target.t === 'hero' || target.t === 'ally') g.stats.healed += h;
       await H.anim('heal', { ref: refId(target), amount: h });
       H.update();
       return h;
@@ -4289,9 +4342,24 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); H.update(); if (g.over) return; }
       }
       const k = B.cardsPerTurn + Math.max(0, alive().length - 1);
-      for (let i = 0; i < k && !g.over; i++) {
-        if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); }
-        const id = B.deck.pop();
+      const drawBoss = () => { if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); } return B.deck.pop(); };
+      if (cfg.bossPlayer && H.ask) {
+        // #25: the player is the boss — keep a hand and choose which cards to play
+        B.hand = B.hand || [];
+        while (B.hand.length < k + 2 && (B.deck.length || B.grave.length)) B.hand.push(drawBoss());
+        H.update();
+        for (let i = 0; i < k && !g.over && B.hand.length; i++) {
+          let idx = await H.ask('bossPick', { hand: B.hand.slice(), left: k - i });
+          if (idx == null || !B.hand[idx]) idx = 0;
+          const id = B.hand.splice(idx, 1)[0];
+          await playBossCard(id);
+          if (g.over) return;
+        }
+      } else for (let i = 0; i < k && !g.over; i++) {
+        await playBossCard(drawBoss());
+        if (g.over) return;
+      }
+      async function playBossCard(id) {
         const bc = BC[id];
         B.lastCard = id;
         log(`${raid.short} plays ${bc.name}: ${bc.text}`, 'boss');
@@ -4302,6 +4370,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         else { await bc.run(api); B.grave.push(id); }
         H.update();
       }
+      if (g.over) return;
       // minions attack (the boss holds back on the opening round)
       if (g.round === 1) { log(`${raid.short} is still taking your measure — no attacks this round.`, 'boss'); }
       else for (const m of [...B.minions]) {
@@ -4368,6 +4437,12 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       let target = null;
       const taunt = heroes.find(p => p.hero.taunt);
       if (taunt) target = T.hero(taunt);
+      else if (cfg.bossPlayer && H.ask) {
+        const pool = [...heroes.map(T.hero), ...allies];
+        if (!pool.length) return;
+        const v = await H.ask('bossTarget', { from: d.name, ref: m.uid, atk: minAtk(m), options: pool });
+        target = v != null && pool[v] ? pool[v] : pick(pool);
+      }
       else if (d.ai === 'allies' && allies.length) target = pick(allies);
       else if (d.ai === 'lowest' && heroes.length) target = T.hero(heroes.reduce((a, b) => heroHp(a) <= heroHp(b) ? a : b));
       else { const pool = [...heroes.map(T.hero), ...allies]; target = pick(pool); }
@@ -4379,8 +4454,13 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     async function bossStrike() {
       const B = g.boss;
       if (B.stunned) { B.stunned = false; log(`${raid.short} is stunned and can't strike!`, 'def'); await H.anim('banner', { text: `${raid.short} is stunned`, kind: 'def' }); return; }
-      const target = threatTarget();
+      let target = threatTarget();
       if (!target) { log(`${raid.short} finds no one to strike.`, 'def'); return; }
+      if (cfg.bossPlayer && H.ask && !target.hero.taunt) {
+        const pool = alive().filter(p => !p.hero.elusive);
+        const v = await H.ask('bossTarget', { from: raid.short, ref: 'boss', atk: raid.strike + B.strikeBonus, options: pool.map(T.hero), strike: true });
+        if (v != null && pool[v]) target = pool[v];
+      }
       await resolveEnemyAttack(raid.short, raid.strike + B.strikeBonus, T.hero(target), 'boss', true);
     }
 
@@ -4750,7 +4830,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     for (const [id, k] of Object.entries(STARTER[heroId])) for (let i = 0; i < k; i++) deck.push(id);
     if (partySize > 1 && RB.HEROES[heroId].cls === 'priest') { const i = deck.lastIndexOf('grunt'); if (i >= 0) deck[i] = 'rebirth'; }
     if (owned) {
-      const extras = Object.values(C).filter(d => (d.set !== 'core') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
+      const extras = Object.values(C).filter(d => (d.set !== 'core' && d.set !== 'frontier') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
         .sort((a, b) => value(b) - value(a));
       for (const d of extras) {
         const want = Math.min(RB.maxCopies(d), owned[d.id]);
@@ -4781,7 +4861,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const rar = { c: 0, u: 0.6, r: 1.3, e: 2.2 }[d.rarity] || 0, tags = d.tags || [], kw = d.kw || [], has = t => tags.includes(t);
     let s;
     switch (d.type) {
-      case 'ally': s = (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
+      case 'ally': s = (d.atk ? 0 : -3) + (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
       case 'ability': s = 3 + ((d.dmg || (has('dmg') ? 3 : 0)) + (d.heal || (has('heal') ? 4 : 0)) * 0.6 + (has('draw') ? 3 : 0) + (has('aoe') || has('aoeMinion') ? 3 : 0) + (has('shield') ? 2 : 0) + (has('stun') || has('stunAll') ? 2 : 0) + (has('revive') ? 4 : 0) + (has('summon') ? 3 : 0) + (has('buff') ? 1.5 : 0)) / (d.cost + 1.2) * 4; break;
       case 'weapon': s = 2 + d.atk * 2.2 - (d.strike || 0) * 1.3; break;
       case 'armor': s = 2 + d.def * 1.6 - (d.use || 0) + (d.spell || 0) * 2; break;
@@ -4861,6 +4941,191 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   };
 })(globalThis.RB);
 
+/* RAIDBOUND — "Frontier" booster set (#27) and unlockable heroes (#26).
+   Art here is procedural (layered SVG scenes), not SpriteCook paintings. */
+(function (RB) {
+  const C = RB.CARDS, TK = RB.TOKENS;
+  const fig = o => ['fig', o];
+  const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
+  const add = (id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; o.art = Object.assign({ img: false }, o.art); C[id] = o; };
+  const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
+  const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
+
+  /* ---------- tokens for the new cards ---------- */
+  TK.bear_t = { id: 'bear_t', name: 'Trophy Bear', type: 'ally', atk: 3, hp: 3, race: 'Beast', art: { s: 'peaks', L: [['beast', { t: 'bear', x: 150, y: 206, s: 1.05, shadow: 80 }]] } };
+  TK.spiritlynx = { id: 'spiritlynx', name: 'Spirit Lynx', type: 'ally', atk: 4, hp: 4, kw: ['ferocity', 'elusive'], race: 'Spirit', art: { s: 'frost', L: [glow(150, 150, 90, '#9ae8ff', 0.5), ['beast', { t: 'lynx', x: 150, y: 206, s: 1, spectral: 1 }], ['fx', { t: 'sparkle', x: 150, y: 120 }]] } };
+
+  /* =================== NEUTRAL (14) =================== */
+  add('tidescout', { name: 'Saltmarsh Scout', type: 'ally', cost: 1, atk: 1, hp: 2, race: 'Human', text: 'When this enters play, scout the top card of the boss deck. You may send it to the bottom.', onEnter: async (E, c) => E.scoutBoss(c.p), flavor: 'Reads the tide like other folk read letters.',
+    art: { s: 'sea', L: [glow(70, 90, 50, '#ffe2a0', 0.35), fig({ pose: 'aim', w: 'bow', helm: 'hood', cape: 1, capeCol: '#2a4a4a', x: 140, y: 214, s: 0.9, cloth: '#3e6a5e', hoodCol: '#2e4e46' }), ['beast', { t: 'bird', x: 236, y: 92, s: 0.32 }]] } });
+  add('cinderhound', { name: 'Cinderhound', type: 'ally', cost: 2, atk: 3, hp: 1, kw: ['ferocity'], race: 'Beast', flavor: 'Its paw prints smoulder for an hour.',
+    art: { s: 'volcano', p: 'embers', pn: 40, L: [glow(150, 196, 70, '#ff6a1a', 0.6), ['beast', { t: 'wolf', x: 150, y: 208, s: 1, eye: '#ffcf4a', fur: '#3a1e14' }], ['fx', { t: 'meteors', n: 3, c: '#ff8a3a' }]] } });
+  add('stonecaller', { name: 'Hill Giant Stonecaller', type: 'ally', cost: 6, atk: 5, hp: 7, kw: ['protector'], race: 'Giant', rarity: 'r', text: 'When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => minionsDmg(E, c, 2), flavor: 'It throws the mountain, then apologises to it.',
+    art: { s: 'peaks', L: [glow(150, 120, 100, '#c8b090', 0.35), fig({ race: 'giant', pose: 'heroic', w: 'hammer', x: 150, y: 222, s: 0.95, cloth: '#5a4a3a' }), ['beast', { t: 'golem', kind: 'rock', x: 252, y: 226, s: 0.35 }], ['beast', { t: 'golem', kind: 'rock', x: 48, y: 230, s: 0.3 }]] } });
+  add('grovebinder', { name: 'Grovebinder Druid', type: 'ally', cost: 3, atk: 2, hp: 4, race: 'Elf', rarity: 'u', text: 'At the start of your turn, heal 2 damage from each of your allies.', start: async (E, p) => { for (const a of [...p.allies]) await E.heal(E.T.ally(p, a), 2); }, flavor: 'Roots knit flesh as easily as soil.',
+    art: { s: 'grove', L: [glow(150, 120, 80, '#9aff8a', 0.45), ['fx', { t: 'heal', x: 150, y: 110, c: '#9aff8a' }], fig({ race: 'elf', pose: 'staff', w: 'staff', robe: 1, helm: 'hair', glowL: '#9aff8a', x: 150, y: 214, s: 0.86, cloth: '#3a6a2e', hairCol: '#e8d8a0' })] } });
+  add('wardstone', { name: 'Runed Wardstone', type: 'item', cost: 2, rarity: 'u', tags: ['shield'], text: 'At the start of your turn, if your hero has no ward, prevent the next 2 damage to your hero.', start: async (E, p) => { if (!p.hero.shield) E.shield(p, 2); },
+    art: { s: 'altar', L: [glow(150, 120, 70, '#9ac8ff', 0.6), ['obj', { t: 'shard', x: 150, y: 116, s: 1, col: '#7aa8ff' }], ['fx', { t: 'runes', x: 150, y: 190, r: 90, flat: 1, c: '#9ac8ff' }]] } });
+  add('frostmoths', { name: 'Frostmoth Swarm', type: 'ally', cost: 2, atk: 1, hp: 1, kw: ['elusive'], race: 'Beast', rarity: 'u', text: 'When this enters play, stun a random enemy minion.', onEnter: async (E, c) => { const m = pick(E, E.minions()); if (m) E.stun(m); }, flavor: 'Where they land, the frost stays.',
+    art: { s: 'frost', L: [glow(150, 130, 90, '#bfeaff', 0.5), ['beast', { t: 'bird', x: 110, y: 110, s: 0.34, eye: '#bfeaff' }], ['beast', { t: 'bird', x: 196, y: 90, s: 0.28, eye: '#bfeaff' }], ['beast', { t: 'bird', x: 168, y: 150, s: 0.3, eye: '#bfeaff' }], ['fx', { t: 'ice', x: 150, y: 190 }]] } });
+  add('rhosk', { name: 'Captain Rhosk, Free Blade', type: 'ally', cost: 5, atk: 4, hp: 5, kw: ['unique'], race: 'Human', rarity: 'r', text: 'When Rhosk enters play, each of your allies (Rhosk too) gets +1 ATK and +1 health permanently.', onEnter: async (E, c) => { for (const a of [...c.p.allies]) E.buffAlly(E.T.ally(c.p, a), 1, 1); }, flavor: '"Paid in advance. Loyal till the coin runs out."',
+    art: { s: 'tavern', L: [glow(210, 90, 60, '#ffcf8a', 0.4), fig({ pose: 'heroic', w: 'sword', off: 'round', helm: 'hood', cape: 1, capeCol: '#4a1a10', pauld: 'plate', x: 150, y: 214, s: 0.82, cloth: '#6a2a1a' }), ['obj', { t: 'coin', x: 240, y: 200, s: 0.45 }], ['obj', { t: 'coin', x: 60, y: 206, s: 0.35 }]] } });
+  add('moonwell', { name: 'Moonwell Spring', type: 'location', cost: 0, rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to heal 4 damage from your party\'s most wounded hero.', lrun: async (E, c) => { const h = E.mostWounded(); if (h) await E.heal(E.heroT(h), 4); },
+    art: { s: 'grove', pal: { light: '#cfe8ff' }, L: [glow(150, 170, 90, '#9ad8ff', 0.6), ['obj', { t: 'pearl', x: 150, y: 170, s: 1.3 }], ['fx', { t: 'sparkle', x: 150, y: 110 }], ['wisps', { x: 150, y: 140, w: 220, h: 90, n: 8 }]] } });
+  add('sunkenrelic', { name: 'Recover the Sunken Relic', type: 'quest', cost: 0, qcost: 3, text: 'Play as a resource. Complete (pay 3): search your deck for a weapon, armor or item and put it in your hand. Draw a card.', reward: async (E, c) => { await E.tutor(c.p, d => ['weapon', 'armor', 'item'].includes(d.type)); await E.draw(c.p, 1); },
+    art: { s: 'sunken', L: [glow(150, 150, 70, '#ffd27a', 0.55), ['obj', { t: 'chest', x: 150, y: 176, s: 0.9 }], ['obj', { t: 'scroll', x: 230, y: 96, s: 0.55 }], ['fx', { t: 'sparkle', x: 150, y: 140 }]] } });
+  add('greathunt', { name: 'The Great Hunt', type: 'quest', cost: 0, qcost: 0, rarity: 'u', cond: (E) => E.g.minionsKilled >= 3, condText: 'your party has destroyed 3 minions', text: 'Play as a resource. Complete once you have destroyed 3 minions: summon a 3/3 Trophy Bear and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'bear_t', 1); await E.draw(c.p, 1); },
+    art: { s: 'forest', L: [['beast', { t: 'bear', x: 196, y: 210, s: 0.8, shadow: 60 }], fig({ race: 'dwarf', pose: 'aim', w: 'crossbow', helm: 'horned', pauld: 'fur', x: 90, y: 214, s: 0.72 }), ['obj', { t: 'horn', x: 250, y: 96, s: 0.5 }]] } });
+  add('flashpowder', { name: 'Flashpowder', type: 'ability', speed: 'instant', cost: 1, target: 'enemy', tags: ['stun'], text: 'Stun an enemy. A stunned minion can\'t attack next boss turn; a stunned boss skips its next strike.', run: async (E, c) => E.stun(c.target),
+    art: { s: 'rooftops', L: [glow(170, 120, 90, '#fff6c0', 0.85), ['obj', { t: 'bomb', x: 150, y: 130, s: 0.9 }], ['fx', { t: 'sparkle', x: 170, y: 110 }], ['fx', { t: 'shout', x: 170, y: 120, c: '#fff6c0' }]] } });
+  add('firebomb', { name: 'Alchemist\'s Firebomb', type: 'ability', speed: 'basic', cost: 2, target: 'enemy', tags: ['dmg'], dmg: 2, text: 'Deal 2 damage to an enemy, then 1 damage to each enemy minion.', run: async (E, c) => { await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); await minionsDmg(E, c, 1); },
+    art: { s: 'forge', p: 'embers', pn: 40, L: [glow(170, 120, 90, '#ff8a2a', 0.7), ['obj', { t: 'potion', x: 120, y: 130, col: '#ff6a1a', shape: 'flask' }], ['fx', { t: 'fireball', x: 200, y: 110, c: '#ff8a3a', ang: 20 }]] } });
+  add('vigorring', { name: 'Ring of Stubborn Vigor', type: 'item', cost: 2, rarity: 'u', allyHp: 1, text: 'Your allies have +1 health.',
+    art: { s: 'altar', L: [glow(150, 120, 60, '#ff9a7a', 0.6), ['obj', { t: 'ring', x: 150, y: 120, s: 1.2, gem: '#ff5a4a' }], ['fx', { t: 'buff', x: 150, y: 120, c: '#ff9a7a' }]] } });
+  add('worldsapling', { name: 'Sapling of the World Tree', type: 'ally', cost: 4, atk: 0, hp: 9, kw: ['protector', 'unique'], race: 'Treant', rarity: 'e', text: 'At the start of your turn, heal 2 damage from each friendly hero.', start: async (E, p) => { for (const h of E.heroes()) await E.heal(E.heroT(h), 2); }, flavor: 'Every forest in the world began as a stubborn seed.',
+    art: { s: 'holy', pal: { light: '#d8ffb0' }, L: [glow(150, 120, 120, '#d8ffb0', 0.55), ['beast', { t: 'treant', x: 150, y: 220, s: 0.8 }], ['fx', { t: 'heal', x: 150, y: 90, c: '#d8ffb0' }], ['wisps', { x: 150, y: 120, w: 260, h: 120, n: 10 }]] } });
+
+  /* =================== CONCORD (7) =================== */
+  add('shieldmaiden', { name: 'Oathsworn Shieldmaiden', type: 'ally', cost: 2, atk: 2, hp: 3, fac: 'concord', kw: ['protector'], race: 'Human', flavor: 'She swore to stand. She has never once sat down.',
+    art: { s: 'castle', L: [fig({ pose: 'stand', w: 'sword', off: 'tower', helm: 'great', plume: true, x: 150, y: 214, s: 0.86, emblem: '#ffd060', cloth: '#2c50a6', hairCol: '#e8c878' })] } });
+  add('skyhammer', { name: 'Skyhammer Rider', type: 'ally', cost: 5, atk: 4, hp: 4, fac: 'concord', kw: ['ferocity'], race: 'Dwarf', rarity: 'u', flavor: 'The gryphon does the flying. He does the shouting.',
+    art: { s: 'peaks', L: [['beast', { t: 'gryphon', x: 160, y: 168, s: 0.85 }], fig({ race: 'dwarf', pose: 'heroic', w: 'hammer', helm: 'horned', x: 150, y: 128, s: 0.52, cloth: '#2c50a6' })] } });
+  add('starwarden', { name: 'Starwarden Archer', type: 'ally', cost: 4, atk: 3, hp: 3, fac: 'concord', kw: ['longrange'], race: 'Elf', rarity: 'u', target: 'enemy', text: 'When this enters play, deal 2 damage to an enemy.', onEnter: async (E, c) => { if (c.target) await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); }, flavor: 'She aims at the star behind you.',
+    art: { s: 'arcane', L: [['fx', { t: 'arrows', x: 210, y: 100, c: '#d0c0ff' }], fig({ race: 'elf', pose: 'aim', w: 'bow', helm: 'hair', cape: 1, capeCol: '#1a1440', glowR: '#d0c0ff', x: 130, y: 212, s: 0.86, cloth: '#3a3a8a', hairCol: '#f4e6b8' })] } });
+  add('dawnbanner', { name: 'Banner of the Silver Dawn', type: 'item', cost: 3, fac: 'concord', rarity: 'r', allyAtk: 1, allyHp: 1, text: 'Your allies have +1 ATK and +1 health.',
+    art: { s: 'castle', L: [glow(150, 100, 90, '#ffe890', 0.5), ['obj', { t: 'banner', x: 150, y: 128, s: 0.95, col: '#2c50a6', em: '#ffd060' }], ['fx', { t: 'holy', x: 150 }]] } });
+  add('highwatch', { name: 'Highwatch Bastion', type: 'location', cost: 0, fac: 'concord', rarity: 'u', lcost: 2, tags: ['shield'], text: 'Play as a resource. Once per turn: pay 2 to prevent the next 3 damage to your hero.', lrun: async (E, c) => E.shield(c.p, 3),
+    art: { s: 'castle', L: [glow(200, 110, 60, '#ffd27a', 0.4), ['obj', { t: 'shieldItem', x: 150, y: 120, s: 0.9 }], ['obj', { t: 'banner', x: 60, y: 120, s: 0.5 }], ['obj', { t: 'banner', x: 240, y: 120, s: 0.5 }]] } });
+  add('avelyn', { name: 'Lord Commander Avelyn', type: 'ally', cost: 6, atk: 5, hp: 6, fac: 'concord', kw: ['unique', 'protector'], race: 'Human', rarity: 'e', text: 'When Avelyn enters play, summon two 1/3 Footmen with Protector.', onEnter: async (E, c) => E.summonAlly(c.p, 'footman_t', 2), flavor: '"Form up. The dawn is watching."',
+    art: { s: 'holy', L: [glow(150, 110, 110, '#ffe890', 0.5), fig({ pose: 'stand', w: 'polearm', off: 'tower', helm: 'great', x: 64, y: 222, s: 0.5 }), fig({ pose: 'stand', w: 'polearm', off: 'tower', helm: 'great', x: 236, y: 222, s: 0.5 }), fig({ pose: 'heroic', w: 'greatsword', helm: 'crown', cape: 1, capeCol: '#2c50a6', pauld: 'plate', wGlow: '#fff6c0', x: 150, y: 214, s: 0.84, emblem: '#ffd060', hairCol: '#c8a060' })] } });
+  add('dawngreaves', { name: 'Dawnward Greaves', type: 'armor', slot: 'legs', atype: 'plate', cost: 2, def: 2, use: 1, fac: 'concord',
+    art: { s: 'forge', L: [glow(150, 120, 60, '#ffd060', 0.4), ['obj', { t: 'legs', x: 150, y: 116 }]] } });
+
+  /* =================== CLANS (7) =================== */
+  add('axethrower', { name: 'Bonechew Axe-Thrower', type: 'ally', cost: 2, atk: 2, hp: 2, fac: 'clans', kw: ['longrange'], race: 'Orc', flavor: 'He never runs out of axes. Nobody asks where he gets them.',
+    art: { s: 'steppe', L: [fig({ race: 'orc', pose: 'charge', w: 'axe', off: 'axe', helm: 'mohawk', x: 140, y: 212, s: 0.9 }), ['fx', { t: 'slash', x: 220, y: 110 }]] } });
+  add('thundertotem', { name: 'Thunderhoof Totem', type: 'item', cost: 3, fac: 'clans', rarity: 'u', tags: ['aoeMinion'], text: 'At the start of your turn, deal 1 damage to each enemy minion.', start: async (E, p) => { for (const t of E.minions()) await E.dmg(t, 1, { p, kind: 'effect' }); },
+    art: { s: 'storm', L: [['fx', { t: 'bolt', x: 150, y: 60 }], glow(150, 150, 70, '#9ac8ff', 0.6), ['obj', { t: 'horn', x: 150, y: 140, s: 1 }], ['fx', { t: 'runes', x: 150, y: 200, r: 80, flat: 1, c: '#9ac8ff' }]] } });
+  add('ravager', { name: 'Steppe Ravager', type: 'ally', cost: 5, atk: 5, hp: 4, fac: 'clans', kw: ['ferocity'], race: 'Minotaur', rarity: 'u', text: 'When this enters play, deal 1 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, flavor: 'The ground shakes first. Then it really shakes.',
+    art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 190, c: '#e8b070' }], fig({ race: 'minotaur', pose: 'charge', w: 'battleaxe', pauld: 'spiked', x: 150, y: 212, s: 0.9 })] } });
+  add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 2, fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
+    art: { s: 'forge', p: 'embers', pn: 30, L: [glow(200, 140, 70, '#ffb040', 0.6), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 120, y: 212, s: 1.05, eye: '#ffd060' }), ['obj', { t: 'bomb', x: 210, y: 176, s: 0.7 }], ['obj', { t: 'bomb', x: 246, y: 200, s: 0.5 }]] } });
+  add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/1 Grunt with Ferocity and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
+    art: { s: 'steppe', L: [['obj', { t: 'chest', x: 190, y: 184, s: 0.7 }], fig({ race: 'orc', pose: 'charge', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.72 }), ['obj', { t: 'scroll', x: 240, y: 90, s: 0.45 }]] } });
+  add('urza', { name: 'Chieftain Urza Redmane', type: 'ally', cost: 6, atk: 6, hp: 5, fac: 'clans', kw: ['unique', 'ferocity'], race: 'Orc', rarity: 'r', text: 'When Urza enters play, ready all your allies. They get +1 ATK this turn.', onEnter: async (E, c) => { E.readyAllies(c.p); E.allyTempAtk(c.p, 1); }, flavor: '"Again. And this time, louder."',
+    art: { s: 'steppe', L: [glow(150, 100, 100, '#ff6a3a', 0.4), ['obj', { t: 'banner', x: 240, y: 120, s: 0.6, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'heroic', w: 'battleaxe', helm: 'horned', pauld: 'spiked', cape: 1, capeCol: '#7a1010', wGlow: '#ff4a1a', x: 140, y: 214, s: 0.86, hairCol: '#c83a1a' })] } });
+  add('hidejerkin', { name: 'Spiked Hide Jerkin', type: 'armor', slot: 'chest', atype: 'leather', cost: 2, def: 2, use: 1, fac: 'clans',
+    art: { s: 'steppe', L: [glow(150, 120, 60, '#ffb070', 0.3), ['obj', { t: 'vest', x: 150, y: 116 }]] } });
+
+  /* =================== CLASS CARDS (12) =================== */
+  add('judgement', { name: 'Judgement of Light', type: 'ability', speed: 'basic', cost: 2, cls: ['paladin'], target: 'enemy', tags: ['dmg', 'shield'], dmg: 3, text: 'Deal 3 damage to an enemy. Prevent the next 3 damage to your hero.', run: async (E, c) => { await E.dmg(c.target, 3, { p: c.p, kind: 'spell' }); E.shield(c.p, 3); },
+    art: { s: 'holy', L: [['fx', { t: 'holy', x: 150, wings: 1, wy: 100 }], ['obj', { t: 'hammer', x: 150, y: 110, s: 0.9 }]] } });
+  add('lightbringer', { name: 'Lightbringer Mace', type: 'weapon', wtype: 'mace', cost: 3, atk: 4, strike: 1, cls: ['paladin'], rarity: 'r', text: 'When your hero attacks with this, heal 2 damage from each of your allies.', onAttack: async (E, c) => { for (const a of [...c.p.allies]) await E.heal(E.T.ally(c.p, a), 2); },
+    art: { s: 'temple', L: [glow(150, 100, 80, '#fff6c0', 0.7), ['obj', { t: 'maceItem', x: 150, y: 110, glow: '#fff6c0' }], ['fx', { t: 'sparkle', x: 150, y: 90 }]] } });
+  add('cleave', { name: 'Cleave', type: 'ability', speed: 'basic', cost: 2, cls: ['warrior'], target: 'none', tags: ['aoeMinion'], dmg: 2, text: 'Deal 2 damage to each enemy minion (3 if your hero has a weapon).', run: async (E, c) => minionsDmg(E, c, c.p.weapon ? 3 : 2, 'spell'),
+    art: { s: 'steppe', L: [['fx', { t: 'slash', x: 150, y: 140 }], ['fx', { t: 'whirl', x: 150, y: 170, c: '#ffd0a0' }], fig({ pose: 'charge', w: 'battleaxe', helm: 'great', x: 150, y: 214, s: 0.8 })] } });
+  add('rampage', { name: 'Unstoppable Rampage', type: 'ability', speed: 'basic', cost: 3, cls: ['warrior'], target: 'none', tags: ['buff', 'shield'], rarity: 'u', text: 'Ready your hero. Your hero gets +2 ATK this turn. Prevent the next 3 damage to your hero.', run: async (E, c) => { E.readyHero(c.p); E.tempAtk(c.p, 2); E.shield(c.p, 3); },
+    art: { s: 'volcano', L: [glow(150, 140, 100, '#ff4a1a', 0.5), ['fx', { t: 'shout', x: 150, y: 100, c: '#ffb070' }], fig({ race: 'orc', pose: 'dual', w: 'axe', off: 'axe', helm: 'mohawk', wGlow: '#ff6a3a', x: 150, y: 212, s: 0.86 })] } });
+  add('explosivetrap', { name: 'Explosive Trap', type: 'ability', speed: 'basic', cost: 2, cls: ['ranger'], target: 'none', tags: ['aoeMinion'], dmg: 2, text: 'Deal 2 damage to each enemy minion.', run: async (E, c) => minionsDmg(E, c, 2, 'spell'),
+    art: { s: 'forest', L: [glow(150, 196, 90, '#ff8a2a', 0.7), ['fx', { t: 'meteors', n: 4, c: '#ff8a3a' }], ['obj', { t: 'bomb', x: 150, y: 190, s: 0.7 }]] } });
+  add('spiritbeast', { name: 'Call the Spirit Beast', type: 'ability', speed: 'basic', cost: 4, cls: ['ranger'], target: 'none', tags: ['summon'], rarity: 'r', text: 'Summon a 4/4 Spirit Lynx with Ferocity and Elusive.', run: async (E, c) => E.summonAlly(c.p, 'spiritlynx', 1),
+    art: TK.spiritlynx.art });
+  add('eviscerate', { name: 'Eviscerate', type: 'ability', speed: 'basic', cost: 3, cls: ['rogue'], target: 'enemy', tags: ['dmg'], dmg: 5, text: 'Deal 5 damage to an enemy. If your hero has a dagger, deal 7 instead.', run: async (E, c) => E.dmg(c.target, c.p.weapon && C[c.p.weapon.c.id].wtype === 'dagger' ? 7 : 5, { p: c.p, kind: 'spell' }),
+    art: { s: 'rooftops', L: [['fx', { t: 'slash', x: 160, y: 120 }], ['fx', { t: 'slash', x: 140, y: 150 }], fig({ race: 'goblin', pose: 'crouch', w: 'dagger', off: 'dagger', helm: 'hood', x: 150, y: 212, s: 1.05, wGlow: '#9aff6a' })] } });
+  add('shadowcowl', { name: 'Shadowsilk Cowl', type: 'armor', slot: 'head', atype: 'leather', cost: 2, def: 1, use: 0, cls: ['rogue'], heroAtk: 1, rarity: 'u', text: 'Your hero has +1 ATK.',
+    art: { s: 'rooftops', L: [glow(150, 120, 60, '#9a7aff', 0.4), ['obj', { t: 'helm', x: 150, y: 116, kind: 'hood', col: '#2a2440' }], ['fx', { t: 'shadow', x: 150, y: 140 }]] } });
+  add('chainlightning', { name: 'Chain Lightning', type: 'ability', speed: 'basic', cost: 3, cls: ['mage'], target: 'enemy', tags: ['dmg'], dmg: 4, rarity: 'u', text: 'Deal 3 damage to an enemy, then 2 damage to a random other enemy.', run: async (E, c) => { await E.dmg(c.target, 3, { p: c.p, kind: 'spell' }); const o = pick(E, E.enemies().filter(t => !E.same(t, c.target))); if (o) await E.dmg(o, 2, { p: c.p, kind: 'spell' }); },
+    art: { s: 'storm', L: [['fx', { t: 'bolt', x: 120, y: 60 }], ['fx', { t: 'bolt', x: 210, y: 80 }], fig({ race: 'elf', pose: 'castF', off: 'staff', helm: 'hair', robe: 1, glowR: '#bfe0ff', x: 110, y: 212, s: 0.8 })] } });
+  add('starwellorb', { name: 'Orb of the Starwell', type: 'item', cost: 2, cls: ['mage'], spell: 1, rarity: 'r', text: 'Your spells and powers deal +1 damage.',
+    art: { s: 'arcane', L: [glow(150, 120, 90, '#c8a0ff', 0.7), ['obj', { t: 'pearl', x: 150, y: 120, s: 1.5 }], ['fx', { t: 'sparkle', x: 150, y: 110 }], ['wisps', { x: 150, y: 120, w: 200, h: 100, n: 7 }]] } });
+  add('holyfire', { name: 'Holy Fire', type: 'ability', speed: 'basic', cost: 2, cls: ['priest'], target: 'enemy', tags: ['dmg', 'heal'], dmg: 3, text: 'Deal 3 damage to an enemy. Heal 3 damage from your party\'s most wounded hero.', run: async (E, c) => { await E.dmg(c.target, 3, { p: c.p, kind: 'spell' }); const h = E.mostWounded(); if (h) await E.heal(E.heroT(h), 3); },
+    art: { s: 'temple', L: [glow(150, 110, 90, '#ffd070', 0.6), ['fx', { t: 'fireball', x: 170, y: 110, c: '#ffe890', ang: 10 }], fig({ pose: 'cast', robe: 1, helm: 'hood', glowR: '#ffe890', x: 110, y: 214, s: 0.8, cloth: '#ece4d0' })] } });
+  add('guardianspirit', { name: 'Guardian Spirit', type: 'ability', speed: 'instant', cost: 3, cls: ['priest'], target: 'friendlyHero', tags: ['shield'], shield: 8, rarity: 'u', text: 'Prevent the next 8 damage to a friendly hero.', run: async (E, c) => E.shield(c.target.p, 8),
+    art: { s: 'holy', L: [['fx', { t: 'holy', x: 150, wings: 1, wy: 96 }], fig({ pose: 'pray', robe: 1, helm: 'hair', spectral: 1, x: 150, y: 200, s: 0.8 }), ['fx', { t: 'barrier', x: 150, y: 150 }]] } });
+
+  RB.FRONTIER = Object.values(C).filter(d => d.set === 'frontier').map(d => d.id);
+
+  /* =================== UNLOCKABLE HEROES (#26) =================== */
+  const H = RB.HEROES;
+  const hero = (id, o) => { o.id = id; o.art = Object.assign({ img: false }, o.art); H[id] = o; };
+  hero('vaelith', { name: 'Vaelith Nightbloom', fac: 'concord', race: 'Elf', cls: 'rogue', spec: 'Nightblade', profs: ['enchanting', 'skinning'], hp: 28,
+    unlock: { how: 'win:crypt', text: 'Defeat Crypt of the Hollow King' },
+    flavor: '"The moon keeps my secrets. The dagger keeps yours."',
+    power: { name: 'Thousand Cuts', text: 'Deal 2 damage to a random enemy four times.', target: 'none', tags: ['dmgRandom'], dmg: 8, run: async (E, c) => { for (let i = 0; i < 4; i++) { const t = E.randomEnemy(); if (t) await E.dmg(t, 2, { p: c.p, kind: 'power' }); } } },
+    art: { s: 'rooftops', L: [glow(220, 70, 50, '#e8e0ff', 0.5), ['fx', { t: 'slash', x: 200, y: 120 }], fig({ race: 'elf', pose: 'crouch', w: 'dagger', off: 'dagger', helm: 'hood', cape: 1, capeCol: '#1a1430', wGlow: '#c8a0ff', x: 140, y: 212, s: 0.98, cloth: '#2a2a5a', hoodCol: '#222048', hairCol: '#f0e8ff', eye: '#c8a0ff' })] } });
+  hero('brannoc', { name: 'Brannoc Stonevow', fac: 'concord', race: 'Dwarf', cls: 'warrior', spec: 'Shieldbearer', profs: ['blacksmithing', 'mining'], hp: 37,
+    unlock: { how: 'win:molten', text: 'Defeat the Molten Spire' },
+    flavor: '"Mountains don\'t step aside. Neither do I."',
+    power: { name: 'Unbreakable', text: 'Prevent the next 10 damage to your hero. Taunt: the boss and its minions must attack your hero until your next turn.', target: 'none', tags: ['shield', 'taunt'], run: async (E, c) => { E.shield(c.p, 10); E.taunt(c.p); } },
+    art: { s: 'forge', p: 'embers', pn: 30, L: [glow(150, 120, 100, '#ffb050', 0.4), fig({ race: 'dwarf', pose: 'stand', w: 'hammer', off: 'tower', helm: 'horned', pauld: 'plate', cape: 1, capeCol: '#2a1a10', x: 150, y: 212, s: 1.05, emblem: '#ffd060', cloth: '#2c50a6', hairCol: '#8a4a22', beardCol: '#8a4a22' })] } });
+  hero('tavra', { name: 'Tavra Sunhorn', fac: 'clans', race: 'Minotaur', cls: 'paladin', spec: 'Dawnbull', profs: ['herbalism', 'mining'], hp: 34,
+    unlock: { how: 'win:tide', text: 'Defeat the Sunken Cathedral' },
+    flavor: '"The sun rises over the steppe first. So do I."',
+    power: { name: 'Sunhorn Charge', text: 'Deal 5 damage to an enemy. Heal 5 damage from your hero.', target: 'enemy', tags: ['dmg', 'heal'], dmg: 5, run: async (E, c) => { await E.dmg(c.target, 5, { p: c.p, kind: 'power' }); await E.heal(E.heroT(c.p), 5); } },
+    art: { s: 'holy', L: [['fx', { t: 'holy', x: 150, wings: 0, wy: 100 }], glow(150, 110, 110, '#ffe890', 0.45), fig({ race: 'minotaur', pose: 'heroic', w: 'hammer', off: 'round', pauld: 'plate', cape: 1, capeCol: '#7a3010', wGlow: '#fff0a0', x: 150, y: 214, s: 0.86, emblem: '#ffd060', cloth: '#c8801a' })] } });
+  hero('zizzik', { name: 'Zizzik Sparkwhistle', fac: 'clans', race: 'Goblin', cls: 'mage', spec: 'Sparkwright', profs: ['engineering', 'alchemy'], hp: 30,
+    unlock: { how: 'gold:300', text: 'Buy for 300 gold in the Market' },
+    flavor: '"Safety goggles are for people who plan to miss."',
+    power: { name: 'Overcharged Rocket', text: 'Deal 4 damage to each enemy. Your hero takes 1 damage.', target: 'none', tags: ['aoe'], dmg: 4, run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 4, { p: c.p, kind: 'power' }); await E.dmg(E.heroT(c.p), 1, { kind: 'effect' }); } },
+    art: { s: 'forge', p: 'embers', pn: 50, L: [glow(200, 110, 80, '#ffb040', 0.6), ['fx', { t: 'fireball', x: 220, y: 100, c: '#ffb040', ang: 30 }], fig({ race: 'goblin', pose: 'castF', off: 'wand', helm: 'hood', robe: 1, glowR: '#ffd060', x: 120, y: 212, s: 1.08, cloth: '#c86a1a', eye: '#ffd060' })] } });
+  hero('seraphine', { name: 'Seraphine Vale', fac: 'concord', race: 'Human', cls: 'priest', spec: 'Lightwarden', profs: ['herbalism', 'tailoring'], hp: 30,
+    unlock: { how: 'gold:300', text: 'Buy for 300 gold in the Market' },
+    flavor: '"Hold the line a little longer. I\'ve got you."',
+    power: { name: 'Sanctuary', text: 'Heal 4 damage from each friendly hero and ally. Prevent the next 3 damage to each friendly hero.', target: 'none', tags: ['healAll', 'shield'], run: async (E, c) => { for (const t of E.friendlyChars()) await E.heal(t, 4); for (const h of E.heroes()) E.shield(h, 3); } },
+    art: { s: 'temple', L: [['fx', { t: 'holy', x: 150, wings: 1, wy: 100 }], glow(150, 120, 110, '#fff6c0', 0.5), fig({ pose: 'pray', robe: 1, helm: 'hair', glowL: '#fff6c0', glowR: '#fff6c0', x: 150, y: 212, s: 0.86, cloth: '#ece4d0', trim: '#d8a840', hairCol: '#c87a3a', gem: '#ffe890' })] } });
+  hero('korga', { name: 'Korga Ironfang', fac: 'clans', race: 'Orc', cls: 'ranger', spec: 'Packmaster', profs: ['skinning', 'engineering'], hp: 34,
+    unlock: { how: 'heroic', text: 'Win any raid on Heroic' },
+    flavor: '"The wolves aren\'t my pets. I\'m theirs."',
+    power: { name: 'Call the Pack', text: 'Summon two 2/2 Wolf Companions with Ferocity. Draw a card.', target: 'none', tags: ['summon', 'draw'], run: async (E, c) => { await E.summonAlly(c.p, 'wolfcomp', 2); await E.draw(c.p, 1); } },
+    art: { s: 'steppe', L: [['beast', { t: 'wolf', x: 230, y: 212, s: 0.7 }], ['beast', { t: 'wolf', x: 66, y: 216, s: 0.62, flip: 1 }], fig({ race: 'orc', pose: 'aim', w: 'bow', helm: 'mohawk', pauld: 'fur', x: 150, y: 212, s: 0.84, cloth: '#5a3a1a', paint: '#d8401e' })] } });
+  RB.UNLOCK_HEROES = ['vaelith', 'brannoc', 'tavra', 'zizzik', 'seraphine', 'korga'];
+  RB.heroUnlocked = (id, save) => {
+    const h = H[id]; if (!h || !h.unlock) return true;
+    if (!save) return true;
+    const how = h.unlock.how;
+    if ((save.heroes || []).includes(id)) return true;
+    if (how.startsWith('win:')) return (save.wins[how.slice(4)] || 0) > 0;
+    if (how === 'heroic') return Object.values(save.heroicWins || {}).some(n => n > 0);
+    return false; // gold: must be bought
+  };
+  // starter decks for the new heroes: the best core-only deck for each
+  for (const id of RB.UNLOCK_HEROES) {
+    const deck = RB.autoDeck(id, null, null, 1), out = {};
+    deck.forEach(x => out[x] = (out[x] || 0) + 1);
+    RB.STARTER[id] = out;
+  }
+
+  /* =================== GOLD + BOOSTER PACKS =================== */
+  RB.PACK_PRICE = 100;
+  RB.goldFor = (g, win) => {
+    const bossDmg = Math.max(g.players.reduce((s, p) => s + (p.stats.bossDmg || 0), 0), Math.min(g.boss.damage, g.boss.maxHp));
+    const parts = [
+      ['Victory', win ? 60 : 15],
+      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.5)],
+      ['Minions destroyed', g.minionsKilled * 6],
+      ['Healing done', Math.round((g.stats.healed || 0) * 0.4)],
+    ];
+    let total = parts.reduce((s, x) => s + x[1], 0);
+    if (g.cfg.difficulty === 'heroic') { const b = Math.round(total * 0.25); parts.push(['Heroic bonus', b]); total += b; }
+    return { parts, total };
+  };
+  RB.rollBooster = (rand) => {
+    rand = rand || Math.random;
+    const pk = a => a[Math.floor(rand() * a.length)];
+    const fr = Object.values(C).filter(d => d.set === 'frontier'), core = Object.values(C).filter(d => d.set === 'core');
+    const byR = (list, r) => list.filter(d => d.rarity === r);
+    const rarity = () => { const x = rand(); return x < 0.06 ? 'e' : x < 0.24 ? 'r' : x < 0.55 ? 'u' : 'c'; };
+    const from = (list, r) => { let l = byR(list, r); while (!l.length) { r = { e: 'r', r: 'u', u: 'c', c: 'c' }[r]; l = byR(list, r); if (r === 'c' && !l.length) l = list; } return pk(l); };
+    const out = [];
+    // two guaranteed Frontier cards, one of them uncommon or better
+    out.push({ id: from(fr, (() => { const r = rarity(); return r === 'c' ? 'u' : r; })()).id, holo: rand() < 0.2 });
+    out.push({ id: from(fr, rarity()).id, holo: rand() < 0.1 });
+    // the rest: mostly Frontier, some regular cards mixed in
+    for (let i = 0; i < 3; i++) { const list = rand() < 0.6 ? fr : core; out.push({ id: from(list, rarity()).id, holo: rand() < 0.08 }); }
+    return out;
+  };
+})(globalThis.RB);
+
 /* RAIDBOUND — UI core: persistence, card rendering, icons, sound, small widgets */
 (function (RB) {
   const U = RB.UI = {};
@@ -4872,7 +5137,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 
   /* ---------- persistence (per-browser; safe if storage is unavailable) ---------- */
   const KEY = 'raidbound.save.v1';
-  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
+  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, gold: 0, heroes: [], settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
   let save = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) save = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
   // base collection: two of every core card
@@ -4880,6 +5145,9 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   U.save = save;
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
   if (!save.heroicWins) save.heroicWins = {};
+  if (typeof save.gold !== 'number') save.gold = 0;
+  if (!Array.isArray(save.heroes)) save.heroes = [];
+  U.heroOpen = id => RB.heroUnlocked(id, save);
   const GEN = () => (RB.ART && RB.ART.GEN) || {};
   U.cosImg = id => GEN()['cos_' + id] || '';
   U.ownsCos = id => { const c = RB.COSMETICS[id]; return !!c && (c.get === 'default' || save.cos.includes(id)); };
@@ -5432,8 +5700,8 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const raids = Object.values(R).map(r => `<button class="traid" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="tbody"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div>${(save.wins[r.id] || 0) ? `<div class="done">Conquered ${save.wins[r.id]}×</div>` : ''}</div></button>`).join('');
     const el = U.show('title', `<img class="bgart" alt="" src="${bg}"><div class="veil"></div>
       <div class="center"><h1 class="logo">Raidbound</h1><p class="tagline">Gather your party. Build your deck. Bring down the raid boss.</p>
-      <div class="menu"><button class="btn primary" data-go="setup">Begin a raid</button>
-      <div class="row"><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
+      <div class="menu"><div class="row"><button class="btn primary" data-go="setup">Begin a raid</button><button class="btn primary" data-go="online">Play online</button></div>
+      <div class="row"><button class="btn" data-go="market">Market <span class="goldchip">${save.gold}</span></button><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
       <div class="traids">${raids}</div>
       ${wins ? `<div class="wins">Raids conquered: ${wins} · Cards collected: ${Object.keys(save.owned).filter(k => save.owned[k] > 0).length}</div>` : ''}</div>`);
@@ -5452,27 +5720,29 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       const h = H[s.hero];
       const deckOk = !s.custom || (save.decks[s.hero] && save.decks[s.hero].length === RB.DECK_SIZE);
       return `<div class="seat" data-seat="${i}"><header><strong>Hero ${i + 1}</strong>${setup.seats.length > 1 ? `<button class="btn small ghost" data-act="rm" aria-label="Remove hero ${i + 1}">Remove</button>` : ''}</header>
-        <div class="heropick">${Object.values(H).map(x => `<button class="${x.id === s.hero ? 'on' : ''}" data-hero="${x.id}" title="${esc(x.name)}"><img alt="" src="${U.cardArt(x.id)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`).join('')}</div>
+        <div class="heropick">${Object.values(H).map(x => { const open = U.heroOpen(x.id); return `<button class="${x.id === s.hero ? 'on' : ''} ${open ? '' : 'locked'}" data-hero="${x.id}" title="${esc(open ? x.name : 'Locked: ' + x.unlock.text)}"><img alt="" src="${U.cardArt(x.id)}">${open ? '' : '<i class="lockicon" aria-hidden="true"></i>'}<span>${open ? esc(x.name.replace(/^Ser /, '').split(' ')[0]) + ' · ' + RB.CLASSES[x.cls].name : 'Locked'}</span></button>`; }).join('')}</div>
         <div class="heroinfo">${heroBlurb(h)}</div>
         <div class="opts"><span class="seg"><button class="${!s.custom && !s.autoD ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.autoD ? 'on' : ''}" data-act="autodeck" title="Builds the strongest deck for this hero against this raid from the cards you own">Auto deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>${s.autoD ? `<div class="opts" style="color:var(--muted);font-size:.85rem">Auto deck: tuned for ${esc(R[setup.raid].short)} with ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''}. It's rebuilt when you change the raid or party.</div>` : ''}
-        <div class="opts"><label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
+        <div class="opts">${setup.asBoss ? '<span style="color:var(--muted);font-size:.85rem">The AI plays this hero against you.</span>' : `<label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>`}${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
     const el = U.show('setup', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
       <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health and strikes 1 harder. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
-      <h3 class="sec">Your party</h3><p class="lede">Play solo or bring up to four heroes. You take every hero's turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.</p>
+      <div class="difficulty"><span class="seg"><button class="${!setup.asBoss ? 'on' : ''}" data-side="heroes">Play the heroes</button><button class="${setup.asBoss ? 'on' : ''}" data-side="boss">Play the raid boss</button></span><span style="color:var(--muted);font-size:.92rem">${setup.asBoss ? `You are ${esc(R[setup.raid].boss)}. Each turn you hold a hand of boss cards and pick which to play, then choose who your minions and your strike attack. The AI plays the heroes.` : 'You lead the heroes against the AI-controlled boss.'}</span></div>
+      <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
       <div class="seats">${seats}</div>
-      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}</span><button class="btn primary" data-act="go">Enter the raid</button></div></div>`, keep === true);
+      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
       const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(true); }
       const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(true); }
+      const sd = t.closest('[data-side]'); if (sd) { setup.asBoss = sd.dataset.side === 'boss'; return U.setup(true); }
       const seatEl = t.closest('[data-seat]'); const seat = seatEl ? setup.seats[+seatEl.dataset.seat] : null;
-      const hb = t.closest('[data-hero]'); if (hb && seat) { seat.hero = hb.dataset.hero; return U.setup(true); }
+      const hb = t.closest('[data-hero]'); if (hb && seat) { const hx = H[hb.dataset.hero]; if (!U.heroOpen(hx.id)) return U.toast(`${hx.name} is locked. To unlock: ${hx.unlock.text}.`); seat.hero = hb.dataset.hero; return U.setup(true); }
       const a = t.closest('[data-act]'); if (!a) return;
       switch (a.dataset.act) {
         case 'back': return U.title();
-        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(true); }
+        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h) && U.heroOpen(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(true); }
         case 'rm': setup.seats.splice(+seatEl.dataset.seat, 1); return U.setup(true);
         case 'starter': seat.custom = false; seat.autoD = false; return U.setup(true);
         case 'autodeck': seat.custom = false; seat.autoD = true; return U.setup(true);
@@ -5494,7 +5764,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       const deck = ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; });
       return { hero: s.hero, auto: s.auto, deck, name: 'Hero ' + (i + 1), pet: i === 0 ? save.sel.pet : null };
     });
-    U.battle({ raid: setup.raid, difficulty: setup.diff, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
+    U.battle({ raid: setup.raid, difficulty: setup.diff, party, bossPlayer: !!setup.asBoss, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };
 
   /* ---------------- auto deck (#23) ---------------- */
@@ -5557,7 +5827,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   /* ---------------- collection ---------------- */
   U.collection = function () {
     let set = 'all';
-    const sets = { all: 'All cards', core: 'Core set', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
+    const sets = { all: 'All cards', core: 'Core set', frontier: 'Frontier boosters', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
     function draw() {
       const list = Object.values(C).filter(d => set === 'all' || d.set === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
       const total = Object.values(C).length, have = Object.values(C).filter(d => save.owned[d.id] > 0).length;
@@ -5565,7 +5835,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       const el = U.show('collection', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters">${Object.entries(sets).map(([k, v]) => `<button class="btn small ${set === k ? '' : 'ghost'}" data-set="${k}">${v}</button>`).join('')}</div>
         ${save.loot.length && (set === 'all' || set === 'loot') ? `<h3 class="sec">Your loot codes</h3><div class="cosgrid">${lootRows}</div><h3 class="sec">Cards</h3>` : ''}
-        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 && d.set !== 'core' ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
+        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 && d.set !== 'core' ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.set === 'frontier' ? 'Found in Frontier booster packs (Market)' : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });
@@ -5682,12 +5952,13 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   let E = null, root = null, cfgLast = null;
   const view = { mode: null, lock: 0, dirty: false, raf: 0, busy: false, focus: 0, hpGhost: null };
   const speed = () => save.settings.speed || 1;
-  const wait = ms => new Promise(r => setTimeout(r, ms * speed()));
+  const wait = ms => new Promise(r => setTimeout(r, (net && net.replaying) ? 0 : ms * speed()));
 
   /* ---------- rendering ---------- */
   function schedule() { if (view.lock > 0) { view.dirty = true; return; } if (!view.raf) view.raf = requestAnimationFrame(() => { view.raf = 0; render(); }); }
   function flush() { if (view.raf) { cancelAnimationFrame(view.raf); view.raf = 0; } render(); view.dirty = false; }
-  const human = p => p && !p.auto;
+  let net = null; // online co-op link (#29), null when playing on one computer
+  const human = p => p && !p.auto && (!net || net.mine(p.idx));
   const myTurn = () => E && E.g.phase === 'main' && human(E.g.players[E.g.turn]) && !view.busy && !E.g.over;
   const fp = () => E.g.players[view.focus] || E.g.players[0];
 
@@ -5751,7 +6022,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     // hand
     const n = p.hand.length, mid = (n - 1) / 2;
     const hand = p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; return `<div class="hc ${playable ? 'play' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
-    const status = g.over ? '' : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? `${esc(E.pdef(active).name)} (AI) is acting…` : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
+    const status = g.over ? '' : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
     // roster
     const roster = g.players.map(q => {
       const qd = E.pdef(q), pct = Math.max(0, E.heroHp(q)) / E.heroMax(q) * 100;
@@ -5772,7 +6043,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
       <div class="handbar"><div class="hand ${p === active && human(p) ? '' : 'other'}">${hand}</div>
-        <div class="turnctl"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
+        <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
     <div class="side"><div class="roster"><h5>Party</h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`;
@@ -5803,6 +6074,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     return wait(ms).then(() => o.remove());
   }
   async function anim(type, d) {
+    if (net && net.replaying) { schedule(); return; }
     if (!root) return;
     if (type !== 'death' && type !== 'heroDeath') flush();
     view.lock++;
@@ -5848,11 +6120,23 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   }
 
   /* ---------- prompts (engine ask hook) ---------- */
-  async function ask(kind, d) {
+  async function ask(kind, d, local) {
+    if (net && !local) return netAsk(kind, d);
     flush();
     if (kind === 'scout') {
       const v = await U.dialog(`<h3>Scouting report</h3><p>The next card in ${esc(E.raid.short)}'s deck is revealed.</p><div class="cards">${U.cardHTML(d.id)}</div><div class="acts"><button class="btn ghost" data-v="top">Leave it on top</button><button class="btn primary" data-v="bottom">Send it to the bottom</button></div>`);
       return v;
+    }
+    if (kind === 'bossPick') {
+      const v = await U.dialog(`<h3>${esc(E.raid.short)}: play a card</h3><p>You are the raid boss. Choose a card from your hand to play — <b>${d.left} more</b> this turn. Cards you don't play stay in your hand for next turn.</p>
+        <div class="cards">${d.hand.map((id, i) => `<div class="pick" data-v="${i}">${U.cardHTML(id)}</div>`).join('')}</div>
+        <div class="acts"><button class="btn ghost" data-v="0">Play the first card</button></div>`, { dismiss: '0' });
+      return v == null ? 0 : +v;
+    }
+    if (kind === 'bossTarget') {
+      const opts = d.options.map((t, i) => { const hero = t.t === 'hero'; const art = hero ? U.cardArt(t.p.heroId) : U.cardArt(t.a.id); return `<button class="tpick" data-v="${i}"><img alt="" src="${art}"><b>${esc(E.nameOf(t))}</b><span>${hero ? 'Hero' : 'Ally'} · ${E.hpOf(t)}/${E.maxHpOf(t)} health${E.atkOf(t) ? ` · hits back for ${hero ? E.heroAtk(t.p) : E.atkOf(t)}+` : ''}</span></button>`; }).join('');
+      const v = await U.dialog(`<h3>${esc(d.from)} attacks (${d.atk} damage)</h3><p>${d.strike ? 'Your boss strike' : 'Your minion'} is ready. Choose who to hit. A ready Protector ally may step in front of its hero.</p><div class="tpicks">${opts}</div><div class="acts"><button class="btn ghost" data-v="auto">Let it choose</button></div>`, { dismiss: 'auto' });
+      return v == null || v === 'auto' ? null : +v;
     }
     if (kind === 'strikeBack') {
       const w = C[d.p.weapon.c.id];
@@ -5894,7 +6178,78 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     return null;
   }
 
-  /* ---------- player actions ---------- */
+  /* ---------- player actions (local, or sent through the online relay) ---------- */
+  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation'];
+  async function doAction(name, args) {
+    const p = args[0];
+    if (name === 'end') return E.endHeroTurn();
+    if (name === 'auto') { await RB.AI.playTurn(E, p); if (!E.g.over && E.g.phase === 'main' && E.g.players[E.g.turn] === p) await E.endHeroTurn(); return; }
+    if (ACTS.includes(name)) return E[name](...args);
+  }
+  function doAct(name, ...args) {
+    if (!net) return run(() => doAction(name, args));
+    if (view.busy) return;
+    view.busy = true; view.mode = null; U.closePop(); U.hidePreview(); render();
+    net.send({ t: 'act', name, args: ser(args) });
+  }
+  const ser = args => args.map(a => a == null ? null : typeof a === 'string' ? { S: a } : (a.hand && a.hero) ? { P: a.idx } : a.t ? { R: E.refId(a) } : (a.c && a.c.uid && !a.id) ? { C: a.c.uid } : a.uid ? { U: a.uid } : null);
+  function findRef(ref) {
+    const g = E.g, all = [...E.enemies(), ...g.players.map(q => E.heroT(q)), ...g.players.flatMap(q => q.allies.map(a => E.T.ally(q, a)))];
+    return all.find(t => E.refId(t) === ref) || null;
+  }
+  function deser(list) {
+    const p0 = list[0] && list[0].P != null ? E.g.players[list[0].P] : null;
+    return list.map(a => {
+      if (a == null) return null;
+      if (a.S != null) return a.S;
+      if (a.P != null) return E.g.players[a.P];
+      if (a.R != null) return findRef(a.R);
+      if (a.C != null) return p0 && (p0.items.find(e => e.c.uid === a.C) || p0.res.find(r => r.c.uid === a.C) || (p0.weapon && p0.weapon.c.uid === a.C ? p0.weapon : null));
+      if (a.U != null) return p0 && (p0.hand.find(c => c.uid === a.U) || p0.allies.find(x => x.uid === a.U));
+      return null;
+    });
+  }
+  // apply one ordered command from the relay (every computer does the same, in the same order)
+  async function applyNet(c, fromMe) {
+    view.busy = true; render();
+    try {
+      if (c.t === 'act') { const r = await doAction(c.name, deser(c.args)); if (fromMe && r && r.ok === false && r.why) U.toast(r.why); }
+      else if (c.t === 'ai' || c.t === 'human') await seatControl(c);
+    } catch (err) { console.error(err); U.toast('Sync problem: ' + err.message); }
+    view.busy = false; afterAction();
+  }
+  async function seatControl(c) {
+    const p = E.g.players[c.seat]; if (!p) return;
+    if (c.t === 'human') { p.auto = false; U.toast(`${E.g.cfg.party[p.idx].name} is back.`); return; }
+    p.auto = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
+    if (E.g.phase === 'main' && E.g.turn === p.idx && !E.g.over) await doAction('auto', [p]);
+  }
+  async function netAnswer(seatIdx) {
+    for (;;) {
+      const m = await net.next();
+      if (m.c.t === 'ans') return m.c.v;
+      if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) p.auto = true; if (m.c.seat === seatIdx) return null; }
+      if (m.c.t === 'human') { const p = E.g.players[m.c.seat]; if (p) p.auto = false; }
+    }
+  }
+  async function netAsk(kind, d) {
+    if (kind === 'scout') {
+      if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v }); }
+      else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is scouting…`);
+      const v = await netAnswer(d.p.idx); net.wait(null); return v || 'bottom';
+    }
+    if (kind === 'instant') {
+      for (const q of d.players) {
+        if (q.auto) continue;
+        if (net.mine(q.idx) && !net.replaying) { const r = await ask('instant', Object.assign({}, d, { players: [q] }), true); net.send({ t: 'ans', v: r ? { uid: r.inst.uid, R: r.target ? E.refId(r.target) : null } : null }); }
+        else net.wait(`Waiting for ${esc(E.g.cfg.party[q.idx].name)} to answer ${esc(d.card.name)}…`);
+        const v = await netAnswer(q.idx); net.wait(null);
+        if (v) { const inst = q.hand.find(c => c.uid === v.uid); if (inst) return { p: q, inst, target: v.R ? findRef(v.R) : null }; }
+      }
+      return null;
+    }
+    return null;
+  }
   async function run(fn) {
     if (view.busy) return;
     view.busy = true; view.mode = null; U.closePop(); U.hidePreview(); render();
@@ -5919,12 +6274,12 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const items = [];
     const chk = E.canPlay(p, inst);
     if (d.type === 'quest' || d.type === 'location') {
-      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : ' (quest)'}`, disabled: p.resPlayed, go: () => run(() => E.playResource(p, inst)) });
+      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : ' (quest)'}`, disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
     } else {
       items.push({ label: `Play ${esc(d.name)} · ${d.cost} ◆`, disabled: !chk.ok, go: () => playWithTarget(p, inst) });
       if (!chk.ok) items.push({ why: chk.why });
-      items.push({ label: 'Use as a resource', disabled: p.resPlayed, go: () => run(() => E.playResource(p, inst)) });
+      items.push({ label: 'Use as a resource', disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
     }
     anchor.classList.add('open');
@@ -5933,16 +6288,16 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   function playWithTarget(p, inst) {
     const d = C[inst.id];
     const tk = E.needsTarget(inst);
-    if (!tk) return run(() => E.playCard(p, inst, null));
+    if (!tk) return doAct('playCard', p, inst, null);
     const friendly = ['friendly', 'friendlyHero', 'ally', 'deadHero'].includes(tk);
-    if (tk === 'deadHero') { const ts = E.targetsFor(tk, p); return run(() => E.playCard(p, inst, ts[0])); }
-    startTargeting(`${d.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(tk, p), friendly, t => run(() => E.playCard(p, inst, t)));
+    if (tk === 'deadHero') { const ts = E.targetsFor(tk, p); return doAct('playCard', p, inst, ts[0]); }
+    startTargeting(`${d.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(tk, p), friendly, t => doAct('playCard', p, inst, t));
   }
   function heroActions(p, anchor) {
     const items = [];
     if (E.canAttackWith(p, 'hero')) {
       const useW = p.weapon && !p.weapon.ex && E.available(p) >= C[p.weapon.c.id].strike;
-      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${C[p.weapon.c.id].strike}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => run(() => E.attack(p, 'hero', t))) });
+      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${C[p.weapon.c.id].strike}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
     } else if (!p.hero.ex) items.push({ why: p.weapon ? (p.weapon.ex ? 'Your weapon has already been used this round.' : `You need ${C[p.weapon.c.id].strike} ready resource${C[p.weapon.c.id].strike === 1 ? '' : 's'} to strike with your weapon.`) : 'Your hero needs a weapon (or an attack bonus) to attack.' });
     else items.push({ why: 'Your hero has already attacked this turn.' });
     if (!p.hero.powerUsed && !p.hero.master) items.push({ label: `Use ${esc(HE[p.heroId].power.name)} (once per game)`, go: () => usePower(p) });
@@ -5952,16 +6307,16 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const pw = HE[p.heroId].power;
     if (pw.target && pw.target !== 'none') {
       const friendly = pw.target.startsWith('friendly');
-      startTargeting(`${pw.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(pw.target, p), friendly, t => run(() => E.usePower(p, t)));
-    } else run(() => E.usePower(p, null));
+      startTargeting(`${pw.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(pw.target, p), friendly, t => doAct('usePower', p, t));
+    } else doAct('usePower', p, null);
   }
   function itemAction(p, e, anchor) {
     const d = C[e.c.id];
     if (!d.use) return U.popover(anchor, d.name, [{ why: d.text }]);
     const ok = E.itemReady(p, e);
     const items = [{ label: `Use ${esc(d.name)}${d.use.cost ? ` (pay ${d.use.cost})` : ''}`, disabled: !ok, go: () => {
-      if (d.use.target && d.use.target !== 'none') { const friendly = d.use.target.startsWith('friendly'); startTargeting(`${d.name}: choose a target`, E.targetsFor(d.use.target, p), friendly, t => run(() => E.useItem(p, e, t))); }
-      else run(() => E.useItem(p, e, null));
+      if (d.use.target && d.use.target !== 'none') { const friendly = d.use.target.startsWith('friendly'); startTargeting(`${d.name}: choose a target`, E.targetsFor(d.use.target, p), friendly, t => doAct('useItem', p, e, t)); }
+      else doAct('useItem', p, e, null);
     } }];
     if (!ok) items.push({ why: e.ex ? 'Already used this turn.' : 'Not enough ready resources.' });
     U.popover(anchor, null, items);
@@ -5971,11 +6326,11 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     if (r.quest) {
       if (r.done) return U.popover(anchor, d.name, [{ why: 'Completed. It still counts as a resource.' }]);
       const ok = E.questReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => run(() => E.completeQuest(p, r)) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])]);
+      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])]);
     }
     if (r.loc) {
       const ok = E.locationReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => run(() => E.useLocation(p, r, t))); else run(() => E.useLocation(p, r, null)); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])]);
+      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])]);
     }
   }
   function onClick(e) {
@@ -6003,8 +6358,8 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     if (fp() !== p) { view.focus = E.g.turn; return render(); }
     if (act) {
       switch (act.dataset.act) {
-        case 'end': return run(() => E.endHeroTurn());
-        case 'auto': return run(async () => { await RB.AI.playTurn(E, p); if (!E.g.over && E.g.phase === 'main' && E.g.players[E.g.turn] === p) await E.endHeroTurn(); });
+        case 'end': return doAct('end', p);
+        case 'auto': return doAct('auto', p);
         case 'power': return usePower(p);
         case 'hero': return heroActions(p, act);
         case 'item': { const it = p.items.find(x => x.c.uid === act.dataset.gid); if (it) return itemAction(p, it, act); return; }
@@ -6017,7 +6372,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const unit = t.closest('.unit[data-kind=ally]');
     if (unit) {
       const a = p.allies.find(x => x.uid === unit.dataset.ref);
-      if (a && E.canAttackWith(p, a)) return startTargeting(`${E.allyDef(a).name} attacks: choose an enemy`, E.attackTargets(), false, tg => run(() => E.attack(p, a, tg)));
+      if (a && E.canAttackWith(p, a)) return startTargeting(`${E.allyDef(a).name} attacks: choose an enemy`, E.attackTargets(), false, tg => doAct('attack', p, a, tg));
       if (a) return U.popover(unit, E.allyDef(a).name, [{ why: a.sick ? 'Just arrived — it can attack next turn.' : a.frozen ? 'Frozen solid this round.' : a.ex ? 'Already exhausted this round.' : 'This ally can\'t attack right now.' }]);
     }
   }
@@ -6039,8 +6394,8 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   }
 
   /* ---------- lifecycle ---------- */
-  U.battle = function (cfg) {
-    cfgLast = cfg;
+  U.battle = function (cfg, link) {
+    cfgLast = cfg; net = link || null;
     root = U.show('battle', '');
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
@@ -6056,32 +6411,242 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       if ((e.key === 'Enter' || e.key === ' ') && document.activeElement && document.activeElement.closest && document.activeElement.closest('#battle .hc, #battle .unit, #battle .herocard, #battle .bosscard')) { e.preventDefault(); document.activeElement.click(); }
     };
     render();
-    E.start().then(() => { view.busy = false; afterAction(); }).catch(err => { console.error(err); view.busy = false; U.toast('Error: ' + err.message); });
+    if (net) { const mine = cfg.party.findIndex(s => s.owner === net.id); if (mine >= 0) view.focus = mine; net.attach({ apply: applyNet, game: () => E }); }
+    E.start().then(() => { view.busy = false; afterAction(); if (net) net.ready(); }).catch(err => { console.error(err); view.busy = false; U.toast('Error: ' + err.message); });
   };
   async function leave() {
     const v = await U.dialog('<h3>Leave the raid?</h3><p>Your progress in this fight will be lost.</p><div class="acts"><button class="btn ghost" data-v="no">Keep fighting</button><button class="btn primary" data-v="yes">Leave</button></div>', { dismiss: 'no' });
-    if (v === 'yes') { E.g.over = 'abandon'; E = null; U.setup(); }
+    if (v === 'yes') { E.g.over = 'abandon'; E = null; if (net) { net.leave(); net = null; return U.title(); } U.setup(); }
   }
   function endScreen() {
     const g = E.g, win = g.over === 'win';
     if (g.over === 'abandon') return;
     const raid = g.raid;
+    if (g.cfg.bossPlayer) return bossEndScreen();
+    const heroesBefore = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id));
+    const gold = RB.goldFor(g, win); save.gold = (save.gold || 0) + gold.total; U.persist();
     let fresh = []; if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'heroic') save.heroicWins[raid.id] = (save.heroicWins[raid.id] || 0) + 1; U.persist(); fresh = U.checkUnlocks(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
     const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${g.stats.dmgDealt}</b>damage dealt</div><div><b>${g.stats.cardsPlayed}</b>cards played</div><div><b>${g.players.filter(p => !p.hero.dead).length}/${g.players.length}</b>heroes standing</div></div>`;
     const heroic = g.cfg.difficulty === 'heroic';
+    const newHeroes = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id) && !heroesBefore.includes(id));
+    const goldBox = `<div class="goldbox"><div class="gtitle">+${gold.total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${gold.parts.map(([k, v]) => `<span>${esc(k)} <b>+${v}</b></span>`).join('')}</div>${win ? '<div class="gnote">Open your treasure first — then visit the Market from the title screen.</div>' : '<button class="btn small" data-act="market">Spend it in the Market</button>'}</div>`
+      + (newHeroes.length ? `<div class="newvault"><b>New hero unlocked:</b> ${newHeroes.map(id => `<span><img alt="" src="${U.cardArt(id)}">${esc(RB.HEROES[id].name)}</span>`).join('')}</div>` : '');
     const el = U.show('end', win
-      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}<div class="pack" data-act="open" tabindex="0" role="button" aria-label="Open treasure pack"><div class="pt">Raid treasure</div><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="pb">${esc(raid.name)}${heroic ? ' · Heroic' : ''} · 5 cards</div></div><p style="color:var(--muted)">Click the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
-      : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}${goldBox}<div class="pack" data-act="open" tabindex="0" role="button" aria-label="Open treasure pack"><div class="pt">Raid treasure</div><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="pb">${esc(raid.name)}${heroic ? ' · Heroic' : ''} · 5 cards</div></div><p style="color:var(--muted)">Click the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
+      : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}${goldBox}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {
       const a = e.target.closest('[data-act]'); if (!a) return;
       if (a.dataset.act === 'open') return U.openPack(raid.id, heroic, a);
-      if (a.dataset.act === 'retry') return U.battle(JSON.parse(JSON.stringify(cfgLast)));
-      if (a.dataset.act === 'party') return U.setup();
+      if (a.dataset.act === 'retry') return cfgLast.online ? U.online() : U.battle(JSON.parse(JSON.stringify(cfgLast)));
+      if (a.dataset.act === 'party') return cfgLast.online ? U.online() : U.setup();
+      if (a.dataset.act === 'market') return U.market();
       if (a.dataset.act === 'title') return U.title();
     };
     el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'open') e.target.click(); };
   }
+  function bossEndScreen() {
+    const g = E.g, raid = g.raid, bossWon = g.over === 'lose';
+    const slain = g.players.filter(p => p.hero.dead).length;
+    const parts = [['Result', bossWon ? 80 : 20], ['Heroes defeated', slain * 15], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.3)]];
+    const total = parts.reduce((s, x) => s + x[1], 0);
+    save.gold = (save.gold || 0) + total; save.bossWins = (save.bossWins || 0) + (bossWon ? 1 : 0); U.persist();
+    if (bossWon) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
+    const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${slain}/${g.players.length}</b>heroes defeated</div><div><b>${Math.max(0, E.bossHp())}</b>health left</div></div>`;
+    const goldBox = `<div class="goldbox"><div class="gtitle">+${total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${parts.map(([k, v]) => `<span>${esc(k)} <b>+${v}</b></span>`).join('')}</div></div>`;
+    const el = U.show('end', `<div class="endscreen ${bossWon ? '' : 'lose'}"><h2>${bossWon ? 'The raid is crushed' : 'The heroes prevail'}</h2><p class="tagline">${bossWon ? `As ${esc(raid.boss)}, you wiped the whole party.` : `${esc(raid.boss)} has fallen. The heroes will tell this story for years.`}</p>${stats}${goldBox}
+      <div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Play again</button><button class="btn" data-act="party">Change heroes</button><button class="btn" data-act="market">Market</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+    el.onclick = e => {
+      const a = e.target.closest('[data-act]'); if (!a) return;
+      if (a.dataset.act === 'retry') return U.battle(JSON.parse(JSON.stringify(cfgLast)));
+      if (a.dataset.act === 'party') return U.setup();
+      if (a.dataset.act === 'market') return U.market();
+      if (a.dataset.act === 'title') return U.title();
+    };
+  }
   U._view = view;
+})(globalThis.RB);
+
+/* RAIDBOUND — online co-op (#29): lobby codes + a lockstep relay.
+   Every computer runs the same game with the same seed; the server only orders commands. */
+(function (RB) {
+  const U = RB.UI, H = RB.HEROES, R = RB.RAIDS;
+  const { $, $$, esc } = U;
+  const save = U.save;
+  RB.NET_URL = RB.NET_URL || 'wss://raidbound-lobby.onrender.com';
+  const HTTP_URL = () => RB.NET_URL.replace(/^ws/, 'http');
+  const S = { ws: null, id: null, code: null, lobby: null, status: '', err: '', name: '', mySeat: { hero: 'aldric', deckMode: 'starter' }, net: null, computing: false };
+  try { const k = JSON.parse(sessionStorage.getItem('raidbound.online') || 'null'); if (k) { S.id = k.id; S.code = k.code; } } catch (e) { }
+  const remember = () => { try { sessionStorage.setItem('raidbound.online', JSON.stringify({ id: S.id, code: S.code })); } catch (e) { } };
+  const forget = () => { try { sessionStorage.removeItem('raidbound.online'); } catch (e) { } S.id = null; S.code = null; };
+  S.name = save.netName || 'Adventurer';
+
+  /* ---------- connection ---------- */
+  function connect(first) {
+    return new Promise((resolve, reject) => {
+      if (S.ws && S.ws.readyState === 1) return resolve();
+      setStatus('Waking the game server… (the free server naps when nobody is playing; this can take up to a minute)');
+      // a plain web request wakes a sleeping free server faster than a socket attempt
+      try { fetch(HTTP_URL(), { mode: 'no-cors' }).catch(() => { }); } catch (e) { }
+      let tries = 0;
+      const open = () => {
+        const ws = new WebSocket(RB.NET_URL);
+        let opened = false;
+        ws.onopen = () => { opened = true; S.ws = ws; setStatus(''); ws.send(JSON.stringify(first)); resolve(); };
+        ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } onMsg(m); };
+        ws.onclose = () => {
+          if (S.ws === ws) S.ws = null;
+          if (!opened) { if (++tries < 14) return setTimeout(open, 5000); setStatus(''); return reject(new Error('Could not reach the game server. Check your internet and try again.')); }
+          if (S.net && !S.net.closed) { U.toast('Connection lost — reconnecting…'); setTimeout(() => connect({ t: 'join', code: S.code, id: S.id }).catch(() => U.toast('Could not reconnect. Your hero is now played by the AI.')), 2000); }
+        };
+      };
+      open();
+    });
+  }
+  const sendRaw = m => { if (S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify(m)); };
+  setInterval(() => sendRaw({ t: 'ping' }), 25000); // keeps the free server awake during a raid
+  function setStatus(t) { S.status = t; const el = $('#online .netstatus'); if (el) el.textContent = t; }
+
+  function onMsg(m) {
+    if (m.t === 'welcome') { S.id = m.id; S.code = m.code; S.rejoining = !!m.rejoin; remember(); return; }
+    if (m.t === 'error') { S.err = m.why; U.toast(m.why); if (/removed you/.test(m.why)) { forget(); } return draw(); }
+    if (m.t === 'lobby') {
+      const key = m.raid + '|' + m.players.length, changed = S.lobbyKey && S.lobbyKey !== key && !m.started;
+      S.lobbyKey = key; S.lobby = m;
+      if (changed && S.mySeat.deckMode === 'auto') sendSeat(); // auto decks are tuned to the raid and party size
+      if (!S.net) draw(); return;
+    }
+    if (m.t === 'start') return startGame(m.cfg);
+    if (m.t === 'cmd') { if (S.net) S.net.push(m); return; }
+    if (m.t === 'caughtup') { if (S.net) S.net.catchUp(m.seq); return; }
+  }
+
+  /* ---------- the link handed to the battle screen ---------- */
+  function makeNet(cfg) {
+    const queue = [], waiters = [];
+    let applied = 0, upTo = -1, handlers = null, started = false, waitEl = null, pumping = false;
+    const net = {
+      id: S.id, closed: false, replaying: false,
+      mine: idx => cfg.party[idx] && cfg.party[idx].owner === S.id,
+      send: c => sendRaw({ t: 'cmd', c }),
+      push(m) {
+        if (m.seq < applied + queue.length) return; // already have it (rejoin replay)
+        queue.push(m);
+        if (waiters.length) waiters.shift()(queue.shift());
+        else pump();
+      },
+      next() { return new Promise(res => { if (queue.length) { applied++; res(queue.shift()); } else waiters.push(m => { applied++; res(m); }); }); },
+      catchUp(seq) { upTo = seq; check(); },
+      attach(h) { handlers = h; },
+      ready() { started = true; pump(); },
+      wait(text) {
+        if (!text) { if (waitEl) waitEl.remove(); waitEl = null; return; }
+        if (!waitEl) { waitEl = document.createElement('div'); waitEl.className = 'netwait'; document.body.appendChild(waitEl); }
+        waitEl.innerHTML = text;
+      },
+      leave() { net.closed = true; S.net = null; forget(); try { S.ws && S.ws.close(); } catch (e) { } },
+    };
+    function check() { if (net.replaying && upTo >= 0 && applied >= upTo) { net.replaying = false; U.toast('You\'re back in the raid.'); } }
+    async function pump() {
+      if (pumping || !started || !handlers) return;
+      pumping = true;
+      while (queue.length && !waiters.length) {
+        const m = await net.next();
+        if (m.c.t === 'ans') { check(); continue; } // stray answer (already handled)
+        await handlers.apply(m.c, m.from === S.id);
+        check();
+      }
+      pumping = false;
+      check();
+    }
+    return net;
+  }
+
+  function startGame(cfg) {
+    // every computer builds the identical game from this config
+    cfg.party.forEach(s => { s.deck = s.deck.map(id => ({ id, holo: false })); });
+    cfg.settings = { autoDefend: true, pauseForInstants: true };
+    if (S.net) S.net.closed = true;
+    S.net = makeNet(cfg);
+    if (S.rejoining) S.net.replaying = true;
+    S.rejoining = false;
+    U.battle(cfg, S.net);
+  }
+
+  /* ---------- screens ---------- */
+  U.online = function (opts) {
+    opts = opts || {};
+    if (opts.join) S.joinCode = opts.join;
+    if (S.net && S.net.closed) S.net = null;
+    S.err = '';
+    draw();
+    // came back to an open lobby?
+    if (!S.ws && S.code && S.id && !S.lobby) connect({ t: 'join', code: S.code, id: S.id }).catch(e => { forget(); S.err = e.message; draw(); });
+  };
+  function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
+  function draw() {
+    if (S.net) return;
+    const L = S.lobby;
+    let body;
+    if (!L) {
+      body = `<p class="lede">Raid together with friends on their own computers. One of you creates a raid and shares the code; everyone else types it in. Each player controls their own hero. Up to 4 heroes.</p>
+        <div class="netform"><label>Your name <input id="netname" maxlength="24" value="${esc(S.name)}"></label></div>
+        <div class="netcols"><div class="netbox"><h3 class="sec">Host a raid</h3><p>Get a code to share with your friends.</p><button class="btn primary" data-act="create">Create a raid</button></div>
+        <div class="netbox"><h3 class="sec">Join a raid</h3><p>Type the code your friend shared.</p><input id="netcode" class="codein" maxlength="5" placeholder="ABCDE" value="${esc(S.joinCode || '')}"><button class="btn primary" data-act="join">Join</button></div></div>`;
+    } else {
+      const me = L.players.find(p => p.id === S.id) || {}, host = L.host === S.id;
+      const link = location.protocol.startsWith('http') ? `${location.origin}${location.pathname}?join=${L.code}` : '';
+      const rows = L.players.map(p => { const h = H[p.hero] || H.aldric; return `<div class="netp ${p.id === S.id ? 'me' : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div><div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('');
+      const pick = heroesOpen().map(h => `<button class="${h.id === S.mySeat.hero ? 'on' : ''}" data-hero="${h.id}" title="${esc(h.name)}"><img alt="" src="${U.cardArt(h.id)}"><span>${esc(h.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[h.cls].name}</span></button>`).join('');
+      const raids = Object.values(R).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${host ? '' : 'disabled'}>${esc(r.short)}</button>`).join('');
+      const allReady = L.players.every(p => p.ready);
+      body = `<div class="codebar"><div><div class="sub">Raid code</div><div class="bigcode">${L.code}</div></div><button class="btn" data-act="copy">Copy code</button>${link ? `<button class="btn ghost" data-act="copylink">Copy invite link</button>` : ''}<span class="sp"></span><button class="btn ghost small" data-act="leave">Leave lobby</button></div>
+        <p class="lede">Send the code to your friends. When everyone has picked a hero, the host starts the raid.</p>
+        <div class="netcols"><div><h3 class="sec">Party (${L.players.length}/4)</h3><div class="netplayers">${rows}</div>
+          <h3 class="sec">Raid</h3><div class="filters">${raids}</div><div class="filters"><button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${host ? '' : 'disabled'}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${host ? '' : 'disabled'}>Heroic</button></div>
+          ${host ? `<button class="btn primary" data-act="start" ${allReady ? '' : 'disabled'}>${allReady ? 'Start the raid' : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the raid.</p>`}</div>
+        <div><h3 class="sec">Your hero</h3><div class="heropick">${pick}</div>
+          <div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>
+          <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
+    }
+    const el = U.show('online', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Play online</h2><span class="sp"></span></div>
+      ${body}<p class="netstatus">${esc(S.status)}</p>${S.err ? `<p class="neterr">${esc(S.err)}</p>` : ''}
+      <p class="sub" style="margin-top:2rem">Good to know: the online server runs on a free plan, so the first connection of the day can take up to a minute. If a friend drops out mid-raid, the AI plays their hero until they come back with the same code. Online play needs the game opened from the website or the downloaded file — it can't connect from inside the Claude preview.</p></div>`, true);
+    el.onclick = onClick;
+  }
+  async function sendSeat() {
+    const L = S.lobby; if (!L) return;
+    const hid = S.mySeat.hero, n = Math.max(1, L.players.length);
+    let deck;
+    if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
+    else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
+    else deck = RB.buildDeck(hid, save.owned, n);
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, pet: save.sel.pet || null, name: S.name });
+  }
+  async function onClick(e) {
+    const t = e.target, a = t.closest('[data-act]');
+    const nameIn = $('#netname'); if (nameIn) { S.name = nameIn.value.trim() || 'Adventurer'; save.netName = S.name; U.persist(); }
+    const hb = t.closest('[data-hero]'); if (hb) { S.mySeat.hero = hb.dataset.hero; draw(); return sendSeat(); }
+    const db = t.closest('[data-deck]'); if (db) { S.mySeat.deckMode = db.dataset.deck; draw(); return sendSeat(); }
+    const rb = t.closest('[data-raid]'); if (rb) { sendRaw({ t: 'settings', raid: rb.dataset.raid }); setTimeout(sendSeat, 300); return; }
+    const df = t.closest('[data-diff]'); if (df) return sendRaw({ t: 'settings', diff: df.dataset.diff });
+    const kb = t.closest('[data-kick]'); if (kb) return sendRaw({ t: 'kick', id: kb.dataset.kick });
+    if (!a) return;
+    switch (a.dataset.act) {
+      case 'back': return U.title();
+      case 'create': S.err = ''; forget(); try { await connect({ t: 'create', name: S.name, hero: S.mySeat.hero }); setTimeout(sendSeat, 600); } catch (x) { S.err = x.message; draw(); } return;
+      case 'join': {
+        const code = ($('#netcode').value || '').toUpperCase().trim(); if (code.length !== 5) return U.toast('Raid codes have 5 letters.');
+        S.err = ''; forget(); S.joinCode = code;
+        try { await connect({ t: 'join', code, name: S.name, hero: S.mySeat.hero }); setTimeout(sendSeat, 600); } catch (x) { S.err = x.message; draw(); } return;
+      }
+      case 'copy': try { await navigator.clipboard.writeText(S.lobby.code); U.toast('Code copied — paste it to your friends.'); } catch (x) { U.toast('Your code is ' + S.lobby.code); } return;
+      case 'copylink': try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}?join=${S.lobby.code}`); U.toast('Invite link copied.'); } catch (x) { U.toast('Could not copy the link.'); } return;
+      case 'leave': S.lobby = null; forget(); try { S.ws && S.ws.close(); } catch (x) { } S.ws = null; return draw();
+      case 'start': return sendRaw({ t: 'start' });
+    }
+  }
+  // invite links: ...?join=ABCDE opens the online screen with the code filled in
+  if (typeof location !== 'undefined') { const m = /[?&]join=([A-Za-z0-9]{5})/.exec(location.search); if (m) setTimeout(() => U.online({ join: m[1].toUpperCase() }), 400); }
 })(globalThis.RB);
 
 /* RAIDBOUND — treasure packs, holofoils, loot cards; app boot */
@@ -6106,8 +6671,9 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     if (heroic) { const plain = out.find(x => !x.holo); if (plain) plain.holo = true; }
     return out;
   };
-  U.openPack = function (raidId, heroic, packEl) {
-    const cards = U.rollPack(raidId, heroic);
+  U.openPack = function (raidId, heroic, packEl, given) {
+    const cards = given || U.rollPack(raidId, heroic);
+    const booster = !!given;
     // add to collection right away so nothing is lost if the page closes
     for (const c of cards) {
       save.owned[c.id] = (save.owned[c.id] || 0) + 1;
@@ -6118,10 +6684,10 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     U.sfx.treasure();
     packEl.classList.add('tear');
     setTimeout(() => {
-      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)">Treasure</h2><p class="tagline">Click each card to reveal it.</p>
+      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)">${booster ? 'Frontier booster' : 'Treasure'}</h2><p class="tagline">Click each card to reveal it.</p>
         <div class="packcards">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${i * 0.12}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
         <div id="lootnote"></div>
-        <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button><button class="btn primary" data-act="again">Raid again</button><button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+        <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">Raid again</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
       $$('.packcards .card', el).forEach(c => c.style.setProperty('--cw', '100%'));
       $$('.packcards .card', el).forEach(c => { c.style.width = '100%'; });
       const flip = f => { if (f.classList.contains('on')) return; f.classList.add('on'); U.sfx.flip(); const c = cards[+f.dataset.i]; if (C[c.id].rarity === 'e') setTimeout(() => U.sfx.quest(), 250); if (C[c.id].loot) showLoot(); };
@@ -6131,6 +6697,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         const a = e.target.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'all') return $$('.flip', el).forEach((f, i) => setTimeout(() => flip(f), i * 180));
         if (a.dataset.act === 'again') return U.setup();
+        if (a.dataset.act === 'market') return U.market();
         if (a.dataset.act === 'col') return U.collection();
         if (a.dataset.act === 'title') return U.title();
       };
@@ -6138,6 +6705,39 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       el.onmouseover = e => { const f = e.target.closest('.flip.on'); if (f && innerWidth > 900) U.preview(U.cardHTML(cards[+f.dataset.i].id, { holo: cards[+f.dataset.i].holo }), f); };
       el.onmouseout = e => { if (e.target.closest('.flip')) U.hidePreview(); };
     }, 550);
+  };
+
+  /* ---------- the Market: spend raid gold on booster packs and heroes (#26, #27) ---------- */
+  const BOOSTER_ART = { s: 'sea', img: false, p: 'embers', pn: 20, L: [['glow', { x: 150, y: 110, r: 110, c: '#ffd27a', op: 0.45 }], ['obj', { t: 'chest', x: 150, y: 170, s: 1.1 }], ['obj', { t: 'coin', x: 86, y: 200, s: 0.5 }], ['obj', { t: 'coin', x: 220, y: 206, s: 0.42 }], ['obj', { t: 'scroll', x: 236, y: 92, s: 0.5 }], ['fx', { t: 'sparkle', x: 150, y: 120 }]] };
+  U.market = function () {
+    const price = RB.PACK_PRICE;
+    const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
+    const heroes = RB.UNLOCK_HEROES.map(id => {
+      const h = RB.HEROES[id], open = U.heroOpen(id), buy = h.unlock.how.startsWith('gold:') ? +h.unlock.how.slice(5) : 0;
+      return `<div class="mhero ${open ? 'open' : ''}"><img alt="" src="${U.cardArt(id)}"><div><h4>${esc(h.name)}</h4><div class="sub">${RB.FACTIONS[h.fac].short} ${esc(h.race)} ${RB.CLASSES[h.cls].name} · ${h.hp} health</div><p><b>${esc(h.power.name)}:</b> ${esc(h.power.text)}</p>
+        ${open ? '<span class="chip ok">Unlocked — pick them in raid setup</span>' : buy ? `<button class="btn small ${save.gold >= buy ? 'primary' : ''}" data-buyhero="${id}" ${save.gold >= buy ? '' : 'disabled'}>Buy for ${buy} gold</button>` : `<span class="chip">To unlock: ${esc(h.unlock.text)}</span>`}</div></div>`;
+    }).join('');
+    const el = U.show('market', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Market</h2><span class="sp"></span><span class="goldchip big">${save.gold} gold</span></div>
+      <p class="lede">Every raid pays you gold, win or lose. You get more for winning, for damage dealt to the boss, for each minion destroyed and for healing your party. Heroic raids pay 25% extra.</p>
+      <h3 class="sec">Frontier booster packs</h3>
+      <div class="boosterrow"><div class="pack booster" data-act="buy" tabindex="0" role="button" aria-label="Buy a booster pack for ${price} gold"><div class="pt">Frontier booster</div><img alt="" src="${U.art(BOOSTER_ART, 'booster')}"><div class="pb">5 cards · ${price} gold</div></div>
+        <div><p>Each pack holds <b>5 cards</b>: at least two from the new <b>Frontier</b> set (one is uncommon or better), with regular cards mixed in. Some come as holofoils.</p><p>You have found <b>${have} of ${fr.length}</b> Frontier cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
+        <button class="btn primary" data-act="buy" ${save.gold >= price ? '' : 'disabled'}>Buy a pack — ${price} gold</button>${save.gold < price ? `<p style="color:var(--muted)">You need ${price - save.gold} more gold. Go raid!</p>` : ''}</div></div>
+      <h3 class="sec">Heroes for hire</h3><p class="lede">Six new heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p>
+      <div class="mheroes">${heroes}</div></div>`);
+    el.onclick = e => {
+      const a = e.target.closest('[data-act]'), bh = e.target.closest('[data-buyhero]');
+      if (bh) { const id = bh.dataset.buyhero, cost = +RB.HEROES[id].unlock.how.slice(5); if (save.gold < cost) return U.toast('Not enough gold yet.'); save.gold -= cost; save.heroes.push(id); U.persist(); U.sfx.quest(); U.toast(`${RB.HEROES[id].name} joins you! Pick them in raid setup.`); return U.market(); }
+      if (!a) return;
+      if (a.dataset.act === 'back') return U.title();
+      if (a.dataset.act === 'buy') {
+        if (save.gold < price) return U.toast(`A pack costs ${price} gold. You have ${save.gold}.`);
+        save.gold -= price; U.persist();
+        const packEl = $('.pack.booster', el);
+        return U.openPack(null, false, packEl, RB.rollBooster());
+      }
+    };
+    el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'buy') e.target.click(); };
   };
 
   /* ---------- boot ---------- */

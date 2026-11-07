@@ -26,8 +26,8 @@
     const raids = Object.values(R).map(r => `<button class="traid" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="tbody"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div>${(save.wins[r.id] || 0) ? `<div class="done">Conquered ${save.wins[r.id]}×</div>` : ''}</div></button>`).join('');
     const el = U.show('title', `<img class="bgart" alt="" src="${bg}"><div class="veil"></div>
       <div class="center"><h1 class="logo">Raidbound</h1><p class="tagline">Gather your party. Build your deck. Bring down the raid boss.</p>
-      <div class="menu"><button class="btn primary" data-go="setup">Begin a raid</button>
-      <div class="row"><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
+      <div class="menu"><div class="row"><button class="btn primary" data-go="setup">Begin a raid</button><button class="btn primary" data-go="online">Play online</button></div>
+      <div class="row"><button class="btn" data-go="market">Market <span class="goldchip">${save.gold}</span></button><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
       <div class="traids">${raids}</div>
       ${wins ? `<div class="wins">Raids conquered: ${wins} · Cards collected: ${Object.keys(save.owned).filter(k => save.owned[k] > 0).length}</div>` : ''}</div>`);
@@ -46,27 +46,29 @@
       const h = H[s.hero];
       const deckOk = !s.custom || (save.decks[s.hero] && save.decks[s.hero].length === RB.DECK_SIZE);
       return `<div class="seat" data-seat="${i}"><header><strong>Hero ${i + 1}</strong>${setup.seats.length > 1 ? `<button class="btn small ghost" data-act="rm" aria-label="Remove hero ${i + 1}">Remove</button>` : ''}</header>
-        <div class="heropick">${Object.values(H).map(x => `<button class="${x.id === s.hero ? 'on' : ''}" data-hero="${x.id}" title="${esc(x.name)}"><img alt="" src="${U.cardArt(x.id)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`).join('')}</div>
+        <div class="heropick">${Object.values(H).map(x => { const open = U.heroOpen(x.id); return `<button class="${x.id === s.hero ? 'on' : ''} ${open ? '' : 'locked'}" data-hero="${x.id}" title="${esc(open ? x.name : 'Locked: ' + x.unlock.text)}"><img alt="" src="${U.cardArt(x.id)}">${open ? '' : '<i class="lockicon" aria-hidden="true"></i>'}<span>${open ? esc(x.name.replace(/^Ser /, '').split(' ')[0]) + ' · ' + RB.CLASSES[x.cls].name : 'Locked'}</span></button>`; }).join('')}</div>
         <div class="heroinfo">${heroBlurb(h)}</div>
         <div class="opts"><span class="seg"><button class="${!s.custom && !s.autoD ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.autoD ? 'on' : ''}" data-act="autodeck" title="Builds the strongest deck for this hero against this raid from the cards you own">Auto deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>${s.autoD ? `<div class="opts" style="color:var(--muted);font-size:.85rem">Auto deck: tuned for ${esc(R[setup.raid].short)} with ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''}. It's rebuilt when you change the raid or party.</div>` : ''}
-        <div class="opts"><label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
+        <div class="opts">${setup.asBoss ? '<span style="color:var(--muted);font-size:.85rem">The AI plays this hero against you.</span>' : `<label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>`}${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
     const el = U.show('setup', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
       <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health and strikes 1 harder. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
-      <h3 class="sec">Your party</h3><p class="lede">Play solo or bring up to four heroes. You take every hero's turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.</p>
+      <div class="difficulty"><span class="seg"><button class="${!setup.asBoss ? 'on' : ''}" data-side="heroes">Play the heroes</button><button class="${setup.asBoss ? 'on' : ''}" data-side="boss">Play the raid boss</button></span><span style="color:var(--muted);font-size:.92rem">${setup.asBoss ? `You are ${esc(R[setup.raid].boss)}. Each turn you hold a hand of boss cards and pick which to play, then choose who your minions and your strike attack. The AI plays the heroes.` : 'You lead the heroes against the AI-controlled boss.'}</span></div>
+      <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
       <div class="seats">${seats}</div>
-      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}</span><button class="btn primary" data-act="go">Enter the raid</button></div></div>`, keep === true);
+      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
       const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(true); }
       const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(true); }
+      const sd = t.closest('[data-side]'); if (sd) { setup.asBoss = sd.dataset.side === 'boss'; return U.setup(true); }
       const seatEl = t.closest('[data-seat]'); const seat = seatEl ? setup.seats[+seatEl.dataset.seat] : null;
-      const hb = t.closest('[data-hero]'); if (hb && seat) { seat.hero = hb.dataset.hero; return U.setup(true); }
+      const hb = t.closest('[data-hero]'); if (hb && seat) { const hx = H[hb.dataset.hero]; if (!U.heroOpen(hx.id)) return U.toast(`${hx.name} is locked. To unlock: ${hx.unlock.text}.`); seat.hero = hb.dataset.hero; return U.setup(true); }
       const a = t.closest('[data-act]'); if (!a) return;
       switch (a.dataset.act) {
         case 'back': return U.title();
-        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(true); }
+        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h) && U.heroOpen(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(true); }
         case 'rm': setup.seats.splice(+seatEl.dataset.seat, 1); return U.setup(true);
         case 'starter': seat.custom = false; seat.autoD = false; return U.setup(true);
         case 'autodeck': seat.custom = false; seat.autoD = true; return U.setup(true);
@@ -88,7 +90,7 @@
       const deck = ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; });
       return { hero: s.hero, auto: s.auto, deck, name: 'Hero ' + (i + 1), pet: i === 0 ? save.sel.pet : null };
     });
-    U.battle({ raid: setup.raid, difficulty: setup.diff, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
+    U.battle({ raid: setup.raid, difficulty: setup.diff, party, bossPlayer: !!setup.asBoss, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };
 
   /* ---------------- auto deck (#23) ---------------- */
@@ -151,7 +153,7 @@
   /* ---------------- collection ---------------- */
   U.collection = function () {
     let set = 'all';
-    const sets = { all: 'All cards', core: 'Core set', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
+    const sets = { all: 'All cards', core: 'Core set', frontier: 'Frontier boosters', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
     function draw() {
       const list = Object.values(C).filter(d => set === 'all' || d.set === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
       const total = Object.values(C).length, have = Object.values(C).filter(d => save.owned[d.id] > 0).length;
@@ -159,7 +161,7 @@
       const el = U.show('collection', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters">${Object.entries(sets).map(([k, v]) => `<button class="btn small ${set === k ? '' : 'ghost'}" data-set="${k}">${v}</button>`).join('')}</div>
         ${save.loot.length && (set === 'all' || set === 'loot') ? `<h3 class="sec">Your loot codes</h3><div class="cosgrid">${lootRows}</div><h3 class="sec">Cards</h3>` : ''}
-        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 && d.set !== 'core' ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
+        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 && d.set !== 'core' ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.set === 'frontier' ? 'Found in Frontier booster packs (Market)' : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });

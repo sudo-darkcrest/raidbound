@@ -6,12 +6,13 @@
   let E = null, root = null, cfgLast = null;
   const view = { mode: null, lock: 0, dirty: false, raf: 0, busy: false, focus: 0, hpGhost: null };
   const speed = () => save.settings.speed || 1;
-  const wait = ms => new Promise(r => setTimeout(r, ms * speed()));
+  const wait = ms => new Promise(r => setTimeout(r, (net && net.replaying) ? 0 : ms * speed()));
 
   /* ---------- rendering ---------- */
   function schedule() { if (view.lock > 0) { view.dirty = true; return; } if (!view.raf) view.raf = requestAnimationFrame(() => { view.raf = 0; render(); }); }
   function flush() { if (view.raf) { cancelAnimationFrame(view.raf); view.raf = 0; } render(); view.dirty = false; }
-  const human = p => p && !p.auto;
+  let net = null; // online co-op link (#29), null when playing on one computer
+  const human = p => p && !p.auto && (!net || net.mine(p.idx));
   const myTurn = () => E && E.g.phase === 'main' && human(E.g.players[E.g.turn]) && !view.busy && !E.g.over;
   const fp = () => E.g.players[view.focus] || E.g.players[0];
 
@@ -75,7 +76,7 @@
     // hand
     const n = p.hand.length, mid = (n - 1) / 2;
     const hand = p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; return `<div class="hc ${playable ? 'play' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
-    const status = g.over ? '' : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? `${esc(E.pdef(active).name)} (AI) is acting…` : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
+    const status = g.over ? '' : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
     // roster
     const roster = g.players.map(q => {
       const qd = E.pdef(q), pct = Math.max(0, E.heroHp(q)) / E.heroMax(q) * 100;
@@ -96,7 +97,7 @@
         <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
       <div class="handbar"><div class="hand ${p === active && human(p) ? '' : 'other'}">${hand}</div>
-        <div class="turnctl"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
+        <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
     <div class="side"><div class="roster"><h5>Party</h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`;
@@ -127,6 +128,7 @@
     return wait(ms).then(() => o.remove());
   }
   async function anim(type, d) {
+    if (net && net.replaying) { schedule(); return; }
     if (!root) return;
     if (type !== 'death' && type !== 'heroDeath') flush();
     view.lock++;
@@ -172,11 +174,23 @@
   }
 
   /* ---------- prompts (engine ask hook) ---------- */
-  async function ask(kind, d) {
+  async function ask(kind, d, local) {
+    if (net && !local) return netAsk(kind, d);
     flush();
     if (kind === 'scout') {
       const v = await U.dialog(`<h3>Scouting report</h3><p>The next card in ${esc(E.raid.short)}'s deck is revealed.</p><div class="cards">${U.cardHTML(d.id)}</div><div class="acts"><button class="btn ghost" data-v="top">Leave it on top</button><button class="btn primary" data-v="bottom">Send it to the bottom</button></div>`);
       return v;
+    }
+    if (kind === 'bossPick') {
+      const v = await U.dialog(`<h3>${esc(E.raid.short)}: play a card</h3><p>You are the raid boss. Choose a card from your hand to play — <b>${d.left} more</b> this turn. Cards you don't play stay in your hand for next turn.</p>
+        <div class="cards">${d.hand.map((id, i) => `<div class="pick" data-v="${i}">${U.cardHTML(id)}</div>`).join('')}</div>
+        <div class="acts"><button class="btn ghost" data-v="0">Play the first card</button></div>`, { dismiss: '0' });
+      return v == null ? 0 : +v;
+    }
+    if (kind === 'bossTarget') {
+      const opts = d.options.map((t, i) => { const hero = t.t === 'hero'; const art = hero ? U.cardArt(t.p.heroId) : U.cardArt(t.a.id); return `<button class="tpick" data-v="${i}"><img alt="" src="${art}"><b>${esc(E.nameOf(t))}</b><span>${hero ? 'Hero' : 'Ally'} · ${E.hpOf(t)}/${E.maxHpOf(t)} health${E.atkOf(t) ? ` · hits back for ${hero ? E.heroAtk(t.p) : E.atkOf(t)}+` : ''}</span></button>`; }).join('');
+      const v = await U.dialog(`<h3>${esc(d.from)} attacks (${d.atk} damage)</h3><p>${d.strike ? 'Your boss strike' : 'Your minion'} is ready. Choose who to hit. A ready Protector ally may step in front of its hero.</p><div class="tpicks">${opts}</div><div class="acts"><button class="btn ghost" data-v="auto">Let it choose</button></div>`, { dismiss: 'auto' });
+      return v == null || v === 'auto' ? null : +v;
     }
     if (kind === 'strikeBack') {
       const w = C[d.p.weapon.c.id];
@@ -218,7 +232,78 @@
     return null;
   }
 
-  /* ---------- player actions ---------- */
+  /* ---------- player actions (local, or sent through the online relay) ---------- */
+  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation'];
+  async function doAction(name, args) {
+    const p = args[0];
+    if (name === 'end') return E.endHeroTurn();
+    if (name === 'auto') { await RB.AI.playTurn(E, p); if (!E.g.over && E.g.phase === 'main' && E.g.players[E.g.turn] === p) await E.endHeroTurn(); return; }
+    if (ACTS.includes(name)) return E[name](...args);
+  }
+  function doAct(name, ...args) {
+    if (!net) return run(() => doAction(name, args));
+    if (view.busy) return;
+    view.busy = true; view.mode = null; U.closePop(); U.hidePreview(); render();
+    net.send({ t: 'act', name, args: ser(args) });
+  }
+  const ser = args => args.map(a => a == null ? null : typeof a === 'string' ? { S: a } : (a.hand && a.hero) ? { P: a.idx } : a.t ? { R: E.refId(a) } : (a.c && a.c.uid && !a.id) ? { C: a.c.uid } : a.uid ? { U: a.uid } : null);
+  function findRef(ref) {
+    const g = E.g, all = [...E.enemies(), ...g.players.map(q => E.heroT(q)), ...g.players.flatMap(q => q.allies.map(a => E.T.ally(q, a)))];
+    return all.find(t => E.refId(t) === ref) || null;
+  }
+  function deser(list) {
+    const p0 = list[0] && list[0].P != null ? E.g.players[list[0].P] : null;
+    return list.map(a => {
+      if (a == null) return null;
+      if (a.S != null) return a.S;
+      if (a.P != null) return E.g.players[a.P];
+      if (a.R != null) return findRef(a.R);
+      if (a.C != null) return p0 && (p0.items.find(e => e.c.uid === a.C) || p0.res.find(r => r.c.uid === a.C) || (p0.weapon && p0.weapon.c.uid === a.C ? p0.weapon : null));
+      if (a.U != null) return p0 && (p0.hand.find(c => c.uid === a.U) || p0.allies.find(x => x.uid === a.U));
+      return null;
+    });
+  }
+  // apply one ordered command from the relay (every computer does the same, in the same order)
+  async function applyNet(c, fromMe) {
+    view.busy = true; render();
+    try {
+      if (c.t === 'act') { const r = await doAction(c.name, deser(c.args)); if (fromMe && r && r.ok === false && r.why) U.toast(r.why); }
+      else if (c.t === 'ai' || c.t === 'human') await seatControl(c);
+    } catch (err) { console.error(err); U.toast('Sync problem: ' + err.message); }
+    view.busy = false; afterAction();
+  }
+  async function seatControl(c) {
+    const p = E.g.players[c.seat]; if (!p) return;
+    if (c.t === 'human') { p.auto = false; U.toast(`${E.g.cfg.party[p.idx].name} is back.`); return; }
+    p.auto = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
+    if (E.g.phase === 'main' && E.g.turn === p.idx && !E.g.over) await doAction('auto', [p]);
+  }
+  async function netAnswer(seatIdx) {
+    for (;;) {
+      const m = await net.next();
+      if (m.c.t === 'ans') return m.c.v;
+      if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) p.auto = true; if (m.c.seat === seatIdx) return null; }
+      if (m.c.t === 'human') { const p = E.g.players[m.c.seat]; if (p) p.auto = false; }
+    }
+  }
+  async function netAsk(kind, d) {
+    if (kind === 'scout') {
+      if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v }); }
+      else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is scouting…`);
+      const v = await netAnswer(d.p.idx); net.wait(null); return v || 'bottom';
+    }
+    if (kind === 'instant') {
+      for (const q of d.players) {
+        if (q.auto) continue;
+        if (net.mine(q.idx) && !net.replaying) { const r = await ask('instant', Object.assign({}, d, { players: [q] }), true); net.send({ t: 'ans', v: r ? { uid: r.inst.uid, R: r.target ? E.refId(r.target) : null } : null }); }
+        else net.wait(`Waiting for ${esc(E.g.cfg.party[q.idx].name)} to answer ${esc(d.card.name)}…`);
+        const v = await netAnswer(q.idx); net.wait(null);
+        if (v) { const inst = q.hand.find(c => c.uid === v.uid); if (inst) return { p: q, inst, target: v.R ? findRef(v.R) : null }; }
+      }
+      return null;
+    }
+    return null;
+  }
   async function run(fn) {
     if (view.busy) return;
     view.busy = true; view.mode = null; U.closePop(); U.hidePreview(); render();
@@ -243,12 +328,12 @@
     const items = [];
     const chk = E.canPlay(p, inst);
     if (d.type === 'quest' || d.type === 'location') {
-      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : ' (quest)'}`, disabled: p.resPlayed, go: () => run(() => E.playResource(p, inst)) });
+      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : ' (quest)'}`, disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
     } else {
       items.push({ label: `Play ${esc(d.name)} · ${d.cost} ◆`, disabled: !chk.ok, go: () => playWithTarget(p, inst) });
       if (!chk.ok) items.push({ why: chk.why });
-      items.push({ label: 'Use as a resource', disabled: p.resPlayed, go: () => run(() => E.playResource(p, inst)) });
+      items.push({ label: 'Use as a resource', disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
     }
     anchor.classList.add('open');
@@ -257,16 +342,16 @@
   function playWithTarget(p, inst) {
     const d = C[inst.id];
     const tk = E.needsTarget(inst);
-    if (!tk) return run(() => E.playCard(p, inst, null));
+    if (!tk) return doAct('playCard', p, inst, null);
     const friendly = ['friendly', 'friendlyHero', 'ally', 'deadHero'].includes(tk);
-    if (tk === 'deadHero') { const ts = E.targetsFor(tk, p); return run(() => E.playCard(p, inst, ts[0])); }
-    startTargeting(`${d.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(tk, p), friendly, t => run(() => E.playCard(p, inst, t)));
+    if (tk === 'deadHero') { const ts = E.targetsFor(tk, p); return doAct('playCard', p, inst, ts[0]); }
+    startTargeting(`${d.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(tk, p), friendly, t => doAct('playCard', p, inst, t));
   }
   function heroActions(p, anchor) {
     const items = [];
     if (E.canAttackWith(p, 'hero')) {
       const useW = p.weapon && !p.weapon.ex && E.available(p) >= C[p.weapon.c.id].strike;
-      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${C[p.weapon.c.id].strike}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => run(() => E.attack(p, 'hero', t))) });
+      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${C[p.weapon.c.id].strike}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
     } else if (!p.hero.ex) items.push({ why: p.weapon ? (p.weapon.ex ? 'Your weapon has already been used this round.' : `You need ${C[p.weapon.c.id].strike} ready resource${C[p.weapon.c.id].strike === 1 ? '' : 's'} to strike with your weapon.`) : 'Your hero needs a weapon (or an attack bonus) to attack.' });
     else items.push({ why: 'Your hero has already attacked this turn.' });
     if (!p.hero.powerUsed && !p.hero.master) items.push({ label: `Use ${esc(HE[p.heroId].power.name)} (once per game)`, go: () => usePower(p) });
@@ -276,16 +361,16 @@
     const pw = HE[p.heroId].power;
     if (pw.target && pw.target !== 'none') {
       const friendly = pw.target.startsWith('friendly');
-      startTargeting(`${pw.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(pw.target, p), friendly, t => run(() => E.usePower(p, t)));
-    } else run(() => E.usePower(p, null));
+      startTargeting(`${pw.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(pw.target, p), friendly, t => doAct('usePower', p, t));
+    } else doAct('usePower', p, null);
   }
   function itemAction(p, e, anchor) {
     const d = C[e.c.id];
     if (!d.use) return U.popover(anchor, d.name, [{ why: d.text }]);
     const ok = E.itemReady(p, e);
     const items = [{ label: `Use ${esc(d.name)}${d.use.cost ? ` (pay ${d.use.cost})` : ''}`, disabled: !ok, go: () => {
-      if (d.use.target && d.use.target !== 'none') { const friendly = d.use.target.startsWith('friendly'); startTargeting(`${d.name}: choose a target`, E.targetsFor(d.use.target, p), friendly, t => run(() => E.useItem(p, e, t))); }
-      else run(() => E.useItem(p, e, null));
+      if (d.use.target && d.use.target !== 'none') { const friendly = d.use.target.startsWith('friendly'); startTargeting(`${d.name}: choose a target`, E.targetsFor(d.use.target, p), friendly, t => doAct('useItem', p, e, t)); }
+      else doAct('useItem', p, e, null);
     } }];
     if (!ok) items.push({ why: e.ex ? 'Already used this turn.' : 'Not enough ready resources.' });
     U.popover(anchor, null, items);
@@ -295,11 +380,11 @@
     if (r.quest) {
       if (r.done) return U.popover(anchor, d.name, [{ why: 'Completed. It still counts as a resource.' }]);
       const ok = E.questReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => run(() => E.completeQuest(p, r)) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])]);
+      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])]);
     }
     if (r.loc) {
       const ok = E.locationReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => run(() => E.useLocation(p, r, t))); else run(() => E.useLocation(p, r, null)); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])]);
+      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])]);
     }
   }
   function onClick(e) {
@@ -327,8 +412,8 @@
     if (fp() !== p) { view.focus = E.g.turn; return render(); }
     if (act) {
       switch (act.dataset.act) {
-        case 'end': return run(() => E.endHeroTurn());
-        case 'auto': return run(async () => { await RB.AI.playTurn(E, p); if (!E.g.over && E.g.phase === 'main' && E.g.players[E.g.turn] === p) await E.endHeroTurn(); });
+        case 'end': return doAct('end', p);
+        case 'auto': return doAct('auto', p);
         case 'power': return usePower(p);
         case 'hero': return heroActions(p, act);
         case 'item': { const it = p.items.find(x => x.c.uid === act.dataset.gid); if (it) return itemAction(p, it, act); return; }
@@ -341,7 +426,7 @@
     const unit = t.closest('.unit[data-kind=ally]');
     if (unit) {
       const a = p.allies.find(x => x.uid === unit.dataset.ref);
-      if (a && E.canAttackWith(p, a)) return startTargeting(`${E.allyDef(a).name} attacks: choose an enemy`, E.attackTargets(), false, tg => run(() => E.attack(p, a, tg)));
+      if (a && E.canAttackWith(p, a)) return startTargeting(`${E.allyDef(a).name} attacks: choose an enemy`, E.attackTargets(), false, tg => doAct('attack', p, a, tg));
       if (a) return U.popover(unit, E.allyDef(a).name, [{ why: a.sick ? 'Just arrived — it can attack next turn.' : a.frozen ? 'Frozen solid this round.' : a.ex ? 'Already exhausted this round.' : 'This ally can\'t attack right now.' }]);
     }
   }
@@ -363,8 +448,8 @@
   }
 
   /* ---------- lifecycle ---------- */
-  U.battle = function (cfg) {
-    cfgLast = cfg;
+  U.battle = function (cfg, link) {
+    cfgLast = cfg; net = link || null;
     root = U.show('battle', '');
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
@@ -380,30 +465,57 @@
       if ((e.key === 'Enter' || e.key === ' ') && document.activeElement && document.activeElement.closest && document.activeElement.closest('#battle .hc, #battle .unit, #battle .herocard, #battle .bosscard')) { e.preventDefault(); document.activeElement.click(); }
     };
     render();
-    E.start().then(() => { view.busy = false; afterAction(); }).catch(err => { console.error(err); view.busy = false; U.toast('Error: ' + err.message); });
+    if (net) { const mine = cfg.party.findIndex(s => s.owner === net.id); if (mine >= 0) view.focus = mine; net.attach({ apply: applyNet, game: () => E }); }
+    E.start().then(() => { view.busy = false; afterAction(); if (net) net.ready(); }).catch(err => { console.error(err); view.busy = false; U.toast('Error: ' + err.message); });
   };
   async function leave() {
     const v = await U.dialog('<h3>Leave the raid?</h3><p>Your progress in this fight will be lost.</p><div class="acts"><button class="btn ghost" data-v="no">Keep fighting</button><button class="btn primary" data-v="yes">Leave</button></div>', { dismiss: 'no' });
-    if (v === 'yes') { E.g.over = 'abandon'; E = null; U.setup(); }
+    if (v === 'yes') { E.g.over = 'abandon'; E = null; if (net) { net.leave(); net = null; return U.title(); } U.setup(); }
   }
   function endScreen() {
     const g = E.g, win = g.over === 'win';
     if (g.over === 'abandon') return;
     const raid = g.raid;
+    if (g.cfg.bossPlayer) return bossEndScreen();
+    const heroesBefore = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id));
+    const gold = RB.goldFor(g, win); save.gold = (save.gold || 0) + gold.total; U.persist();
     let fresh = []; if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'heroic') save.heroicWins[raid.id] = (save.heroicWins[raid.id] || 0) + 1; U.persist(); fresh = U.checkUnlocks(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
     const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${g.stats.dmgDealt}</b>damage dealt</div><div><b>${g.stats.cardsPlayed}</b>cards played</div><div><b>${g.players.filter(p => !p.hero.dead).length}/${g.players.length}</b>heroes standing</div></div>`;
     const heroic = g.cfg.difficulty === 'heroic';
+    const newHeroes = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id) && !heroesBefore.includes(id));
+    const goldBox = `<div class="goldbox"><div class="gtitle">+${gold.total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${gold.parts.map(([k, v]) => `<span>${esc(k)} <b>+${v}</b></span>`).join('')}</div>${win ? '<div class="gnote">Open your treasure first — then visit the Market from the title screen.</div>' : '<button class="btn small" data-act="market">Spend it in the Market</button>'}</div>`
+      + (newHeroes.length ? `<div class="newvault"><b>New hero unlocked:</b> ${newHeroes.map(id => `<span><img alt="" src="${U.cardArt(id)}">${esc(RB.HEROES[id].name)}</span>`).join('')}</div>` : '');
     const el = U.show('end', win
-      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}<div class="pack" data-act="open" tabindex="0" role="button" aria-label="Open treasure pack"><div class="pt">Raid treasure</div><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="pb">${esc(raid.name)}${heroic ? ' · Heroic' : ''} · 5 cards</div></div><p style="color:var(--muted)">Click the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
-      : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}${goldBox}<div class="pack" data-act="open" tabindex="0" role="button" aria-label="Open treasure pack"><div class="pt">Raid treasure</div><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="pb">${esc(raid.name)}${heroic ? ' · Heroic' : ''} · 5 cards</div></div><p style="color:var(--muted)">Click the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
+      : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}${goldBox}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {
       const a = e.target.closest('[data-act]'); if (!a) return;
       if (a.dataset.act === 'open') return U.openPack(raid.id, heroic, a);
-      if (a.dataset.act === 'retry') return U.battle(JSON.parse(JSON.stringify(cfgLast)));
-      if (a.dataset.act === 'party') return U.setup();
+      if (a.dataset.act === 'retry') return cfgLast.online ? U.online() : U.battle(JSON.parse(JSON.stringify(cfgLast)));
+      if (a.dataset.act === 'party') return cfgLast.online ? U.online() : U.setup();
+      if (a.dataset.act === 'market') return U.market();
       if (a.dataset.act === 'title') return U.title();
     };
     el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'open') e.target.click(); };
+  }
+  function bossEndScreen() {
+    const g = E.g, raid = g.raid, bossWon = g.over === 'lose';
+    const slain = g.players.filter(p => p.hero.dead).length;
+    const parts = [['Result', bossWon ? 80 : 20], ['Heroes defeated', slain * 15], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.3)]];
+    const total = parts.reduce((s, x) => s + x[1], 0);
+    save.gold = (save.gold || 0) + total; save.bossWins = (save.bossWins || 0) + (bossWon ? 1 : 0); U.persist();
+    if (bossWon) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
+    const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${slain}/${g.players.length}</b>heroes defeated</div><div><b>${Math.max(0, E.bossHp())}</b>health left</div></div>`;
+    const goldBox = `<div class="goldbox"><div class="gtitle">+${total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${parts.map(([k, v]) => `<span>${esc(k)} <b>+${v}</b></span>`).join('')}</div></div>`;
+    const el = U.show('end', `<div class="endscreen ${bossWon ? '' : 'lose'}"><h2>${bossWon ? 'The raid is crushed' : 'The heroes prevail'}</h2><p class="tagline">${bossWon ? `As ${esc(raid.boss)}, you wiped the whole party.` : `${esc(raid.boss)} has fallen. The heroes will tell this story for years.`}</p>${stats}${goldBox}
+      <div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Play again</button><button class="btn" data-act="party">Change heroes</button><button class="btn" data-act="market">Market</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+    el.onclick = e => {
+      const a = e.target.closest('[data-act]'); if (!a) return;
+      if (a.dataset.act === 'retry') return U.battle(JSON.parse(JSON.stringify(cfgLast)));
+      if (a.dataset.act === 'party') return U.setup();
+      if (a.dataset.act === 'market') return U.market();
+      if (a.dataset.act === 'title') return U.title();
+    };
   }
   U._view = view;
 })(globalThis.RB);

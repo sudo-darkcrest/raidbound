@@ -1,5 +1,5 @@
 globalThis.RB = {};
-for (const f of ['art_photos','art_core','art_fig','art_obj','art_hero','data','engine','ai']) require('../src/'+f+'.js');
+for (const f of ['art_photos','art_core','art_fig','art_obj','art_hero','data','engine','ai','frontier']) require('../src/'+f+'.js');
 const RB = globalThis.RB;
 const heroes = Object.keys(RB.HEROES), raids = Object.keys(RB.RAIDS);
 async function run(raid, party, seed, diff) {

@@ -1,6 +1,6 @@
 // quick solo win rates: node tools/solo.js N [deckMode]   deckMode: starter | auto
 globalThis.RB = {};
-for (const f of ['art_core','art_fig','art_obj','art_hero','data','engine','ai']) require('../src/'+f+'.js');
+for (const f of ['art_core','art_fig','art_obj','art_hero','data','engine','ai','frontier']) require('../src/'+f+'.js');
 const RB = globalThis.RB;
 const N = +process.argv[2] || 20, mode = process.argv[3] || 'starter';
 (async () => {

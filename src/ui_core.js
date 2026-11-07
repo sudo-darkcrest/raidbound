@@ -9,7 +9,7 @@
 
   /* ---------- persistence (per-browser; safe if storage is unavailable) ---------- */
   const KEY = 'raidbound.save.v1';
-  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
+  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, gold: 0, heroes: [], settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
   let save = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) save = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
   // base collection: two of every core card
@@ -17,6 +17,9 @@
   U.save = save;
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
   if (!save.heroicWins) save.heroicWins = {};
+  if (typeof save.gold !== 'number') save.gold = 0;
+  if (!Array.isArray(save.heroes)) save.heroes = [];
+  U.heroOpen = id => RB.heroUnlocked(id, save);
   const GEN = () => (RB.ART && RB.ART.GEN) || {};
   U.cosImg = id => GEN()['cos_' + id] || '';
   U.ownsCos = id => { const c = RB.COSMETICS[id]; return !!c && (c.get === 'default' || save.cos.includes(id)); };
