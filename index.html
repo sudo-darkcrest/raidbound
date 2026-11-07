@@ -196,22 +196,9 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .topbar .raidname { font-family: var(--f-display); font-weight: 700; font-size: 1.45rem; color: var(--gilt-hi); }
 .topbar .round { color: var(--muted); }
 .topbar .sp { flex: 1; }
-.bossarea { display: grid; grid-template-columns: auto 1fr; gap: 1.4rem; padding: .9rem 1.2rem .6rem; min-height: 0; align-items: center; }
-.bosscard { position: relative; width: clamp(220px, min(26vw, 44vh), 420px); border-radius: 8px; overflow: hidden; border: 2px solid #6a1a20; box-shadow: 0 0 0 1px var(--gilt-lo), 0 0 40px rgba(217, 72, 43, .25), 0 10px 30px rgba(0, 0, 0, .6); background: #000; align-self: start; }
-.bosscard img { display: block; width: 100%; aspect-ratio: 300/220; }
-.bosscard .bn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1.4rem .7rem .45rem; background: linear-gradient(transparent, rgba(10, 2, 4, .92)); }
-.bosscard .bn b { display: block; font-family: var(--f-display); font-weight: 900; font-size: 1.5rem; line-height: 1; color: #ffe2c8; text-shadow: 0 2px 0 #000; }
-.bosscard .bn span { font-style: italic; font-size: .85rem; color: #d8b8a0; }
 .bosscard.targetable, .unit.targetable, .herocard.targetable, .rchip.targetable { box-shadow: 0 0 0 3px #ff4a2a, 0 0 26px #ff4a2a; cursor: crosshair; animation: tpulse 1s infinite; }
 .bosscard.friendly-t, .unit.friendly-t, .herocard.friendly-t, .rchip.friendly-t { box-shadow: 0 0 0 3px var(--verd-hi), 0 0 24px var(--verd-hi) !important; cursor: pointer; animation: tpulse 1s infinite; }
 @keyframes tpulse { 50% { filter: brightness(1.25); } }
-.bossinfo { display: flex; flex-direction: column; gap: .7rem; min-width: 0; align-self: stretch; justify-content: center; }
-.hpbar { position: relative; height: 1.45rem; border-radius: 3px; background: #1a0608; border: 1px solid #6a2a20; overflow: hidden; box-shadow: inset 0 2px 6px #000; }
-.hpbar .fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(#ff7a4a, #b8241a 60%, #6a0e08); transition: width .5s ease; }
-.hpbar .ghost { position: absolute; inset: 0 auto 0 0; background: rgba(255, 220, 160, .45); transition: width 1.2s ease .3s; }
-.hpbar .txt { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: 1.05rem; color: #fff; text-shadow: 0 1px 2px #000; }
-.hpbar .tick { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--gilt-hi); box-shadow: 0 0 6px var(--gilt); }
-.bossrow { display: flex; gap: .7rem; align-items: center; flex-wrap: wrap; }
 .counter { display: inline-flex; gap: .3rem; align-items: center; font-family: var(--f-sc); font-size: .95rem; color: #ffd0a8; }
 .counter i { width: .95rem; height: .95rem; border-radius: 50%; border: 1px solid #ff9a5a; display: inline-block; }
 .counter i.on { background: radial-gradient(circle at 40% 35%, #fff2b0, #ff7a2a 55%, #8a1a04); box-shadow: 0 0 8px #ff7a2a; }
@@ -445,7 +432,6 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   .gearcol { display: none; }
 }
 @media (max-height: 760px) {
-  .bosscard { width: clamp(170px, 15vw, 230px); }
   .unit { --uw: clamp(76px, 6.4vw, 96px); }
   .handbar { --hw: clamp(108px, 9vw, 132px); }
 }
@@ -591,9 +577,6 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 
 /* ---------- #37 / #40 battle UI pass ---------- */
 /* boss side: minions stay on one row and shrink to fit instead of spilling onto the heroes */
-.minions { flex-wrap: nowrap; overflow-x: auto; overflow-y: visible; padding: .7rem .3rem .5rem; scrollbar-width: thin; }
-.minions .unit.minion { flex: 0 0 auto; --uw: clamp(78px, min(calc((100% - 1rem) / var(--mn, 4)), 15vh), 140px); }
-.minions .unit.minion { width: clamp(78px, calc((52vw - 2rem) / max(var(--mn, 4), 4)), 140px); }
 .bossplayed { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; font-size: .8rem; }
 .bossplayed small { color: var(--muted); margin-right: .2rem; }
 .bossplayed .bpc { padding: .1rem .45rem; border-radius: 3px; background: rgba(90, 16, 20, .6); border: 1px solid #8a1a24; color: #ffd8c8; font-family: var(--f-sc); cursor: help; }
@@ -644,6 +627,69 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .codebox.goldcode { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; justify-content: center; margin: .6rem auto 1.4rem; }
 .codebox.goldcode > span:first-child { font-family: var(--f-sc); color: var(--gilt-hi); }
 .okmsg { color: var(--verd-hi); } .errmsg { color: var(--danger); }
+
+/* #46 buy another pack from the reveal screen */
+.againbox { margin: 1.8rem auto 0; padding: 1rem 1.4rem 1.2rem; max-width: 640px; border: 1px solid rgba(242, 199, 106, .35); border-radius: 14px; background: linear-gradient(180deg, rgba(40, 26, 12, .75), rgba(14, 10, 8, .8)); box-shadow: inset 0 0 30px rgba(0, 0, 0, .5); text-align: center; }
+.againhead { display: flex; gap: .8rem; align-items: center; justify-content: center; flex-wrap: wrap; font-family: var(--f-sc); font-size: 1.15rem; color: var(--gold, #f2c76a); }
+.againhead .againcost { color: var(--muted); font-size: .9rem; }
+.packrow.mini { gap: 1.2rem; margin: .8rem 0 .6rem; }
+.packrow.mini .tcgpack { zoom: .46; }
+.packrow.mini .packpick { gap: .3rem; }
+.packrow.mini .tcgpack.broke { filter: grayscale(.85) brightness(.6) drop-shadow(0 10px 12px rgba(0,0,0,.6)); cursor: not-allowed; }
+.packrow.mini .tcgpack.tear { zoom: .46; }
+
+
+/* ---------- #48 boss stage: centered boss, ornate health bar, flanking minions ---------- */
+.bossarea { --bt: #ff7a4a; display: flex; flex-direction: column; align-items: stretch; gap: .5rem; padding: .7rem 1.2rem .4rem; min-height: 0; overflow: hidden; }
+.bossbar { width: min(980px, 100%); margin: 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: .25rem; }
+.bbname { display: flex; align-items: baseline; justify-content: center; gap: .7rem; line-height: 1; }
+.bbname b { font-family: var(--f-display); font-weight: 900; font-size: clamp(1.5rem, 2.2vw, 2.1rem); color: #ffe6c8; letter-spacing: .02em; text-shadow: 0 2px 0 #000, 0 0 18px color-mix(in srgb, var(--bt) 55%, transparent); }
+.bbname span { font-style: italic; color: #d8b8a0; font-size: 1rem; }
+.bbname em { font-style: normal; font-family: var(--f-sc); font-size: .75rem; letter-spacing: .1em; color: #ffcf6a; border: 1px solid #ffcf6a; border-radius: 3px; padding: .1rem .4rem; align-self: center; text-shadow: 0 0 8px rgba(255, 180, 60, .6); }
+.bbname .orn { flex: 1; max-width: 200px; height: 2px; align-self: center; background: linear-gradient(90deg, transparent, var(--gilt-hi)); position: relative; }
+.bbname .orn.r { background: linear-gradient(270deg, transparent, var(--gilt-hi)); }
+.bbname .orn::after { content: ''; position: absolute; right: -4px; top: -4px; width: 8px; height: 8px; transform: rotate(45deg); background: var(--gilt-hi); box-shadow: 0 0 8px var(--gilt); }
+.bbname .orn.r::after { right: auto; left: -4px; }
+.hpframe { position: relative; display: flex; align-items: center; padding: 4px; border-radius: 6px; background: linear-gradient(#f6dc95, #8a5a1a 45%, #4a2e0c 55%, #c89a48); box-shadow: 0 0 0 1px #000, 0 6px 18px rgba(0, 0, 0, .7), 0 0 28px color-mix(in srgb, var(--bt) 30%, transparent); }
+.hpframe .cap { position: absolute; left: -14px; top: 50%; width: 26px; height: 26px; transform: translateY(-50%) rotate(45deg); background: radial-gradient(circle at 40% 35%, #fff2c0, var(--bt) 45%, #2a0a04 90%); border: 3px solid #c89a48; box-shadow: 0 0 0 1px #000, 0 0 12px var(--bt); z-index: 2; }
+.hpframe .cap.r { left: auto; right: -14px; }
+.hpbar { position: relative; flex: 1; height: clamp(1.7rem, 3.4vh, 2.2rem); border-radius: 3px; background: repeating-linear-gradient(135deg, #1a0608 0 8px, #220a0c 8px 16px); border: 1px solid #000; overflow: visible; box-shadow: inset 0 3px 8px #000; }
+.hpbar .fill, .hpbar .ghost { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 2px; }
+.hpbar .fill { background: linear-gradient(#ff9a6a, #d8301e 45%, #8a120a 75%, #5a0806); transition: width .5s ease; box-shadow: 0 0 14px rgba(255, 70, 40, .55); }
+.hpbar .fill::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #fff4d0; box-shadow: 0 0 10px #ffcf8a; border-radius: 2px; }
+.hpbar .ghost { background: linear-gradient(#fff2c8, #ffc070); opacity: .7; transition: width 1.2s ease .35s; }
+.hpbar .gloss { position: absolute; left: 0; right: 0; top: 0; height: 45%; background: linear-gradient(rgba(255, 255, 255, .22), transparent); pointer-events: none; border-radius: 2px 2px 0 0; }
+.hpbar .txt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: .4rem; font-family: var(--f-display); font-weight: 900; font-size: clamp(1.05rem, 1.6vw, 1.35rem); color: #fff; text-shadow: 0 1px 0 #000, 0 0 6px #000, 0 0 2px #000; z-index: 1; }
+.hpbar .txt small { font-size: .7em; color: #f2d8c0; font-weight: 700; }
+.hpbar .txt em { font-style: normal; font-family: var(--f-sc); font-size: .62em; color: #ffe0a8; margin-left: .4rem; padding: .05rem .35rem; border-radius: 3px; background: rgba(0, 0, 0, .45); }
+.hpbar .tick { position: absolute; top: -7px; bottom: -7px; width: 2px; margin-left: -1px; background: linear-gradient(#fff4c8, var(--gilt)); box-shadow: 0 0 6px var(--gilt), 0 0 0 1px rgba(0, 0, 0, .6); z-index: 1; cursor: help; }
+.hpbar .tick i { position: absolute; top: -5px; left: -5px; width: 12px; height: 12px; transform: rotate(45deg); background: var(--gilt-hi); border: 1px solid #000; box-shadow: 0 0 8px var(--gilt); }
+.hpbar .tick.done { opacity: .45; } .hpbar .tick.done i { background: #6a5a3a; box-shadow: none; }
+.phaselbls { position: relative; height: 1rem; margin: 0 4px; }
+.phaselbls span { position: absolute; transform: translateX(-50%); white-space: nowrap; font-family: var(--f-sc); font-size: .72rem; letter-spacing: .06em; color: var(--gilt-hi); text-shadow: 0 1px 2px #000; cursor: help; }
+.phaselbls span.done { color: var(--muted); text-decoration: line-through; }
+.bossbar.hit .hpframe { animation: barhit .55s ease; }
+.bossbar.hit .hpbar .fill { filter: brightness(1.9) saturate(1.3); }
+.bossbar.healfx .hpbar .fill { filter: hue-rotate(95deg) brightness(1.4); }
+@keyframes barhit { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); } 45% { transform: translateX(5px); } 70% { transform: translateX(-3px); } }
+.bossrow { display: flex; gap: .55rem; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: .2rem; }
+.bossrow .chip { background: rgba(10, 4, 4, .65); }
+.bossrow .chip.guard { color: #ffd27a; border-color: #ffd27a; }
+.bossstage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 1.2rem; }
+.bosscard { position: relative; height: 100%; max-height: 330px; min-height: 150px; aspect-ratio: 300/220; border-radius: 10px; overflow: hidden; border: 2px solid #000; box-shadow: 0 0 0 3px #b8873a, 0 0 0 5px #000, 0 0 50px color-mix(in srgb, var(--bt) 45%, transparent), 0 14px 34px rgba(0, 0, 0, .75); background: #000; cursor: pointer; animation: bossbreathe 5s ease-in-out infinite; }
+.bosscard img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bosscard .bframe { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(255, 230, 170, .35), inset 0 0 40px rgba(0, 0, 0, .55); border-radius: 8px; }
+.bosscard .bn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1.6rem .8rem .5rem; background: linear-gradient(transparent, rgba(10, 2, 4, .92)); text-align: center; }
+.bosscard .bn b { display: block; font-family: var(--f-display); font-weight: 900; font-size: 1.35rem; line-height: 1; color: #ffe2c8; text-shadow: 0 2px 0 #000; }
+.bosscard .bn span { font-style: italic; font-size: .8rem; color: #d8b8a0; }
+@keyframes bossbreathe { 0%, 100% { box-shadow: 0 0 0 3px #b8873a, 0 0 0 5px #000, 0 0 40px color-mix(in srgb, var(--bt) 35%, transparent), 0 14px 34px rgba(0, 0, 0, .75); } 50% { box-shadow: 0 0 0 3px #d8a74a, 0 0 0 5px #000, 0 0 70px color-mix(in srgb, var(--bt) 60%, transparent), 0 14px 34px rgba(0, 0, 0, .75); } }
+.bosscard.targetable, .bosscard.friendly-t { animation: tpulse 1s infinite; }
+.minions { display: flex; gap: .6rem; align-items: center; min-width: 0; padding: .6rem .2rem .7rem; flex-wrap: nowrap; overflow-x: auto; overflow-y: visible; scrollbar-width: thin; }
+.minions.left { flex-direction: row-reverse; justify-content: flex-start; }
+.minions.right { justify-content: flex-start; }
+.minions .unit.minion { flex: 0 0 auto; width: clamp(74px, calc((100% - .6rem * (max(var(--mn, 1), 2) - 1)) / max(var(--mn, 1), 2)), 128px); }
+.bossplayed { justify-content: center; }
+@media (max-height: 760px) { .bosscard { max-height: 220px; } .bbname span { display: none; } }
 
 </style>
 </head>
@@ -6152,7 +6198,13 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     // boss
     const hpPct = Math.max(0, E.bossHp()) / B.maxHp * 100;
     if (view.hpGhost == null) view.hpGhost = hpPct;
-    const ticks = (raid.phases || []).map((ph, i) => `<span class="tick" style="left:${ph.at * 100}%" title="${esc(ph.name)}"></span>`).join('');
+    const ticks = (raid.phases || []).map((ph, i) => `<span class="tick ${B.phasesDone.includes(i) ? 'done' : ''}" style="left:${ph.at * 100}%" title="${esc(ph.name)} at ${Math.round(ph.at * 100)}%: ${esc(ph.text)}"><i></i></span>`).join('');
+    const phaseLbls = (raid.phases || []).map((ph, i) => `<span class="${B.phasesDone.includes(i) ? 'done' : ''}" style="left:${ph.at * 100}%" title="${esc(ph.text)}">${esc(ph.name)}</span>`).join('');
+    // #48: flash the bar when the boss is hurt (red) or healed (green)
+    const bhp = Math.max(0, E.bossHp());
+    if (view.lastBossHp != null && bhp !== view.lastBossHp) { view.barFx = bhp < view.lastBossHp ? 'hit' : 'healfx'; view.barFxUntil = Date.now() + 650; clearTimeout(view.barFxT); view.barFxT = setTimeout(() => { const b = root && root.querySelector('.bossbar'); if (b) b.classList.remove('hit', 'healfx'); }, 680); }
+    view.lastBossHp = bhp;
+    const barFx = view.barFxUntil > Date.now() ? view.barFx : '';
     const counter = raid.counter ? `<span class="counter" title="${esc(raid.rules[0].text)}">${esc(raid.counter.name)} ${Array.from({ length: raid.counter.max }, (_, i) => `<i class="${i < B.counter ? 'on' : ''}"></i>`).join('')}</span>` : '';
     const events = B.events.map(e => `<span class="evt" data-bc="${e.id}" title="${esc(BC[e.id].text)}"><b>${esc(BC[e.id].name)}</b> · ${e.turns} round${e.turns > 1 ? 's' : ''}</span>`).join('');
     const mark = B.mark ? `<span class="evt" style="background:rgba(120,60,10,.5)"><b>Marked</b> +${B.mark.amount} damage taken</span>` : '';
@@ -6160,7 +6212,9 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const minions = B.minions.map(m => {
       const d = TK[m.id];
       return unitHTML('minion', { ref: m.uid, name: d.name, img: U.cardArt(m.id), atk: E.minAtk(m), hp: E.minMax(m) - m.damage, max: E.minMax(m), kws: d.kw || [], buffA: m.atkB > 0, buffH: m.hpB > 0, cls: [(d.kw || []).includes('guardian') ? 'guardian' : '', m.ex ? '' : '', m.stunned ? 'stunned' : '', m.sick && g.phase !== 'boss' ? '' : '', tcls(m.uid)] });
-    }).join('') || '<span class="empty">No minions — the boss stands alone.</span>';
+    });
+    // #48: minions flank the boss — first one on the right, then left, then right…
+    const minR = minions.filter((x, i) => i % 2 === 0), minL = minions.filter((x, i) => i % 2 === 1);
     const strike = g.raid.strike + B.strikeBonus + g.partyFury;
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
@@ -6215,10 +6269,20 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <span class="bossdeck" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
         <button class="btn small ghost" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost" data-act="rulesref">Rules</button><button class="btn small ghost" data-act="quit">Leave raid</button></div>
-      <div class="bossarea ${raid.id}"><div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="bn"><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span></div></div>
-        <div class="bossinfo"><div class="hpbar"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div>${ticks}<div class="txt">${Math.max(0, E.bossHp())} / ${B.maxHp}</div></div>
-          <div class="bossrow">${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip" style="color:#ffd27a">Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
-          ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}<div class="minions" style="--mn:${B.minions.length}">${minions}</div></div></div>
+      <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
+        <div class="bossbar ${barFx}">
+          <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<i class="orn r"></i></div>
+          <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}<div class="txt">${bhp} <small>/ ${B.maxHp}</small><em>${Math.ceil(hpPct)}%</em></div></div><span class="cap r"></span></div>
+          ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
+          <div class="bossrow">${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+        </div>
+        <div class="bossstage">
+          <div class="minions left" style="--mn:${minL.length}">${minL.join('')}</div>
+          <div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="bframe"></div><div class="bn"><b>${esc(raid.short)}</b><span>${B.minions.length ? `${B.minions.length} minion${B.minions.length > 1 ? 's' : ''} at its side` : 'Stands alone'}</span></div></div>
+          <div class="minions right" style="--mn:${minR.length}">${minR.join('')}</div>
+        </div>
+        ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
+      </div>
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
         <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
@@ -6921,6 +6985,9 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)">${booster ? 'Frontier booster' : 'Treasure'}</h2><p class="tagline">Click each card to reveal it.</p>
         <div class="packcards">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${i * 0.12}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
         <div id="lootnote"></div>
+        ${booster ? `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">${RB.PACK_PRICE} gold each</span></div>
+          <div class="packrow mini">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buyagain', cls: save.gold >= RB.PACK_PRICE ? '' : 'broke', data: `data-style="${k}"`, label: `Buy another ${v.name} booster pack for ${RB.PACK_PRICE} gold` })}<div class="pname">${v.name}</div></div>`).join('')}</div>
+          ${save.gold >= RB.PACK_PRICE ? `<button class="btn primary" data-act="buyagain">Buy another pack — ${RB.PACK_PRICE} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${RB.PACK_PRICE - save.gold} more gold for another pack. Go raid!</p>`}</div>` : ''}
         <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">Raid again</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
       $$('.packcards .card', el).forEach(c => c.style.setProperty('--cw', '100%'));
       $$('.packcards .card', el).forEach(c => { c.style.width = '100%'; });
@@ -6932,6 +6999,13 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         if (a.dataset.act === 'all') return $$('.flip', el).forEach((f, i) => setTimeout(() => flip(f), i * 180));
         if (a.dataset.act === 'again') return U.setup();
         if (a.dataset.act === 'market') return U.market();
+        if (a.dataset.act === 'buyagain') {
+          if (save.gold < RB.PACK_PRICE) return U.toast(`A pack costs ${RB.PACK_PRICE} gold. You have ${save.gold}.`);
+          if (el.dataset.busy) return; el.dataset.busy = '1';
+          save.gold -= RB.PACK_PRICE; U.persist(); U.hidePreview();
+          const packEl = a.classList.contains('tcgpack') ? a : $('.againbox .tcgpack', el);
+          return U.openPack(null, false, packEl, RB.rollBooster());
+        }
         if (a.dataset.act === 'col') return U.collection();
         if (a.dataset.act === 'title') return U.title();
       };

@@ -36,6 +36,9 @@
       const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)">${booster ? 'Frontier booster' : 'Treasure'}</h2><p class="tagline">Click each card to reveal it.</p>
         <div class="packcards">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${i * 0.12}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
         <div id="lootnote"></div>
+        ${booster ? `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">${RB.PACK_PRICE} gold each</span></div>
+          <div class="packrow mini">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buyagain', cls: save.gold >= RB.PACK_PRICE ? '' : 'broke', data: `data-style="${k}"`, label: `Buy another ${v.name} booster pack for ${RB.PACK_PRICE} gold` })}<div class="pname">${v.name}</div></div>`).join('')}</div>
+          ${save.gold >= RB.PACK_PRICE ? `<button class="btn primary" data-act="buyagain">Buy another pack — ${RB.PACK_PRICE} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${RB.PACK_PRICE - save.gold} more gold for another pack. Go raid!</p>`}</div>` : ''}
         <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">Raid again</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
       $$('.packcards .card', el).forEach(c => c.style.setProperty('--cw', '100%'));
       $$('.packcards .card', el).forEach(c => { c.style.width = '100%'; });
@@ -47,6 +50,13 @@
         if (a.dataset.act === 'all') return $$('.flip', el).forEach((f, i) => setTimeout(() => flip(f), i * 180));
         if (a.dataset.act === 'again') return U.setup();
         if (a.dataset.act === 'market') return U.market();
+        if (a.dataset.act === 'buyagain') {
+          if (save.gold < RB.PACK_PRICE) return U.toast(`A pack costs ${RB.PACK_PRICE} gold. You have ${save.gold}.`);
+          if (el.dataset.busy) return; el.dataset.busy = '1';
+          save.gold -= RB.PACK_PRICE; U.persist(); U.hidePreview();
+          const packEl = a.classList.contains('tcgpack') ? a : $('.againbox .tcgpack', el);
+          return U.openPack(null, false, packEl, RB.rollBooster());
+        }
         if (a.dataset.act === 'col') return U.collection();
         if (a.dataset.act === 'title') return U.title();
       };

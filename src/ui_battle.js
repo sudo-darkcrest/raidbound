@@ -49,7 +49,13 @@
     // boss
     const hpPct = Math.max(0, E.bossHp()) / B.maxHp * 100;
     if (view.hpGhost == null) view.hpGhost = hpPct;
-    const ticks = (raid.phases || []).map((ph, i) => `<span class="tick" style="left:${ph.at * 100}%" title="${esc(ph.name)}"></span>`).join('');
+    const ticks = (raid.phases || []).map((ph, i) => `<span class="tick ${B.phasesDone.includes(i) ? 'done' : ''}" style="left:${ph.at * 100}%" title="${esc(ph.name)} at ${Math.round(ph.at * 100)}%: ${esc(ph.text)}"><i></i></span>`).join('');
+    const phaseLbls = (raid.phases || []).map((ph, i) => `<span class="${B.phasesDone.includes(i) ? 'done' : ''}" style="left:${ph.at * 100}%" title="${esc(ph.text)}">${esc(ph.name)}</span>`).join('');
+    // #48: flash the bar when the boss is hurt (red) or healed (green)
+    const bhp = Math.max(0, E.bossHp());
+    if (view.lastBossHp != null && bhp !== view.lastBossHp) { view.barFx = bhp < view.lastBossHp ? 'hit' : 'healfx'; view.barFxUntil = Date.now() + 650; clearTimeout(view.barFxT); view.barFxT = setTimeout(() => { const b = root && root.querySelector('.bossbar'); if (b) b.classList.remove('hit', 'healfx'); }, 680); }
+    view.lastBossHp = bhp;
+    const barFx = view.barFxUntil > Date.now() ? view.barFx : '';
     const counter = raid.counter ? `<span class="counter" title="${esc(raid.rules[0].text)}">${esc(raid.counter.name)} ${Array.from({ length: raid.counter.max }, (_, i) => `<i class="${i < B.counter ? 'on' : ''}"></i>`).join('')}</span>` : '';
     const events = B.events.map(e => `<span class="evt" data-bc="${e.id}" title="${esc(BC[e.id].text)}"><b>${esc(BC[e.id].name)}</b> · ${e.turns} round${e.turns > 1 ? 's' : ''}</span>`).join('');
     const mark = B.mark ? `<span class="evt" style="background:rgba(120,60,10,.5)"><b>Marked</b> +${B.mark.amount} damage taken</span>` : '';
@@ -57,7 +63,9 @@
     const minions = B.minions.map(m => {
       const d = TK[m.id];
       return unitHTML('minion', { ref: m.uid, name: d.name, img: U.cardArt(m.id), atk: E.minAtk(m), hp: E.minMax(m) - m.damage, max: E.minMax(m), kws: d.kw || [], buffA: m.atkB > 0, buffH: m.hpB > 0, cls: [(d.kw || []).includes('guardian') ? 'guardian' : '', m.ex ? '' : '', m.stunned ? 'stunned' : '', m.sick && g.phase !== 'boss' ? '' : '', tcls(m.uid)] });
-    }).join('') || '<span class="empty">No minions — the boss stands alone.</span>';
+    });
+    // #48: minions flank the boss — first one on the right, then left, then right…
+    const minR = minions.filter((x, i) => i % 2 === 0), minL = minions.filter((x, i) => i % 2 === 1);
     const strike = g.raid.strike + B.strikeBonus + g.partyFury;
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
@@ -112,10 +120,20 @@
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <span class="bossdeck" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
         <button class="btn small ghost" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost" data-act="rulesref">Rules</button><button class="btn small ghost" data-act="quit">Leave raid</button></div>
-      <div class="bossarea ${raid.id}"><div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="bn"><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span></div></div>
-        <div class="bossinfo"><div class="hpbar"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div>${ticks}<div class="txt">${Math.max(0, E.bossHp())} / ${B.maxHp}</div></div>
-          <div class="bossrow">${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip" style="color:#ffd27a">Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
-          ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}<div class="minions" style="--mn:${B.minions.length}">${minions}</div></div></div>
+      <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
+        <div class="bossbar ${barFx}">
+          <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<i class="orn r"></i></div>
+          <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}<div class="txt">${bhp} <small>/ ${B.maxHp}</small><em>${Math.ceil(hpPct)}%</em></div></div><span class="cap r"></span></div>
+          ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
+          <div class="bossrow">${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+        </div>
+        <div class="bossstage">
+          <div class="minions left" style="--mn:${minL.length}">${minL.join('')}</div>
+          <div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="bframe"></div><div class="bn"><b>${esc(raid.short)}</b><span>${B.minions.length ? `${B.minions.length} minion${B.minions.length > 1 ? 's' : ''} at its side` : 'Stands alone'}</span></div></div>
+          <div class="minions right" style="--mn:${minR.length}">${minR.join('')}</div>
+        </div>
+        ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
+      </div>
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
         <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
