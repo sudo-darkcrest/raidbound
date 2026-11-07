@@ -262,7 +262,8 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .powerbtn { margin-top: .4rem; width: 100%; display: block; text-align: left; font-size: .8rem; padding: .35rem .5rem; line-height: 1.15; }
 .powerbtn b { display: block; font-family: var(--f-display); font-weight: 700; font-size: 1rem; }
 .powerbtn.used { opacity: .5; }
-.pet { position: absolute; left: calc(100% - 46px); top: -3.4rem; width: 66px; pointer-events: none; animation: bob 3s ease-in-out infinite; filter: drop-shadow(0 4px 8px #000); }
+.petspot { display: flex; justify-content: center; margin-top: .45rem; pointer-events: none; }
+.pet { width: 74px; max-height: 74px; object-fit: contain; animation: bob 3s ease-in-out infinite; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .7)); }
 @keyframes bob { 50% { transform: translateY(-8px); } }
 .gearcol { display: grid; grid-template-columns: repeat(2, 11.2rem); gap: .35rem; align-content: start; }
 .gslot { display: flex; align-items: center; gap: .4rem; width: 11.2rem; min-height: 2.2rem; padding: .2rem .35rem; border-radius: 4px; border: 1px dashed rgba(212, 166, 74, .25); font-size: .78rem; color: var(--muted); background: rgba(0, 0, 0, .2); cursor: default; }
@@ -452,6 +453,33 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 /* sound settings */
 .audioset .vrow { display: grid; grid-template-columns: 11rem 1fr 4.5rem; align-items: center; gap: 1rem; margin: .5rem 0; }
 .audioset input[type=range] { width: 100%; accent-color: var(--gilt); }
+
+.reveal .who { text-align: center; font-family: var(--f-sc); color: var(--gilt-hi); font-size: 1.05rem; letter-spacing: .06em; margin-bottom: .5rem; text-shadow: 0 2px 6px #000; }
+
+/* ---- stat badges: sword shield for attack, gold-rimmed heart for health ---- */
+.unit .ua, .herocard .hatk, .card .stat.atk { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='a' cx='38%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%23ffd28a'/%3E%3Cstop offset='.45' stop-color='%23d0581c'/%3E%3Cstop offset='1' stop-color='%234a1204'/%3E%3C/radialGradient%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff8e0'/%3E%3Cstop offset='1' stop-color='%239aa4b8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 3 L58 14 L54 44 Q46 56 32 61 Q18 56 10 44 L6 14 Z' fill='url(%23a)' stroke='%23f2c862' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cg opacity='.42'%3E%3Cpath d='M44 9 L52 9 L52 17 L23 46 L17 40 Z' fill='url(%23b)'/%3E%3Cpath d='M12 38 L26 52' stroke='%23fff2c8' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='54' r='3.5' fill='%23fff2c8'/%3E%3Cpath d='M20 9 L12 9 L12 17 L41 46 L47 40 Z' fill='url(%23b)'/%3E%3Cpath d='M52 38 L38 52' stroke='%23fff2c8' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='52' cy='54' r='3.5' fill='%23fff2c8'/%3E%3C/g%3E%3Cpath d='M14 16 Q32 9 50 16' stroke='%23fff' stroke-opacity='.35' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat; clip-path: none; border: 0; border-radius: 0; }
+.unit .uh, .herocard .hhp, .card .stat.hp { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='h' cx='35%25' cy='30%25' r='80%25'%3E%3Cstop offset='0' stop-color='%23ffb0b8'/%3E%3Cstop offset='.45' stop-color='%23d01c34'/%3E%3Cstop offset='1' stop-color='%234a040e'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cpath d='M32 59 C12 44 4 33 4 21 C4 11 11 4 20 4 C26 4 30 8 32 12 C34 8 38 4 44 4 C53 4 60 11 60 21 C60 33 52 44 32 59 Z' fill='url(%23h)' stroke='%23f2c862' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cellipse cx='19' cy='17' rx='8' ry='5' transform='rotate(-30 19 17)' fill='%23fff' opacity='.45'/%3E%3C/svg%3E") center/contain no-repeat; clip-path: none; border: 0; border-radius: 0; padding-bottom: 8%; }
+.unit .uh.hurt, .herocard .hhp.low { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='h' cx='35%25' cy='30%25' r='80%25'%3E%3Cstop offset='0' stop-color='%23ff7a6a'/%3E%3Cstop offset='.45' stop-color='%239a0a14'/%3E%3Cstop offset='1' stop-color='%232a0004'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cpath d='M32 59 C12 44 4 33 4 21 C4 11 11 4 20 4 C26 4 30 8 32 12 C34 8 38 4 44 4 C53 4 60 11 60 21 C60 33 52 44 32 59 Z' fill='url(%23h)' stroke='%23f2c862' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cellipse cx='19' cy='17' rx='8' ry='5' transform='rotate(-30 19 17)' fill='%23fff' opacity='.45'/%3E%3C/svg%3E") center/contain no-repeat; clip-path: none; border: 0; border-radius: 0; }
+.unit .ua, .unit .uh { width: 2.15rem; height: 2.15rem; bottom: -.75rem; font-size: 1.12rem; text-shadow: 0 1px 0 #000, 0 0 4px #000; }
+.unit .ua { left: -.6rem; padding-bottom: .1rem; } .unit .uh { right: -.6rem; }
+.herocard .hhp { width: 3.5rem; height: 3.5rem; font-size: 1.5rem; right: -.85rem; top: -.85rem; }
+.herocard .hatk { width: 3rem; height: 3rem; font-size: 1.35rem; left: -.8rem; top: -.8rem; }
+.card .stat.atk, .card .stat.hp { width: 17cqw; height: 17cqw; bottom: -2cqw; text-shadow: 0 .4cqw 0 #000, 0 0 1.2cqw #000; }
+/* ---- bigger resource cards, bigger hand, hover zoom ---- */
+.rcard { --cw: 3.7rem; transition: transform .15s; }
+.rcard:hover { transform: scale(1.55) translateY(-12%); z-index: 15; }
+.rcard .mini { width: 5.8rem; height: 4.2rem; } .rcard .mini .q { font-size: .7rem; }
+.rcard .temp { width: 3.7rem; height: 5.2rem; font-size: 1.2rem; }
+.restray { min-height: 5.6rem; gap: .7rem; }
+.handbar { --hw: clamp(150px, 13vw, 205px); }
+.hand .hc:hover, .hand .hc.open { transform: translateY(-52%) scale(1.42) !important; z-index: 30; margin: 0 calc(var(--hw) * 0.1); }
+.unit { transition: transform .18s, filter .2s, box-shadow .2s; }
+.unit:hover { transform: translateY(-4px) scale(1.1); z-index: 10; box-shadow: 0 10px 22px rgba(0, 0, 0, .65); }
+.gslot.has { transition: transform .15s; } .gslot.has:hover { transform: scale(1.06); }
+@media (max-width: 1100px) { .handbar { --hw: clamp(128px, 12vw, 160px); } }
+
+.pbar { height: 10px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: .8rem; border: 1px solid var(--gilt-lo); }
+.pbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gilt-lo), var(--gilt-hi)); transition: width .2s; }
 
 </style>
 </head>
@@ -4594,11 +4622,20 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
           atk = E.heroAttackValue(p, useW); myHp = E.heroHp(p); lr = useW && (C[p.weapon.c.id].kw || []).includes('longrange');
         } else { atk = E.allyAtk(p, who); myHp = E.allyMax(p, who) - who.damage; lr = E.allyKw(p, who, 'longrange'); }
         let best = null, bs = -1;
+        // does a fallen ally come back for the boss (the Crypt's Grave Harvest)? then a lost trade also hands the boss a minion
+        const raisesMinion = who !== 'hero' && E.raid.onAllyDeath && !who.token;
+        const allyWorth = who === 'hero' ? 0 : 6 + atk * 1.5 + E.allyMax(p, who) * 0.4;
         for (const t of targets) {
           const back = lr ? 0 : t.t === 'boss' ? E.raid.retaliation : E.minAtk(t.m);
           const dies = back >= myHp;
+          const kills = t.t === 'minion' ? atk >= E.hpOf(t) : atk >= E.bossHp();
           let s = enemyValue(E, t, atk) - back * (who === 'hero' ? 0.9 : 0.45);
-          if (dies) s -= who === 'hero' ? 999 : 6 + atk;
+          if (dies && who === 'hero') s -= 999;
+          if (dies && who !== 'hero') {
+            if (!kills) continue;                     // never throw an ally away without killing anything
+            s -= allyWorth;
+            if (raisesMinion) s -= 15;                // its corpse becomes a Risen Thrall for the boss
+          }
           if (who === 'hero' && myHp - back < 8 && back > 0) s -= 6;
           if (s > bs) { bs = s; best = t; }
         }
@@ -4728,6 +4765,99 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       }
     }
     return deck;
+  };
+})(globalThis.RB);
+
+/* ---------- auto deck: the best deck for a hero against a particular raid ---------- */
+(function (RB) {
+  const C = RB.CARDS;
+  // how each raid changes what is worth bringing
+  const RAIDMOD = {
+    crypt: { ally: -1.2, aoe: 2.5, aoeMinion: 2.5, heal: 1, stunAll: 1, shield: 0.5 },
+    molten: { armor: -1.5, heal: 1.5, shield: 1.5, dmg: 1, aoe: 1.5, aoeMinion: 1 },
+    tide: { ally: -1.5, aoe: 2, aoeMinion: 2, dmg: 1.2, draw: 1, stun: 1 },
+  };
+  RB.cardScore = function (d, raidId) {
+    const rar = { c: 0, u: 0.6, r: 1.3, e: 2.2 }[d.rarity] || 0, tags = d.tags || [], kw = d.kw || [], has = t => tags.includes(t);
+    let s;
+    switch (d.type) {
+      case 'ally': s = (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
+      case 'ability': s = 3 + ((d.dmg || (has('dmg') ? 3 : 0)) + (d.heal || (has('heal') ? 4 : 0)) * 0.6 + (has('draw') ? 3 : 0) + (has('aoe') || has('aoeMinion') ? 3 : 0) + (has('shield') ? 2 : 0) + (has('stun') || has('stunAll') ? 2 : 0) + (has('revive') ? 4 : 0) + (has('summon') ? 3 : 0) + (has('buff') ? 1.5 : 0)) / (d.cost + 1.2) * 4; break;
+      case 'weapon': s = 2 + d.atk * 2.2 - (d.strike || 0) * 1.3; break;
+      case 'armor': s = 2 + d.def * 1.6 - (d.use || 0) + (d.spell || 0) * 2; break;
+      case 'item': s = 4 + (d.spell || 0) * 2 + (d.allyAtk ? 3 : 0) + (d.use ? 1 : 0); break;
+      case 'master': s = 10; break;
+      default: s = 5;
+    }
+    s += rar;
+    const m = RAIDMOD[raidId] || {};
+    if (m[d.type]) s += m[d.type];
+    for (const t of tags) if (m[t]) s += m[t];
+    return s;
+  };
+  function shape(heroId) {
+    const st = RB.STARTER[heroId], out = {};
+    if (st) for (const [id, k] of Object.entries(st)) { const t = C[id].type === 'location' ? 'quest' : C[id].type; out[t] = (out[t] || 0) + k; }
+    else Object.assign(out, { ally: 11, ability: 9, weapon: 2, armor: 3, item: 2, quest: 2, master: 1 });
+    return out;
+  }
+  const poolFor = (heroId, owned) => Object.values(C).filter(d => RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
+  const copiesOf = (d, owned) => Math.min(RB.maxCopies(d), owned ? owned[d.id] || 0 : 2);
+  // fast heuristic pick (instant)
+  RB.autoDeck = function (heroId, raidId, owned, partySize) {
+    const pool = poolFor(heroId, owned), want = shape(heroId), deck = [];
+    const sc = d => RB.cardScore(d, raidId) + (partySize > 1 && (d.tags || []).includes('revive') ? 4 : 0);
+    const add = (list, n) => { const opts = []; list.forEach(d => { for (let k = 0; k < copiesOf(d, owned); k++) opts.push({ id: d.id, s: sc(d) - k * 0.5 }); }); opts.sort((a, b) => b.s - a.s); for (const o of opts) { if (n <= 0) break; if (deck.length >= RB.DECK_SIZE) break; if (C[o.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue; deck.push(o.id); n--; } };
+    for (const [t, n] of Object.entries(want)) add(pool.filter(d => (d.type === 'location' ? 'quest' : d.type) === t), n);
+    if (deck.length < RB.DECK_SIZE) { const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1); add(pool.filter(d => (counts[d.id] || 0) < copiesOf(d, owned)).map(d => d), RB.DECK_SIZE - deck.length); }
+    return deck.slice(0, RB.DECK_SIZE);
+  };
+  // play test raids and keep swaps that do better (async, yields to the page between games)
+  RB.polishDeck = async function (heroId, raidId, deck, owned, partySize, opts) {
+    opts = opts || {};
+    const games = opts.games || 16, iters = opts.iters || 30;
+    let seeds = Array.from({ length: games }, (_, i) => 7000 + i * 13);
+    const pool = poolFor(heroId, owned);
+    const tick = () => new Promise(r => setTimeout(r, 0));
+    async function evaluate(d) {
+      let s = 0;
+      for (const seed of seeds) {
+        const party = [{ hero: heroId, deck: d.slice() }];
+        for (let k = 1; k < (partySize || 1); k++) { const ally = Object.keys(RB.HEROES)[(Object.keys(RB.HEROES).indexOf(heroId) + k * 2) % 6]; party.push({ hero: ally, deck: RB.buildDeck(ally, null, partySize) }); }
+        const g = RB.newGame({ raid: raidId, seed, difficulty: opts.difficulty || 'normal', allAuto: true, party }, {});
+        await g.start();
+        s += (g.g.over === 'win' ? 100 + Math.max(0, 30 - g.g.round) : 0) + (1 - Math.max(0, g.bossHp()) / g.g.boss.maxHp) * 40;
+      }
+      await tick();
+      return s / games;
+    }
+    let best = deck.slice(), bestS = await evaluate(best);
+    const base = bestS;
+    for (const alt of opts.alternatives || []) { const s = await evaluate(alt); if (s > bestS) { best = alt.slice(); bestS = s; } }
+    for (let i = 0; i < iters; i++) {
+      const counts = {}; best.forEach(id => counts[id] = (counts[id] || 0) + 1);
+      const outs = best.map((id, ix) => ({ ix, s: RB.cardScore(C[id], raidId) + Math.random() * 3 })).sort((a, b) => a.s - b.s);
+      const ins = pool.filter(d => (counts[d.id] || 0) < copiesOf(d, owned) && !(d.type === 'master' && best.some(x => C[x].type === 'master'))).map(d => ({ id: d.id, s: RB.cardScore(d, raidId) + Math.random() * 3 })).sort((a, b) => b.s - a.s);
+      if (!outs.length || !ins.length) break;
+      const out = outs[Math.floor(Math.random() * Math.min(5, outs.length))], inn = ins[Math.floor(Math.random() * Math.min(6, ins.length))];
+      const cand = best.slice(); cand[out.ix] = inn.id;
+      const s = await evaluate(cand);
+      if (s > bestS + 0.5) { best = cand; bestS = s; }
+      if (opts.onProgress) opts.onProgress((i + 1) / iters, bestS, base);
+    }
+    // final check on fresh raids: only beat the alternatives if it really is better
+    if (opts.alternatives && opts.alternatives.length) {
+      seeds = Array.from({ length: games * 2 }, (_, i) => 91000 + i * 17);
+      let pick = best, ps = await evaluate(best);
+      for (const alt of opts.alternatives) { const s = await evaluate(alt); if (s > ps) { pick = alt.slice(); ps = s; } }
+      best = pick;
+    }
+    return { deck: best, score: bestS, base };
+  };
+  // the deck the "Auto deck" button uses: best of the starter and the scored pick, then tuned by test raids
+  RB.bestDeck = async function (heroId, raidId, owned, partySize, opts) {
+    const auto = RB.autoDeck(heroId, raidId, owned, partySize), starter = RB.buildDeck(heroId, owned, partySize);
+    return RB.polishDeck(heroId, raidId, auto, owned, partySize, Object.assign({ games: 20, iters: 24, alternatives: [starter] }, opts || {}));
   };
 })(globalThis.RB);
 
@@ -5119,10 +5249,14 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     for (let i = 0; i < 4; i++) tone(t + i * 0.04, { f: hz(88 + [0, 3, 7, 10][i]), a: 0.002, d: 0.35, vol: 0.08, verb: 0.5, pan: rnd(-0.4, 0.4) });
   };
   fx.summon = t => { taiko(t, 0.35, 80); noise(t, { flt: ['bandpass', 600, 2400, 2, 0.3], a: 0.08, d: 0.3, vol: 0.18, verb: 0.3 }); };
-  fx.death = t => {
-    tone(t, { type: 'sawtooth', f: 160, f2: 55, glide: 0.75, a: 0.03, d: 0.8, vol: 0.2, flt: ['lowpass', 1000, 260, 1, 0.7], vib: [7, 6], verb: 0.25 });
-    tone(t + 0.35, { f: 95, f2: 38, d: 0.32, vol: 0.6 });
-    noise(t + 0.35, { kind: 'brown', flt: ['lowpass', 600], a: 0.04, d: 0.55, vol: 0.32, verb: 0.2 });
+  fx.death = t => { // a body crumpling to the ground: falling whoosh, heavy thud, armour clatter, dust and a dark low chord
+    noise(t, { flt: ['bandpass', 1400, 320, 1.4, 0.24], a: 0.06, d: 0.2, vol: 0.22, pan: 0.15, pan2: -0.15 });
+    const hit = t + 0.24;
+    tone(hit, { f: 115, f2: 42, glide: 0.3, a: 0.002, d: 0.38, vol: 0.72 });
+    noise(hit, { kind: 'brown', flt: ['lowpass', 520, 180, 0, 0.3], a: 0.002, d: 0.42, vol: 0.55, verb: 0.15 });
+    for (let i = 0; i < 6; i++) { const s = hit + 0.02 + rnd(0, 0.32), f = rnd(1500, 3400); tone(s, { f, a: 0.001, d: rnd(0.05, 0.14), vol: rnd(0.025, 0.05), pan: rnd(-0.5, 0.5) }); tone(s, { f: f * 2.7, a: 0.001, d: 0.05, vol: 0.015 }); noise(s, { flt: ['highpass', 3000], a: 0.001, d: 0.02, vol: 0.05 }); }
+    noise(hit + 0.05, { kind: 'pink', flt: ['lowpass', 900, 300, 0, 0.6], a: 0.08, d: 0.6, vol: 0.12, verb: 0.3 });
+    [43, 46, 50].forEach(m => tone(hit + 0.08, { type: 'triangle', f: hz(m), a: 0.06, d: 1.3, vol: 0.035, flt: ['lowpass', 500], verb: 0.5 }));
   };
   fx.heroDeath = t => { bell(t, 98, 0.22, 3.2, { verb: 0.6 }); fx.death(t + 0.05); pad(t + 0.2, hz(45), 2.4, 0.03, { cut: 600, verb: 0.6 }); };
   fx.bossReveal = t => {
@@ -5277,14 +5411,15 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   const save = U.save;
   const app = () => $('#app');
 
-  U.show = function (name, html) {
+  U.show = function (name, html, keepScroll) {
     U.closePop(); U.hidePreview();
+    const prev = keepScroll && $('#' + name) ? $('#' + name).scrollTop : 0;
     $$('.screen').forEach(s => s.classList.add('hidden'));
     let el = $('#' + name);
     if (!el) { el = document.createElement('div'); el.id = name; el.className = 'screen'; app().appendChild(el); }
     if (html != null) el.innerHTML = html;
     el.classList.remove('hidden');
-    el.scrollTop = 0;
+    el.scrollTop = prev;
     return el;
   };
 
@@ -5311,7 +5446,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   /* ---------------- raid setup ---------------- */
   const setup = U.setupState = { raid: 'crypt', diff: 'normal', seats: [{ hero: 'aldric', auto: false, custom: false }] };
   function heroBlurb(h) { return `<b>${esc(h.name)}</b> — ${RB.FACTIONS[h.fac].short} ${h.race} ${RB.CLASSES[h.cls].name} (${h.spec}). ${h.hp} health. <b>${esc(h.power.name)}:</b> ${esc(h.power.text)}${h.trait ? ' ' + esc(h.trait) : ''}`; }
-  U.setup = function () {
+  U.setup = function (keep) {
     const raids = Object.values(R).map(r => `<button class="raid ${setup.raid === r.id ? 'sel' : ''}" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="body"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div><p>${esc(r.intro)}</p><ul class="rules">${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul><p style="color:var(--muted)">Treasure: ${r.treasure.map(t => esc(C[t].name)).join(', ')}${(save.wins[r.id] || 0) ? ` · Conquered ${save.wins[r.id]}×` : ''}</p></div></button>`).join('');
     const seats = setup.seats.map((s, i) => {
       const h = H[s.hero];
@@ -5319,7 +5454,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       return `<div class="seat" data-seat="${i}"><header><strong>Hero ${i + 1}</strong>${setup.seats.length > 1 ? `<button class="btn small ghost" data-act="rm" aria-label="Remove hero ${i + 1}">Remove</button>` : ''}</header>
         <div class="heropick">${Object.values(H).map(x => `<button class="${x.id === s.hero ? 'on' : ''}" data-hero="${x.id}" title="${esc(x.name)}"><img alt="" src="${U.cardArt(x.id)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`).join('')}</div>
         <div class="heroinfo">${heroBlurb(h)}</div>
-        <div class="opts"><span class="seg"><button class="${!s.custom ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>
+        <div class="opts"><span class="seg"><button class="${!s.custom && !s.autoD ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.autoD ? 'on' : ''}" data-act="autodeck" title="Builds the strongest deck for this hero against this raid from the cards you own">Auto deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>${s.autoD ? `<div class="opts" style="color:var(--muted);font-size:.85rem">Auto deck: tuned for ${esc(R[setup.raid].short)} with ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''}. It's rebuilt when you change the raid or party.</div>` : ''}
         <div class="opts"><label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
     const el = U.show('setup', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Choose your raid</h2><span class="sp"></span></div>
@@ -5327,35 +5462,55 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health and strikes 1 harder. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
       <h3 class="sec">Your party</h3><p class="lede">Play solo or bring up to four heroes. You take every hero's turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.</p>
       <div class="seats">${seats}</div>
-      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}</span><button class="btn primary" data-act="go">Enter the raid</button></div></div>`);
+      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}</span><button class="btn primary" data-act="go">Enter the raid</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
-      const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(); }
-      const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(); }
+      const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(true); }
+      const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(true); }
       const seatEl = t.closest('[data-seat]'); const seat = seatEl ? setup.seats[+seatEl.dataset.seat] : null;
-      const hb = t.closest('[data-hero]'); if (hb && seat) { seat.hero = hb.dataset.hero; return U.setup(); }
+      const hb = t.closest('[data-hero]'); if (hb && seat) { seat.hero = hb.dataset.hero; return U.setup(true); }
       const a = t.closest('[data-act]'); if (!a) return;
       switch (a.dataset.act) {
         case 'back': return U.title();
-        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(); }
-        case 'rm': setup.seats.splice(+seatEl.dataset.seat, 1); return U.setup();
-        case 'starter': seat.custom = false; return U.setup();
-        case 'custom': seat.custom = true; if (!save.decks[seat.hero]) save.decks[seat.hero] = RB.buildDeck(seat.hero, save.owned, setup.seats.length); U.persist(); return U.setup();
-        case 'edit': seat.custom = true; return U.deckbuilder(seat.hero, () => U.setup());
+        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(true); }
+        case 'rm': setup.seats.splice(+seatEl.dataset.seat, 1); return U.setup(true);
+        case 'starter': seat.custom = false; seat.autoD = false; return U.setup(true);
+        case 'autodeck': seat.custom = false; seat.autoD = true; return U.setup(true);
+        case 'custom': seat.custom = true; seat.autoD = false; if (!save.decks[seat.hero]) save.decks[seat.hero] = RB.buildDeck(seat.hero, save.owned, setup.seats.length); U.persist(); return U.setup(true);
+        case 'edit': seat.custom = true; seat.autoD = false; return U.deckbuilder(seat.hero, () => U.setup(true));
         case 'auto': seat.auto = a.checked; return;
         case 'go': return U.startRaid();
+        case 'heroAuto': return;
       }
     };
   };
-  U.startRaid = function () {
+  U.startRaid = async function () {
+    const autos = [];
+    for (const s of setup.seats) autos.push(s.autoD ? await U.autoDeckFor(s.hero, setup.raid, setup.seats.length) : null);
     const party = setup.seats.map((s, i) => {
       const custom = s.custom && save.decks[s.hero] && save.decks[s.hero].length === RB.DECK_SIZE;
-      const ids = custom ? save.decks[s.hero].slice() : RB.buildDeck(s.hero, save.owned, setup.seats.length);
+      const ids = autos[i] ? autos[i].slice() : custom ? save.decks[s.hero].slice() : RB.buildDeck(s.hero, save.owned, setup.seats.length);
       const holoLeft = Object.assign({}, save.holo);
       const deck = ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; });
       return { hero: s.hero, auto: s.auto, deck, name: 'Hero ' + (i + 1), pet: i === 0 ? save.sel.pet : null };
     });
     U.battle({ raid: setup.raid, difficulty: setup.diff, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
+  };
+
+  /* ---------------- auto deck (#23) ---------------- */
+  U.autoDeckFor = async function (hid, raidId, partySize) {
+    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0)].join('|');
+    save.autoDecks = save.autoDecks || {};
+    if (save.autoDecks[key]) return save.autoDecks[key];
+    const ov = document.createElement('div'); ov.className = 'overlay';
+    ov.innerHTML = `<div class="dialog" style="min-width:min(90vw,420px)"><h3>Building the best deck</h3><p>Testing ${esc(H[hid].name)}'s cards against ${esc(R[raidId].short)} in practice raids…</p><div class="pbar"><i style="width:0%"></i></div><p class="pnote" style="color:var(--muted);font-size:.9rem;margin:.6rem 0 0">This takes a few seconds.</p></div>`;
+    document.body.appendChild(ov);
+    try {
+      const r = await RB.bestDeck(hid, raidId, save.owned, partySize, { onProgress: f => { const b = ov.querySelector('.pbar i'); if (b) b.style.width = Math.round(f * 100) + '%'; } });
+      for (const k of Object.keys(save.autoDecks)) if (k.startsWith(hid + '|')) delete save.autoDecks[k];
+      save.autoDecks[key] = r.deck; U.persist();
+      return r.deck;
+    } finally { ov.remove(); }
   };
 
   /* ---------------- deck builder ---------------- */
@@ -5372,7 +5527,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       const maxC = Math.max(1, ...curve);
       const rows = Object.entries(counts).sort((a, b) => C[a[0]].cost - C[b[0]].cost).map(([id, k]) => `<div class="row" data-rm="${id}" title="Click to remove one"><span class="c">${['quest', 'location'].includes(C[id].type) ? '·' : C[id].cost}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('');
       const byType = t => deck.filter(id => C[id].type === t).length;
-      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2>${esc(h.name)}'s deck</h2><span class="sp"></span><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
+      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2>${esc(h.name)}'s deck</h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
         <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', location: 'Locations', master: 'Master heroes' }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
         <div class="pool">${list.map(d => { const k = counts[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
@@ -5386,6 +5541,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         const rm = t.closest('[data-rm]'); if (rm) { deck.splice(deck.indexOf(rm.dataset.rm), 1); return draw(); }
         const a = t.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'starter') { deck = RB.buildDeck(hid, save.owned); return draw(); }
+        if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
         if (a.dataset.act === 'clear') { deck = []; return draw(); }
         if (a.dataset.act === 'done') { save.decks[hid] = deck; U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); (onDone || U.title)(); }
       };
@@ -5570,14 +5726,14 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? C[p.weapon.c.id].atk : 0);
     const heroCan = canAct && E.canAttackWith(p, 'hero');
     const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Elusive', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
-    const petImg = p.hero.pet && U.ownsCos(p.hero.pet) && U.cosImg(p.hero.pet) ? `<img class="pet" alt="" src="${U.cosImg(p.hero.pet)}">` : '';
+    const petImg = p.hero.pet && U.ownsCos(p.hero.pet) && U.cosImg(p.hero.pet) ? `<div class="petspot"><img class="pet" alt="" src="${U.cosImg(p.hero.pet)}" title="${esc(RB.COSMETICS[p.hero.pet].name)}"></div>` : '';
     const pw = HE[p.heroId].power;
     const powerBtn = p.hero.master ? `<button class="btn small ghost powerbtn used" disabled><b>Master Hero</b>Original power set aside</button>` :
       `<button class="btn small powerbtn ${p.hero.powerUsed ? 'used' : ''}" data-act="power" ${p.hero.powerUsed || !canAct ? 'disabled' : ''} title="${esc(pw.text)}"><b>${esc(pw.name)}</b>${p.hero.powerUsed ? 'Used' : 'Once per game'}</button>`;
     const heroCard = `<div class="herocard ${p.hero.ex ? 'ex' : ''} ${dead ? 'dead' : ''} ${heroCan && !view.mode ? 'can' : ''}${tcls('hero' + p.idx)}" data-ref="hero${p.idx}" data-act="hero" tabindex="0" aria-label="${esc(hd.name)}, ${E.heroHp(p)} health">
-      <img alt="" src="${U.cardArt(p.hero.master || p.heroId)}">${petImg}<div class="tags">${tags}</div>
+      <img alt="" src="${U.cardArt(p.hero.master || p.heroId)}"><div class="tags">${tags}</div>
       ${heroAtk > 0 ? `<div class="hatk" title="Attack with weapon">${heroAtk}</div>` : ''}<div class="hhp ${E.heroHp(p) <= 8 ? 'low' : ''}">${Math.max(0, E.heroHp(p))}</div>${p.hero.shield ? `<div class="shield" title="Ward: prevents the next ${p.hero.shield} damage">◈ ${p.hero.shield}</div>` : ''}
-      <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max health</small></div></div>${powerBtn}`;
+      <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max health</small></div></div>${powerBtn}${petImg}`;
     const gslot = (e, label, val, act, can) => e ? `<div class="gslot has ${e.ex ? 'ex' : ''} ${can ? 'can' : ''}" data-act="${act}" data-gid="${e.c.uid}" data-card="${e.c.id}"><img alt="" src="${U.cardArt(e.c.id)}"><span class="gn"><b>${esc(C[e.c.id].name)}</b>${label}</span><span class="gv">${val}</span></div>` : '';
     let gear = p.weapon ? gslot(p.weapon, `Strike ${C[p.weapon.c.id].strike}${p.weapon.ex ? ' · used' : ''}`, '⚔ ' + C[p.weapon.c.id].atk, 'weapon', false) : `<div class="gslot">No weapon</div>`;
     for (const slot of Object.keys(RB.SLOTS)) if (p.armor[slot]) { const d = C[p.armor[slot].c.id]; gear += gslot(p.armor[slot], `${RB.SLOTS[slot]} · pay ${d.use}${p.armor[slot].ex ? ' · used' : ''}`, '⛨ ' + d.def, 'armor', false); }
@@ -5641,8 +5797,8 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     b.style.animationDuration = (ms || 1500) * speed() + 'ms';
     document.body.appendChild(b); setTimeout(() => b.remove(), (ms || 1500) * speed() + 50);
   }
-  function reveal(html, ms, onTop) {
-    const o = document.createElement('div'); o.className = 'overlay clear'; o.innerHTML = `<div class="reveal">${html}</div>`;
+  function reveal(html, ms, onTop, who) {
+    const o = document.createElement('div'); o.className = 'overlay clear'; o.innerHTML = `<div class="reveal">${who ? `<div class="who">${esc(who)}</div>` : ''}${html}</div>`;
     document.body.appendChild(o);
     return wait(ms).then(() => o.remove());
   }
@@ -5671,8 +5827,8 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         case 'death': { U.sfx.death(); const el = elFor(d.ref); if (el) el.classList.add('dying'); await wait(450); break; }
         case 'heroDeath': { U.sfx.heroDeath(); banner(E.pdef(E.g.players[+d.ref.replace('hero', '')]).name + ' has fallen', 'boss', null, 1600); await wait(1200); break; }
         case 'summon': { U.sfx.summon(); const el = elFor(d.ref); if (el && el.animate) el.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1 }, { transform: 'none' }], { duration: 320 * speed() }); await wait(260); break; }
-        case 'play': { if (C[d.id] && C[d.id].type === 'ability') U.sfx.spell(); else U.sfx.card(); if (speed() > 0.2) await reveal(U.cardHTML(d.id, { holo: d.holo }), 750); break; }
-        case 'bossCard': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 1500); break; }
+        case 'play': { if (C[d.id] && C[d.id].type === 'ability') U.sfx.spell(); else U.sfx.card(); const byAI = !human(E.g.players[d.p]); if (speed() > 0.2 || byAI) await reveal(U.cardHTML(d.id, { holo: d.holo }), byAI ? 1700 : 800, null, byAI ? E.pdef(E.g.players[d.p]).name : null); break; }
+        case 'bossCard': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 2600, null, E.raid.short + ' plays'); break; }
         case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
         case 'turn': { const p = E.g.players[d.p]; view.focus = d.p; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
         case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
@@ -5889,6 +6045,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
     U.currentGame = E;
+    E.g.onAiStep = () => wait(550);
     RB.AUDIO.music(cfg.raid || (E.raid && E.raid.id));
     root.onclick = onClick;
     root.onmouseover = onOver;

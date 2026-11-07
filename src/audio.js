@@ -173,10 +173,14 @@
     for (let i = 0; i < 4; i++) tone(t + i * 0.04, { f: hz(88 + [0, 3, 7, 10][i]), a: 0.002, d: 0.35, vol: 0.08, verb: 0.5, pan: rnd(-0.4, 0.4) });
   };
   fx.summon = t => { taiko(t, 0.35, 80); noise(t, { flt: ['bandpass', 600, 2400, 2, 0.3], a: 0.08, d: 0.3, vol: 0.18, verb: 0.3 }); };
-  fx.death = t => {
-    tone(t, { type: 'sawtooth', f: 160, f2: 55, glide: 0.75, a: 0.03, d: 0.8, vol: 0.2, flt: ['lowpass', 1000, 260, 1, 0.7], vib: [7, 6], verb: 0.25 });
-    tone(t + 0.35, { f: 95, f2: 38, d: 0.32, vol: 0.6 });
-    noise(t + 0.35, { kind: 'brown', flt: ['lowpass', 600], a: 0.04, d: 0.55, vol: 0.32, verb: 0.2 });
+  fx.death = t => { // a body crumpling to the ground: falling whoosh, heavy thud, armour clatter, dust and a dark low chord
+    noise(t, { flt: ['bandpass', 1400, 320, 1.4, 0.24], a: 0.06, d: 0.2, vol: 0.22, pan: 0.15, pan2: -0.15 });
+    const hit = t + 0.24;
+    tone(hit, { f: 115, f2: 42, glide: 0.3, a: 0.002, d: 0.38, vol: 0.72 });
+    noise(hit, { kind: 'brown', flt: ['lowpass', 520, 180, 0, 0.3], a: 0.002, d: 0.42, vol: 0.55, verb: 0.15 });
+    for (let i = 0; i < 6; i++) { const s = hit + 0.02 + rnd(0, 0.32), f = rnd(1500, 3400); tone(s, { f, a: 0.001, d: rnd(0.05, 0.14), vol: rnd(0.025, 0.05), pan: rnd(-0.5, 0.5) }); tone(s, { f: f * 2.7, a: 0.001, d: 0.05, vol: 0.015 }); noise(s, { flt: ['highpass', 3000], a: 0.001, d: 0.02, vol: 0.05 }); }
+    noise(hit + 0.05, { kind: 'pink', flt: ['lowpass', 900, 300, 0, 0.6], a: 0.08, d: 0.6, vol: 0.12, verb: 0.3 });
+    [43, 46, 50].forEach(m => tone(hit + 0.08, { type: 'triangle', f: hz(m), a: 0.06, d: 1.3, vol: 0.035, flt: ['lowpass', 500], verb: 0.5 }));
   };
   fx.heroDeath = t => { bell(t, 98, 0.22, 3.2, { verb: 0.6 }); fx.death(t + 0.05); pad(t + 0.2, hz(45), 2.4, 0.03, { cut: 600, verb: 0.6 }); };
   fx.bossReveal = t => {

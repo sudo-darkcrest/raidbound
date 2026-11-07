@@ -173,11 +173,20 @@
           atk = E.heroAttackValue(p, useW); myHp = E.heroHp(p); lr = useW && (C[p.weapon.c.id].kw || []).includes('longrange');
         } else { atk = E.allyAtk(p, who); myHp = E.allyMax(p, who) - who.damage; lr = E.allyKw(p, who, 'longrange'); }
         let best = null, bs = -1;
+        // does a fallen ally come back for the boss (the Crypt's Grave Harvest)? then a lost trade also hands the boss a minion
+        const raisesMinion = who !== 'hero' && E.raid.onAllyDeath && !who.token;
+        const allyWorth = who === 'hero' ? 0 : 6 + atk * 1.5 + E.allyMax(p, who) * 0.4;
         for (const t of targets) {
           const back = lr ? 0 : t.t === 'boss' ? E.raid.retaliation : E.minAtk(t.m);
           const dies = back >= myHp;
+          const kills = t.t === 'minion' ? atk >= E.hpOf(t) : atk >= E.bossHp();
           let s = enemyValue(E, t, atk) - back * (who === 'hero' ? 0.9 : 0.45);
-          if (dies) s -= who === 'hero' ? 999 : 6 + atk;
+          if (dies && who === 'hero') s -= 999;
+          if (dies && who !== 'hero') {
+            if (!kills) continue;                     // never throw an ally away without killing anything
+            s -= allyWorth;
+            if (raisesMinion) s -= 15;                // its corpse becomes a Risen Thrall for the boss
+          }
           if (who === 'hero' && myHp - back < 8 && back > 0) s -= 6;
           if (s > bs) { bs = s; best = t; }
         }
@@ -307,5 +316,98 @@
       }
     }
     return deck;
+  };
+})(globalThis.RB);
+
+/* ---------- auto deck: the best deck for a hero against a particular raid ---------- */
+(function (RB) {
+  const C = RB.CARDS;
+  // how each raid changes what is worth bringing
+  const RAIDMOD = {
+    crypt: { ally: -1.2, aoe: 2.5, aoeMinion: 2.5, heal: 1, stunAll: 1, shield: 0.5 },
+    molten: { armor: -1.5, heal: 1.5, shield: 1.5, dmg: 1, aoe: 1.5, aoeMinion: 1 },
+    tide: { ally: -1.5, aoe: 2, aoeMinion: 2, dmg: 1.2, draw: 1, stun: 1 },
+  };
+  RB.cardScore = function (d, raidId) {
+    const rar = { c: 0, u: 0.6, r: 1.3, e: 2.2 }[d.rarity] || 0, tags = d.tags || [], kw = d.kw || [], has = t => tags.includes(t);
+    let s;
+    switch (d.type) {
+      case 'ally': s = (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
+      case 'ability': s = 3 + ((d.dmg || (has('dmg') ? 3 : 0)) + (d.heal || (has('heal') ? 4 : 0)) * 0.6 + (has('draw') ? 3 : 0) + (has('aoe') || has('aoeMinion') ? 3 : 0) + (has('shield') ? 2 : 0) + (has('stun') || has('stunAll') ? 2 : 0) + (has('revive') ? 4 : 0) + (has('summon') ? 3 : 0) + (has('buff') ? 1.5 : 0)) / (d.cost + 1.2) * 4; break;
+      case 'weapon': s = 2 + d.atk * 2.2 - (d.strike || 0) * 1.3; break;
+      case 'armor': s = 2 + d.def * 1.6 - (d.use || 0) + (d.spell || 0) * 2; break;
+      case 'item': s = 4 + (d.spell || 0) * 2 + (d.allyAtk ? 3 : 0) + (d.use ? 1 : 0); break;
+      case 'master': s = 10; break;
+      default: s = 5;
+    }
+    s += rar;
+    const m = RAIDMOD[raidId] || {};
+    if (m[d.type]) s += m[d.type];
+    for (const t of tags) if (m[t]) s += m[t];
+    return s;
+  };
+  function shape(heroId) {
+    const st = RB.STARTER[heroId], out = {};
+    if (st) for (const [id, k] of Object.entries(st)) { const t = C[id].type === 'location' ? 'quest' : C[id].type; out[t] = (out[t] || 0) + k; }
+    else Object.assign(out, { ally: 11, ability: 9, weapon: 2, armor: 3, item: 2, quest: 2, master: 1 });
+    return out;
+  }
+  const poolFor = (heroId, owned) => Object.values(C).filter(d => RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
+  const copiesOf = (d, owned) => Math.min(RB.maxCopies(d), owned ? owned[d.id] || 0 : 2);
+  // fast heuristic pick (instant)
+  RB.autoDeck = function (heroId, raidId, owned, partySize) {
+    const pool = poolFor(heroId, owned), want = shape(heroId), deck = [];
+    const sc = d => RB.cardScore(d, raidId) + (partySize > 1 && (d.tags || []).includes('revive') ? 4 : 0);
+    const add = (list, n) => { const opts = []; list.forEach(d => { for (let k = 0; k < copiesOf(d, owned); k++) opts.push({ id: d.id, s: sc(d) - k * 0.5 }); }); opts.sort((a, b) => b.s - a.s); for (const o of opts) { if (n <= 0) break; if (deck.length >= RB.DECK_SIZE) break; if (C[o.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue; deck.push(o.id); n--; } };
+    for (const [t, n] of Object.entries(want)) add(pool.filter(d => (d.type === 'location' ? 'quest' : d.type) === t), n);
+    if (deck.length < RB.DECK_SIZE) { const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1); add(pool.filter(d => (counts[d.id] || 0) < copiesOf(d, owned)).map(d => d), RB.DECK_SIZE - deck.length); }
+    return deck.slice(0, RB.DECK_SIZE);
+  };
+  // play test raids and keep swaps that do better (async, yields to the page between games)
+  RB.polishDeck = async function (heroId, raidId, deck, owned, partySize, opts) {
+    opts = opts || {};
+    const games = opts.games || 16, iters = opts.iters || 30;
+    let seeds = Array.from({ length: games }, (_, i) => 7000 + i * 13);
+    const pool = poolFor(heroId, owned);
+    const tick = () => new Promise(r => setTimeout(r, 0));
+    async function evaluate(d) {
+      let s = 0;
+      for (const seed of seeds) {
+        const party = [{ hero: heroId, deck: d.slice() }];
+        for (let k = 1; k < (partySize || 1); k++) { const ally = Object.keys(RB.HEROES)[(Object.keys(RB.HEROES).indexOf(heroId) + k * 2) % 6]; party.push({ hero: ally, deck: RB.buildDeck(ally, null, partySize) }); }
+        const g = RB.newGame({ raid: raidId, seed, difficulty: opts.difficulty || 'normal', allAuto: true, party }, {});
+        await g.start();
+        s += (g.g.over === 'win' ? 100 + Math.max(0, 30 - g.g.round) : 0) + (1 - Math.max(0, g.bossHp()) / g.g.boss.maxHp) * 40;
+      }
+      await tick();
+      return s / games;
+    }
+    let best = deck.slice(), bestS = await evaluate(best);
+    const base = bestS;
+    for (const alt of opts.alternatives || []) { const s = await evaluate(alt); if (s > bestS) { best = alt.slice(); bestS = s; } }
+    for (let i = 0; i < iters; i++) {
+      const counts = {}; best.forEach(id => counts[id] = (counts[id] || 0) + 1);
+      const outs = best.map((id, ix) => ({ ix, s: RB.cardScore(C[id], raidId) + Math.random() * 3 })).sort((a, b) => a.s - b.s);
+      const ins = pool.filter(d => (counts[d.id] || 0) < copiesOf(d, owned) && !(d.type === 'master' && best.some(x => C[x].type === 'master'))).map(d => ({ id: d.id, s: RB.cardScore(d, raidId) + Math.random() * 3 })).sort((a, b) => b.s - a.s);
+      if (!outs.length || !ins.length) break;
+      const out = outs[Math.floor(Math.random() * Math.min(5, outs.length))], inn = ins[Math.floor(Math.random() * Math.min(6, ins.length))];
+      const cand = best.slice(); cand[out.ix] = inn.id;
+      const s = await evaluate(cand);
+      if (s > bestS + 0.5) { best = cand; bestS = s; }
+      if (opts.onProgress) opts.onProgress((i + 1) / iters, bestS, base);
+    }
+    // final check on fresh raids: only beat the alternatives if it really is better
+    if (opts.alternatives && opts.alternatives.length) {
+      seeds = Array.from({ length: games * 2 }, (_, i) => 91000 + i * 17);
+      let pick = best, ps = await evaluate(best);
+      for (const alt of opts.alternatives) { const s = await evaluate(alt); if (s > ps) { pick = alt.slice(); ps = s; } }
+      best = pick;
+    }
+    return { deck: best, score: bestS, base };
+  };
+  // the deck the "Auto deck" button uses: best of the starter and the scored pick, then tuned by test raids
+  RB.bestDeck = async function (heroId, raidId, owned, partySize, opts) {
+    const auto = RB.autoDeck(heroId, raidId, owned, partySize), starter = RB.buildDeck(heroId, owned, partySize);
+    return RB.polishDeck(heroId, raidId, auto, owned, partySize, Object.assign({ games: 20, iters: 24, alternatives: [starter] }, opts || {}));
   };
 })(globalThis.RB);

@@ -5,14 +5,15 @@
   const save = U.save;
   const app = () => $('#app');
 
-  U.show = function (name, html) {
+  U.show = function (name, html, keepScroll) {
     U.closePop(); U.hidePreview();
+    const prev = keepScroll && $('#' + name) ? $('#' + name).scrollTop : 0;
     $$('.screen').forEach(s => s.classList.add('hidden'));
     let el = $('#' + name);
     if (!el) { el = document.createElement('div'); el.id = name; el.className = 'screen'; app().appendChild(el); }
     if (html != null) el.innerHTML = html;
     el.classList.remove('hidden');
-    el.scrollTop = 0;
+    el.scrollTop = prev;
     return el;
   };
 
@@ -39,7 +40,7 @@
   /* ---------------- raid setup ---------------- */
   const setup = U.setupState = { raid: 'crypt', diff: 'normal', seats: [{ hero: 'aldric', auto: false, custom: false }] };
   function heroBlurb(h) { return `<b>${esc(h.name)}</b> — ${RB.FACTIONS[h.fac].short} ${h.race} ${RB.CLASSES[h.cls].name} (${h.spec}). ${h.hp} health. <b>${esc(h.power.name)}:</b> ${esc(h.power.text)}${h.trait ? ' ' + esc(h.trait) : ''}`; }
-  U.setup = function () {
+  U.setup = function (keep) {
     const raids = Object.values(R).map(r => `<button class="raid ${setup.raid === r.id ? 'sel' : ''}" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="body"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div><p>${esc(r.intro)}</p><ul class="rules">${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul><p style="color:var(--muted)">Treasure: ${r.treasure.map(t => esc(C[t].name)).join(', ')}${(save.wins[r.id] || 0) ? ` · Conquered ${save.wins[r.id]}×` : ''}</p></div></button>`).join('');
     const seats = setup.seats.map((s, i) => {
       const h = H[s.hero];
@@ -47,7 +48,7 @@
       return `<div class="seat" data-seat="${i}"><header><strong>Hero ${i + 1}</strong>${setup.seats.length > 1 ? `<button class="btn small ghost" data-act="rm" aria-label="Remove hero ${i + 1}">Remove</button>` : ''}</header>
         <div class="heropick">${Object.values(H).map(x => `<button class="${x.id === s.hero ? 'on' : ''}" data-hero="${x.id}" title="${esc(x.name)}"><img alt="" src="${U.cardArt(x.id)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`).join('')}</div>
         <div class="heroinfo">${heroBlurb(h)}</div>
-        <div class="opts"><span class="seg"><button class="${!s.custom ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>
+        <div class="opts"><span class="seg"><button class="${!s.custom && !s.autoD ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.autoD ? 'on' : ''}" data-act="autodeck" title="Builds the strongest deck for this hero against this raid from the cards you own">Auto deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>${s.autoD ? `<div class="opts" style="color:var(--muted);font-size:.85rem">Auto deck: tuned for ${esc(R[setup.raid].short)} with ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''}. It's rebuilt when you change the raid or party.</div>` : ''}
         <div class="opts"><label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
     const el = U.show('setup', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Choose your raid</h2><span class="sp"></span></div>
@@ -55,35 +56,55 @@
       <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health and strikes 1 harder. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
       <h3 class="sec">Your party</h3><p class="lede">Play solo or bring up to four heroes. You take every hero's turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.</p>
       <div class="seats">${seats}</div>
-      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}</span><button class="btn primary" data-act="go">Enter the raid</button></div></div>`);
+      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}</span><button class="btn primary" data-act="go">Enter the raid</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
-      const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(); }
-      const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(); }
+      const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(true); }
+      const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(true); }
       const seatEl = t.closest('[data-seat]'); const seat = seatEl ? setup.seats[+seatEl.dataset.seat] : null;
-      const hb = t.closest('[data-hero]'); if (hb && seat) { seat.hero = hb.dataset.hero; return U.setup(); }
+      const hb = t.closest('[data-hero]'); if (hb && seat) { seat.hero = hb.dataset.hero; return U.setup(true); }
       const a = t.closest('[data-act]'); if (!a) return;
       switch (a.dataset.act) {
         case 'back': return U.title();
-        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(); }
-        case 'rm': setup.seats.splice(+seatEl.dataset.seat, 1); return U.setup();
-        case 'starter': seat.custom = false; return U.setup();
-        case 'custom': seat.custom = true; if (!save.decks[seat.hero]) save.decks[seat.hero] = RB.buildDeck(seat.hero, save.owned, setup.seats.length); U.persist(); return U.setup();
-        case 'edit': seat.custom = true; return U.deckbuilder(seat.hero, () => U.setup());
+        case 'add': { const used = setup.seats.map(s => s.hero); const next = Object.keys(H).find(h => !used.includes(h)) || 'aldric'; setup.seats.push({ hero: next, auto: false, custom: false }); return U.setup(true); }
+        case 'rm': setup.seats.splice(+seatEl.dataset.seat, 1); return U.setup(true);
+        case 'starter': seat.custom = false; seat.autoD = false; return U.setup(true);
+        case 'autodeck': seat.custom = false; seat.autoD = true; return U.setup(true);
+        case 'custom': seat.custom = true; seat.autoD = false; if (!save.decks[seat.hero]) save.decks[seat.hero] = RB.buildDeck(seat.hero, save.owned, setup.seats.length); U.persist(); return U.setup(true);
+        case 'edit': seat.custom = true; seat.autoD = false; return U.deckbuilder(seat.hero, () => U.setup(true));
         case 'auto': seat.auto = a.checked; return;
         case 'go': return U.startRaid();
+        case 'heroAuto': return;
       }
     };
   };
-  U.startRaid = function () {
+  U.startRaid = async function () {
+    const autos = [];
+    for (const s of setup.seats) autos.push(s.autoD ? await U.autoDeckFor(s.hero, setup.raid, setup.seats.length) : null);
     const party = setup.seats.map((s, i) => {
       const custom = s.custom && save.decks[s.hero] && save.decks[s.hero].length === RB.DECK_SIZE;
-      const ids = custom ? save.decks[s.hero].slice() : RB.buildDeck(s.hero, save.owned, setup.seats.length);
+      const ids = autos[i] ? autos[i].slice() : custom ? save.decks[s.hero].slice() : RB.buildDeck(s.hero, save.owned, setup.seats.length);
       const holoLeft = Object.assign({}, save.holo);
       const deck = ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; });
       return { hero: s.hero, auto: s.auto, deck, name: 'Hero ' + (i + 1), pet: i === 0 ? save.sel.pet : null };
     });
     U.battle({ raid: setup.raid, difficulty: setup.diff, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
+  };
+
+  /* ---------------- auto deck (#23) ---------------- */
+  U.autoDeckFor = async function (hid, raidId, partySize) {
+    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0)].join('|');
+    save.autoDecks = save.autoDecks || {};
+    if (save.autoDecks[key]) return save.autoDecks[key];
+    const ov = document.createElement('div'); ov.className = 'overlay';
+    ov.innerHTML = `<div class="dialog" style="min-width:min(90vw,420px)"><h3>Building the best deck</h3><p>Testing ${esc(H[hid].name)}'s cards against ${esc(R[raidId].short)} in practice raids…</p><div class="pbar"><i style="width:0%"></i></div><p class="pnote" style="color:var(--muted);font-size:.9rem;margin:.6rem 0 0">This takes a few seconds.</p></div>`;
+    document.body.appendChild(ov);
+    try {
+      const r = await RB.bestDeck(hid, raidId, save.owned, partySize, { onProgress: f => { const b = ov.querySelector('.pbar i'); if (b) b.style.width = Math.round(f * 100) + '%'; } });
+      for (const k of Object.keys(save.autoDecks)) if (k.startsWith(hid + '|')) delete save.autoDecks[k];
+      save.autoDecks[key] = r.deck; U.persist();
+      return r.deck;
+    } finally { ov.remove(); }
   };
 
   /* ---------------- deck builder ---------------- */
@@ -100,7 +121,7 @@
       const maxC = Math.max(1, ...curve);
       const rows = Object.entries(counts).sort((a, b) => C[a[0]].cost - C[b[0]].cost).map(([id, k]) => `<div class="row" data-rm="${id}" title="Click to remove one"><span class="c">${['quest', 'location'].includes(C[id].type) ? '·' : C[id].cost}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('');
       const byType = t => deck.filter(id => C[id].type === t).length;
-      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2>${esc(h.name)}'s deck</h2><span class="sp"></span><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
+      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2>${esc(h.name)}'s deck</h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
         <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', location: 'Locations', master: 'Master heroes' }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
         <div class="pool">${list.map(d => { const k = counts[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
@@ -114,6 +135,7 @@
         const rm = t.closest('[data-rm]'); if (rm) { deck.splice(deck.indexOf(rm.dataset.rm), 1); return draw(); }
         const a = t.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'starter') { deck = RB.buildDeck(hid, save.owned); return draw(); }
+        if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
         if (a.dataset.act === 'clear') { deck = []; return draw(); }
         if (a.dataset.act === 'done') { save.decks[hid] = deck; U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); (onDone || U.title)(); }
       };

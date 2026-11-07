@@ -50,14 +50,14 @@
     const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? C[p.weapon.c.id].atk : 0);
     const heroCan = canAct && E.canAttackWith(p, 'hero');
     const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Elusive', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
-    const petImg = p.hero.pet && U.ownsCos(p.hero.pet) && U.cosImg(p.hero.pet) ? `<img class="pet" alt="" src="${U.cosImg(p.hero.pet)}">` : '';
+    const petImg = p.hero.pet && U.ownsCos(p.hero.pet) && U.cosImg(p.hero.pet) ? `<div class="petspot"><img class="pet" alt="" src="${U.cosImg(p.hero.pet)}" title="${esc(RB.COSMETICS[p.hero.pet].name)}"></div>` : '';
     const pw = HE[p.heroId].power;
     const powerBtn = p.hero.master ? `<button class="btn small ghost powerbtn used" disabled><b>Master Hero</b>Original power set aside</button>` :
       `<button class="btn small powerbtn ${p.hero.powerUsed ? 'used' : ''}" data-act="power" ${p.hero.powerUsed || !canAct ? 'disabled' : ''} title="${esc(pw.text)}"><b>${esc(pw.name)}</b>${p.hero.powerUsed ? 'Used' : 'Once per game'}</button>`;
     const heroCard = `<div class="herocard ${p.hero.ex ? 'ex' : ''} ${dead ? 'dead' : ''} ${heroCan && !view.mode ? 'can' : ''}${tcls('hero' + p.idx)}" data-ref="hero${p.idx}" data-act="hero" tabindex="0" aria-label="${esc(hd.name)}, ${E.heroHp(p)} health">
-      <img alt="" src="${U.cardArt(p.hero.master || p.heroId)}">${petImg}<div class="tags">${tags}</div>
+      <img alt="" src="${U.cardArt(p.hero.master || p.heroId)}"><div class="tags">${tags}</div>
       ${heroAtk > 0 ? `<div class="hatk" title="Attack with weapon">${heroAtk}</div>` : ''}<div class="hhp ${E.heroHp(p) <= 8 ? 'low' : ''}">${Math.max(0, E.heroHp(p))}</div>${p.hero.shield ? `<div class="shield" title="Ward: prevents the next ${p.hero.shield} damage">◈ ${p.hero.shield}</div>` : ''}
-      <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max health</small></div></div>${powerBtn}`;
+      <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max health</small></div></div>${powerBtn}${petImg}`;
     const gslot = (e, label, val, act, can) => e ? `<div class="gslot has ${e.ex ? 'ex' : ''} ${can ? 'can' : ''}" data-act="${act}" data-gid="${e.c.uid}" data-card="${e.c.id}"><img alt="" src="${U.cardArt(e.c.id)}"><span class="gn"><b>${esc(C[e.c.id].name)}</b>${label}</span><span class="gv">${val}</span></div>` : '';
     let gear = p.weapon ? gslot(p.weapon, `Strike ${C[p.weapon.c.id].strike}${p.weapon.ex ? ' · used' : ''}`, '⚔ ' + C[p.weapon.c.id].atk, 'weapon', false) : `<div class="gslot">No weapon</div>`;
     for (const slot of Object.keys(RB.SLOTS)) if (p.armor[slot]) { const d = C[p.armor[slot].c.id]; gear += gslot(p.armor[slot], `${RB.SLOTS[slot]} · pay ${d.use}${p.armor[slot].ex ? ' · used' : ''}`, '⛨ ' + d.def, 'armor', false); }
@@ -121,8 +121,8 @@
     b.style.animationDuration = (ms || 1500) * speed() + 'ms';
     document.body.appendChild(b); setTimeout(() => b.remove(), (ms || 1500) * speed() + 50);
   }
-  function reveal(html, ms, onTop) {
-    const o = document.createElement('div'); o.className = 'overlay clear'; o.innerHTML = `<div class="reveal">${html}</div>`;
+  function reveal(html, ms, onTop, who) {
+    const o = document.createElement('div'); o.className = 'overlay clear'; o.innerHTML = `<div class="reveal">${who ? `<div class="who">${esc(who)}</div>` : ''}${html}</div>`;
     document.body.appendChild(o);
     return wait(ms).then(() => o.remove());
   }
@@ -151,8 +151,8 @@
         case 'death': { U.sfx.death(); const el = elFor(d.ref); if (el) el.classList.add('dying'); await wait(450); break; }
         case 'heroDeath': { U.sfx.heroDeath(); banner(E.pdef(E.g.players[+d.ref.replace('hero', '')]).name + ' has fallen', 'boss', null, 1600); await wait(1200); break; }
         case 'summon': { U.sfx.summon(); const el = elFor(d.ref); if (el && el.animate) el.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1 }, { transform: 'none' }], { duration: 320 * speed() }); await wait(260); break; }
-        case 'play': { if (C[d.id] && C[d.id].type === 'ability') U.sfx.spell(); else U.sfx.card(); if (speed() > 0.2) await reveal(U.cardHTML(d.id, { holo: d.holo }), 750); break; }
-        case 'bossCard': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 1500); break; }
+        case 'play': { if (C[d.id] && C[d.id].type === 'ability') U.sfx.spell(); else U.sfx.card(); const byAI = !human(E.g.players[d.p]); if (speed() > 0.2 || byAI) await reveal(U.cardHTML(d.id, { holo: d.holo }), byAI ? 1700 : 800, null, byAI ? E.pdef(E.g.players[d.p]).name : null); break; }
+        case 'bossCard': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 2600, null, E.raid.short + ' plays'); break; }
         case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
         case 'turn': { const p = E.g.players[d.p]; view.focus = d.p; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
         case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
@@ -369,6 +369,7 @@
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
     U.currentGame = E;
+    E.g.onAiStep = () => wait(550);
     RB.AUDIO.music(cfg.raid || (E.raid && E.raid.id));
     root.onclick = onClick;
     root.onmouseover = onOver;
