@@ -1,10 +1,10 @@
 /* RAIDBOUND — "Frontier" booster set (#27) and unlockable heroes (#26).
-   Art here is procedural (layered SVG scenes), not SpriteCook paintings. */
+   Paintings come from SpriteCook (gen/<id>.webp); the layered SVG specs below are the fallback. */
 (function (RB) {
   const C = RB.CARDS, TK = RB.TOKENS;
   const fig = o => ['fig', o];
   const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
-  const add = (id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; o.art = Object.assign({ img: false }, o.art); C[id] = o; };
+  const add = (id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; C[id] = o; };
   const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
   const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
 
@@ -104,7 +104,7 @@
 
   /* =================== UNLOCKABLE HEROES (#26) =================== */
   const H = RB.HEROES;
-  const hero = (id, o) => { o.id = id; o.art = Object.assign({ img: false }, o.art); H[id] = o; };
+  const hero = (id, o) => { o.id = id; H[id] = o; };
   hero('vaelith', { name: 'Vaelith Nightbloom', fac: 'concord', race: 'Elf', cls: 'rogue', spec: 'Nightblade', profs: ['enchanting', 'skinning'], hp: 28,
     unlock: { how: 'win:crypt', text: 'Defeat Crypt of the Hollow King' },
     flavor: '"The moon keeps my secrets. The dagger keeps yours."',

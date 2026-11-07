@@ -57,7 +57,7 @@
   };
 
   /* ---------- the Market: spend raid gold on booster packs and heroes (#26, #27) ---------- */
-  const BOOSTER_ART = { s: 'sea', img: false, p: 'embers', pn: 20, L: [['glow', { x: 150, y: 110, r: 110, c: '#ffd27a', op: 0.45 }], ['obj', { t: 'chest', x: 150, y: 170, s: 1.1 }], ['obj', { t: 'coin', x: 86, y: 200, s: 0.5 }], ['obj', { t: 'coin', x: 220, y: 206, s: 0.42 }], ['obj', { t: 'scroll', x: 236, y: 92, s: 0.5 }], ['fx', { t: 'sparkle', x: 150, y: 120 }]] };
+  const BOOSTER_ART = { s: 'sea', img: 'booster', p: 'embers', pn: 20, L: [['glow', { x: 150, y: 110, r: 110, c: '#ffd27a', op: 0.45 }], ['obj', { t: 'chest', x: 150, y: 170, s: 1.1 }], ['obj', { t: 'coin', x: 86, y: 200, s: 0.5 }], ['obj', { t: 'coin', x: 220, y: 206, s: 0.42 }], ['obj', { t: 'scroll', x: 236, y: 92, s: 0.5 }], ['fx', { t: 'sparkle', x: 150, y: 120 }]] };
   U.market = function () {
     const price = RB.PACK_PRICE;
     const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
