@@ -184,5 +184,20 @@
  "inkcloud": "f21f0435-f16a-4b8c-ba49-ea953e99647e",
  "dragbelow": "60f7ffff-d8e8-4861-ba78-85f78d7023e6",
  "title_wide": "3a6c6fcb-811d-4166-a43e-8e8d0716c026",
- "title_alt": "74cd253f-106c-477e-a132-f61be52a1c1c"
+ "title_alt": "74cd253f-106c-477e-a132-f61be52a1c1c",
+ "cos_back_classic": "dd5a3baa-3def-4c38-849a-277ac9ce38ed",
+ "cos_back_aether": "0cadc522-189e-4a67-bb3b-b98ac999b8fa",
+ "cos_back_lynx": "8f57db68-db34-4348-a07a-ee37909af6d3",
+ "cos_back_crown": "c24a4f4f-a4fc-4fb5-a5d9-01d80b41582e",
+ "cos_back_ember": "2d681c63-c8d7-44e4-b60c-5cf20e14fa08",
+ "cos_back_abyss": "a1d6a844-4791-49de-926b-15dc2143593d",
+ "cos_board_classic": "6b775e98-eca8-493b-85db-d981b4adfe1f",
+ "cos_board_banners": "fe51546e-330e-464d-91f8-36288b33cbad",
+ "cos_board_sky": "5fcc9934-7b40-44e6-b55b-3d5adde6d023",
+ "cos_board_treasury": "03cad5ed-ac14-4464-b634-1f10067b666e",
+ "cos_pet_gryphon": "7c5c959a-eb2d-4c86-bb28-264ff44b8062",
+ "cos_pet_kite": "7a3878bb-6d4a-44e1-ad59-26f251ff1b52",
+ "cos_pet_wisp": "4b478e21-adcd-4e8e-abe8-4ee08132e924",
+ "cos_pet_whelp": "8f080eb0-6beb-47e9-81de-42e71264047e",
+ "cos_pet_seahorse": "9acd2253-02f4-42c9-8ed2-5c0c485bc3df"
 }

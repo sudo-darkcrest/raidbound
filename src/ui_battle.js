@@ -50,7 +50,7 @@
     const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? C[p.weapon.c.id].atk : 0);
     const heroCan = canAct && E.canAttackWith(p, 'hero');
     const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Elusive', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
-    const petImg = p.hero.pet && U.PET_ART[p.hero.pet] ? `<img class="pet" alt="" src="${U.art(U.PET_ART[p.hero.pet], 'pet:' + p.hero.pet)}">` : '';
+    const petImg = p.hero.pet && U.ownsCos(p.hero.pet) && U.cosImg(p.hero.pet) ? `<img class="pet" alt="" src="${U.cosImg(p.hero.pet)}">` : '';
     const pw = HE[p.heroId].power;
     const powerBtn = p.hero.master ? `<button class="btn small ghost powerbtn used" disabled><b>Master Hero</b>Original power set aside</button>` :
       `<button class="btn small powerbtn ${p.hero.powerUsed ? 'used' : ''}" data-act="power" ${p.hero.powerUsed || !canAct ? 'disabled' : ''} title="${esc(pw.text)}"><b>${esc(pw.name)}</b>${p.hero.powerUsed ? 'Used' : 'Once per game'}</button>`;
@@ -389,11 +389,11 @@
     const g = E.g, win = g.over === 'win';
     if (g.over === 'abandon') return;
     const raid = g.raid;
-    if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; U.persist(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
+    let fresh = []; if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'heroic') save.heroicWins[raid.id] = (save.heroicWins[raid.id] || 0) + 1; U.persist(); fresh = U.checkUnlocks(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
     const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${g.stats.dmgDealt}</b>damage dealt</div><div><b>${g.stats.cardsPlayed}</b>cards played</div><div><b>${g.players.filter(p => !p.hero.dead).length}/${g.players.length}</b>heroes standing</div></div>`;
     const heroic = g.cfg.difficulty === 'heroic';
     const el = U.show('end', win
-      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}<div class="pack" data-act="open" tabindex="0" role="button" aria-label="Open treasure pack"><div class="pt">Raid treasure</div><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="pb">${esc(raid.name)}${heroic ? ' · Heroic' : ''} · 5 cards</div></div><p style="color:var(--muted)">Click the pack to open it.</p></div>`
+      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}<div class="pack" data-act="open" tabindex="0" role="button" aria-label="Open treasure pack"><div class="pt">Raid treasure</div><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="pb">${esc(raid.name)}${heroic ? ' · Heroic' : ''} · 5 cards</div></div><p style="color:var(--muted)">Click the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
       : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {
       const a = e.target.closest('[data-act]'); if (!a) return;

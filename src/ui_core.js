@@ -9,18 +9,47 @@
 
   /* ---------- persistence (per-browser; safe if storage is unavailable) ---------- */
   const KEY = 'raidbound.save.v1';
-  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
+  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
   let save = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) save = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
   // base collection: two of every core card
   for (const d of Object.values(C)) if (d.set === 'core' && !(save.owned[d.id] >= 2)) save.owned[d.id] = Math.max(save.owned[d.id] || 0, 2);
   U.save = save;
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
-  U.applyCosmetics = () => {
-    document.body.className = document.body.className.replace(/\b(back|board)-\S+/g, '').trim();
-    if (save.sel.back) document.body.classList.add('back-' + save.sel.back.replace('back_', ''));
-    if (save.sel.board) document.body.classList.add('board-' + save.sel.board.replace('board_', ''));
+  if (!save.heroicWins) save.heroicWins = {};
+  const GEN = () => (RB.ART && RB.ART.GEN) || {};
+  U.cosImg = id => GEN()['cos_' + id] || '';
+  U.ownsCos = id => { const c = RB.COSMETICS[id]; return !!c && (c.get === 'default' || save.cos.includes(id)); };
+  U.unlockText = c => {
+    const [k, r] = c.get.split(':'), raid = r && RB.RAIDS[r];
+    if (k === 'default') return 'Owned from the start';
+    if (k === 'loot') return c.via ? 'Bonus with the ' + RB.COSMETICS[c.via].name + ' loot code' : 'Redeem its loot code from a treasure pack';
+    if (k === 'win') return 'Defeat ' + raid.short + ' in ' + raid.name;
+    if (k === 'heroic') return 'Defeat ' + raid.short + ' on Heroic';
+    if (k === 'allraids') return 'Defeat all three raid bosses';
+    return '';
   };
+  // grant anything earned by playing; returns the ids that are new
+  U.checkUnlocks = () => {
+    const got = [];
+    for (const [id, c] of Object.entries(RB.COSMETICS)) {
+      if (save.cos.includes(id)) continue;
+      const [k, r] = c.get.split(':');
+      const ok = k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
+      if (ok) { save.cos.push(id); got.push(id); }
+    }
+    if (got.length) U.persist();
+    return got;
+  };
+  U.checkUnlocks();
+  U.applyCosmetics = () => {
+    const pick = k => (save.sel[k] && U.ownsCos(save.sel[k])) ? save.sel[k] : '';
+    const st = document.body.style, back = U.cosImg(pick('back') || 'back_classic'), board = U.cosImg(pick('board') || 'board_classic');
+    if (back) st.setProperty('--back', `url(${back}) center/cover`); else st.removeProperty('--back');
+    if (board) st.setProperty('--felt', `linear-gradient(rgba(8,11,26,.62), rgba(8,11,26,.78)), url(${board}) center/cover`); else st.removeProperty('--felt');
+    document.body.classList.toggle('painted-back', !!back);
+  };
+
 
   /* ---------- icons ---------- */
   const IC = {

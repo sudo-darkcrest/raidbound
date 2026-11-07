@@ -373,14 +373,26 @@
   };
 
   /* ======================= COSMETICS (loot rewards) ======================= */
+  // kind: back = card back, board = table theme, pet = companion. get: how it unlocks.
+  //   default | loot (redeem a code; 'also' unlocks a bonus item) | win:<raid> | heroic:<raid> | allraids
   RB.COSMETICS = {
-    pet_gryphon: { kind: 'pet', name: 'Spectral Gryphon', also: 'back_aether' },
-    back_aether: { kind: 'back', name: 'Aether card back' },
-    back_lynx: { kind: 'back', name: 'Frostlynx card back' },
-    board_banners: { kind: 'board', name: 'Hall of Banners table' },
-    pet_kite: { kind: 'pet', name: 'Paper Wyrm', also: 'board_sky' },
-    board_sky: { kind: 'board', name: 'Skyward table' },
+    back_classic: { kind: 'back', name: 'Raidbound Seal', get: 'default', desc: 'The standard gold-on-navy card back with the Raidbound crest.' },
+    back_aether: { kind: 'back', name: 'Aether', get: 'loot', via: 'pet_gryphon', desc: 'Swirling starlit aether around a spectral gryphon. Comes free with the Spectral Gryphon code.' },
+    back_lynx: { kind: 'back', name: 'Frostlynx', get: 'loot', desc: 'A snow lynx crest in a ring of ice crystals.' },
+    back_crown: { kind: 'back', name: 'Hollow Crown', get: 'win:crypt', desc: 'Malgareth\'s spiked crown and soul-fire skull.' },
+    back_ember: { kind: 'back', name: 'Emberforge', get: 'win:molten', desc: 'Vorthrax\'s crest in molten gold over cracked obsidian.' },
+    back_abyss: { kind: 'back', name: 'Abyssal Tide', get: 'win:tide', desc: 'A sea serpent coiled around a pearl, framed in coral and shells.' },
+    board_classic: { kind: 'board', name: 'War Table', get: 'default', desc: 'A candlelit oak war table with a map of the realm.' },
+    board_banners: { kind: 'board', name: 'Hall of Banners', get: 'loot', desc: 'A great hall hung with crimson and gold banners.' },
+    board_sky: { kind: 'board', name: 'Skyward', get: 'loot', via: 'pet_kite', desc: 'Above the clouds among floating islands. Comes free with the Paper Wyrm code.' },
+    board_treasury: { kind: 'board', name: 'Dragon\'s Hoard', get: 'allraids', desc: 'A cavern of gold, crowns and jewels, with a dragon asleep on the pile.' },
+    pet_gryphon: { kind: 'pet', name: 'Spectral Gryphon', get: 'loot', also: 'back_aether', desc: 'A ghostly gryphon made of pale blue light.' },
+    pet_kite: { kind: 'pet', name: 'Paper Wyrm', get: 'loot', also: 'board_sky', desc: 'A grinning paper dragon kite with streaming ribbons.' },
+    pet_wisp: { kind: 'pet', name: 'Crowned Wisp', get: 'heroic:crypt', desc: 'A tiny crowned skull wrapped in friendly green soul-flame.' },
+    pet_whelp: { kind: 'pet', name: 'Ember Whelp', get: 'heroic:molten', desc: 'A chubby baby dragon that puffs little flames.' },
+    pet_seahorse: { kind: 'pet', name: 'Pearl Seahorse', get: 'heroic:tide', desc: 'A shimmering seahorse holding a glowing pearl, trailing bubbles.' },
   };
+
 
   /* ---------- character looks: colour schemes for the painted figures ----------
      Heroes have signature colours; class cards borrow their hero's look so a deck reads as one character. */

@@ -161,25 +161,31 @@
   };
 
   /* ---------------- vault ---------------- */
-  const COS_PREV = {
-    back_aether: 'radial-gradient(circle at 50% 40%, #6ae8ff, #1a4a8a 50%, #0a1430)',
-    back_lynx: 'repeating-linear-gradient(60deg, #cfefff 0 8px, #8ac0e0 8px 14px, #4a7aa0 14px 18px)',
-    board_banners: 'radial-gradient(ellipse at 50% 38%, #5a1420 0%, #3a0c16 50%, #16050a 100%)',
-    board_sky: 'radial-gradient(ellipse at 50% 30%, #3a5a8a 0%, #24385e 50%, #0e1830 100%)',
-  };
-  U.PET_ART = { pet_gryphon: { s: 'void', p: false, L: [['beast', { t: 'gryphon', x: 150, y: 190, s: 1.3, spectral: '#9ae8ff', auraOp: 0.7, aura: true }]] }, pet_kite: { s: 'void', p: false, L: [['obj', { t: 'kite', x: 150, y: 90, s: 1.4 }]] } };
   U.vault = function (msg) {
-    const owned = id => save.cos.includes(id);
-    const kinds = { back: 'Card backs', board: 'Table themes', pet: 'Companions' };
-    const cards = Object.entries(RB.COSMETICS).map(([id, c]) => `<div class="cos ${owned(id) ? '' : 'locked'}"><div class="swatch" style="background:${COS_PREV[id] || '#000'};${U.PET_ART[id] ? `background:#0a0e1f url('${U.art(U.PET_ART[id], 'pet:' + id)}') center 22%/cover` : ''}"></div><h4>${esc(c.name)}</h4><p style="margin:.2rem 0 .6rem;color:var(--muted);font-size:.88rem">${kinds[c.kind]}${owned(id) ? '' : ' · Locked — redeem a loot code'}</p>${owned(id) ? `<button class="btn small ${save.sel[c.kind] === id ? '' : 'ghost'}" data-use="${id}">${save.sel[c.kind] === id ? 'In use — click to remove' : 'Use this'}</button>` : ''}</div>`).join('');
-    const el = U.show('vault', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Vault</h2></div>
-      <p class="lede">Loot cards from treasure packs hide a scratch-off code. Reveal it in your Collection, then redeem it here to unlock a cosmetic for the game: card backs, table themes and companions that follow your hero into battle.</p>
+    const KINDS = [
+      ['back', 'Card backs', 'Change the design on the back of every face-down card: your resource row, and the cards in treasure packs before you flip them.'],
+      ['board', 'Table themes', 'Change the scene behind the battlefield during raids.'],
+      ['pet', 'Companions', 'A little creature that floats beside your hero (the first hero, in party games) during raids. Just for looks: companions never change the rules or the odds.'],
+    ];
+    const tile = id => {
+      const c = RB.COSMETICS[id], own = U.ownsCos(id), cur = save.sel[c.kind] && U.ownsCos(save.sel[c.kind]) ? save.sel[c.kind] : '', on = own && (cur || (c.get === 'default' ? id : '')) === id;
+      const img = U.cosImg(id);
+      return `<div class="cos k-${c.kind} ${own ? '' : 'locked'} ${on ? 'equipped' : ''}">
+        <div class="swatch">${img ? `<img alt="" src="${img}">` : ''}${own ? '' : '<span class="lock" aria-hidden="true">&#128274;</span>'}${on ? '<span class="eq">Equipped</span>' : ''}</div>
+        <h4>${esc(c.name)}</h4><p class="cdesc">${esc(c.desc)}</p>
+        <p class="how ${own ? 'own' : ''}">${own ? (c.get === 'default' ? 'Owned from the start' : 'Unlocked') : esc(U.unlockText(c))}</p>
+        ${own ? (on ? `<button class="btn small" disabled>In use</button>` : `<button class="btn small ghost" data-use="${id}">Use this</button>`) : ''}</div>`;
+    };
+    const total = Object.keys(RB.COSMETICS).length, have = Object.keys(RB.COSMETICS).filter(U.ownsCos).length;
+    const sections = KINDS.map(([k, label, what]) => `<h3 class="sec">${label}</h3><p class="kwhat">${what}</p><div class="cosgrid g-${k}">${Object.keys(RB.COSMETICS).filter(id => RB.COSMETICS[id].kind === k).map(tile).join('')}</div>`).join('');
+    const el = U.show('vault', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Vault</h2><span class="vcount">${have} of ${total} unlocked</span></div>
+      <p class="lede">Cosmetics change how the game looks, never how it plays. Earn them by beating raids, or redeem the scratch-off code from a loot card (find loot cards in treasure packs, then scratch the code in your Collection).</p>
       <div class="codebox"><input id="code" placeholder="RB-XXXXX-XXXXX" aria-label="Loot code" maxlength="16"><button class="btn primary" data-act="redeem">Redeem</button></div>
       ${msg ? `<p style="text-align:center;color:${msg.ok ? 'var(--verd-hi)' : '#ffb49a'}">${esc(msg.text)}</p>` : ''}
-      <h3 class="sec">Unlockables</h3><div class="cosgrid">${cards}</div></div>`);
+      ${sections}</div>`);
     el.onclick = e => {
       if (e.target.closest('[data-act=back]')) return U.title();
-      const u = e.target.closest('[data-use]'); if (u) { const id = u.dataset.use, k = RB.COSMETICS[id].kind; save.sel[k] = save.sel[k] === id ? '' : id; U.persist(); U.applyCosmetics(); return U.vault(); }
+      const u = e.target.closest('[data-use]'); if (u) { const id = u.dataset.use, c = RB.COSMETICS[id]; save.sel[c.kind] = c.get === 'default' ? '' : id; U.persist(); U.applyCosmetics(); U.sfx.flip(); return U.vault(); }
       if (e.target.closest('[data-act=redeem]')) {
         const code = $('#code').value.trim();
         const reward = U.checkCode(code);
