@@ -212,4 +212,31 @@
     const ri = Math.floor(ALPH.indexOf(body[0]) / 4);
     return REWARD_KEYS[ri] || null;
   };
+  // #41: gold codes (for testing / gifts). Format RBG-XXXXX-XXXXX; the first letter sets the amount.
+  const GOLD_TIERS = [100, 250, 500, 1000, 2500, 5000, 10000, 50000];
+  U.makeGoldCode = function (amount) {
+    const ti = Math.max(0, GOLD_TIERS.indexOf(amount));
+    let body = ALPH[ti * 4 + Math.floor(Math.random() * 4)];
+    for (let i = 0; i < 7; i++) body += ALPH[Math.floor(Math.random() * ALPH.length)];
+    const sum = A.hash('raidbound-gold' + body) % (ALPH.length * ALPH.length);
+    const code = body + ALPH[Math.floor(sum / ALPH.length)] + ALPH[sum % ALPH.length];
+    return 'RBG-' + code.slice(0, 5) + '-' + code.slice(5);
+  };
+  U.checkGoldCode = function (raw) {
+    const c = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!c.startsWith('RBG')) return null;
+    const b = c.slice(3); if (b.length !== 10) return null;
+    const body = b.slice(0, 8), sum = A.hash('raidbound-gold' + body) % (ALPH.length * ALPH.length);
+    if (b.slice(8) !== ALPH[Math.floor(sum / ALPH.length)] + ALPH[sum % ALPH.length]) return null;
+    return { amount: GOLD_TIERS[Math.floor(ALPH.indexOf(body[0]) / 4)] || null, key: b };
+  };
+  // returns a message; adds the gold once per code on this computer
+  U.redeemGold = function (raw) {
+    const g = U.checkGoldCode(raw);
+    if (!g || !g.amount) return { ok: false, text: 'That gold code isn\'t valid. Check the letters and try again.' };
+    save.goldCodes = save.goldCodes || [];
+    if (save.goldCodes.includes(g.key)) return { ok: false, text: 'This gold code has already been used on this computer.' };
+    save.goldCodes.push(g.key); save.gold = (save.gold || 0) + g.amount; U.persist(); U.sfx.treasure();
+    return { ok: true, text: `+${g.amount} gold! You now have ${save.gold}.` };
+  };
 })(globalThis.RB);

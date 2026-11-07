@@ -641,6 +641,9 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .roster { max-height: 55vh; }
 .gearcol { grid-template-columns: repeat(2, max-content); }
 .gslot { width: auto; min-width: 11.2rem; }
+.codebox.goldcode { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; justify-content: center; margin: .6rem auto 1.4rem; }
+.codebox.goldcode > span:first-child { font-family: var(--f-sc); color: var(--gilt-hi); }
+.okmsg { color: var(--verd-hi); } .errmsg { color: var(--danger); }
 
 </style>
 </head>
@@ -5453,6 +5456,33 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const ri = Math.floor(ALPH.indexOf(body[0]) / 4);
     return REWARD_KEYS[ri] || null;
   };
+  // #41: gold codes (for testing / gifts). Format RBG-XXXXX-XXXXX; the first letter sets the amount.
+  const GOLD_TIERS = [100, 250, 500, 1000, 2500, 5000, 10000, 50000];
+  U.makeGoldCode = function (amount) {
+    const ti = Math.max(0, GOLD_TIERS.indexOf(amount));
+    let body = ALPH[ti * 4 + Math.floor(Math.random() * 4)];
+    for (let i = 0; i < 7; i++) body += ALPH[Math.floor(Math.random() * ALPH.length)];
+    const sum = A.hash('raidbound-gold' + body) % (ALPH.length * ALPH.length);
+    const code = body + ALPH[Math.floor(sum / ALPH.length)] + ALPH[sum % ALPH.length];
+    return 'RBG-' + code.slice(0, 5) + '-' + code.slice(5);
+  };
+  U.checkGoldCode = function (raw) {
+    const c = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!c.startsWith('RBG')) return null;
+    const b = c.slice(3); if (b.length !== 10) return null;
+    const body = b.slice(0, 8), sum = A.hash('raidbound-gold' + body) % (ALPH.length * ALPH.length);
+    if (b.slice(8) !== ALPH[Math.floor(sum / ALPH.length)] + ALPH[sum % ALPH.length]) return null;
+    return { amount: GOLD_TIERS[Math.floor(ALPH.indexOf(body[0]) / 4)] || null, key: b };
+  };
+  // returns a message; adds the gold once per code on this computer
+  U.redeemGold = function (raw) {
+    const g = U.checkGoldCode(raw);
+    if (!g || !g.amount) return { ok: false, text: 'That gold code isn\'t valid. Check the letters and try again.' };
+    save.goldCodes = save.goldCodes || [];
+    if (save.goldCodes.includes(g.key)) return { ok: false, text: 'This gold code has already been used on this computer.' };
+    save.goldCodes.push(g.key); save.gold = (save.gold || 0) + g.amount; U.persist(); U.sfx.treasure();
+    return { ok: true, text: `+${g.amount} gold! You now have ${save.gold}.` };
+  };
 })(globalThis.RB);
 
 /* RAIDBOUND — audio: layered synthesized sound effects and generative music (WebAudio only, no sound files).
@@ -6002,7 +6032,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
     const sections = KINDS.map(([k, label, what]) => `<h3 class="sec">${label}</h3><p class="kwhat">${what}</p><div class="cosgrid g-${k}">${Object.keys(RB.COSMETICS).filter(id => RB.COSMETICS[id].kind === k).map(tile).join('')}</div>`).join('');
     const el = U.show('vault', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Vault</h2><span class="vcount">${have} of ${total} unlocked</span></div>
       <p class="lede">Cosmetics change how the game looks, never how it plays. Earn them by beating raids, or redeem the scratch-off code from a loot card (find loot cards in treasure packs, then scratch the code in your Collection).</p>
-      <div class="codebox"><input id="code" placeholder="RB-XXXXX-XXXXX" aria-label="Loot code" maxlength="16"><button class="btn primary" data-act="redeem">Redeem</button></div>
+      <div class="codebox"><input id="code" placeholder="RB-XXXXX-XXXXX" aria-label="Loot or gold code" maxlength="17"><button class="btn primary" data-act="redeem">Redeem</button></div>
       ${msg ? `<p style="text-align:center;color:${msg.ok ? 'var(--verd-hi)' : '#ffb49a'}">${esc(msg.text)}</p>` : ''}
       ${sections}</div>`);
     el.onclick = e => {
@@ -6010,6 +6040,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       const u = e.target.closest('[data-use]'); if (u) { const id = u.dataset.use, c = RB.COSMETICS[id]; save.sel[c.kind] = c.get === 'default' ? '' : id; U.persist(); U.applyCosmetics(); U.sfx.flip(); return U.vault(); }
       if (e.target.closest('[data-act=redeem]')) {
         const code = $('#code').value.trim();
+        if (U.checkGoldCode(code)) return U.vault(U.redeemGold(code));
         const reward = U.checkCode(code);
         if (!reward) return U.vault({ ok: false, text: 'That code isn\'t valid. Check the letters on your loot card and try again.' });
         const norm = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -6928,7 +6959,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
   };
 
   /* ---------- the Market: spend raid gold on booster packs and heroes (#26, #27) ---------- */
-  U.market = function () {
+  U.market = function (opts) {
     const price = RB.PACK_PRICE;
     const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
     const heroes = RB.UNLOCK_HEROES.map(id => {
@@ -6942,6 +6973,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buy', data: `data-style="${k}"`, label: `Buy a ${v.name} booster pack for ${price} gold` })}<div class="pname">${v.name} wrapper</div></div>`).join('')}</div>
       <div class="packinfo"><p>Every pack holds <b>5 cards</b>: at least two from the <b>Frontier</b> set (one uncommon or better), with regular cards mixed in. Some come as holofoils. The three wrappers hold the same cards — pick the one you like.</p><p>You have found <b>${have} of ${fr.length}</b> Frontier cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
         <button class="btn primary" data-act="buy" ${save.gold >= price ? '' : 'disabled'}>Buy a pack — ${price} gold</button>${save.gold < price ? ` <span style="color:var(--muted)">You need ${price - save.gold} more gold. Go raid!</span>` : ''}</div>
+      <div class="codebox goldcode"><span>Have a gold code?</span><input id="goldcode" placeholder="RBG-XXXXX-XXXXX" aria-label="Gold code" maxlength="17"><button class="btn" data-act="goldcode">Redeem</button>${opts && opts.msg ? `<span class="${opts.msg.ok ? 'okmsg' : 'errmsg'}">${esc(opts.msg.text)}</span>` : ''}</div>
       <h3 class="sec">Heroes for hire</h3><p class="lede">Six new heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p>
       <div class="mheroes">${heroes}</div></div>`);
     el.onclick = e => {
@@ -6949,6 +6981,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
       if (bh) { const id = bh.dataset.buyhero, cost = +RB.HEROES[id].unlock.how.slice(5); if (save.gold < cost) return U.toast('Not enough gold yet.'); save.gold -= cost; save.heroes.push(id); U.persist(); U.sfx.quest(); U.toast(`${RB.HEROES[id].name} joins you! Pick them in raid setup.`); return U.market(); }
       if (!a) return;
       if (a.dataset.act === 'back') return U.title();
+      if (a.dataset.act === 'goldcode') return U.market({ msg: U.redeemGold($('#goldcode').value) });
       if (a.dataset.act === 'buy') {
         if (save.gold < price) return U.toast(`A pack costs ${price} gold. You have ${save.gold}.`);
         save.gold -= price; U.persist();
@@ -6956,7 +6989,7 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
         return U.openPack(null, false, packEl, RB.rollBooster());
       }
     };
-    el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'buy') e.target.click(); };
+    el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'buy') e.target.click(); if (e.key === 'Enter' && e.target.id === 'goldcode') el.querySelector('[data-act=goldcode]').click(); };
   };
 
   /* ---------- boot ---------- */

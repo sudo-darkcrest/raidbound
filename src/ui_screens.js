@@ -215,7 +215,7 @@
     const sections = KINDS.map(([k, label, what]) => `<h3 class="sec">${label}</h3><p class="kwhat">${what}</p><div class="cosgrid g-${k}">${Object.keys(RB.COSMETICS).filter(id => RB.COSMETICS[id].kind === k).map(tile).join('')}</div>`).join('');
     const el = U.show('vault', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Vault</h2><span class="vcount">${have} of ${total} unlocked</span></div>
       <p class="lede">Cosmetics change how the game looks, never how it plays. Earn them by beating raids, or redeem the scratch-off code from a loot card (find loot cards in treasure packs, then scratch the code in your Collection).</p>
-      <div class="codebox"><input id="code" placeholder="RB-XXXXX-XXXXX" aria-label="Loot code" maxlength="16"><button class="btn primary" data-act="redeem">Redeem</button></div>
+      <div class="codebox"><input id="code" placeholder="RB-XXXXX-XXXXX" aria-label="Loot or gold code" maxlength="17"><button class="btn primary" data-act="redeem">Redeem</button></div>
       ${msg ? `<p style="text-align:center;color:${msg.ok ? 'var(--verd-hi)' : '#ffb49a'}">${esc(msg.text)}</p>` : ''}
       ${sections}</div>`);
     el.onclick = e => {
@@ -223,6 +223,7 @@
       const u = e.target.closest('[data-use]'); if (u) { const id = u.dataset.use, c = RB.COSMETICS[id]; save.sel[c.kind] = c.get === 'default' ? '' : id; U.persist(); U.applyCosmetics(); U.sfx.flip(); return U.vault(); }
       if (e.target.closest('[data-act=redeem]')) {
         const code = $('#code').value.trim();
+        if (U.checkGoldCode(code)) return U.vault(U.redeemGold(code));
         const reward = U.checkCode(code);
         if (!reward) return U.vault({ ok: false, text: 'That code isn\'t valid. Check the letters on your loot card and try again.' });
         const norm = code.toUpperCase().replace(/[^A-Z0-9]/g, '');

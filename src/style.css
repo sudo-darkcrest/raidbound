@@ -624,3 +624,6 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .roster { max-height: 55vh; }
 .gearcol { grid-template-columns: repeat(2, max-content); }
 .gslot { width: auto; min-width: 11.2rem; }
+.codebox.goldcode { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; justify-content: center; margin: .6rem auto 1.4rem; }
+.codebox.goldcode > span:first-child { font-family: var(--f-sc); color: var(--gilt-hi); }
+.okmsg { color: var(--verd-hi); } .errmsg { color: var(--danger); }

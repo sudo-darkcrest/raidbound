@@ -76,7 +76,7 @@
   };
 
   /* ---------- the Market: spend raid gold on booster packs and heroes (#26, #27) ---------- */
-  U.market = function () {
+  U.market = function (opts) {
     const price = RB.PACK_PRICE;
     const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
     const heroes = RB.UNLOCK_HEROES.map(id => {
@@ -90,6 +90,7 @@
       <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buy', data: `data-style="${k}"`, label: `Buy a ${v.name} booster pack for ${price} gold` })}<div class="pname">${v.name} wrapper</div></div>`).join('')}</div>
       <div class="packinfo"><p>Every pack holds <b>5 cards</b>: at least two from the <b>Frontier</b> set (one uncommon or better), with regular cards mixed in. Some come as holofoils. The three wrappers hold the same cards — pick the one you like.</p><p>You have found <b>${have} of ${fr.length}</b> Frontier cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
         <button class="btn primary" data-act="buy" ${save.gold >= price ? '' : 'disabled'}>Buy a pack — ${price} gold</button>${save.gold < price ? ` <span style="color:var(--muted)">You need ${price - save.gold} more gold. Go raid!</span>` : ''}</div>
+      <div class="codebox goldcode"><span>Have a gold code?</span><input id="goldcode" placeholder="RBG-XXXXX-XXXXX" aria-label="Gold code" maxlength="17"><button class="btn" data-act="goldcode">Redeem</button>${opts && opts.msg ? `<span class="${opts.msg.ok ? 'okmsg' : 'errmsg'}">${esc(opts.msg.text)}</span>` : ''}</div>
       <h3 class="sec">Heroes for hire</h3><p class="lede">Six new heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p>
       <div class="mheroes">${heroes}</div></div>`);
     el.onclick = e => {
@@ -97,6 +98,7 @@
       if (bh) { const id = bh.dataset.buyhero, cost = +RB.HEROES[id].unlock.how.slice(5); if (save.gold < cost) return U.toast('Not enough gold yet.'); save.gold -= cost; save.heroes.push(id); U.persist(); U.sfx.quest(); U.toast(`${RB.HEROES[id].name} joins you! Pick them in raid setup.`); return U.market(); }
       if (!a) return;
       if (a.dataset.act === 'back') return U.title();
+      if (a.dataset.act === 'goldcode') return U.market({ msg: U.redeemGold($('#goldcode').value) });
       if (a.dataset.act === 'buy') {
         if (save.gold < price) return U.toast(`A pack costs ${price} gold. You have ${save.gold}.`);
         save.gold -= price; U.persist();
@@ -104,7 +106,7 @@
         return U.openPack(null, false, packEl, RB.rollBooster());
       }
     };
-    el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'buy') e.target.click(); };
+    el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'buy') e.target.click(); if (e.key === 'Enter' && e.target.id === 'goldcode') el.querySelector('[data-act=goldcode]').click(); };
   };
 
   /* ---------- boot ---------- */
