@@ -160,13 +160,13 @@
   RB.PACK_PRICE = 100;
   RB.goldFor = (g, win) => {
     const bossDmg = Math.max(g.players.reduce((s, p) => s + (p.stats.bossDmg || 0), 0), Math.min(g.boss.damage, g.boss.maxHp));
-    // #43: slower gold so packs (100) take a couple of raids and heroes (1,000) are a real goal
+    // #43/#46: about 150-250 gold per raid
     const parts = [
-      ['Victory', win ? 25 : 5],
+      ['Victory', win ? 100 : 30],
       // the party splits the spoils, so bigger groups don't earn more each
-      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.15 / g.players.length)],
-      ['Minions destroyed', Math.round(g.minionsKilled * 2 / g.players.length)],
-      ['Healing done', Math.round((g.stats.healed || 0) * 0.1 / g.players.length)],
+      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.6 / g.players.length)],
+      ['Minions destroyed', Math.round(g.minionsKilled * 3 / g.players.length)],
+      ['Healing done', Math.round((g.stats.healed || 0) * 0.4 / g.players.length)],
     ];
     let total = parts.reduce((s, x) => s + x[1], 0);
     if (g.cfg.difficulty === 'heroic') { const b = Math.round(total * 0.25); parts.push(['Heroic bonus', b]); total += b; }

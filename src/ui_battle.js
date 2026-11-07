@@ -569,7 +569,7 @@
   function bossEndScreen() {
     const g = E.g, raid = g.raid, bossWon = g.over === 'lose';
     const slain = g.players.filter(p => p.hero.dead).length;
-    const parts = [['Result', bossWon ? 30 : 5], ['Heroes defeated', slain * 5], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.1)]];
+    const parts = [['Result', bossWon ? 110 : 35], ['Heroes defeated', slain * 20], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.4 / Math.max(1, g.players.length))]];
     const total = parts.reduce((s, x) => s + x[1], 0);
     save.gold = (save.gold || 0) + total; save.bossWins = (save.bossWins || 0) + (bossWon ? 1 : 0); U.persist();
     if (bossWon) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
