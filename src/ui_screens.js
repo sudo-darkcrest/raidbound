@@ -22,7 +22,9 @@
   U.title = function () {
     RB.AUDIO.music('title');
     const wins = Object.values(save.wins).reduce((a, b) => a + b, 0);
-    const bg = (RB.ART.GEN && RB.ART.GEN.title_wide) || U.art(TITLE_ART, 'title');
+    // #17: pick one of the two painted backdrops at random; each has its own text layout
+    const G = RB.ART.GEN || {}, alt = !!G.title_alt && Math.random() < 0.5;
+    const bg = (alt ? G.title_alt : G.title_wide) || U.art(TITLE_ART, 'title');
     const raids = Object.values(R).map(r => `<button class="traid" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="tbody"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div>${(save.wins[r.id] || 0) ? `<div class="done">Conquered ${save.wins[r.id]}×</div>` : ''}</div></button>`).join('');
     const el = U.show('title', `<img class="bgart" alt="" src="${bg}"><div class="veil"></div>
       <div class="center"><h1 class="logo">Raidbound</h1><p class="tagline">Gather your party. Build your deck. Bring down the raid boss.</p>
@@ -31,6 +33,7 @@
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
       <div class="traids">${raids}</div>
       ${wins ? `<div class="wins">Raids conquered: ${wins} · Cards collected: ${Object.keys(save.owned).filter(k => save.owned[k] > 0).length}</div>` : ''}</div>`);
+    el.classList.toggle('alt', alt);
     el.onclick = e => {
       const r = e.target.closest('[data-raid]'); if (r) { U.setupState.raid = r.dataset.raid; return U.setup(); }
       const b = e.target.closest('[data-go]'); if (b) U[b.dataset.go]();
@@ -57,6 +60,7 @@
       <div class="difficulty"><span class="seg"><button class="${!setup.asBoss ? 'on' : ''}" data-side="heroes">Play the heroes</button><button class="${setup.asBoss ? 'on' : ''}" data-side="boss">Play the raid boss</button></span><span style="color:var(--muted);font-size:.92rem">${setup.asBoss ? `You are ${esc(R[setup.raid].boss)}. Each turn you hold a hand of boss cards and pick which to play, then choose who your minions and your strike attack. The AI plays the heroes.` : 'You lead the heroes against the AI-controlled boss.'}</span></div>
       <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
       <div class="seats">${seats}</div>
+      ${U.bossScale(setup.raid, setup.seats.length, setup.diff, setup.asBoss)}
       <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
@@ -79,6 +83,13 @@
         case 'heroAuto': return;
       }
     };
+  };
+  // #34 (user): show how the boss scales to the party
+  U.bossScale = function (raidId, n, diff, asBoss) {
+    const r = R[raidId], hv = diff === 'heroic';
+    const hp = Math.round((r.hp + r.hpPer * (n - 1)) * (hv ? 1.3 : 1) * (asBoss ? 1.15 : 1));
+    const strike = r.strike + (hv ? 1 : 0) + (n - 1) + (n >= 2 ? 1 : 0);
+    return `<div class="bossscale"><b>${esc(r.short)} scales to ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${strike} · reveals ${n} boss card${n > 1 ? 's' : ''} a turn${n >= 2 ? ' · minion attacks +1' : ''}${r.id === 'tide' && n >= 3 ? ` · starts with ${n} tentacles` : ''}</div>`;
   };
   U.startRaid = async function () {
     const autos = [];

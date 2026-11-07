@@ -312,7 +312,7 @@
 
   RB.RAIDS = {
     crypt: {
-      id: 'crypt', name: 'Crypt of the Hollow King', boss: 'Malgareth, the Hollow King', short: 'Malgareth', difficulty: 'Apprentice', hp: 85, hpPer: 55, strike: 4, retaliation: 2,
+      id: 'crypt', name: 'Crypt of the Hollow King', boss: 'Malgareth, the Hollow King', short: 'Malgareth', difficulty: 'Apprentice', hp: 85, hpPer: 62, strike: 4, retaliation: 2,
       intro: 'Beneath the drowned chapel, a king who refused to die has gathered an army that cannot.',
       rules: [
         { name: 'Grave Harvest', text: 'Whenever an ally is destroyed, Malgareth raises it as a 2/2 Risen Thrall.' },
@@ -351,7 +351,7 @@
       theme: '#ff6a2a',
     },
     tide: {
-      id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 85, hpPer: 55, strike: 4, retaliation: 2,
+      id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 85, hpPer: 105, strike: 4, retaliation: 2,
       intro: 'The cathedral bells still ring under the sea. Something down there is ringing them.',
       rules: [
         { name: 'Rising Tide', text: 'Each boss turn raises the Tide. At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes.' },
@@ -359,7 +359,7 @@
         { name: 'Coral Hide', text: 'Melee attackers take 2 damage back when they strike Nethys.' },
         { name: 'The Deep Awakens (50%)', text: 'The Leviathan Maw (5/8, Guardian) rises and Nethys reveals 2 boss cards each turn.' },
       ],
-      setup: async E => E.summonMinion('tentacle', 2),
+      setup: async E => E.summonMinion('tentacle', E.g.players.length >= 3 ? E.g.players.length : 2),
       counter: { name: 'Tide', max: 4, onMax: async E => { E.log('A Tidal Surge crashes over the party!', 'boss'); E.banner('Tidal Surge', 'boss'); for (const t of E.friendlyChars()) await E.dmg(t, 3, { kind: 'boss' }); } },
       counterPerTurn: 1,
       phases: [

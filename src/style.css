@@ -520,3 +520,54 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .unit.minion .un { padding-bottom: 2.35rem; text-align: center; }
 .unit.minion .ua, .unit.minion .uh { bottom: .2rem; }
 .unit.minion .ua { left: .2rem; } .unit.minion .uh { right: .2rem; }
+.bossscale { margin: .8rem 0 0; padding: .55rem .8rem; border-left: 3px solid var(--ember-hi); background: rgba(40, 10, 4, .55); border-radius: 4px; font-size: .92rem; color: var(--text); }
+/* #17 second title backdrop: party seen from behind, dragon overhead — menu sits in the dark sky on the left */
+#title.alt { place-items: center start; }
+#title.alt .bgart { object-position: 62% 40%; }
+#title.alt .veil { background: linear-gradient(90deg, rgba(8, 10, 22, .9) 0%, rgba(8, 10, 22, .72) 30%, rgba(8, 10, 22, .25) 52%, transparent 70%), linear-gradient(180deg, rgba(8, 10, 22, .3), transparent 35%, transparent 75%, rgba(8, 10, 22, .6)); }
+#title.alt .center { margin-left: clamp(1.5rem, 5vw, 5rem); max-width: min(46vw, 640px); }
+#title.alt .traids { flex-wrap: wrap; justify-content: center; }
+#title.alt .traid { width: 11rem; }
+#title.alt .logo { font-size: clamp(3rem, 7vw, 6.2rem); }
+
+/* ---------- #36 foil booster packs (TCG style) ---------- */
+.tcgpack { --trim: #f2c76a; --trim2: #a8701e; --glow: rgba(255, 140, 40, .45); position: relative; width: 236px; aspect-ratio: 236 / 420; cursor: pointer; display: flex; flex-direction: column; filter: drop-shadow(0 22px 26px rgba(0, 0, 0, .7)); transition: transform .25s ease; user-select: none; }
+.tcgpack.v-frost { --trim: #d8f2ff; --trim2: #4a8ab8; --glow: rgba(120, 200, 255, .45); }
+.tcgpack.v-void { --trim: #e2c8ff; --trim2: #6a3aa8; --glow: rgba(170, 100, 255, .45); }
+.tcgpack:hover, .tcgpack:focus-visible { transform: translateY(-8px) rotate(-1.5deg) scale(1.02); outline: none; }
+.tcgpack .hang { position: relative; z-index: 2; align-self: center; width: 44%; height: 7%; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, #f4f4f2, #cfcfcb 60%, #e8e8e4); box-shadow: inset 0 -2px 3px rgba(0, 0, 0, .2); }
+.tcgpack .hang i { position: absolute; left: 50%; top: 32%; width: 34%; height: 34%; transform: translateX(-50%); border-radius: 50% 50% 40% 40% / 100% 100% 30% 30%; background: #0b0d18; box-shadow: inset 0 1px 2px #000; }
+.tcgpack .crimp { position: relative; height: 6%; z-index: 1;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .9) 0 1.5px, rgba(120, 120, 120, .55) 1.5px 3px, rgba(225, 225, 225, .8) 3px 4.5px), linear-gradient(180deg, #e9e9e9, #9d9d9d 45%, #f4f4f4 60%, #8a8a8a); }
+.tcgpack .crimp.top::before, .tcgpack .crimp.bottom::after { content: ''; position: absolute; left: 0; right: 0; height: 5px; background: linear-gradient(135deg, transparent 50%, #d8d8d8 50%) 0 0 / 7px 7px, linear-gradient(225deg, transparent 50%, #d8d8d8 50%) 0 0 / 7px 7px; }
+.tcgpack .crimp.top::before { top: -5px; }
+.tcgpack .crimp.bottom::after { bottom: -5px; transform: scaleY(-1); }
+.tcgpack .body { position: relative; flex: 1; overflow: hidden; background: #111; box-shadow: inset 10px 0 14px -6px rgba(0, 0, 0, .75), inset -10px 0 14px -6px rgba(0, 0, 0, .75); }
+.tcgpack .body .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tcgpack .body .art.wide { object-position: 50% 30%; }
+.tcgpack .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .15), rgba(0, 0, 0, .05) 25%, rgba(0, 0, 0, .55) 45%, rgba(0, 0, 0, .05) 62%, rgba(0, 0, 0, .7) 100%); }
+.tcgpack .shine { position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .28) 45%, rgba(255, 255, 255, .05) 52%, transparent 60%); transform: translateX(-60%); transition: transform .9s ease; pointer-events: none; mix-blend-mode: screen; }
+.tcgpack:hover .shine { transform: translateX(60%); }
+.tcgpack .plogo { position: absolute; left: 0; right: 0; top: 33%; text-align: center; line-height: .85; }
+.tcgpack .plogo b { display: block; font-family: var(--f-display); font-weight: 900; font-size: 2.55rem; letter-spacing: .01em; background: linear-gradient(180deg, #fffaf0 0%, var(--trim) 40%, var(--trim2) 72%, #fff2c8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 #1a0e02) drop-shadow(0 0 10px var(--glow)) drop-shadow(0 4px 8px #000); }
+.tcgpack .plogo span { display: inline-block; margin-top: .2rem; padding: .05rem .5rem; font-family: var(--f-sc); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: #fff; background: rgba(0, 0, 0, .55); border-top: 1px solid var(--trim); border-bottom: 1px solid var(--trim); }
+.tcgpack .ribbon { position: absolute; left: 12%; right: 12%; top: 52%; padding: .3rem .3rem .35rem; text-align: center; background: linear-gradient(180deg, rgba(20, 12, 4, .85), rgba(50, 30, 8, .85)); border: 1px solid var(--trim); clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%); }
+.tcgpack .ribbon b { display: block; font-family: var(--f-sc); font-size: .95rem; color: var(--trim); letter-spacing: .04em; text-transform: uppercase; }
+.tcgpack .ribbon span { display: block; font-family: var(--f-sc); font-size: .66rem; color: #fff; text-transform: uppercase; letter-spacing: .08em; }
+.tcgpack .ribbon small { display: block; font-size: .58rem; color: #e8dcc0; text-transform: uppercase; letter-spacing: .1em; }
+.tcgpack .burst { position: absolute; right: 4%; bottom: 13%; width: 4.4rem; height: 4.4rem; display: grid; place-items: center; text-align: center; background: radial-gradient(circle, #fff6c0, #f2c040 55%, #b07010); clip-path: polygon(50% 0, 61% 18%, 82% 10%, 80% 32%, 100% 40%, 85% 56%, 96% 76%, 74% 78%, 70% 100%, 52% 86%, 32% 100%, 28% 79%, 5% 78%, 15% 58%, 0 40%, 19% 32%, 17% 10%, 39% 18%); transform: rotate(-10deg); }
+.tcgpack .burst span { font-family: var(--f-sc); font-weight: 800; font-size: .58rem; line-height: 1.05; color: #4a1a00; text-transform: uppercase; }
+.tcgpack .fine { position: absolute; left: 0; right: 30%; bottom: 3.5%; padding-left: 7%; font-family: var(--f-sc); font-size: .54rem; line-height: 1.25; color: #f4ead0; text-transform: uppercase; letter-spacing: .04em; text-shadow: 0 1px 2px #000; }
+.tcgpack.treasure { margin: 1rem auto; }
+.tcgpack.tear { pointer-events: none; animation: packdrop .55s .38s ease-in forwards; }
+.tcgpack.tear .crimp.top, .tcgpack.tear .hang { animation: rip .45s ease-out forwards; transform-origin: 0 100%; }
+@keyframes rip { 0% { transform: none; } 30% { transform: rotate(-4deg); } 100% { transform: translate(-30px, -80px) rotate(-38deg); opacity: 0; } }
+@keyframes packdrop { 0% { transform: none; } 30% { transform: scale(1.05); filter: drop-shadow(0 0 30px var(--glow)); } 100% { transform: translateY(40vh) scale(.8); opacity: 0; } }
+.packrow { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0 .4rem; }
+.packpick { display: flex; flex-direction: column; align-items: center; gap: .8rem; }
+.packpick .pname { font-family: var(--f-sc); color: var(--muted); font-size: .9rem; }
+.packinfo { max-width: 760px; margin: 0 auto 1rem; text-align: center; }
+.netp.bot { border-style: dashed; }
+.botpick { margin: .25rem 0; font: inherit; font-size: .82rem; padding: .2rem .3rem; background: #0c0a08; color: var(--text); border: 1px solid var(--gilt-lo); border-radius: 4px; max-width: 100%; }
+.addseat.small { padding: .6rem; font-size: .95rem; }
+.addseat.small { min-height: 0; width: 100%; }

@@ -100,6 +100,10 @@
   add('guardianspirit', { name: 'Guardian Spirit', type: 'ability', speed: 'instant', cost: 3, cls: ['priest'], target: 'friendlyHero', tags: ['shield'], shield: 8, rarity: 'u', text: 'Prevent the next 8 damage to a friendly hero.', run: async (E, c) => E.shield(c.target.p, 8),
     art: { s: 'holy', L: [['fx', { t: 'holy', x: 150, wings: 1, wy: 96 }], fig({ pose: 'pray', robe: 1, helm: 'hair', spectral: 1, x: 150, y: 200, s: 0.8 }), ['fx', { t: 'barrier', x: 150, y: 150 }]] } });
 
+  // #36: the old Market picture (a harbor stall full of cards and coin) now belongs to this card
+  add('harbormarket', { name: 'Saltwind Harbor Market', type: 'location', cost: 0, rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to draw a card.', lrun: async (E, c) => E.draw(c.p, 1),
+    art: { s: 'sea', L: [glow(150, 120, 90, '#ffd27a', 0.45), ['obj', { t: 'chest', x: 150, y: 170, s: 1 }], ['obj', { t: 'coin', x: 90, y: 200, s: 0.45 }], ['obj', { t: 'scroll', x: 230, y: 96, s: 0.5 }]] } });
+
   RB.FRONTIER = Object.values(C).filter(d => d.set === 'frontier').map(d => d.id);
 
   /* =================== UNLOCKABLE HEROES (#26) =================== */

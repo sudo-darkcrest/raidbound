@@ -120,21 +120,24 @@
     const L = S.lobby;
     let body;
     if (!L) {
-      body = `<p class="lede">Raid together with friends on their own computers. One of you creates a raid and shares the code; everyone else types it in. Each player controls their own hero. Up to 4 heroes.</p>
+      body = `<p class="lede">Raid together with friends on their own computers. One of you creates a raid and shares the code; everyone else types it in. Each player controls their own hero. Up to 4 heroes — and the host can fill empty seats with AI heroes.</p>
         <div class="netform"><label>Your name <input id="netname" maxlength="24" value="${esc(S.name)}"></label></div>
         <div class="netcols"><div class="netbox"><h3 class="sec">Host a raid</h3><p>Get a code to share with your friends.</p><button class="btn primary" data-act="create">Create a raid</button></div>
         <div class="netbox"><h3 class="sec">Join a raid</h3><p>Type the code your friend shared.</p><input id="netcode" class="codein" maxlength="5" placeholder="ABCDE" value="${esc(S.joinCode || '')}"><button class="btn primary" data-act="join">Join</button></div></div>`;
     } else {
       const me = L.players.find(p => p.id === S.id) || {}, host = L.host === S.id;
       const link = location.protocol.startsWith('http') ? `${location.origin}${location.pathname}?join=${L.code}` : '';
-      const rows = L.players.map(p => { const h = H[p.hero] || H.aldric; return `<div class="netp ${p.id === S.id ? 'me' : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div><div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('');
+      const rows = L.players.map(p => { const h = H[p.hero] || H.aldric;
+        const botPick = p.bot && host ? `<select class="botpick" data-bot="${p.id}" aria-label="AI hero">${heroesOpen().map(x => `<option value="${x.id}" ${x.id === p.hero ? 'selected' : ''}>${esc(x.name)} · ${RB.CLASSES[x.cls].name}</option>`).join('')}</select>` : '';
+        return `<div class="netp ${p.id === S.id ? 'me' : ''} ${p.bot ? 'bot' : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.bot ? ' <span class="chip">AI</span>' : ''}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.bot ? 'Starter deck · played by the AI' : p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div>${botPick}<div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online || p.bot ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('')
+        + (host && L.players.length < 4 ? `<button class="addseat small" data-act="addbot">+ Add an AI hero to an empty seat</button>` : '');
       const pick = heroesOpen().map(h => `<button class="${h.id === S.mySeat.hero ? 'on' : ''}" data-hero="${h.id}" title="${esc(h.name)}"><img alt="" src="${U.cardArt(h.id)}"><span>${esc(h.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[h.cls].name}</span></button>`).join('');
       const raids = Object.values(R).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${host ? '' : 'disabled'}>${esc(r.short)}</button>`).join('');
       const allReady = L.players.every(p => p.ready);
       body = `<div class="codebar"><div><div class="sub">Raid code</div><div class="bigcode">${L.code}</div></div><button class="btn" data-act="copy">Copy code</button>${link ? `<button class="btn ghost" data-act="copylink">Copy invite link</button>` : ''}<span class="sp"></span><button class="btn ghost small" data-act="leave">Leave lobby</button></div>
         <p class="lede">Send the code to your friends. When everyone has picked a hero, the host starts the raid.</p>
         <div class="netcols"><div><h3 class="sec">Party (${L.players.length}/4)</h3><div class="netplayers">${rows}</div>
-          <h3 class="sec">Raid</h3><div class="filters">${raids}</div><div class="filters"><button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${host ? '' : 'disabled'}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${host ? '' : 'disabled'}>Heroic</button></div>
+          <h3 class="sec">Raid</h3><div class="filters">${raids}</div><div class="filters"><button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${host ? '' : 'disabled'}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${host ? '' : 'disabled'}>Heroic</button></div>${U.bossScale(L.raid, L.players.length, L.diff)}
           ${host ? `<button class="btn primary" data-act="start" ${allReady ? '' : 'disabled'}>${allReady ? 'Start the raid' : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the raid.</p>`}</div>
         <div><h3 class="sec">Your hero</h3><div class="heropick">${pick}</div>
           <div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>
@@ -144,6 +147,7 @@
       ${body}<p class="netstatus">${esc(S.status)}</p>${S.err ? `<p class="neterr">${esc(S.err)}</p>` : ''}
       <p class="sub" style="margin-top:2rem">Good to know: the online server runs on a free plan, so the first connection of the day can take up to a minute. If a friend drops out mid-raid, the AI plays their hero until they come back with the same code. Online play needs the game opened from the website or the downloaded file — it can't connect from inside the Claude preview.</p></div>`, true);
     el.onclick = onClick;
+    el.onchange = e => { const sel = e.target.closest('.botpick'); if (!sel) return; const hid = sel.value; sendRaw({ t: 'botset', id: sel.dataset.bot, hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: RB.buildDeck(hid, null, S.lobby.players.length) }); };
   }
   async function sendSeat() {
     const L = S.lobby; if (!L) return;
@@ -175,6 +179,11 @@
       case 'copylink': try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}?join=${S.lobby.code}`); U.toast('Invite link copied.'); } catch (x) { U.toast('Could not copy the link.'); } return;
       case 'leave': S.lobby = null; forget(); try { S.ws && S.ws.close(); } catch (x) { } S.ws = null; return draw();
       case 'start': return sendRaw({ t: 'start' });
+      case 'addbot': {
+        const L = S.lobby, used = L.players.map(p => p.hero);
+        const hid = (heroesOpen().find(h => !used.includes(h.id)) || H.aldric).id;
+        return sendRaw({ t: 'addbot', hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: RB.buildDeck(hid, null, L.players.length + 1) });
+      }
     }
   }
   // invite links: ...?join=ABCDE opens the online screen with the code filled in

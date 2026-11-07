@@ -53,11 +53,29 @@
       el.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('flip')) { e.preventDefault(); flip(e.target); } };
       el.onmouseover = e => { const f = e.target.closest('.flip.on'); if (f && innerWidth > 900) U.preview(U.cardHTML(cards[+f.dataset.i].id, { holo: cards[+f.dataset.i].holo }), f); };
       el.onmouseout = e => { if (e.target.closest('.flip')) U.hidePreview(); };
-    }, 550);
+    }, packEl.classList.contains('tcgpack') ? 950 : 550);
+  };
+
+  /* ---------- #36 TCG-style foil booster pack ---------- */
+  RB.PACK_STYLES = {
+    ember: { name: 'Emberfall', art: 'pack_ember' },
+    frost: { name: 'Frostwing', art: 'pack_frost' },
+    void: { name: 'Voidshade', art: 'pack_void' },
+  };
+  U.packHTML = function (o) {
+    const G = RB.ART.GEN || {};
+    const art = o.img || G[o.art] || '';
+    return `<div class="tcgpack v-${o.theme || 'ember'} ${o.cls || ''}" ${o.act ? `data-act="${o.act}"` : ''} ${o.data || ''} tabindex="0" role="button" aria-label="${esc(o.label || 'Booster pack')}">
+      <div class="hang"><i></i></div><div class="crimp top"></div>
+      <div class="body"><img class="art ${o.wide ? 'wide' : ''}" alt="" src="${art}"><div class="shade"></div><div class="shine"></div>
+        <div class="plogo"><b>Raidbound</b><span>Trading Card Game</span></div>
+        <div class="ribbon"><b>${esc(o.title || 'Booster Pack')}</b><span>${esc(o.set || 'Frontier Set')}</span><small>${esc(o.count || '5 random cards')}</small></div>
+        ${o.burst === false ? '' : `<div class="burst"><span>Look for<br>holofoils!</span></div>`}
+        <div class="fine">${o.fine || '5 cards per pack<br>At least two Frontier set cards<br>(one uncommon or better)'}</div></div>
+      <div class="crimp bottom"></div></div>`;
   };
 
   /* ---------- the Market: spend raid gold on booster packs and heroes (#26, #27) ---------- */
-  const BOOSTER_ART = { s: 'sea', img: 'booster', p: 'embers', pn: 20, L: [['glow', { x: 150, y: 110, r: 110, c: '#ffd27a', op: 0.45 }], ['obj', { t: 'chest', x: 150, y: 170, s: 1.1 }], ['obj', { t: 'coin', x: 86, y: 200, s: 0.5 }], ['obj', { t: 'coin', x: 220, y: 206, s: 0.42 }], ['obj', { t: 'scroll', x: 236, y: 92, s: 0.5 }], ['fx', { t: 'sparkle', x: 150, y: 120 }]] };
   U.market = function () {
     const price = RB.PACK_PRICE;
     const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
@@ -69,9 +87,9 @@
     const el = U.show('market', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Market</h2><span class="sp"></span><span class="goldchip big">${save.gold} gold</span></div>
       <p class="lede">Every raid pays you gold, win or lose. You get more for winning, for damage dealt to the boss, for each minion destroyed and for healing your party. Heroic raids pay 25% extra.</p>
       <h3 class="sec">Frontier booster packs</h3>
-      <div class="boosterrow"><div class="pack booster" data-act="buy" tabindex="0" role="button" aria-label="Buy a booster pack for ${price} gold"><div class="pt">Frontier booster</div><img alt="" src="${U.art(BOOSTER_ART, 'booster')}"><div class="pb">5 cards · ${price} gold</div></div>
-        <div><p>Each pack holds <b>5 cards</b>: at least two from the new <b>Frontier</b> set (one is uncommon or better), with regular cards mixed in. Some come as holofoils.</p><p>You have found <b>${have} of ${fr.length}</b> Frontier cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
-        <button class="btn primary" data-act="buy" ${save.gold >= price ? '' : 'disabled'}>Buy a pack — ${price} gold</button>${save.gold < price ? `<p style="color:var(--muted)">You need ${price - save.gold} more gold. Go raid!</p>` : ''}</div></div>
+      <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buy', data: `data-style="${k}"`, label: `Buy a ${v.name} booster pack for ${price} gold` })}<div class="pname">${v.name} wrapper</div></div>`).join('')}</div>
+      <div class="packinfo"><p>Every pack holds <b>5 cards</b>: at least two from the <b>Frontier</b> set (one uncommon or better), with regular cards mixed in. Some come as holofoils. The three wrappers hold the same cards — pick the one you like.</p><p>You have found <b>${have} of ${fr.length}</b> Frontier cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
+        <button class="btn primary" data-act="buy" ${save.gold >= price ? '' : 'disabled'}>Buy a pack — ${price} gold</button>${save.gold < price ? ` <span style="color:var(--muted)">You need ${price - save.gold} more gold. Go raid!</span>` : ''}</div>
       <h3 class="sec">Heroes for hire</h3><p class="lede">Six new heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p>
       <div class="mheroes">${heroes}</div></div>`);
     el.onclick = e => {
@@ -82,7 +100,7 @@
       if (a.dataset.act === 'buy') {
         if (save.gold < price) return U.toast(`A pack costs ${price} gold. You have ${save.gold}.`);
         save.gold -= price; U.persist();
-        const packEl = $('.pack.booster', el);
+        const packEl = a.classList.contains('tcgpack') ? a : $('.tcgpack', el);
         return U.openPack(null, false, packEl, RB.rollBooster());
       }
     };
