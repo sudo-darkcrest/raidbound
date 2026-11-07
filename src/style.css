@@ -515,3 +515,8 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .netstatus { color: var(--gilt-hi); min-height: 1.2em; }
 .neterr { color: var(--danger); }
 .netwait { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 60; padding: .5rem 1rem; border-radius: 99px; background: rgba(10, 20, 30, .92); border: 1px solid #9ae8ff; color: #d8f4ff; font-size: .95rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .6); }
+/* #32 boss minions: a bit bigger, and their attack/health badges sit inside the card */
+.unit.minion { --uw: clamp(100px, min(9.2vw, 15vh), 148px); }
+.unit.minion .un { padding-bottom: 2.35rem; text-align: center; }
+.unit.minion .ua, .unit.minion .uh { bottom: .2rem; }
+.unit.minion .ua { left: .2rem; } .unit.minion .uh { right: .2rem; }

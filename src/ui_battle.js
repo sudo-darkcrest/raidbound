@@ -85,7 +85,7 @@
     }).join('');
     const logHTML = g.log.slice(-120).map(e => `<div class="${e.cls}">${esc(e.msg)}</div>`).join('');
 
-    root.innerHTML = `<div class="table">
+    morph(root, `<div class="table">
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <span class="bossdeck" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
         <button class="btn small ghost" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost" data-act="rulesref">Rules</button><button class="btn small ghost" data-act="quit">Leave raid</button></div>
@@ -96,15 +96,42 @@
       <div class="playerzone"><div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
         <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
-      <div class="handbar"><div class="hand ${p === active && human(p) ? '' : 'other'}">${hand}</div>
+      <div class="handbar"><div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) ? '' : 'other'}">${hand}</div>
         <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
-    <div class="side"><div class="roster"><h5>Party</h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`;
+    <div class="side"><div class="roster"><h5>Party</h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
     const lb = $('.logbox', root); if (lb) lb.scrollTop = lb.scrollHeight;
     const hEl = $('.hand', root);
-    if (hEl && n) { const hc = hEl.querySelector('.hc'); const cw = hc.offsetWidth || 140; const room = hEl.clientWidth - cw * 0.5; const ov = Math.min(-cw * 0.12, (room - n * cw) / (2 * n)); hEl.style.setProperty('--ov', Math.max(-cw * 0.42, ov) + 'px'); }
+    if (hEl && n) { const hc = hEl.querySelector('.hc'); const cw = hc.offsetWidth || 140; const room = hEl.clientWidth - cw * 0.5; const ov = Math.min(-cw * 0.12, (room - n * cw) / (2 * n)); view.ov = Math.max(-cw * 0.42, ov) + 'px'; hEl.style.setProperty('--ov', Math.max(-cw * 0.42, ov) + 'px'); }
     if (view.hpGhost !== hpPct) setTimeout(() => { view.hpGhost = hpPct; const gh = $('.hpbar .ghost', root); if (gh) gh.style.width = hpPct + '%'; }, 30);
+  }
+
+  // #33: update the battle screen in place instead of rebuilding it, so cards and pictures
+  // that didn't change are left alone (no flicker or "puffing" when many things heal at once)
+  const tpl = document.createElement('template');
+  function morph(target, html) {
+    if (!target.firstChild) { target.innerHTML = html; return; }
+    tpl.innerHTML = html;
+    patchKids(target, tpl.content);
+  }
+  function patchKids(a, b) {
+    const ak = [...a.childNodes], bk = [...b.childNodes];
+    for (let i = 0; i < bk.length; i++) {
+      const x = ak[i], y = bk[i];
+      if (!x) { a.appendChild(y); continue; }
+      patchNode(a, x, y);
+    }
+    for (let i = bk.length; i < ak.length; i++) ak[i].remove();
+  }
+  function patchNode(parent, x, y) {
+    if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName || (x.nodeType === 1 && x.dataset.uid !== y.dataset.uid) || (x.nodeType === 1 && x.getAttribute('data-ref') !== y.getAttribute('data-ref'))) { parent.replaceChild(y, x); return; }
+    if (x.nodeType === 3 || x.nodeType === 8) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; return; }
+    if (x.isEqualNode(y)) return;
+    for (const at of [...x.attributes]) if (!y.hasAttribute(at.name)) x.removeAttribute(at.name);
+    for (const at of [...y.attributes]) if (x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+    if (x.nodeName === 'IMG' || x.nodeName === 'INPUT') return;
+    patchKids(x, y);
   }
 
   /* ---------- animations (engine hooks) ---------- */
