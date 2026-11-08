@@ -15,7 +15,8 @@
   /* ---------- connection ---------- */
   function connect(first) {
     return new Promise((resolve, reject) => {
-      if (S.ws && S.ws.readyState === 1) return resolve();
+      // #64: a socket left open by an earlier attempt must still carry this request
+      if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(first)); return resolve(); }
       setStatus('Waking the game server… (the free server naps when nobody is playing; this can take up to a minute)');
       // a plain web request wakes a sleeping free server faster than a socket attempt
       try { fetch(HTTP_URL(), { mode: 'no-cors' }).catch(() => { }); } catch (e) { }
@@ -39,12 +40,18 @@
   function setStatus(t) { S.status = t; const el = $('#online .netstatus'); if (el) el.textContent = t; }
 
   function onMsg(m) {
-    if (m.t === 'welcome') { S.id = m.id; S.code = m.code; S.rejoining = !!m.rejoin; remember(); return; }
-    if (m.t === 'error') { S.err = m.why; U.toast(m.why); if (/removed you/.test(m.why)) { forget(); } return draw(); }
+    if (m.t === 'welcome') { S.id = m.id; S.code = m.code; S.rejoining = !!m.rejoin; S.autoJoin = false; remember(); if (S.wantMode && !m.rejoin) { const w = S.wantMode; S.wantMode = null; sendRaw({ t: 'settings', mode: 'dungeon', raid: w.id, diff: w.diff }); } return; }
+    if (m.t === 'error') {
+      if (/No raid with that code/.test(m.why)) { forget(); S.lobby = null; if (S.autoJoin) { S.autoJoin = false; S.err = ''; U.toast('Your last online party has closed. Create or join a new one.'); return draw(); } }
+      S.err = m.why; U.toast(m.why); if (/removed you/.test(m.why)) { forget(); S.lobby = null; } return draw();
+    }
     if (m.t === 'lobby') {
-      const key = m.raid + '|' + m.players.length, changed = S.lobbyKey && S.lobbyKey !== key && !m.started;
+      const key = m.mode + '|' + m.raid + '|' + m.players.length, prevMode = S.lobby && S.lobby.mode, changed = S.lobbyKey && S.lobbyKey !== key && !m.started;
       S.lobbyKey = key; S.lobby = m;
-      if (changed && S.mySeat.deckMode === 'auto') sendSeat(); // auto decks are tuned to the raid and party size
+      const modeChanged = prevMode && prevMode !== m.mode;
+      if (changed && (S.mySeat.deckMode === 'auto' || m.mode === 'dungeon' || modeChanged)) sendSeat(); // auto and dungeon decks depend on the raid, mode and party size
+      if (modeChanged && m.host === S.id) m.players.filter(x => x.bot).forEach(b => sendRaw({ t: 'botset', id: b.id, hero: b.hero, deck: botDeck(b.hero, m) }));
+      if (S.net && S.net.over && !m.started) { S.net = null; if (!$('#online').classList.contains('hidden')) draw(); }
       if (!S.net) draw(); return;
     }
     if (m.t === 'start') return startGame(m.cfg);
@@ -98,6 +105,7 @@
     cfg.party.forEach(s => { s.deck = s.deck.map(id => ({ id, holo: false })); });
     cfg.settings = { autoDefend: true, pauseForInstants: true };
     if (S.net) S.net.closed = true;
+    if (S.lobby) S.lobby.started = true; // so the host reopens the lobby after this run
     S.net = makeNet(cfg);
     if (S.rejoining) S.net.replaying = true;
     S.rejoining = false;
@@ -108,52 +116,66 @@
   U.online = function (opts) {
     opts = opts || {};
     if (opts.join) S.joinCode = opts.join;
-    if (S.net && S.net.closed) S.net = null;
+    if (opts.dungeon) S.wantMode = opts.dungeon;
+    // back from a finished run: drop the old game; the host opens the lobby for the next one
+    if (S.net && (S.net.closed || S.net.over || (U.currentGame && U.currentGame.g.over))) { S.net.closed = true; S.net = null; if (S.lobby && S.lobby.started && S.lobby.host === S.id) sendRaw({ t: 'reopen' }); }
     S.err = '';
     draw();
     // came back to an open lobby?
-    if (!S.ws && S.code && S.id && !S.lobby) connect({ t: 'join', code: S.code, id: S.id }).catch(e => { forget(); S.err = e.message; draw(); });
+    if (!S.ws && S.code && S.id && !S.lobby) { S.autoJoin = true; connect({ t: 'join', code: S.code, id: S.id }).catch(e => { S.autoJoin = false; forget(); S.err = e.message; draw(); }); }
   };
+  const isDungeon = L => L && L.mode === 'dungeon';
+  const myDungeonLevel = () => RB.dungeonLevel(save.dxp || 0);
+  function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length); }
   function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
   function draw() {
     if (S.net) return;
     const L = S.lobby;
     let body;
     if (!L) {
-      body = `<p class="lede">Raid together with friends on their own computers. One of you creates a raid and shares the code; everyone else types it in. Each player controls their own hero. Up to 4 heroes — and the host can fill empty seats with AI heroes.</p>
+      body = `<p class="lede">Play together with friends on their own computers or phones. One of you creates a party and shares the code; everyone else types it in. Each player controls their own hero. Raids take up to 4 heroes, dungeons up to 3 — and the host can fill empty seats with AI heroes.</p>${S.wantMode ? `<p class="newvault">You'll host a <b>dungeon run</b>: ${esc(RB.DUNGEONS[S.wantMode.id].name)} on ${esc(RB.DUNGEON_MODES[S.wantMode.diff].name)}. You can change it in the lobby.</p>` : ''}
         <div class="netform"><label>Your name <input id="netname" maxlength="24" value="${esc(S.name)}"></label></div>
-        <div class="netcols"><div class="netbox"><h3 class="sec">Host a raid</h3><p>Get a code to share with your friends.</p><button class="btn primary" data-act="create">Create a raid</button></div>
-        <div class="netbox"><h3 class="sec">Join a raid</h3><p>Type the code your friend shared.</p><input id="netcode" class="codein" maxlength="5" placeholder="ABCDE" value="${esc(S.joinCode || '')}"><button class="btn primary" data-act="join">Join</button></div></div>`;
+        <div class="netcols"><div class="netbox"><h3 class="sec">Host a game</h3><p>Get a code to share with your friends. You choose a raid or a dungeon in the lobby.</p><button class="btn primary" data-act="create">Create a party</button></div>
+        <div class="netbox"><h3 class="sec">Join a game</h3><p>Type the code your friend shared.</p><input id="netcode" class="codein" maxlength="5" placeholder="ABCDE" value="${esc(S.joinCode || '')}"><button class="btn primary" data-act="join">Join</button></div></div>`;
     } else {
       const me = L.players.find(p => p.id === S.id) || {}, host = L.host === S.id;
       const link = location.protocol.startsWith('http') ? `${location.origin}${location.pathname}?join=${L.code}` : '';
       const rows = L.players.map(p => { const h = H[p.hero] || H.aldric;
         const botPick = p.bot && host ? `<select class="botpick" data-bot="${p.id}" aria-label="AI hero">${heroesOpen().map(x => `<option value="${x.id}" ${x.id === p.hero ? 'selected' : ''}>${esc(x.name)} · ${RB.CLASSES[x.cls].name}</option>`).join('')}</select>` : '';
         return `<div class="netp ${p.id === S.id ? 'me' : ''} ${p.bot ? 'bot' : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.bot ? ' <span class="chip">AI</span>' : ''}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.bot ? 'Starter deck · played by the AI' : p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div>${botPick}<div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online || p.bot ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('')
-        + (host && L.players.length < 4 ? `<button class="addseat small" data-act="addbot">+ Add an AI hero to an empty seat</button>` : '');
+        + (host && L.players.length < (L.max || 4) ? `<button class="addseat small" data-act="addbot">+ Add an AI hero to an empty seat</button>` : '');
       const pick = heroesOpen().map(h => `<button class="${h.id === S.mySeat.hero ? 'on' : ''}" data-hero="${h.id}" title="${esc(h.name)}"><img alt="" src="${U.cardArt(h.id)}"><span>${esc(h.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[h.cls].name}</span></button>`).join('');
-      const raids = Object.values(R).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${host ? '' : 'disabled'}>${esc(r.short)}</button>`).join('');
+      const D = isDungeon(L), dis = host ? '' : 'disabled';
+      const raids = (D ? Object.values(RB.DUNGEONS) : Object.values(R)).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${dis}>${esc(D ? r.name : r.short)}</button>`).join('');
+      const diffs = D ? Object.entries(RB.DUNGEON_MODES).map(([k, mm]) => `<button class="btn small ${L.diff === k ? '' : 'ghost'}" data-diff="${k}" ${dis} title="${esc(mm.text)}">${mm.name}</button>`).join('')
+        : `<button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${dis}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${dis}>Heroic</button>`;
+      const dd = D && RB.DUNGEONS[L.raid], dm = D && (RB.DUNGEON_MODES[L.diff] || RB.DUNGEON_MODES.novice);
+      const scale = D && dd ? `<div class="bossscale"><b>${esc(dd.short)} for ${L.players.length} hero${L.players.length > 1 ? 'es' : ''}:</b> ${dd.hp + dd.hpPer * (L.players.length - 1)} health · starts at level ${dm.level} · ${dm.first ? 'goes first' : 'you go first'}</div>` : U.bossScale(L.raid, L.players.length, L.diff);
+      const modeSeg = `<div class="filters"><span class="seg"><button class="${D ? '' : 'on'}" data-mode="raid" ${dis}>Raid</button><button class="${D ? 'on' : ''}" data-mode="dungeon" ${dis || (L.players.length > 3 ? 'disabled title="Dungeons take up to 3 heroes"' : '')}>Dungeon</button></span></div>`;
       const allReady = L.players.every(p => p.ready);
-      body = `<div class="codebar"><div><div class="sub">Raid code</div><div class="bigcode">${L.code}</div></div><button class="btn" data-act="copy">Copy code</button>${link ? `<button class="btn ghost" data-act="copylink">Copy invite link</button>` : ''}<span class="sp"></span><button class="btn ghost small" data-act="leave">Leave lobby</button></div>
-        <p class="lede">Send the code to your friends. When everyone has picked a hero, the host starts the raid.</p>
-        <div class="netcols"><div><h3 class="sec">Party (${L.players.length}/4)</h3><div class="netplayers">${rows}</div>
-          <h3 class="sec">Raid</h3><div class="filters">${raids}</div><div class="filters"><button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${host ? '' : 'disabled'}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${host ? '' : 'disabled'}>Heroic</button></div>${U.bossScale(L.raid, L.players.length, L.diff)}
-          ${host ? `<button class="btn primary" data-act="start" ${allReady ? '' : 'disabled'}>${allReady ? 'Start the raid' : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the raid.</p>`}</div>
+      const what = D ? 'dungeon run' : 'raid';
+      body = `<div class="codebar"><div><div class="sub">Party code</div><div class="bigcode">${L.code}</div></div><button class="btn" data-act="copy">Copy code</button>${link ? `<button class="btn ghost" data-act="copylink">Copy invite link</button>` : ''}<span class="sp"></span><button class="btn ghost small" data-act="leave">Leave lobby</button></div>
+        <p class="lede">Send the code to your friends. When everyone has picked a hero, the host starts the ${what}.</p>
+        ${L.started ? `<p class="newvault">The last run has finished. ${host ? 'Opening the lobby for the next one…' : 'Waiting for the host to open the lobby again.'}</p>` : ''}
+        <div class="netcols"><div><h3 class="sec">Party (${L.players.length}/${L.max || 4})</h3><div class="netplayers">${rows}</div>
+          <h3 class="sec">What to play</h3>${modeSeg}<div class="filters">${raids}</div><div class="filters">${diffs}</div>${scale}
+          ${host ? `<button class="btn primary" data-act="start" ${allReady && !L.started ? '' : 'disabled'}>${allReady ? `Start the ${what}` : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the ${what}.</p>`}</div>
         <div><h3 class="sec">Your hero</h3><div class="heropick">${pick}</div>
-          <div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>
+          ${D ? `<p class="sub" style="margin-top:.6rem">Dungeon deck: the starter deck plus <b>${RB.dungeonSwaps(myDungeonLevel())}</b> of your own best cards (your dungeon level is ${myDungeonLevel()}).</p>` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
           <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
     }
     const el = U.show('online', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Play online</h2><span class="sp"></span></div>
       ${body}<p class="netstatus">${esc(S.status)}</p>${S.err ? `<p class="neterr">${esc(S.err)}</p>` : ''}
       <p class="sub" style="margin-top:2rem">Good to know: the online server runs on a free plan, so the first connection of the day can take up to a minute. If a friend drops out mid-raid, the AI plays their hero until they come back with the same code.</p></div>`, true);
     el.onclick = onClick;
-    el.onchange = e => { const sel = e.target.closest('.botpick'); if (!sel) return; const hid = sel.value; sendRaw({ t: 'botset', id: sel.dataset.bot, hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: RB.buildDeck(hid, null, S.lobby.players.length) }); };
+    el.onchange = e => { const sel = e.target.closest('.botpick'); if (!sel) return; const hid = sel.value; sendRaw({ t: 'botset', id: sel.dataset.bot, hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: botDeck(hid, S.lobby) }); };
   }
   async function sendSeat() {
     const L = S.lobby; if (!L) return;
     const hid = S.mySeat.hero, n = Math.max(1, L.players.length);
     let deck;
-    if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
+    if (isDungeon(L)) deck = RB.dungeonDeck(hid, save.owned, RB.dungeonSwaps(myDungeonLevel()));
+    else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
     else deck = RB.buildDeck(hid, save.owned, n);
     sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, pet: save.sel.pet || null, name: S.name });
@@ -163,6 +185,7 @@
     const nameIn = $('#netname'); if (nameIn) { S.name = nameIn.value.trim() || 'Adventurer'; save.netName = S.name; U.persist(); }
     const hb = t.closest('[data-hero]'); if (hb) { S.mySeat.hero = hb.dataset.hero; draw(); return sendSeat(); }
     const db = t.closest('[data-deck]'); if (db) { S.mySeat.deckMode = db.dataset.deck; draw(); return sendSeat(); }
+    const mb = t.closest('[data-mode]'); if (mb && S.lobby && S.lobby.host === S.id) { const toD = mb.dataset.mode === 'dungeon'; if (toD === isDungeon(S.lobby)) return; return sendRaw(toD ? { t: 'settings', mode: 'dungeon', raid: (U.dungeonState && U.dungeonState.id) || 'thornwood', diff: (U.dungeonState && U.dungeonState.mode) || 'novice' } : { t: 'settings', mode: 'raid', raid: 'crypt', diff: 'normal' }); }
     const rb = t.closest('[data-raid]'); if (rb) { sendRaw({ t: 'settings', raid: rb.dataset.raid }); setTimeout(sendSeat, 300); return; }
     const df = t.closest('[data-diff]'); if (df) return sendRaw({ t: 'settings', diff: df.dataset.diff });
     const kb = t.closest('[data-kick]'); if (kb) return sendRaw({ t: 'kick', id: kb.dataset.kick });
@@ -182,7 +205,7 @@
       case 'addbot': {
         const L = S.lobby, used = L.players.map(p => p.hero);
         const hid = (heroesOpen().find(h => !used.includes(h.id)) || H.aldric).id;
-        return sendRaw({ t: 'addbot', hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: RB.buildDeck(hid, null, L.players.length + 1) });
+        return sendRaw({ t: 'addbot', hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length + 1) });
       }
     }
   }

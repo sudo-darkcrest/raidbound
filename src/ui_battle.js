@@ -379,6 +379,12 @@
     }
   }
   async function netAsk(kind, d) {
+    // #65 online dungeons: each player decides their own opening mulligan; everyone else waits
+    if (kind === 'mulligan') {
+      if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v: !!v }); }
+      else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is looking at their opening hand…`);
+      const v = await netAnswer(d.p.idx); net.wait(null); return v === true;
+    }
     if (kind === 'scout') {
       if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v }); }
       else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is scouting…`);
@@ -405,7 +411,7 @@
   }
   function afterAction() {
     if (!E) return;
-    if (E.g.over) return endScreen();
+    if (E.g.over) { if (net) net.over = true; return endScreen(); }
     const g = E.g;
     if (g.phase === 'main') { const a = g.players[g.turn]; if (human(a) && !g.cfg.bossPlayer) view.focus = g.turn; else if (view.focus == null) view.focus = homeFocus(); }
     render();

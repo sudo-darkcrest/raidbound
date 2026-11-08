@@ -32,7 +32,7 @@
       <h3 class="sec">Difficulty</h3><div class="difficulty"><span class="seg">${Object.entries(M).map(([k, m]) => `<button class="${k === st.mode ? 'on' : ''}" data-mode="${k}">${m.name}</button>`).join('')}</span><p class="kwhat">${esc(mode.text)}</p></div>
       <h3 class="sec">Your party (up to 3)</h3><div class="dseats">${seats}${n < 3 ? `<button class="btn" data-act="add">+ Add a hero</button>` : ''}</div>
       <div class="bossscale"><b>${esc(d.short)} for ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${d.strike + (n - 1) + mode.level - 1} · starts at level ${mode.level} · ${mode.first ? 'goes first' : 'you go first'}</div>
-      <div class="startbar"><span class="summary">${esc(d.name)} · ${mode.name} · ${n} hero${n > 1 ? 'es' : ''} · decks: starter + ${RB.dungeonSwaps(lvl())} of your cards</span><button class="btn primary big" data-act="go">Enter the dungeon</button></div></div>`, keep);
+      <div class="startbar"><span class="summary">${esc(d.name)} · ${mode.name} · ${n} hero${n > 1 ? 'es' : ''} · decks: starter + ${RB.dungeonSwaps(lvl())} of your cards</span><button class="btn" data-act="online" title="Friends join with a code from their own computer or phone">Play online with friends</button><button class="btn primary big" data-act="go">Enter the dungeon</button></div></div>`, keep);
     el.onclick = e => {
       const t = e.target;
       if (t.closest('[data-act=back]')) return U.title();
@@ -41,6 +41,7 @@
       const r = t.closest('[data-rm]'); if (r) { st.seats.splice(+r.dataset.rm, 1); return U.dungeons(true); }
       if (t.closest('[data-act=add]')) { const used = st.seats.map(s => s.hero); st.seats.push({ hero: heroes.find(h => !used.includes(h)) || heroes[0], auto: true }); return U.dungeons(true); }
       if (t.closest('[data-act=go]')) return U.startDungeon();
+      if (t.closest('[data-act=online]')) return U.online({ dungeon: { id: st.id, diff: st.mode } });
     };
     el.onchange = e => {
       const s = e.target.closest('[data-seat]'); if (s) { st.seats[+s.dataset.seat].hero = s.value; return U.dungeons(true); }
@@ -72,11 +73,12 @@
     const unl = fresh.length ? `<div class="newvault"><b>Unlocked:</b> ${fresh.map(id => esc(RB.COSMETICS[id].name)).join(', ')} — find it in the Vault.</div>` : '';
     const el = U.show('end', `<div class="endscreen ${win ? '' : 'lose'}"><h2>${win ? 'Dungeon cleared' : 'The party has fallen'}</h2><p class="tagline">${win ? `${esc(d.boss)} is defeated on ${mode.name}.` : `${esc(d.short)} still stands with ${Math.max(0, E.bossHp())} health.`}</p>${stats}
       <div class="goldbox"><div class="gtitle">+${xp} Dungeon XP · +${gold.total} gold</div><div class="gparts"><span>Dungeon level <b>${after}</b></span><span>Total XP <b>${save.dxp}</b></span><span>Gold <b>${save.gold}</b></span></div></div>${lvlUp}${unl}
-      <div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="again">${win ? 'Next dungeon' : 'Try again'}</button><button class="btn" data-act="dun">Dungeons</button><button class="btn" data-act="market">Market</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+      <div class="menu" style="flex-direction:row;justify-content:center">${cfg.online ? `<button class="btn primary" data-act="lobby">Back to the party lobby</button>` : `<button class="btn primary" data-act="again">${win ? 'Next dungeon' : 'Try again'}</button><button class="btn" data-act="dun">Dungeons</button>`}<button class="btn" data-act="market">Market</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {
       const a = e.target.closest('[data-act]'); if (!a) return;
       if (a.dataset.act === 'again') { if (win) { const ids = Object.keys(RB.DUNGEONS); st.id = ids[(ids.indexOf(d.id) + 1) % ids.length]; return U.dungeons(); } return U.startDungeon(); }
       if (a.dataset.act === 'dun') return U.dungeons();
+      if (a.dataset.act === 'lobby') return U.online();
       if (a.dataset.act === 'market') return U.market();
       if (a.dataset.act === 'title') return U.title();
     };
