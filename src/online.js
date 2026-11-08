@@ -62,19 +62,23 @@
   /* ---------- the link handed to the battle screen ---------- */
   function makeNet(cfg) {
     const queue = [], waiters = [];
-    let applied = 0, upTo = -1, handlers = null, started = false, waitEl = null, pumping = false;
+    let applied = 0, upTo = -1, handlers = null, started = false, waitEl = null, pumping = false, lastSeq = -1;
     const net = {
       id: S.id, closed: false, replaying: false,
       mine: idx => cfg.party[idx] && cfg.party[idx].owner === S.id,
       send: c => sendRaw({ t: 'cmd', c }),
       push(m) {
-        if (m.seq < applied + queue.length) return; // already have it (rejoin replay)
+        if (m.seq <= lastSeq) return; // already have it (rejoin replay)
+        lastSeq = m.seq;
+        // #70: speed changes are for everyone and don't touch the game, so they apply at once
+        if (m.c.t === 'speed') { const v = +m.c.v; if (v > 0 && v <= 1) { cfg.speed = v; if (handlers && handlers.speed) handlers.speed(v); } applied++; check(); return; }
         queue.push(m);
         if (waiters.length) waiters.shift()(queue.shift());
         else pump();
       },
       next() { return new Promise(res => { if (queue.length) { applied++; res(queue.shift()); } else waiters.push(m => { applied++; res(m); }); }); },
       catchUp(seq) { upTo = seq; check(); },
+      behind: () => queue.length > 0,
       attach(h) { handlers = h; },
       ready() { started = true; pump(); },
       wait(text) {
@@ -201,7 +205,7 @@
       case 'copy': try { await navigator.clipboard.writeText(S.lobby.code); U.toast('Code copied — paste it to your friends.'); } catch (x) { U.toast('Your code is ' + S.lobby.code); } return;
       case 'copylink': try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}?join=${S.lobby.code}`); U.toast('Invite link copied.'); } catch (x) { U.toast('Could not copy the link.'); } return;
       case 'leave': S.lobby = null; forget(); try { S.ws && S.ws.close(); } catch (x) { } S.ws = null; return draw();
-      case 'start': return sendRaw({ t: 'start' });
+      case 'start': return sendRaw({ t: 'start', speed: save.settings.speed || 1 });
       case 'addbot': {
         const L = S.lobby, used = L.players.map(p => p.hero);
         const hid = (heroesOpen().find(h => !used.includes(h.id)) || H.aldric).id;

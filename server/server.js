@@ -112,7 +112,8 @@ wss.on('connection', ws => {
       if (room.players.some(p => !p.deck)) return send(ws, { t: 'error', why: 'Someone is still choosing a deck.' });
       if (room.players.length > cap(room)) return send(ws, { t: 'error', why: `Too many heroes (up to ${cap(room)}).` });
       const seed = Math.floor(Math.random() * 1e9);
-      const cfg = { raid: room.raid, difficulty: room.diff, seed, online: true,
+      const sp = +m.speed;
+      const cfg = { raid: room.raid, difficulty: room.diff, seed, online: true, speed: sp > 0 && sp <= 1 ? sp : 0.55,
         party: room.players.map((p, i) => ({ hero: p.hero, deck: p.deck, name: p.name, pet: p.bot ? null : p.pet || null, owner: p.bot ? null : p.id, auto: !!p.bot })) };
       if (room.mode === 'dungeon') { const dm = DMODES[room.diff] || DMODES.novice; Object.assign(cfg, { dungeon: true, dungeonLevel: dm[0], dungeonFirst: dm[1] }); }
       room.start = { t: 'start', cfg };

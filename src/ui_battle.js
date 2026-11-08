@@ -5,8 +5,13 @@
   const save = U.save;
   let E = null, root = null, cfgLast = null;
   const view = { mode: null, lock: 0, dirty: false, raf: 0, busy: false, focus: 0, hpGhost: null };
-  const speed = () => save.settings.speed || 1;
-  const wait = ms => new Promise(r => setTimeout(r, (net && net.replaying) ? 0 : ms * speed()));
+  // #70: online games share one speed, and a screen that falls behind plays fast until it catches up
+  const speed = () => (net && view.netSpeed) || save.settings.speed || 1;
+  const pace = () => net && net.behind && net.behind() ? Math.min(speed(), 0.2) : speed();
+  const wait = ms => new Promise(r => setTimeout(r, (net && net.replaying) ? 0 : ms * pace()));
+  const nextSpeed = s => s === 1 ? 0.55 : s > 0.3 ? 0.15 : 1;
+  const speedName = () => (speed() === 1 ? 'normal' : speed() < 0.3 ? 'very fast' : 'fast') + (net ? ' (everyone)' : '');
+  function changeSpeed() { if (net) return net.send({ t: 'speed', v: nextSpeed(speed()) }); const s = save.settings; s.speed = nextSpeed(s.speed || 1); U.persist(); render(); }
 
   /* ---------- rendering ---------- */
   function schedule() { if (view.lock > 0) { view.dirty = true; return; } if (!view.raf) view.raf = requestAnimationFrame(() => { view.raf = 0; render(); }); }
@@ -120,7 +125,7 @@
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button><button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
         <span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
-        <button class="btn small ghost wide-only" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
+        <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
       <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
         <div class="bossbar ${barFx}">
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
@@ -190,8 +195,8 @@
   function banner(text, kind, sub, ms) {
     const b = document.createElement('div'); b.className = 'banner ' + (kind || '');
     b.innerHTML = `<span>${esc(text)}${sub ? `<small>${esc(sub)}</small>` : ''}</span>`;
-    b.style.animationDuration = (ms || 1500) * speed() + 'ms';
-    document.body.appendChild(b); setTimeout(() => b.remove(), (ms || 1500) * speed() + 50);
+    b.style.animationDuration = (ms || 1500) * pace() + 'ms';
+    document.body.appendChild(b); setTimeout(() => b.remove(), (ms || 1500) * pace() + 50);
   }
   function reveal(html, ms, onTop, who) {
     const o = document.createElement('div'); o.className = 'overlay clear'; o.innerHTML = `<div class="reveal">${who ? `<div class="who">${esc(who)}</div>` : ''}${html}</div>`;
@@ -504,7 +509,7 @@
   function phoneMenu(anchor) {
     const s = save.settings, B = E.g.boss;
     U.popover(anchor, `${E.raid.short} · boss deck ${B.deck.length} · discard ${B.grave.length}`, [
-      { label: `Speed: ${speed() === 1 ? 'normal' : speed() < 0.3 ? 'very fast' : 'fast'} (tap to change)`, go: () => { s.speed = s.speed === 1 ? 0.55 : s.speed > 0.3 ? 0.15 : 1; U.persist(); render(); } },
+      { label: `Speed: ${speedName()} (tap to change)`, go: () => changeSpeed() },
       { label: s.muted ? '🔇 Turn sound on' : '🔊 Mute all sound', go: () => { U.toggleMute(); render(); } },
       { label: 'Volume', go: () => U.soundPop(anchor) },
       { label: 'Raid rules', go: () => showRules() },
@@ -522,7 +527,7 @@
     if (act && act.dataset.act === 'rulesref') return showRules();
     if (act && act.dataset.act === 'mute') { U.toggleMute(); return render(); }
     if (act && act.dataset.act === 'soundpop') return U.soundPop(act);
-    if (act && act.dataset.act === 'speed') { const s = save.settings; s.speed = s.speed === 1 ? 0.55 : s.speed > 0.3 ? 0.15 : 1; U.persist(); return render(); }
+    if (act && act.dataset.act === 'speed') return changeSpeed();
     if (act && act.dataset.act === 'menu') return phoneMenu(act);
     if (act && act.dataset.act === 'drawer') { view.drawer = !view.drawer; return render(); }
     if (t === root && view.drawer) { view.drawer = false; return render(); }
@@ -584,7 +589,7 @@
   U.battle = function (cfg, link) {
     cfgLast = cfg; net = link || null;
     root = U.show('battle', '');
-    view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0;
+    view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0; view.netSpeed = net ? (+cfg.speed || save.settings.speed || 1) : null;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
     U.currentGame = E;
     // website build: warm the cache with this fight's pictures so cards don't pop in
@@ -600,7 +605,7 @@
       if ((e.key === 'Enter' || e.key === ' ') && document.activeElement && document.activeElement.closest && document.activeElement.closest('#battle .hc, #battle .unit, #battle .herocard, #battle .bosscard')) { e.preventDefault(); document.activeElement.click(); }
     };
     render();
-    if (net) { const mine = cfg.party.findIndex(s => s.owner === net.id); if (mine >= 0) view.focus = mine; net.attach({ apply: applyNet, game: () => E }); }
+    if (net) { const mine = cfg.party.findIndex(s => s.owner === net.id); if (mine >= 0) view.focus = mine; net.attach({ apply: applyNet, game: () => E, speed: v => { view.netSpeed = v; if (!net.replaying) U.toast(`Speed changed to ${speedName()}.`); render(); } }); }
     E.start().then(() => { view.busy = false; afterAction(); if (net) net.ready(); }).catch(err => { console.error(err); view.busy = false; U.toast('Error: ' + err.message); });
   };
   async function leave() {
@@ -626,7 +631,7 @@
       : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}${goldBox}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {
       const a = e.target.closest('[data-act]'); if (!a) return;
-      if (a.dataset.act === 'open') return U.openPack(raid.id, heroic, a);
+      if (a.dataset.act === 'open') return U.openPack(raid.id, heroic, a, null, { online: !!cfgLast.online });
       if (a.dataset.act === 'retry') return cfgLast.online ? U.online() : U.battle(JSON.parse(JSON.stringify(cfgLast)));
       if (a.dataset.act === 'party') return cfgLast.online ? U.online() : U.setup();
       if (a.dataset.act === 'market') return U.market();
