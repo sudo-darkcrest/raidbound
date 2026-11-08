@@ -10,8 +10,10 @@
     const core = Object.values(C).filter(d => d.set === 'core');
     const rares = core.filter(d => d.rarity === 'r'), uncs = core.filter(d => d.rarity === 'u'), coms = core.filter(d => d.rarity === 'c');
     const out = [];
-    out.push({ id: pick(raid.treasure), holo: true });
-    if (Math.random() < (heroic ? 0.5 : 0.3)) { const others = raid.treasure.filter(t => t !== out[0].id); out.push({ id: pick(others), holo: heroic }); }
+    // epic treasure is half as likely as rare treasure
+    const wpick = list => { const w = list.map(id => C[id].rarity === 'e' ? 1 : 2), tot = w.reduce((a, b) => a + b, 0); let x = Math.random() * tot; for (let i = 0; i < list.length; i++) { x -= w[i]; if (x < 0) return list[i]; } return list[list.length - 1]; };
+    out.push({ id: wpick(raid.treasure), holo: true });
+    if (Math.random() < (heroic ? 0.5 : 0.3)) { const others = raid.treasure.filter(t => t !== out[0].id); out.push({ id: wpick(others), holo: heroic }); }
     else out.push({ id: pick(rares).id, holo: Math.random() < (heroic ? 0.6 : 0.3) });
     out.push({ id: pick(uncs).id, holo: Math.random() < 0.15 });
     out.push({ id: pick(coms).id, holo: Math.random() < 0.1 });
