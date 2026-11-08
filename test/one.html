@@ -1,3 +1,0 @@
-<!DOCTYPE html><html><head><style>body{margin:0;background:#111}img{width:900px;height:660px;display:block}</style></head><body><img id="i">
-<script src="../src/art_photos.js"></script><script src="../src/art_gen.js"></script><script src="../src/art_core.js"></script><script src="../src/art_fig.js"></script><script src="../src/art_obj.js"></script><script src="../src/art_hero.js"></script><script src="../src/data.js"></script>
-<script>const [kind,id]=location.hash.slice(1).split(':');const d=kind==='h'?RB.HEROES[id]:kind==='r'?RB.RAIDS[id]:kind==='b'?RB.BOSSCARDS[id]:kind==='t'?RB.TOKENS[id]:RB.CARDS[id];document.getElementById('i').src=RB.ART.uri(d.art,kind+':'+id);</script></body></html>
