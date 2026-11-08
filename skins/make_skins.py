@@ -85,8 +85,13 @@ SKINS = {
 
 if __name__ == '__main__':
     import json
+    painted = here / 'painted'
     for f in gen.glob('skin_*.webp'): f.unlink()
     for sid, cfg in SKINS.items():
-        im = skin(gen / f"{cfg['hero']}.webp", cfg)
+        # a SpriteCook-painted skin (skins/import_painted.py) always wins over the recolour
+        if (painted / f'{sid}.webp').exists():
+            from PIL import Image as _I; im = _I.open(painted / f'{sid}.webp').convert('RGB')
+        else:
+            im = skin(gen / f"{cfg['hero']}.webp", cfg)
         p = gen / f'skin_{sid}.webp'; im.save(p, 'WEBP', quality=80, method=6); print(p.name, p.stat().st_size // 1024, 'KB')
     (here / 'skins.json').write_text(json.dumps({k: {'hero': v['hero'], 'name': v['name'], 'desc': v['desc']} for k, v in SKINS.items()}, indent=1))
