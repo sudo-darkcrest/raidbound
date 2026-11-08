@@ -102,5 +102,23 @@
   tide('undertowring', { name: 'Ring of the Undertow', type: 'item', cost: 2, allyHp: 1, text: 'Your allies have +1 health.',
     art: { s: 'sunken', L: [glow(150, 120, 60, '#5ad8ff', 0.6), ['obj', { t: 'ring', x: 150, y: 120, s: 1.2, gem: '#5ad8ff' }]] } });
 
+  /* ======================= +1 core card ======================= */
+  C.fieldmedic = { id: 'fieldmedic', name: 'Field Medic', type: 'ally', cost: 2, atk: 1, hp: 3, race: 'Human', fac: 'neutral', rarity: 'c', set: 'core', target: 'friendlyHero', tags: ['heal'], text: 'When this enters play, heal 3 damage from a friendly hero.', onEnter: async (E, c) => { if (c.target) await E.heal(c.target, 3); }, flavor: 'Bandages, splints and a very firm voice.',
+    art: { s: 'castle', L: [glow(150, 130, 70, '#9aff8a', 0.4), fig({ pose: 'stand', w: 'mace', helm: 'hood', x: 130, y: 214, s: 0.86, cloth: '#e8e0c8' }), ['fx', { t: 'heal', x: 210, y: 120, c: '#9aff8a' }], ['obj', { t: 'potion', x: 230, y: 190, col: '#ff5a4a' }]] } };
+
+  /* ======================= +3 loot cards (each with a scratch-off code reward) ======================= */
+  const loot = (id, o) => { o.id = id; o.fac = 'neutral'; o.rarity = 'e'; o.set = 'loot'; C[id] = o; };
+  loot('loot_owl', { name: 'Snowfeather Owlet', type: 'ally', cost: 2, atk: 2, hp: 2, kw: ['elusive', 'longrange'], race: 'Beast', tags: ['draw'], text: 'When this enters play, draw a card.', onEnter: async (E, c) => E.draw(c.p, 1), loot: { reward: 'pet_owl', label: 'Snowfeather Owlet companion' },
+    art: { s: 'frost', L: [glow(150, 130, 90, '#e8f6ff', 0.6), ['beast', { t: 'bird', x: 150, y: 140, s: 0.7, eye: '#ffd060' }], ['fx', { t: 'sparkle', x: 150, y: 100, n: 10 }]] } });
+  loot('loot_starfall', { name: 'Starfall Sigil', type: 'item', cost: 2, spell: 1, text: 'Your spells and powers deal +1 damage.', loot: { reward: 'back_starfall', label: 'Starfall card back' },
+    art: { s: 'void', L: [glow(150, 120, 90, '#c87aff', 0.6), ['fx', { t: 'meteors', n: 5, c: '#e0c8ff' }], ['fx', { t: 'runes', x: 150, y: 130, r: 80, c: '#e8c060' }]] } });
+  loot('loot_aurora', { name: 'Lantern of the Northern Lights', type: 'item', cost: 3, tags: ['heal'], text: 'At the start of your turn, heal 1 damage from each friendly hero and ally.', start: async (E, p) => { for (const t of E.friendlyChars()) await E.heal(t, 1); }, loot: { reward: 'board_aurora', label: 'Northern Lights table theme' },
+    art: { s: 'frost', pal: { light: '#b8ffe0' }, L: [['wisps', { x: 150, y: 70, w: 300, h: 70, n: 12, c: '#9affd0' }], glow(150, 120, 80, '#9affd0', 0.5), ['obj', { t: 'lantern', x: 150, y: 130, s: 1.1 }]] } });
+  Object.assign(RB.COSMETICS, {
+    pet_owl: { kind: 'pet', name: 'Snowfeather Owlet', get: 'loot', desc: 'A round, fluffy snowy owlet with big golden eyes.' },
+    back_starfall: { kind: 'back', name: 'Starfall', get: 'loot', desc: 'Falling stars around a gold eight-point star on a violet night sky.' },
+    board_aurora: { kind: 'board', name: 'Northern Lights', get: 'loot', desc: 'Green and violet aurora over snowy peaks and a pine forest.' },
+  });
+
   RB.FRONTIER = Object.values(C).filter(d => d.set === 'frontier').map(d => d.id);
 })(globalThis.RB);

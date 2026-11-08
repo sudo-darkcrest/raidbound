@@ -222,7 +222,7 @@
 
   /* ---------- loot codes ---------- */
   const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const REWARD_KEYS = ['pet_gryphon', 'back_lynx', 'board_banners', 'pet_kite'];
+  const REWARD_KEYS = ['pet_gryphon', 'back_lynx', 'board_banners', 'pet_kite', 'pet_owl', 'back_starfall', 'board_aurora']; // append only: a code's first letter picks the reward
   U.makeCode = function (reward) {
     const ri = REWARD_KEYS.indexOf(reward);
     let body = ALPH[ri * 4 + Math.floor(Math.random() * 4)];
