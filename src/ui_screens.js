@@ -164,15 +164,15 @@
   /* ---------------- collection ---------------- */
   U.collection = function () {
     let set = 'all';
-    const sets = { all: 'All cards', core: 'Core set', frontier: 'Frontier boosters', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
+    const sets = { all: 'All cards', core: 'Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
     function draw() {
-      const list = Object.values(C).filter(d => set === 'all' || d.set === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
+      const list = Object.values(C).filter(d => set === 'all' || d.set === set || d.pack === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
       const total = Object.values(C).length, have = Object.values(C).filter(d => save.owned[d.id] > 0).length;
       const lootRows = save.loot.map((l, i) => `<div class="cos"><h4>${esc(C[l.id].name)}</h4><p style="margin:.2rem 0;color:var(--muted);font-size:.9rem">${esc(C[l.id].loot.label)}</p><div class="scratch" data-loot="${i}"><span>${l.code}</span>${l.scratched ? '' : '<canvas></canvas>'}</div><p style="font-size:.85rem;color:${l.redeemed ? 'var(--verd-hi)' : 'var(--muted)'}">${l.redeemed ? 'Redeemed in the Vault.' : l.scratched ? 'Enter this code in the Vault.' : 'Scratch the silver panel to reveal your code.'}</p></div>`).join('');
       const el = U.show('collection', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters">${Object.entries(sets).map(([k, v]) => `<button class="btn small ${set === k ? '' : 'ghost'}" data-set="${k}">${v}</button>`).join('')}</div>
         ${save.loot.length && (set === 'all' || set === 'loot') ? `<h3 class="sec">Your loot codes</h3><div class="cosgrid">${lootRows}</div><h3 class="sec">Cards</h3>` : ''}
-        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 && d.set !== 'core' ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.set === 'frontier' ? 'Found in Frontier booster packs (Market)' : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
+        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 && d.set !== 'core' ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });
@@ -203,7 +203,7 @@
       ['pet', 'Companions', 'A little creature that floats beside your hero (the first hero, in party games) during raids. Just for looks: companions never change the rules or the odds.'],
     ];
     const tile = id => {
-      const c = RB.COSMETICS[id], own = U.ownsCos(id), cur = save.sel[c.kind] && U.ownsCos(save.sel[c.kind]) ? save.sel[c.kind] : '', on = own && (cur || (c.get === 'default' ? id : '')) === id;
+      const c = RB.COSMETICS[id], own = U.ownsCos(id), cur = save.sel[c.kind] && U.ownsCos(save.sel[c.kind]) ? save.sel[c.kind] : '', on = own && (cur || ({ back: 'back_classic', board: 'board_classic' }[c.kind] || '')) === id;
       const img = U.cosImg(id);
       return `<div class="cos k-${c.kind} ${own ? '' : 'locked'} ${on ? 'equipped' : ''}">
         <div class="swatch">${img ? `<img alt="" src="${img}">` : ''}${own ? '' : '<span class="lock" aria-hidden="true">&#128274;</span>'}${on ? '<span class="eq">Equipped</span>' : ''}</div>
@@ -220,7 +220,7 @@
       ${sections}</div>`);
     el.onclick = e => {
       if (e.target.closest('[data-act=back]')) return U.title();
-      const u = e.target.closest('[data-use]'); if (u) { const id = u.dataset.use, c = RB.COSMETICS[id]; save.sel[c.kind] = c.get === 'default' ? '' : id; U.persist(); U.applyCosmetics(); U.sfx.flip(); return U.vault(); }
+      const u = e.target.closest('[data-use]'); if (u) { const id = u.dataset.use, c = RB.COSMETICS[id]; save.sel[c.kind] = (id === 'back_classic' || id === 'board_classic') ? '' : id; U.persist(); U.applyCosmetics(); U.sfx.flip(); return U.vault(); }
       if (e.target.closest('[data-act=redeem]')) {
         const code = $('#code').value.trim();
         if (U.checkGoldCode(code)) return U.vault(U.redeemGold(code));

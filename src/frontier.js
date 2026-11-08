@@ -172,19 +172,5 @@
     if (g.cfg.difficulty === 'heroic') { const b = Math.round(total * 0.25); parts.push(['Heroic bonus', b]); total += b; }
     return { parts, total };
   };
-  RB.rollBooster = (rand) => {
-    rand = rand || Math.random;
-    const pk = a => a[Math.floor(rand() * a.length)];
-    const fr = Object.values(C).filter(d => d.set === 'frontier'), core = Object.values(C).filter(d => d.set === 'core');
-    const byR = (list, r) => list.filter(d => d.rarity === r);
-    const rarity = () => { const x = rand(); return x < 0.06 ? 'e' : x < 0.24 ? 'r' : x < 0.55 ? 'u' : 'c'; };
-    const from = (list, r) => { let l = byR(list, r); while (!l.length) { r = { e: 'r', r: 'u', u: 'c', c: 'c' }[r]; l = byR(list, r); if (r === 'c' && !l.length) l = list; } return pk(l); };
-    const out = [];
-    // two guaranteed Frontier cards, one of them uncommon or better
-    out.push({ id: from(fr, (() => { const r = rarity(); return r === 'c' ? 'u' : r; })()).id, holo: rand() < 0.2 });
-    out.push({ id: from(fr, rarity()).id, holo: rand() < 0.1 });
-    // the rest: mostly Frontier, some regular cards mixed in
-    for (let i = 0; i < 3; i++) { const list = rand() < 0.6 ? fr : core; out.push({ id: from(list, rarity()).id, holo: rand() < 0.08 }); }
-    return out;
-  };
+  // RB.rollBooster lives in packs.js (#47: each wrapper is its own set)
 })(globalThis.RB);

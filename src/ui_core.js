@@ -30,6 +30,7 @@
     if (k === 'win') return 'Defeat ' + raid.short + ' in ' + raid.name;
     if (k === 'heroic') return 'Defeat ' + raid.short + ' on Heroic';
     if (k === 'allraids') return 'Defeat all three raid bosses';
+    if (k === 'packs') { const PS = RB.PACK_SETS && RB.PACK_SETS[r], n = +c.get.split(':')[2], have = (save.packs || {})[r] || 0; return `Open ${n} ${PS ? PS.name : ''} booster packs (${Math.min(have, n)}/${n})`; }
     return '';
   };
   // grant anything earned by playing; returns the ids that are new
@@ -38,7 +39,7 @@
     for (const [id, c] of Object.entries(RB.COSMETICS)) {
       if (save.cos.includes(id)) continue;
       const [k, r] = c.get.split(':');
-      const ok = k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
+      const ok = k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
       if (ok) { save.cos.push(id); got.push(id); }
     }
     if (got.length) U.persist();

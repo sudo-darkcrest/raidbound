@@ -673,3 +673,11 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .minions .unit.minion { flex: 0 0 auto; width: clamp(74px, calc((100% - .6rem * (max(var(--mn, 1), 2) - 1)) / max(var(--mn, 1), 2)), 128px); }
 .bossplayed { justify-content: center; }
 @media (max-height: 760px) { .bosscard { max-height: 220px; } .bbname span { display: none; } }
+
+/* #47 each wrapper is its own set */
+.packpick.setpick { width: 300px; gap: .45rem; padding: 1rem .9rem 1.1rem; border-radius: 14px; background: linear-gradient(180deg, color-mix(in srgb, var(--sc) 14%, transparent), rgba(10, 8, 14, .6)); border: 1px solid color-mix(in srgb, var(--sc) 45%, transparent); text-align: center; }
+.setpick .pname { font-family: var(--f-display); font-weight: 900; font-size: 1.5rem; color: var(--sc); text-shadow: 0 2px 0 #000; margin-top: .3rem; }
+.setpick .ptheme { font-family: var(--f-sc); font-size: .85rem; letter-spacing: .05em; color: var(--vellum); }
+.setpick .pblurb { margin: .1rem 0; font-size: .9rem; color: var(--muted); line-height: 1.35; min-height: 3.6em; }
+.setpick .pgot { font-size: .85rem; color: var(--muted); } .setpick .pgot b { color: var(--sc); font-size: 1.05rem; }
+.packrow.mini .pname small { color: var(--muted); font-size: .75em; }

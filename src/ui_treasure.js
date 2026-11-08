@@ -23,6 +23,8 @@
   U.openPack = function (raidId, heroic, packEl, given) {
     const cards = given || U.rollPack(raidId, heroic);
     const booster = !!given;
+    const style = booster ? (given.style || 'ember') : null, PS = booster ? RB.PACK_SETS[style] : null;
+    if (booster) { save.packs = save.packs || {}; save.packs[style] = (save.packs[style] || 0) + 1; }
     // add to collection right away so nothing is lost if the page closes
     for (const c of cards) {
       save.owned[c.id] = (save.owned[c.id] || 0) + 1;
@@ -30,16 +32,18 @@
       if (C[c.id].loot) save.loot.push({ id: c.id, code: U.makeCode(C[c.id].loot.reward), scratched: false, redeemed: false });
     }
     U.persist();
+    const newBoards = booster && U.checkUnlocks ? U.checkUnlocks() : [];
     U.sfx.treasure();
     packEl.classList.add('tear');
     setTimeout(() => {
-      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)">${booster ? 'Frontier booster' : 'Treasure'}</h2><p class="tagline">Click each card to reveal it.</p>
+      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)${PS ? `;color:${PS.col}` : ''}">${booster ? `${PS.name} booster` : 'Treasure'}</h2><p class="tagline">${PS ? `${esc(PS.theme)} · ` : ''}Click each card to reveal it.</p>
         <div class="packcards">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${i * 0.12}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
         <div id="lootnote"></div>
         ${booster ? `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">${RB.PACK_PRICE} gold each</span></div>
-          <div class="packrow mini">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buyagain', cls: save.gold >= RB.PACK_PRICE ? '' : 'broke', data: `data-style="${k}"`, label: `Buy another ${v.name} booster pack for ${RB.PACK_PRICE} gold` })}<div class="pname">${v.name}</div></div>`).join('')}</div>
-          ${save.gold >= RB.PACK_PRICE ? `<button class="btn primary" data-act="buyagain">Buy another pack — ${RB.PACK_PRICE} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${RB.PACK_PRICE - save.gold} more gold for another pack. Go raid!</p>`}</div>` : ''}
+          <div class="packrow mini">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buyagain', set: RB.PACK_SETS[k].name + ' Set', cls: save.gold >= RB.PACK_PRICE ? '' : 'broke', data: `data-style="${k}"`, label: `Buy another ${v.name} booster pack for ${RB.PACK_PRICE} gold` })}<div class="pname">${v.name}${k === style ? ' <small>(again)</small>' : ''}</div></div>`).join('')}</div>
+          ${save.gold >= RB.PACK_PRICE ? `<button class="btn primary" data-act="buyagain">Another ${PS.name} pack — ${RB.PACK_PRICE} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${RB.PACK_PRICE - save.gold} more gold for another pack. Go raid!</p>`}</div>` : ''}
         <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">Raid again</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+      if (newBoards && newBoards.length) setTimeout(() => U.toast(`Unlocked: ${newBoards.map(id => RB.COSMETICS[id].name).join(', ')}! Pick it in the Vault.`), 1200);
       $$('.packcards .card', el).forEach(c => c.style.setProperty('--cw', '100%'));
       $$('.packcards .card', el).forEach(c => { c.style.width = '100%'; });
       const flip = f => { if (f.classList.contains('on')) return; f.classList.add('on'); U.sfx.flip(); const c = cards[+f.dataset.i]; if (C[c.id].rarity === 'e') setTimeout(() => U.sfx.quest(), 250); if (C[c.id].loot) showLoot(); };
@@ -95,10 +99,12 @@
     }).join('');
     const el = U.show('market', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Market</h2><span class="sp"></span><span class="goldchip big">${save.gold} gold</span></div>
       <p class="lede">Every raid pays you gold, win or lose. You get more for winning, for damage dealt to the boss, for each minion destroyed and for healing your party. Heroic raids pay 25% extra.</p>
-      <h3 class="sec">Frontier booster packs</h3>
-      <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buy', data: `data-style="${k}"`, label: `Buy a ${v.name} booster pack for ${price} gold` })}<div class="pname">${v.name} wrapper</div></div>`).join('')}</div>
-      <div class="packinfo"><p>Every pack holds <b>5 cards</b>: at least two from the <b>Frontier</b> set (one uncommon or better), with regular cards mixed in. Some come as holofoils. The three wrappers hold the same cards — pick the one you like.</p><p>You have found <b>${have} of ${fr.length}</b> Frontier cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
-        <button class="btn primary" data-act="buy" ${save.gold >= price ? '' : 'disabled'}>Buy a pack — ${price} gold</button>${save.gold < price ? ` <span style="color:var(--muted)">You need ${price - save.gold} more gold. Go raid!</span>` : ''}</div>
+      <h3 class="sec">Booster packs</h3>
+      <p class="lede">Each wrapper is its own set of cards. Every pack holds <b>5 cards</b>: at least three from that set (one uncommon or better), and the rest are usually from the set too, with the odd regular card. Some come as holofoils. Open 5 of one kind to unlock its table theme.</p>
+      <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => { const PS = RB.PACK_SETS[k], pool = RB.packPool(k), got = pool.filter(d => (save.owned[d.id] || 0) > 0).length, opened = (save.packs || {})[k] || 0;
+        return `<div class="packpick setpick" style="--sc:${PS.col}">${U.packHTML({ theme: k, art: v.art, act: 'buy', set: PS.name + ' Set', data: `data-style="${k}"`, label: `Buy a ${v.name} booster pack for ${price} gold` })}<div class="pname">${v.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(PS.blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${save.gold >= price ? 'primary' : ''}" data-act="buy" data-style="${k}" ${save.gold >= price ? '' : 'disabled'}>Buy — ${price} gold</button></div>`; }).join('')}</div>
+      ${save.gold < price ? `<p class="lede" style="text-align:center">You need ${price - save.gold} more gold for a pack. Go raid!</p>` : ''}
+      <p class="lede" style="text-align:center">You have found <b>${have} of ${fr.length}</b> booster cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
       <div class="codebox goldcode"><span>Have a gold code?</span><input id="goldcode" placeholder="RBG-XXXXX-XXXXX" aria-label="Gold code" maxlength="17"><button class="btn" data-act="goldcode">Redeem</button>${opts && opts.msg ? `<span class="${opts.msg.ok ? 'okmsg' : 'errmsg'}">${esc(opts.msg.text)}</span>` : ''}</div>
       <h3 class="sec">Heroes for hire</h3><p class="lede">Six new heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p>
       <div class="mheroes">${heroes}</div></div>`);
@@ -111,8 +117,9 @@
       if (a.dataset.act === 'buy') {
         if (save.gold < price) return U.toast(`A pack costs ${price} gold. You have ${save.gold}.`);
         save.gold -= price; U.persist();
-        const packEl = a.classList.contains('tcgpack') ? a : $('.tcgpack', el);
-        return U.openPack(null, false, packEl, RB.rollBooster());
+        const st = a.dataset.style || 'ember';
+        const packEl = a.classList.contains('tcgpack') ? a : $(`.tcgpack[data-style="${st}"]`, el);
+        return U.openPack(null, false, packEl, RB.rollBooster(null, st));
       }
     };
     el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'buy') e.target.click(); if (e.key === 'Enter' && e.target.id === 'goldcode') el.querySelector('[data-act=goldcode]').click(); };
