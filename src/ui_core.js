@@ -32,6 +32,9 @@
     if (k === 'win') return 'Defeat ' + raid.short + ' in ' + raid.name;
     if (k === 'heroic') return 'Defeat ' + raid.short + ' on Heroic';
     if (k === 'allraids') return 'Defeat all three raid bosses';
+    if (k === 'dclear') { const d = RB.DUNGEONS && RB.DUNGEONS[r]; return `Clear the dungeon ${d ? d.name : r}`; }
+    if (k === 'dlevel') return `Reach Dungeon level ${r}`;
+    if (k === 'dlegend') return 'Clear any dungeon on Legendary';
     if (k === 'packtotal') { const n = +r, have = Object.values(save.packs || {}).reduce((a, b) => a + b, 0); return `Open ${n} booster packs of any kind (${Math.min(have, n)}/${n})`; }
     if (k === 'packs') { const PS = RB.PACK_SETS && RB.PACK_SETS[r], n = +c.get.split(':')[2], have = (save.packs || {})[r] || 0; return `Open ${n} ${PS ? PS.name : ''} booster packs (${Math.min(have, n)}/${n})`; }
     return '';
@@ -42,7 +45,7 @@
     for (const [id, c] of Object.entries(RB.COSMETICS)) {
       if (save.cos.includes(id)) continue;
       const [k, r] = c.get.split(':');
-      const ok = k === 'packtotal' ? Object.values(save.packs || {}).reduce((a, b) => a + b, 0) >= +r : k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
+      const ok = k === 'dclear' ? ((save.dclears || {})[r] || 0) > 0 : k === 'dlevel' ? RB.dungeonLevel(save.dxp || 0) >= +r : k === 'dlegend' ? (save.dlegend || 0) > 0 : k === 'packtotal' ? Object.values(save.packs || {}).reduce((a, b) => a + b, 0) >= +r : k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
       if (ok) { save.cos.push(id); got.push(id); }
     }
     if (got.length) U.persist();
@@ -222,7 +225,7 @@
 
   /* ---------- loot codes ---------- */
   const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const REWARD_KEYS = ['pet_gryphon', 'back_lynx', 'board_banners', 'pet_kite', 'pet_owl', 'back_starfall', 'board_aurora']; // append only: a code's first letter picks the reward
+  const REWARD_KEYS = ['pet_gryphon', 'back_lynx', 'board_banners', 'pet_kite', 'pet_owl', 'back_starfall', 'board_aurora', 'pet_ram']; // append only: a code's first letter picks the reward
   U.makeCode = function (reward) {
     const ri = REWARD_KEYS.indexOf(reward);
     let body = ALPH[ri * 4 + Math.floor(Math.random() * 4)];

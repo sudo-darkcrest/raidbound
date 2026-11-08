@@ -9,7 +9,8 @@
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
-    const raid = RB.RAIDS[cfg.raid];
+    const raid = RB.RAIDS[cfg.raid] || (RB.DUNGEONS || {})[cfg.raid];
+    const D = !!raid.dungeon; // #63 Dungeon mode: the boss runs itself, flips cards by level, marks a random hero
     let uidN = 1;
     const uid = () => 'x' + (uidN++);
     const g = {
@@ -41,7 +42,10 @@
     g.boss = {
       maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: heroic && raid.counter ? 1 : 0,
       cardsPerTurn: 1, strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
+      level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
     };
+    if (D) g.boss.strikeBonus += g.boss.level - 1;
+    const flipCount = () => { const f = raid.flip[Math.min(g.boss.level, raid.flip.length) - 1]; return Math.max(1, f - Math.floor((3 - Math.min(3, n)) / 2)); };
 
     /* ---------- basic queries ---------- */
     const pdef = p => p.hero.master ? C[p.hero.master] : HEROES[p.heroId];
@@ -373,7 +377,7 @@
       }
       log(`${nameOf(attackerT)} attacks ${nameOf(target)}${wname}.`, 'atk');
       await H.anim('attack', { from: refId(attackerT), to: refId(target) });
-      const back = Math.max(0, (longrange ? 0 : target.t === 'boss' ? raid.retaliation : minAtk(target.m)) - ironHide);
+      const back = Math.max(0, (longrange ? 0 : target.t === 'boss' ? raid.retaliation + (g.boss.retalBonus || 0) : minAtk(target.m)) - ironHide);
       await dmg(target, atk, { p, kind: who === 'hero' ? 'hero' : 'ally' });
       if (back > 0 && isAlive(attackerT) && !g.over) await dmg(attackerT, back, { kind: target.t === 'boss' ? 'boss' : 'minion' });
       if (onAttack && !g.over) await onAttack(api, { p, defender: target });
@@ -498,7 +502,8 @@
         H.update();
         if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); H.update(); if (g.over) return; }
       }
-      const k = B.cardsPerTurn + Math.max(0, alive().length - 1);
+      const k = D ? flipCount() : B.cardsPerTurn + Math.max(0, alive().length - 1);
+      if (D) log(`${raid.short} is level ${B.level}: flips ${k} card${k > 1 ? 's' : ''}.`, 'boss');
       const drawBoss = () => { if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); } return B.deck.pop(); };
       if (cfg.bossPlayer && H.ask) {
         // #25: the player is the boss — keep a hand and choose which cards to play
@@ -528,8 +533,9 @@
         H.update();
       }
       if (g.over) return;
+      if (D) markHero();
       // minions attack (the boss holds back on the opening round)
-      if (g.round === 1) { log(`${raid.short} is still taking your measure — no attacks this round.`, 'boss'); }
+      if (D ? B.turnsTaken === 0 : g.round === 1) { log(`${raid.short} is still taking your measure — no attacks this round.`, 'boss'); }
       else for (const m of [...B.minions]) {
         if (g.over) return;
         if (!B.minions.includes(m) || m.ex || m.sick) continue;
@@ -538,7 +544,8 @@
         await minionAttack(m);
       }
       if (g.over) return;
-      if (g.round > 1) await bossStrike();
+      if (D ? B.turnsTaken > 0 : g.round > 1) await bossStrike();
+      B.turnsTaken++;
       if (g.over) return;
       // end of boss turn
       B.events.forEach(e => e.turns--);
@@ -578,11 +585,19 @@
         await dmg(attackerT, back, { p: srcP, kind: defT.t === 'hero' ? 'hero' : 'ally' });
       }
     }
+    function markedHero() { const m = g.boss.marked != null ? g.players[g.boss.marked] : null; return m && !m.hero.dead && !m.hero.elusive ? m : null; }
+    function markHero() {
+      const cands = alive().filter(p => !p.hero.elusive); if (!cands.length) { g.boss.marked = null; return; }
+      const p = pick(cands); g.boss.marked = p.idx;
+      log(`${raid.short} rolls the die and MARKS ${pdef(p).name}! Every dungeon attack this turn goes at them.`, 'boss');
+      H.anim('banner', { text: `${pdef(p).name} is marked!`, kind: 'boss' }); H.update();
+    }
     function threatTarget() {
       const cands = alive().filter(p => !p.hero.elusive);
       if (!cands.length) return null;
       const taunt = cands.filter(p => p.hero.taunt);
       if (taunt.length) return taunt[0];
+      if (D && markedHero()) return markedHero();
       const top = Math.max(...cands.map(p => p.threat));
       const tied = cands.filter(p => p.threat === top);
       return tied.length === 1 ? tied[0] : pick(tied);
@@ -594,6 +609,7 @@
       let target = null;
       const taunt = heroes.find(p => p.hero.taunt);
       if (taunt) target = T.hero(taunt);
+      else if (D && markedHero()) target = T.hero(markedHero());
       else if (cfg.bossPlayer && H.ask) {
         const pool = [...heroes.map(T.hero), ...allies];
         if (!pool.length) return;
@@ -626,7 +642,18 @@
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
       canPlay, canEquip, needsTarget, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
-      start: async () => { log(`The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, 7); } log('Each hero begins with 2 resources from the war chest.', ''); if (raid.setup) await raid.setup(api); H.update(); g.turn = 0; await startHeroTurn(); },
+      start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, 7); } log('Each hero begins with 2 resources from the war chest.', '');
+        if (D) for (const p of g.players) { // one mulligan each: shuffle the hand back and draw 7 new cards
+          let redo = false;
+          if (p.auto || cfg.allAuto || !H.ask) redo = !p.hand.some(c => C[c.id].type === 'ally' && C[c.id].cost <= 3);
+          else redo = await H.ask('mulligan', { p });
+          if (redo) { p.deck.push(...p.hand.splice(0)); shuffle(p.deck, rnd); await draw(p, 7); log(`${pdef(p).name} takes a mulligan and draws a new hand of 7.`, ''); }
+        }
+        if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
+        if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
+      flipCount, markedHero,
+      levelUp: async (k) => { const B = g.boss, top = raid.maxLevel || 4; if (B.level >= top) return; B.level = Math.min(top, B.level + (k || 1)); B.strikeBonus += (k || 1); log(`${raid.short} levels up to level ${B.level}! Strikes harder and flips more cards.`, 'boss'); H.update(); },
+      equipBoss: (name, strike, retal) => { const B = g.boss; B.strikeBonus += strike || 0; B.retalBonus = (B.retalBonus || 0) + (retal || 0); B.equip.push(name); log(`${raid.short} equips ${name}.`, 'boss'); H.update(); },
       // effect helpers
       dmg, heal, draw,
       enemies, minions, allAllies, friendlyChars, heroes: alive,

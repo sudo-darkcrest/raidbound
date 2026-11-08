@@ -255,6 +255,9 @@
     crypt: { bpm: 58, key: 49, prog: [[0, 'm'], [0, 'm'], [-4, 'M'], [-5, 'M'], [0, 'm'], [1, 'M'], [-4, 'M'], [-5, 'M']], choir: 1, bellEvery: 4, drone: 1, amb: 'wind', scale: [0, 1, 3, 5, 7, 8, 10] },
     molten: { bpm: 96, key: 40, prog: [[0, 'm'], [0, 'm'], [-4, 'M'], [-2, 'M']], drum: 'war', ostinato: 1, bass: 1, horns: 1, amb: 'lava', scale: [0, 2, 3, 5, 7, 8, 10] },
     tide: { bpm: 64, key: 41, prog: [[0, 'm'], [-4, 'M'], [3, 'M'], [-2, 'M']], drops: 1, whale: 1, pads: 1, amb: 'water', scale: [0, 2, 3, 5, 7, 8, 10] },
+    thornwood: { bpm: 72, key: 45, prog: [[0, 'm'], [-2, 'M'], [-4, 'M'], [-5, 'M']], harp: 1, pads: 1, drone: 1, amb: 'wind', scale: [0, 2, 3, 5, 7, 8, 10] },
+    warcamp: { bpm: 104, key: 43, prog: [[0, 'm'], [-2, 'M'], [-4, 'M'], [-2, 'M']], drum: 'war', bass: 1, horns: 1, amb: 'lava', scale: [0, 2, 3, 5, 7, 8, 10] },
+    vault: { bpm: 66, key: 47, prog: [[0, 'm'], [3, 'M'], [-4, 'M'], [-5, 's']], pads: 1, bellEvery: 2, drone: 1, harp: 1, amb: 'wind', scale: [0, 2, 3, 6, 7, 8, 11] },
     victory: { bpm: 92, key: 48, prog: [[0, 'M'], [5, 'M'], [7, 'M'], [0, 'M']], harp: 1, bass: 1, drum: 'pulse', melody: 1, scale: [0, 2, 4, 5, 7, 9, 11] },
   };
   const triad = (r, q) => q === 'M' ? [r, r + 4, r + 7] : q === 's' ? [r, r + 5, r + 7] : q === 'd' ? [r, r + 3, r + 6] : [r, r + 3, r + 7];

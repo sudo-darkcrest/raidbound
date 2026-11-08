@@ -108,7 +108,7 @@
       const gearIcons = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
       const backs = `<span class="rhand" title="${q.hand.length} cards in hand${q.idx === vIdx ? '' : ' (hidden)'}">${'<i></i>'.repeat(Math.min(q.hand.length, 10))}<b>${q.hand.length}</b></span>`;
       const played = ((view.played || {})[q.idx] || []).map(c => `<img class="rplay ${c.holo ? 'holo' : ''}" alt="" src="${U.cardArt(c.id)}" data-card="${c.id}">`).join('');
-      const tag = q.idx === vIdx ? ' <span class="youtag">You</span>' : q.auto ? ' <span class="aitag">AI</span>' : '';
+      const tag = (q.idx === vIdx ? ' <span class="youtag">You</span>' : q.auto ? ' <span class="aitag">AI</span>' : '') + (raid.dungeon && g.boss.marked === q.idx && g.phase === 'boss' ? ' <span class="marktag">🎯 Marked</span>' : '');
       const who = net && E.g.cfg.party[q.idx].name ? `<div class="rplayer">${esc(E.g.cfg.party[q.idx].name)}</div>` : '';
       return `<div class="rmember ${q === active && g.phase !== 'boss' ? 'active' : ''} ${q.hero.dead ? 'dead' : ''} ${q === p ? 'viewing' : ''}" data-focus="${q.idx}" title="Click to look at ${esc(qd.name)}'s side of the table"><img class="herochip${q === p ? '' : tcls('hero' + q.idx)}" ${q === p ? '' : `data-ref="hero${q.idx}"`} alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="rbody"><div class="rn">${esc(qd.name)}${tag}</div>${who}<div class="rbar"><i style="width:${pct}%"></i><span>${Math.max(0, E.heroHp(q))}/${E.heroMax(q)}</span></div>
         <div class="rmeta">${backs}${q.hero.shield ? `<span class="rward">◈ ${q.hero.shield}</span>` : ''}<span>threat ${q.threat}</span>${gearIcons ? `<span class="rgears">${gearIcons}</span>` : ''}</div>
@@ -125,7 +125,7 @@
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
-          <div class="bossrow">${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+          <div class="bossrow">${raid.dungeon ? `<span class="chip dlevel" title="The dungeon levels up at 70% and 40% health">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
         </div>
         <div class="bossstage">
           <div class="minions left" style="--mn:${minL.length}">${minL.join('')}</div>
@@ -265,6 +265,11 @@
     if (kind === 'scout') {
       const v = await U.dialog(`<h3>Scouting report</h3><p>The next card in ${esc(E.raid.short)}'s deck is revealed.</p><div class="cards">${U.cardHTML(d.id)}</div><div class="acts"><button class="btn ghost" data-v="top">Leave it on top</button><button class="btn primary" data-v="bottom">Send it to the bottom</button></div>`);
       return v;
+    }
+    if (kind === 'mulligan') {
+      const p = d.p, h = p.hand.map(c => `<div class="pick">${U.cardHTML(c.id, { holo: c.holo })}</div>`).join('');
+      const v = await U.dialog(`<h3>${esc(E.pdef(p).name)}: keep this hand?</h3><p>You may take <b>one mulligan</b>: shuffle these 7 cards back into your deck and draw 7 new ones.</p><div class="cards">${h}</div><div class="acts"><button class="btn ghost" data-v="redo">Mulligan (draw 7 new)</button><button class="btn primary" data-v="keep">Keep this hand</button></div>`, { dismiss: 'keep', cls: 'wide' });
+      return v === 'redo';
     }
     if (kind === 'bossPick') {
       const v = await U.dialog(`<h3>${esc(E.raid.short)}: play a card</h3><p>You are the raid boss. Choose a card from your hand to play — <b>${d.left} more</b> this turn. Cards you don't play stay in your hand for next turn.</p>
@@ -543,7 +548,7 @@
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
     U.currentGame = E;
     E.g.onAiStep = () => wait(550);
-    RB.AUDIO.music(cfg.raid || (E.raid && E.raid.id));
+    RB.AUDIO.music((E.raid && E.raid.music) || cfg.raid);
     root.onclick = onClick;
     root.onmouseover = onOver;
     root.onmouseleave = () => U.hidePreview();
@@ -565,6 +570,7 @@
     if (g.over === 'abandon') return;
     const raid = g.raid;
     if (g.cfg.bossPlayer) return bossEndScreen();
+    if (raid.dungeon) return U.dungeonEnd(g, win, cfgLast, E);
     const heroesBefore = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id));
     const gold = RB.goldFor(g, win); save.gold = (save.gold || 0) + gold.total; U.persist();
     let fresh = []; if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'heroic') save.heroicWins[raid.id] = (save.heroicWins[raid.id] || 0) + 1; U.persist(); fresh = U.checkUnlocks(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }

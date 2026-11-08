@@ -755,3 +755,29 @@ b.legend { color: #ffb040; text-shadow: 0 0 8px rgba(255, 170, 60, .6); }
 .herocard .hhp { width: 3.4rem; height: 3.4rem; } .herocard .hatk { width: 2.9rem; height: 2.9rem; }
 .unit .ua, .unit .uh { width: 1.95rem; height: 1.95rem; }
 .herocard .shield { filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+
+/* #63 Dungeons */
+.dxp { margin: .4rem 0 1.2rem; padding: .8rem 1rem; border-radius: 10px; background: rgba(10, 8, 20, .5); border: 1px solid var(--gilt-lo); }
+.dxp small { color: var(--muted); display: block; margin-top: .3rem; }
+.xpbar { height: .7rem; border-radius: 99px; background: #1a1424; border: 1px solid #3a3020; margin-top: .35rem; overflow: hidden; }
+.xpbar i { display: block; height: 100%; background: linear-gradient(90deg, #6a4aff, #c8a0ff); }
+.dcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.dcard { display: flex; flex-direction: column; text-align: left; padding: 0; border-radius: 12px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--dc) 40%, transparent); background: rgba(10, 8, 14, .6); color: var(--vellum); cursor: pointer; position: relative; }
+.dcard img { width: 100%; aspect-ratio: 300/220; object-fit: cover; display: block; }
+.dcard > div { padding: .6rem .8rem .8rem; } .dcard h4 { margin: .2rem 0 0; font-family: var(--f-display); font-size: 1.25rem; color: var(--dc); }
+.dcard .boss { color: var(--muted); font-style: italic; font-size: .9rem; } .dcard .done { color: var(--verd-hi); font-size: .85rem; }
+.dcard .tier { position: absolute; top: .5rem; left: .5rem; }
+.dcard.on { box-shadow: 0 0 0 2px var(--dc), 0 0 24px color-mix(in srgb, var(--dc) 40%, transparent); }
+.dinfo { margin: 1rem 0; padding: .8rem 1.1rem; border-left: 3px solid var(--dc); background: rgba(10, 8, 14, .45); border-radius: 0 10px 10px 0; }
+.dinfo h3 { margin: 0; color: var(--dc); font-family: var(--f-display); } .dinfo ul { margin: .4rem 0 0; padding-left: 1.1rem; color: #d8ccb0; font-size: .92rem; }
+.dseats { display: flex; gap: .8rem; flex-wrap: wrap; align-items: center; }
+.dseat { display: flex; gap: .6rem; align-items: center; padding: .5rem .7rem; border-radius: 10px; border: 1px solid var(--gilt-lo); background: rgba(10, 8, 14, .5); }
+.dseat img { width: 74px; aspect-ratio: 300/220; object-fit: cover; border-radius: 6px; }
+.dseat label { display: flex; flex-direction: column; font-size: .8rem; color: var(--muted); gap: .2rem; } .dseat label.toggle { flex-direction: row; align-items: center; margin-top: .3rem; }
+.dseat select { background: #0a0c16; color: var(--vellum); border: 1px solid #3a3420; border-radius: 6px; padding: .25rem .4rem; }
+.chip.dlevel { color: #c8a0ff; border-color: #8a6aff; } .chip.dmark { color: #ffd060; border-color: #ffd060; animation: tpulse 1.2s infinite; } .chip.dequip { color: #d8c8a0; }
+.marktag { font-size: .7rem; color: #2a1a04; background: #ffd060; border-radius: 4px; padding: 0 .3rem; margin-left: .2rem; }
+/* #62 compact redeemed loot */
+.usedloot { margin: .6rem 0 0; padding: .5rem .8rem; border-radius: 8px; background: rgba(10, 8, 14, .45); border: 1px solid var(--gilt-lo); }
+.usedloot summary { cursor: pointer; color: var(--muted); } .usedloot ul { margin: .4rem 0 0; padding-left: 1rem; font-size: .9rem; } .usedloot code { color: #ffe0a0; }
+.cosgrid.lootgrid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
