@@ -114,7 +114,7 @@
 
   // ---------- Warrior ----------
   add('mortalstrike', { name: 'Mortal Strike', type: 'ability', speed: 'basic', cost: 2, cls: ['warrior'], target: 'enemy', tags: ['dmg'], dmg: 4, text: 'Deal 4 damage to an enemy. If your hero has a weapon, deal 6 instead.', run: async (E, c) => E.dmg(c.target, c.p.weapon ? 6 : 4, { p: c.p, kind: 'spell' }), art: { s: 'steppe', L: [['fx', { t: 'slash', x: 210, y: 100, c: '#ff4a2a' }], fig({ race: 'orc', pose: 'charge', w: 'greatsword', helm: 'horned', x: 130, y: 210, s: 0.88, wGlow: '#ff6a3a' })] } });
-  add('shieldwall', { name: 'Shield Wall', type: 'ability', speed: 'instant', cost: 2, cls: ['warrior'], target: 'none', tags: ['shield'], shield: 8, text: 'Prevent the next 8 damage to your hero.', run: async (E, c) => E.shield(c.p, 8), art: { s: 'castle', L: [fig({ race: 'dwarf', pose: 'stand', off: 'tower', oA: 0, w: 'axe', helm: 'great', plume: false, x: 150, y: 210, s: 1.0, emblem: GOLD }), ['fx', { t: 'barrier', r: 80, c: '#ffd890' }]] } });
+  add('shieldwall', { name: 'Shield Wall', type: 'ability', speed: 'instant', cost: 3, cls: ['warrior'], target: 'none', tags: ['shield'], shield: 8, text: 'Prevent the next 8 damage to your hero.', run: async (E, c) => E.shield(c.p, 8), art: { s: 'castle', L: [fig({ race: 'dwarf', pose: 'stand', off: 'tower', oA: 0, w: 'axe', helm: 'great', plume: false, x: 150, y: 210, s: 1.0, emblem: GOLD }), ['fx', { t: 'barrier', r: 80, c: '#ffd890' }]] } });
   add('battleshout', { name: 'Battle Shout', type: 'ability', speed: 'basic', cost: 1, cls: ['warrior'], target: 'none', tags: ['draw', 'buff'], text: 'Your hero and allies get +1 ATK this turn. Draw a card.', run: async (E, c) => { E.tempAtk(c.p, 1); E.allyTempAtk(c.p, 1); await E.draw(c.p, 1); }, art: { s: 'steppe', L: [['fx', { t: 'shout', x: 150, y: 90, c: '#ffb070' }], fig({ race: 'orc', pose: 'cast', helm: 'mohawk', pauld: 'spiked', x: 150, y: 210, s: 0.86 })] } });
   add('whirlwind', { name: 'Whirlwind', type: 'ability', speed: 'basic', cost: 3, cls: ['warrior'], target: 'none', tags: ['aoe'], dmg: 3, rarity: 'u', text: 'Deal 3 damage to each enemy minion and 2 damage to the boss.', run: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'spell' }); await E.dmg(E.bossT(), 2, { p: c.p, kind: 'spell' }); }, art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 140, c: '#ffc090' }], fig({ race: 'orc', pose: 'dual', w: 'axe', off: 'axe', x: 150, y: 210, s: 0.86 })] } });
   add('taunt', { name: 'Taunting Roar', type: 'ability', speed: 'basic', cost: 1, cls: ['warrior'], target: 'none', tags: ['taunt', 'draw'], text: 'Taunt: the boss and its minions must attack your hero until your next turn. Draw a card.', run: async (E, c) => { E.taunt(c.p); await E.draw(c.p, 1); }, art: { s: 'storm', L: [['fx', { t: 'shout', x: 160, y: 100 }], fig({ race: 'orc', pose: 'heroic', w: 'axe', off: 'round', helm: 'horned', x: 150, y: 210, s: 0.86 })] } });
@@ -131,7 +131,7 @@
   add('manasurge', { name: 'Mana Surge', type: 'ability', speed: 'basic', cost: 0, cls: ['mage'], target: 'none', tags: ['ramp'], text: 'Gain 2 extra resources this turn.', run: async (E, c) => E.gainRes(c.p, 2), art: { s: 'arcane', L: [['fx', { t: 'runes', x: 150, y: 120, r: 90, flat: 1, c: '#9ad0ff' }], ['obj', { t: 'shard', x: 150, y: 120, s: 0.9, col: '#9ad0ff' }]] } });
   add('polymorph', { name: 'Polymorph', type: 'ability', speed: 'basic', cost: 3, cls: ['mage'], target: 'minion', tags: ['removal'], rarity: 'u', text: 'Transform an enemy minion into a 0/1 Sheep with no abilities.', run: async (E, c) => E.transform(c.target, 'sheep'), flavor: 'Baa.', art: { s: 'forest', L: [['beast', { t: 'sheep', x: 150, y: 200, s: 1.3 }], ['fx', { t: 'sparkle', n: 14, c: '#e6d0ff' }]] } });
 
-  add('icebarrier', { name: 'Ice Barrier', type: 'ability', speed: 'instant', cost: 2, cls: ['mage'], target: 'none', tags: ['shield'], shield: 7, text: 'Prevent the next 7 damage to your hero.', run: async (E, c) => E.shield(c.p, 7), art: { s: 'frost', L: [fig({ race: 'elf', pose: 'pray', robe: 1, helm: 'hair', x: 150, y: 196, s: 0.85 }), ['fx', { t: 'ice', x: 150, y: 198 }], ['fx', { t: 'barrier', r: 84, c: '#bff4ff' }]] } });
+  add('icebarrier', { name: 'Ice Barrier', type: 'ability', speed: 'instant', cost: 2, cls: ['mage'], target: 'none', tags: ['shield'], shield: 6, text: 'Prevent the next 6 damage to your hero.', run: async (E, c) => E.shield(c.p, 6), art: { s: 'frost', L: [fig({ race: 'elf', pose: 'pray', robe: 1, helm: 'hair', x: 150, y: 196, s: 0.85 }), ['fx', { t: 'ice', x: 150, y: 198 }], ['fx', { t: 'barrier', r: 84, c: '#bff4ff' }]] } });
 
   // ---------- Priest ----------
   add('mend', { name: 'Mend Wounds', type: 'ability', speed: 'instant', cost: 1, cls: ['priest'], target: 'friendly', tags: ['heal'], heal: 5, text: 'Heal 5 damage from a friendly hero or ally.', run: async (E, c) => E.heal(c.target, 5), art: { s: 'grove', L: [['fx', { t: 'heal', x: 150, y: 140, leaves: 1 }], fig({ race: 'minotaur', pose: 'pray', robe: 1, glowL: '#b0ff9a', x: 150, y: 210, s: 0.8 })] } });
@@ -160,7 +160,7 @@
   add('companion', { name: 'Call Companion', type: 'ability', speed: 'basic', cost: 2, cls: ['ranger'], target: 'none', tags: ['summon'], text: 'Summon a 2/2 Wolf Companion with Ferocity.', run: async (E, c) => E.summonAlly(c.p, 'wolfcomp', 1), art: { s: 'forest', L: [['beast', { t: 'wolf', x: 190, y: 206, s: 0.9, shadow: 60 }], fig({ race: 'dwarf', pose: 'stand', w: 'axe', helm: 'horned', x: 90, y: 210, s: 0.85 })] } });
   add('huntersmark', { name: 'Hunter\'s Mark', type: 'ability', speed: 'basic', cost: 1, cls: ['ranger'], target: 'none', tags: ['mark'], text: 'Until your next turn, the boss takes 2 extra damage from every source.', run: async (E, c) => E.mark(c.p, 2), art: { s: 'forest', L: [['fx', { t: 'runes', x: 150, y: 110, r: 60, flat: 1, c: '#ff5a3a' }], ['fx', { t: 'runes', x: 150, y: 110, r: 30, flat: 1, c: '#ffb090' }]] } });
   add('rapidfire', { name: 'Rapid Fire', type: 'ability', speed: 'basic', cost: 4, cls: ['ranger'], target: 'none', tags: ['dmgRandom'], dmg: 8, rarity: 'u', text: 'Deal 2 damage to a random enemy four times.', run: async (E, c) => { for (let i = 0; i < 4; i++) { const t = E.randomEnemy(); if (t) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); } }, art: { s: 'storm', L: [['fx', { t: 'arrows', n: 8, ang: 8 }], fig({ race: 'dwarf', pose: 'aim', w: 'bow', helm: 'horned', x: 90, y: 210, s: 0.9 })] } });
-  add('feigndeath', { name: 'Feign Death', type: 'ability', speed: 'instant', cost: 1, cls: ['ranger'], target: 'none', tags: ['shield'], shield: 6, text: 'Prevent the next 6 damage to your hero.', run: async (E, c) => E.shield(c.p, 6), art: { s: 'forest', L: [fig({ race: 'dwarf', pose: 'crouch', helm: 'horned', x: 150, y: 210, s: 0.95, spectral: '#a0b0d0' })] } });
+  add('feigndeath', { name: 'Feign Death', type: 'ability', speed: 'instant', cost: 1, cls: ['ranger'], target: 'none', tags: ['shield'], shield: 4, text: 'Prevent the next 4 damage to your hero.', run: async (E, c) => E.shield(c.p, 4), art: { s: 'forest', L: [fig({ race: 'dwarf', pose: 'crouch', helm: 'horned', x: 150, y: 210, s: 0.95, spectral: '#a0b0d0' })] } });
 
   // ---------- neutral abilities ----------
   add('bandage', { name: 'Linen Bandage', type: 'ability', speed: 'instant', cost: 0, target: 'friendly', tags: ['heal'], heal: 3, text: 'Heal 3 damage from a friendly hero or ally.', art: { s: 'altar', L: [['obj', { t: 'scroll', x: 150, y: 120, s: 0.6 }], ['fx', { t: 'heal', x: 150, y: 120, c: '#ffe0b0' }]] }, run: async (E, c) => E.heal(c.target, 3) });
@@ -189,7 +189,7 @@
   add('wardenmail', { name: 'Wardens\' Chainmail', type: 'armor', slot: 'chest', atype: 'mail', cost: 3, def: 3, use: 1, art: { s: 'peaks', L: [['obj', { t: 'breastplate', x: 150, y: 110, mat: 'mail' }]] } });
   add('moonweave', { name: 'Enchanted Moonweave Robe', type: 'armor', slot: 'chest', atype: 'cloth', cost: 2, def: 2, use: 1, prof: 'tailoring', spell: 1, rarity: 'u', text: 'Your spells and powers deal +1 damage.', art: { s: 'arcane', L: [['obj', { t: 'robe', x: 150, y: 110 }]] } });
   add('shadowboots', { name: 'Shadowstep Boots', type: 'armor', slot: 'feet', atype: 'leather', cost: 1, def: 1, use: 0, art: { s: 'rooftops', L: [['obj', { t: 'boots', x: 150, y: 110, shadowy: 1 }]] } });
-  add('forgegauntlets', { name: 'Gauntlets of the Living Forge', type: 'armor', slot: 'hands', atype: 'plate', cost: 2, def: 2, use: 0, prof: 'blacksmithing', heroAtk: 1, rarity: 'u', text: 'Your hero has +1 ATK.', art: { s: 'forge', L: [['obj', { t: 'gauntlet', x: 150, y: 110 }]] } });
+  add('forgegauntlets', { name: 'Gauntlets of the Living Forge', type: 'armor', slot: 'hands', atype: 'plate', cost: 2, def: 2, use: 1, prof: 'blacksmithing', heroAtk: 1, rarity: 'u', text: 'Your hero has +1 ATK.', art: { s: 'forge', L: [['obj', { t: 'gauntlet', x: 150, y: 110 }]] } });
   add('rocketboots', { name: 'Goblin Rocket Boots', type: 'armor', slot: 'feet', atype: 'cloth', cost: 2, def: 1, use: 0, prof: 'engineering', text: 'When you play this, draw a card.', onEnter: async (E, c) => E.draw(c.p, 1), flavor: 'Lit fuse sold separately.', art: { s: 'forge', L: [['obj', { t: 'boots', x: 150, y: 104, rocket: 1, mat: 'cloth' }]] } });
   add('bearhide', { name: 'Greatbear Hide Leggings', type: 'armor', slot: 'legs', atype: 'leather', cost: 2, def: 2, use: 1, prof: 'skinning', art: { s: 'peaks', L: [['obj', { t: 'legs', x: 150, y: 110, fur: 1 }]] } });
   add('vestments', { name: 'Acolyte\'s Vestments', type: 'armor', slot: 'chest', atype: 'cloth', cost: 1, def: 1, use: 0, art: { s: 'temple', L: [['obj', { t: 'robe', x: 150, y: 110, col: '#e8e0d0', trim: '#d8a840' }]] } });
@@ -220,7 +220,7 @@
 
   // ---------- locations ----------
   add('citadel', { name: 'Silverhold Citadel', type: 'location', cost: 0, fac: 'concord', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 1/3 Footman with Protector.', lrun: async (E, c) => E.summonAlly(c.p, 'footman_t', 1), art: { s: 'castle', L: [['glow', { x: 205, y: 110, r: 50, c: '#ffd27a', op: 0.45 }], ['obj', { t: 'banner', x: 64, y: 128, s: 0.55 }], fig({ pose: 'stand', w: 'polearm', off: 'tower', wA: 0, helm: 'great', plume: false, x: 120, y: 214, s: 0.6, emblem: '#ffd060' })] } });
-  add('encampment', { name: 'Bloodrock Encampment', type: 'location', cost: 0, fac: 'clans', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 2/1 Grunt with Ferocity.', lrun: async (E, c) => E.summonAlly(c.p, 'grunt_t', 1), art: { s: 'steppe', L: [['glow', { x: 150, y: 196, r: 40, c: '#ff8a2a', op: 0.7 }], ['obj', { t: 'banner', x: 225, y: 128, s: 0.55, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'stand', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.62 }), fig({ race: 'orc', pose: 'staff', w: 'polearm', x: 70, y: 214, s: 0.58, flip: 1 })] } });
+  add('encampment', { name: 'Bloodrock Encampment', type: 'location', cost: 0, fac: 'clans', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 2/2 Grunt with Ferocity and Protector.', lrun: async (E, c) => E.summonAlly(c.p, 'grunt_t', 1), art: { s: 'steppe', L: [['glow', { x: 150, y: 196, r: 40, c: '#ff8a2a', op: 0.7 }], ['obj', { t: 'banner', x: 225, y: 128, s: 0.55, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'stand', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.62 }), fig({ race: 'orc', pose: 'staff', w: 'polearm', x: 70, y: 214, s: 0.58, flip: 1 })] } });
   add('moonwell', { name: 'Moonwell Sanctum', type: 'location', cost: 0, lcost: 1, ltarget: 'friendlyHero', text: 'Play as a resource. Once per turn: pay 1 to heal 3 damage from a friendly hero.', lrun: async (E, c) => E.heal(c.target, 3), art: { s: 'forest', L: [['fx', { t: 'runes', x: 150, y: 190, r: 70, c: '#d0e0ff' }], ['glow', { x: 150, y: 180, r: 50, c: '#bfd8ff' }]] } });
   add('library', { name: 'Spire Library of Aethermoor', type: 'location', cost: 0, rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to draw a card.', lrun: async (E, c) => E.draw(c.p, 1), art: { s: 'arcane', L: [['obj', { t: 'tome', x: 150, y: 150, s: 0.7 }]] } });
   add('ashenforge', { name: 'The Ashen Forge', type: 'location', cost: 0, lcost: 1, text: 'Play as a resource. Once per turn: pay 1. Your hero gets +2 ATK this turn.', lrun: async (E, c) => E.tempAtk(c.p, 2), art: { s: 'forge', L: [['obj', { t: 'hammer', x: 200, y: 150, s: 0.45 }]] } });
@@ -253,7 +253,7 @@
   RB.TOKENS = {
     wolfcomp: { id: 'wolfcomp', name: 'Wolf Companion', type: 'ally', atk: 2, hp: 2, kw: ['ferocity'], race: 'Beast', art: C.packleader.art },
     footman_t: { id: 'footman_t', name: 'Silverguard Footman', type: 'ally', atk: 1, hp: 3, kw: ['protector'], race: 'Human', art: C.footman.art },
-    grunt_t: { id: 'grunt_t', name: 'Bloodfang Grunt', type: 'ally', atk: 2, hp: 1, kw: ['ferocity'], race: 'Orc', art: C.grunt.art },
+    grunt_t: { id: 'grunt_t', name: 'Bloodfang Grunt', type: 'ally', atk: 2, hp: 2, kw: ['ferocity', 'protector'], race: 'Orc', art: C.grunt.art },
     // boss minions
     whelp: { id: 'whelp', name: 'Emberwhelp', atk: 2, hp: 2, kw: ['ferocity'], ai: 'random', art: { s: 'volcano', L: [['dragon', { x: 150, y: 150, s: 0.55 }]] } },
     magma: { id: 'magma', name: 'Magma Guardian', atk: 3, hp: 6, kw: ['guardian'], ai: 'lowest', art: { s: 'volcano', L: [['beast', { t: 'golem', kind: 'magma', x: 150, y: 214, s: 0.95 }]] } },
@@ -312,7 +312,7 @@
 
   RB.RAIDS = {
     crypt: {
-      id: 'crypt', name: 'Crypt of the Hollow King', boss: 'Malgareth, the Hollow King', short: 'Malgareth', difficulty: 'Apprentice', hp: 85, hpPer: 62, strike: 4, retaliation: 2,
+      id: 'crypt', name: 'Crypt of the Hollow King', boss: 'Malgareth, the Hollow King', short: 'Malgareth', difficulty: 'Apprentice', hp: 106, hpPer: 78, strike: 5, retaliation: 2,
       intro: 'Beneath the drowned chapel, a king who refused to die has gathered an army that cannot.',
       rules: [
         { name: 'Grave Harvest', text: 'Whenever an ally is destroyed, Malgareth raises it as a 2/2 Risen Thrall.' },
@@ -331,7 +331,7 @@
       theme: '#4aff9a',
     },
     molten: {
-      id: 'molten', name: 'The Molten Spire', boss: 'Vorthrax, the Cinder Tyrant', short: 'Vorthrax', difficulty: 'Veteran', hp: 60, hpPer: 50, strike: 3, retaliation: 2,
+      id: 'molten', name: 'The Molten Spire', boss: 'Vorthrax, the Cinder Tyrant', short: 'Vorthrax', difficulty: 'Veteran', hp: 75, hpPer: 63, strike: 4, retaliation: 2,
       intro: 'At the summit of the Molten Spire, the last of the great fire wyrms has woken hungry.',
       rules: [
         { name: 'Embers', text: 'Each boss turn adds an Ember. At 3 Embers, Vorthrax breathes Cinderstorm: 4 damage to each hero. Then the Embers reset.' },
@@ -351,7 +351,7 @@
       theme: '#ff6a2a',
     },
     tide: {
-      id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 85, hpPer: 105, strike: 4, retaliation: 2,
+      id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 106, hpPer: 131, strike: 5, retaliation: 2,
       intro: 'The cathedral bells still ring under the sea. Something down there is ringing them.',
       rules: [
         { name: 'Rising Tide', text: 'Each boss turn raises the Tide. At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes.' },

@@ -542,12 +542,14 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .tcgpack.v-frost { --trim: #d8f2ff; --trim2: #4a8ab8; --glow: rgba(120, 200, 255, .45); }
 .tcgpack.v-void { --trim: #e2c8ff; --trim2: #6a3aa8; --glow: rgba(170, 100, 255, .45); }
 .tcgpack:hover, .tcgpack:focus-visible { transform: translateY(-8px) rotate(-1.5deg) scale(1.02); outline: none; }
-.tcgpack .hang { position: relative; z-index: 2; align-self: center; width: 44%; height: 7%; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, #f4f4f2, #cfcfcb 60%, #e8e8e4); box-shadow: inset 0 -2px 3px rgba(0, 0, 0, .2); }
-.tcgpack .hang i { position: absolute; left: 50%; top: 32%; width: 34%; height: 34%; transform: translateX(-50%); border-radius: 50% 50% 40% 40% / 100% 100% 30% 30%; background: #0b0d18; box-shadow: inset 0 1px 2px #000; }
-.tcgpack .crimp { position: relative; height: 6%; z-index: 1;
+/* #73 (user): the plastic hang tab sits behind the foil; the crimped top overlaps its lower edge */
+.tcgpack .hang { position: relative; z-index: 0; align-self: center; width: 44%; height: 10.5%; margin-bottom: -6.2%; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, rgba(250, 250, 248, .97), rgba(214, 216, 214, .93) 55%, rgba(236, 238, 236, .95)); box-shadow: inset 0 1px 0 #fff, inset 0 -6px 6px rgba(0, 0, 0, .18); }
+.tcgpack .hang i { position: absolute; left: 50%; top: 20%; width: 34%; height: 24%; transform: translateX(-50%); border-radius: 50% 50% 40% 40% / 100% 100% 30% 30%; background: #0b0d18; box-shadow: inset 0 1px 2px #000; }
+.tcgpack .crimp { position: relative; height: 6%; z-index: 2;
   background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .9) 0 1.5px, rgba(120, 120, 120, .55) 1.5px 3px, rgba(225, 225, 225, .8) 3px 4.5px), linear-gradient(180deg, #e9e9e9, #9d9d9d 45%, #f4f4f4 60%, #8a8a8a); }
 .tcgpack .crimp.top::before, .tcgpack .crimp.bottom::after { content: ''; position: absolute; left: 0; right: 0; height: 5px; background: linear-gradient(135deg, transparent 50%, #d8d8d8 50%) 0 0 / 7px 7px, linear-gradient(225deg, transparent 50%, #d8d8d8 50%) 0 0 / 7px 7px; }
 .tcgpack .crimp.top::before { top: -5px; }
+.tcgpack .crimp.top { filter: drop-shadow(0 -1.5px 1.5px rgba(0, 0, 0, .38)); }
 .tcgpack .crimp.bottom::after { bottom: -5px; transform: scaleY(-1); }
 .tcgpack .body { position: relative; flex: 1; overflow: hidden; background: #111; box-shadow: inset 10px 0 14px -6px rgba(0, 0, 0, .75), inset -10px 0 14px -6px rgba(0, 0, 0, .75); }
 .tcgpack .body .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -4046,7 +4048,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 
   // ---------- Warrior ----------
   add('mortalstrike', { name: 'Mortal Strike', type: 'ability', speed: 'basic', cost: 2, cls: ['warrior'], target: 'enemy', tags: ['dmg'], dmg: 4, text: 'Deal 4 damage to an enemy. If your hero has a weapon, deal 6 instead.', run: async (E, c) => E.dmg(c.target, c.p.weapon ? 6 : 4, { p: c.p, kind: 'spell' }), art: { s: 'steppe', L: [['fx', { t: 'slash', x: 210, y: 100, c: '#ff4a2a' }], fig({ race: 'orc', pose: 'charge', w: 'greatsword', helm: 'horned', x: 130, y: 210, s: 0.88, wGlow: '#ff6a3a' })] } });
-  add('shieldwall', { name: 'Shield Wall', type: 'ability', speed: 'instant', cost: 2, cls: ['warrior'], target: 'none', tags: ['shield'], shield: 8, text: 'Prevent the next 8 damage to your hero.', run: async (E, c) => E.shield(c.p, 8), art: { s: 'castle', L: [fig({ race: 'dwarf', pose: 'stand', off: 'tower', oA: 0, w: 'axe', helm: 'great', plume: false, x: 150, y: 210, s: 1.0, emblem: GOLD }), ['fx', { t: 'barrier', r: 80, c: '#ffd890' }]] } });
+  add('shieldwall', { name: 'Shield Wall', type: 'ability', speed: 'instant', cost: 3, cls: ['warrior'], target: 'none', tags: ['shield'], shield: 8, text: 'Prevent the next 8 damage to your hero.', run: async (E, c) => E.shield(c.p, 8), art: { s: 'castle', L: [fig({ race: 'dwarf', pose: 'stand', off: 'tower', oA: 0, w: 'axe', helm: 'great', plume: false, x: 150, y: 210, s: 1.0, emblem: GOLD }), ['fx', { t: 'barrier', r: 80, c: '#ffd890' }]] } });
   add('battleshout', { name: 'Battle Shout', type: 'ability', speed: 'basic', cost: 1, cls: ['warrior'], target: 'none', tags: ['draw', 'buff'], text: 'Your hero and allies get +1 ATK this turn. Draw a card.', run: async (E, c) => { E.tempAtk(c.p, 1); E.allyTempAtk(c.p, 1); await E.draw(c.p, 1); }, art: { s: 'steppe', L: [['fx', { t: 'shout', x: 150, y: 90, c: '#ffb070' }], fig({ race: 'orc', pose: 'cast', helm: 'mohawk', pauld: 'spiked', x: 150, y: 210, s: 0.86 })] } });
   add('whirlwind', { name: 'Whirlwind', type: 'ability', speed: 'basic', cost: 3, cls: ['warrior'], target: 'none', tags: ['aoe'], dmg: 3, rarity: 'u', text: 'Deal 3 damage to each enemy minion and 2 damage to the boss.', run: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'spell' }); await E.dmg(E.bossT(), 2, { p: c.p, kind: 'spell' }); }, art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 140, c: '#ffc090' }], fig({ race: 'orc', pose: 'dual', w: 'axe', off: 'axe', x: 150, y: 210, s: 0.86 })] } });
   add('taunt', { name: 'Taunting Roar', type: 'ability', speed: 'basic', cost: 1, cls: ['warrior'], target: 'none', tags: ['taunt', 'draw'], text: 'Taunt: the boss and its minions must attack your hero until your next turn. Draw a card.', run: async (E, c) => { E.taunt(c.p); await E.draw(c.p, 1); }, art: { s: 'storm', L: [['fx', { t: 'shout', x: 160, y: 100 }], fig({ race: 'orc', pose: 'heroic', w: 'axe', off: 'round', helm: 'horned', x: 150, y: 210, s: 0.86 })] } });
@@ -4063,7 +4065,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   add('manasurge', { name: 'Mana Surge', type: 'ability', speed: 'basic', cost: 0, cls: ['mage'], target: 'none', tags: ['ramp'], text: 'Gain 2 extra resources this turn.', run: async (E, c) => E.gainRes(c.p, 2), art: { s: 'arcane', L: [['fx', { t: 'runes', x: 150, y: 120, r: 90, flat: 1, c: '#9ad0ff' }], ['obj', { t: 'shard', x: 150, y: 120, s: 0.9, col: '#9ad0ff' }]] } });
   add('polymorph', { name: 'Polymorph', type: 'ability', speed: 'basic', cost: 3, cls: ['mage'], target: 'minion', tags: ['removal'], rarity: 'u', text: 'Transform an enemy minion into a 0/1 Sheep with no abilities.', run: async (E, c) => E.transform(c.target, 'sheep'), flavor: 'Baa.', art: { s: 'forest', L: [['beast', { t: 'sheep', x: 150, y: 200, s: 1.3 }], ['fx', { t: 'sparkle', n: 14, c: '#e6d0ff' }]] } });
 
-  add('icebarrier', { name: 'Ice Barrier', type: 'ability', speed: 'instant', cost: 2, cls: ['mage'], target: 'none', tags: ['shield'], shield: 7, text: 'Prevent the next 7 damage to your hero.', run: async (E, c) => E.shield(c.p, 7), art: { s: 'frost', L: [fig({ race: 'elf', pose: 'pray', robe: 1, helm: 'hair', x: 150, y: 196, s: 0.85 }), ['fx', { t: 'ice', x: 150, y: 198 }], ['fx', { t: 'barrier', r: 84, c: '#bff4ff' }]] } });
+  add('icebarrier', { name: 'Ice Barrier', type: 'ability', speed: 'instant', cost: 2, cls: ['mage'], target: 'none', tags: ['shield'], shield: 6, text: 'Prevent the next 6 damage to your hero.', run: async (E, c) => E.shield(c.p, 6), art: { s: 'frost', L: [fig({ race: 'elf', pose: 'pray', robe: 1, helm: 'hair', x: 150, y: 196, s: 0.85 }), ['fx', { t: 'ice', x: 150, y: 198 }], ['fx', { t: 'barrier', r: 84, c: '#bff4ff' }]] } });
 
   // ---------- Priest ----------
   add('mend', { name: 'Mend Wounds', type: 'ability', speed: 'instant', cost: 1, cls: ['priest'], target: 'friendly', tags: ['heal'], heal: 5, text: 'Heal 5 damage from a friendly hero or ally.', run: async (E, c) => E.heal(c.target, 5), art: { s: 'grove', L: [['fx', { t: 'heal', x: 150, y: 140, leaves: 1 }], fig({ race: 'minotaur', pose: 'pray', robe: 1, glowL: '#b0ff9a', x: 150, y: 210, s: 0.8 })] } });
@@ -4092,7 +4094,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   add('companion', { name: 'Call Companion', type: 'ability', speed: 'basic', cost: 2, cls: ['ranger'], target: 'none', tags: ['summon'], text: 'Summon a 2/2 Wolf Companion with Ferocity.', run: async (E, c) => E.summonAlly(c.p, 'wolfcomp', 1), art: { s: 'forest', L: [['beast', { t: 'wolf', x: 190, y: 206, s: 0.9, shadow: 60 }], fig({ race: 'dwarf', pose: 'stand', w: 'axe', helm: 'horned', x: 90, y: 210, s: 0.85 })] } });
   add('huntersmark', { name: 'Hunter\'s Mark', type: 'ability', speed: 'basic', cost: 1, cls: ['ranger'], target: 'none', tags: ['mark'], text: 'Until your next turn, the boss takes 2 extra damage from every source.', run: async (E, c) => E.mark(c.p, 2), art: { s: 'forest', L: [['fx', { t: 'runes', x: 150, y: 110, r: 60, flat: 1, c: '#ff5a3a' }], ['fx', { t: 'runes', x: 150, y: 110, r: 30, flat: 1, c: '#ffb090' }]] } });
   add('rapidfire', { name: 'Rapid Fire', type: 'ability', speed: 'basic', cost: 4, cls: ['ranger'], target: 'none', tags: ['dmgRandom'], dmg: 8, rarity: 'u', text: 'Deal 2 damage to a random enemy four times.', run: async (E, c) => { for (let i = 0; i < 4; i++) { const t = E.randomEnemy(); if (t) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); } }, art: { s: 'storm', L: [['fx', { t: 'arrows', n: 8, ang: 8 }], fig({ race: 'dwarf', pose: 'aim', w: 'bow', helm: 'horned', x: 90, y: 210, s: 0.9 })] } });
-  add('feigndeath', { name: 'Feign Death', type: 'ability', speed: 'instant', cost: 1, cls: ['ranger'], target: 'none', tags: ['shield'], shield: 6, text: 'Prevent the next 6 damage to your hero.', run: async (E, c) => E.shield(c.p, 6), art: { s: 'forest', L: [fig({ race: 'dwarf', pose: 'crouch', helm: 'horned', x: 150, y: 210, s: 0.95, spectral: '#a0b0d0' })] } });
+  add('feigndeath', { name: 'Feign Death', type: 'ability', speed: 'instant', cost: 1, cls: ['ranger'], target: 'none', tags: ['shield'], shield: 4, text: 'Prevent the next 4 damage to your hero.', run: async (E, c) => E.shield(c.p, 4), art: { s: 'forest', L: [fig({ race: 'dwarf', pose: 'crouch', helm: 'horned', x: 150, y: 210, s: 0.95, spectral: '#a0b0d0' })] } });
 
   // ---------- neutral abilities ----------
   add('bandage', { name: 'Linen Bandage', type: 'ability', speed: 'instant', cost: 0, target: 'friendly', tags: ['heal'], heal: 3, text: 'Heal 3 damage from a friendly hero or ally.', art: { s: 'altar', L: [['obj', { t: 'scroll', x: 150, y: 120, s: 0.6 }], ['fx', { t: 'heal', x: 150, y: 120, c: '#ffe0b0' }]] }, run: async (E, c) => E.heal(c.target, 3) });
@@ -4121,7 +4123,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   add('wardenmail', { name: 'Wardens\' Chainmail', type: 'armor', slot: 'chest', atype: 'mail', cost: 3, def: 3, use: 1, art: { s: 'peaks', L: [['obj', { t: 'breastplate', x: 150, y: 110, mat: 'mail' }]] } });
   add('moonweave', { name: 'Enchanted Moonweave Robe', type: 'armor', slot: 'chest', atype: 'cloth', cost: 2, def: 2, use: 1, prof: 'tailoring', spell: 1, rarity: 'u', text: 'Your spells and powers deal +1 damage.', art: { s: 'arcane', L: [['obj', { t: 'robe', x: 150, y: 110 }]] } });
   add('shadowboots', { name: 'Shadowstep Boots', type: 'armor', slot: 'feet', atype: 'leather', cost: 1, def: 1, use: 0, art: { s: 'rooftops', L: [['obj', { t: 'boots', x: 150, y: 110, shadowy: 1 }]] } });
-  add('forgegauntlets', { name: 'Gauntlets of the Living Forge', type: 'armor', slot: 'hands', atype: 'plate', cost: 2, def: 2, use: 0, prof: 'blacksmithing', heroAtk: 1, rarity: 'u', text: 'Your hero has +1 ATK.', art: { s: 'forge', L: [['obj', { t: 'gauntlet', x: 150, y: 110 }]] } });
+  add('forgegauntlets', { name: 'Gauntlets of the Living Forge', type: 'armor', slot: 'hands', atype: 'plate', cost: 2, def: 2, use: 1, prof: 'blacksmithing', heroAtk: 1, rarity: 'u', text: 'Your hero has +1 ATK.', art: { s: 'forge', L: [['obj', { t: 'gauntlet', x: 150, y: 110 }]] } });
   add('rocketboots', { name: 'Goblin Rocket Boots', type: 'armor', slot: 'feet', atype: 'cloth', cost: 2, def: 1, use: 0, prof: 'engineering', text: 'When you play this, draw a card.', onEnter: async (E, c) => E.draw(c.p, 1), flavor: 'Lit fuse sold separately.', art: { s: 'forge', L: [['obj', { t: 'boots', x: 150, y: 104, rocket: 1, mat: 'cloth' }]] } });
   add('bearhide', { name: 'Greatbear Hide Leggings', type: 'armor', slot: 'legs', atype: 'leather', cost: 2, def: 2, use: 1, prof: 'skinning', art: { s: 'peaks', L: [['obj', { t: 'legs', x: 150, y: 110, fur: 1 }]] } });
   add('vestments', { name: 'Acolyte\'s Vestments', type: 'armor', slot: 'chest', atype: 'cloth', cost: 1, def: 1, use: 0, art: { s: 'temple', L: [['obj', { t: 'robe', x: 150, y: 110, col: '#e8e0d0', trim: '#d8a840' }]] } });
@@ -4152,7 +4154,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 
   // ---------- locations ----------
   add('citadel', { name: 'Silverhold Citadel', type: 'location', cost: 0, fac: 'concord', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 1/3 Footman with Protector.', lrun: async (E, c) => E.summonAlly(c.p, 'footman_t', 1), art: { s: 'castle', L: [['glow', { x: 205, y: 110, r: 50, c: '#ffd27a', op: 0.45 }], ['obj', { t: 'banner', x: 64, y: 128, s: 0.55 }], fig({ pose: 'stand', w: 'polearm', off: 'tower', wA: 0, helm: 'great', plume: false, x: 120, y: 214, s: 0.6, emblem: '#ffd060' })] } });
-  add('encampment', { name: 'Bloodrock Encampment', type: 'location', cost: 0, fac: 'clans', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 2/1 Grunt with Ferocity.', lrun: async (E, c) => E.summonAlly(c.p, 'grunt_t', 1), art: { s: 'steppe', L: [['glow', { x: 150, y: 196, r: 40, c: '#ff8a2a', op: 0.7 }], ['obj', { t: 'banner', x: 225, y: 128, s: 0.55, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'stand', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.62 }), fig({ race: 'orc', pose: 'staff', w: 'polearm', x: 70, y: 214, s: 0.58, flip: 1 })] } });
+  add('encampment', { name: 'Bloodrock Encampment', type: 'location', cost: 0, fac: 'clans', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 2/2 Grunt with Ferocity and Protector.', lrun: async (E, c) => E.summonAlly(c.p, 'grunt_t', 1), art: { s: 'steppe', L: [['glow', { x: 150, y: 196, r: 40, c: '#ff8a2a', op: 0.7 }], ['obj', { t: 'banner', x: 225, y: 128, s: 0.55, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'stand', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.62 }), fig({ race: 'orc', pose: 'staff', w: 'polearm', x: 70, y: 214, s: 0.58, flip: 1 })] } });
   add('moonwell', { name: 'Moonwell Sanctum', type: 'location', cost: 0, lcost: 1, ltarget: 'friendlyHero', text: 'Play as a resource. Once per turn: pay 1 to heal 3 damage from a friendly hero.', lrun: async (E, c) => E.heal(c.target, 3), art: { s: 'forest', L: [['fx', { t: 'runes', x: 150, y: 190, r: 70, c: '#d0e0ff' }], ['glow', { x: 150, y: 180, r: 50, c: '#bfd8ff' }]] } });
   add('library', { name: 'Spire Library of Aethermoor', type: 'location', cost: 0, rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to draw a card.', lrun: async (E, c) => E.draw(c.p, 1), art: { s: 'arcane', L: [['obj', { t: 'tome', x: 150, y: 150, s: 0.7 }]] } });
   add('ashenforge', { name: 'The Ashen Forge', type: 'location', cost: 0, lcost: 1, text: 'Play as a resource. Once per turn: pay 1. Your hero gets +2 ATK this turn.', lrun: async (E, c) => E.tempAtk(c.p, 2), art: { s: 'forge', L: [['obj', { t: 'hammer', x: 200, y: 150, s: 0.45 }]] } });
@@ -4185,7 +4187,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   RB.TOKENS = {
     wolfcomp: { id: 'wolfcomp', name: 'Wolf Companion', type: 'ally', atk: 2, hp: 2, kw: ['ferocity'], race: 'Beast', art: C.packleader.art },
     footman_t: { id: 'footman_t', name: 'Silverguard Footman', type: 'ally', atk: 1, hp: 3, kw: ['protector'], race: 'Human', art: C.footman.art },
-    grunt_t: { id: 'grunt_t', name: 'Bloodfang Grunt', type: 'ally', atk: 2, hp: 1, kw: ['ferocity'], race: 'Orc', art: C.grunt.art },
+    grunt_t: { id: 'grunt_t', name: 'Bloodfang Grunt', type: 'ally', atk: 2, hp: 2, kw: ['ferocity', 'protector'], race: 'Orc', art: C.grunt.art },
     // boss minions
     whelp: { id: 'whelp', name: 'Emberwhelp', atk: 2, hp: 2, kw: ['ferocity'], ai: 'random', art: { s: 'volcano', L: [['dragon', { x: 150, y: 150, s: 0.55 }]] } },
     magma: { id: 'magma', name: 'Magma Guardian', atk: 3, hp: 6, kw: ['guardian'], ai: 'lowest', art: { s: 'volcano', L: [['beast', { t: 'golem', kind: 'magma', x: 150, y: 214, s: 0.95 }]] } },
@@ -4244,7 +4246,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 
   RB.RAIDS = {
     crypt: {
-      id: 'crypt', name: 'Crypt of the Hollow King', boss: 'Malgareth, the Hollow King', short: 'Malgareth', difficulty: 'Apprentice', hp: 85, hpPer: 62, strike: 4, retaliation: 2,
+      id: 'crypt', name: 'Crypt of the Hollow King', boss: 'Malgareth, the Hollow King', short: 'Malgareth', difficulty: 'Apprentice', hp: 106, hpPer: 78, strike: 5, retaliation: 2,
       intro: 'Beneath the drowned chapel, a king who refused to die has gathered an army that cannot.',
       rules: [
         { name: 'Grave Harvest', text: 'Whenever an ally is destroyed, Malgareth raises it as a 2/2 Risen Thrall.' },
@@ -4263,7 +4265,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       theme: '#4aff9a',
     },
     molten: {
-      id: 'molten', name: 'The Molten Spire', boss: 'Vorthrax, the Cinder Tyrant', short: 'Vorthrax', difficulty: 'Veteran', hp: 60, hpPer: 50, strike: 3, retaliation: 2,
+      id: 'molten', name: 'The Molten Spire', boss: 'Vorthrax, the Cinder Tyrant', short: 'Vorthrax', difficulty: 'Veteran', hp: 75, hpPer: 63, strike: 4, retaliation: 2,
       intro: 'At the summit of the Molten Spire, the last of the great fire wyrms has woken hungry.',
       rules: [
         { name: 'Embers', text: 'Each boss turn adds an Ember. At 3 Embers, Vorthrax breathes Cinderstorm: 4 damage to each hero. Then the Embers reset.' },
@@ -4283,7 +4285,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       theme: '#ff6a2a',
     },
     tide: {
-      id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 85, hpPer: 105, strike: 4, retaliation: 2,
+      id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 106, hpPer: 131, strike: 5, retaliation: 2,
       intro: 'The cathedral bells still ring under the sea. Something down there is ringing them.',
       rules: [
         { name: 'Rising Tide', text: 'Each boss turn raises the Tide. At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes.' },
@@ -4380,6 +4382,9 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   const shuffle = (a, rnd) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const noop = async () => { };
 
+  RB.ENRAGE_ROUND = 25; // fix-sim: see bossTurn
+  RB.DUNGEON_PARTY_STRIKE = 1; // fix-sim: each extra hero adds 1 more to dungeon strikes (on top of the usual +1)
+  RB.HEROIC_EXTRA_CARDS = 1; // fix-sim: Heroic raids reveal one more boss card each turn (smarter decks made Heroic too easy)
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
@@ -4415,11 +4420,12 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
       maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: heroic && raid.counter ? 1 : 0,
-      cardsPerTurn: 1, strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
+      cardsPerTurn: 1 + (heroic && !D ? (RB.HEROIC_EXTRA_CARDS || 0) : 0), strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
     };
-    if (D) g.boss.strikeBonus += g.boss.level - 1;
-    const flipCount = () => { const f = raid.flip[Math.min(g.boss.level, raid.flip.length) - 1]; return Math.max(1, f - Math.floor((3 - Math.min(3, n)) / 2)); };
+    if (D) g.boss.strikeBonus += g.boss.level - 1 + (RB.DUNGEON_PARTY_STRIKE || 0) * (n - 1); // fix-sim: dungeon attacks were spread over the party but barely grew with it
+    // #fix-sim: two heroes flip one card fewer like a solo hero (they were facing a three-hero dungeon)
+    const flipCount = () => { const f = raid.flip[Math.min(g.boss.level, raid.flip.length) - 1]; const cut = n === 1 ? 1 : n === 2 ? (RB.DUNGEON_TWO_CUT != null ? RB.DUNGEON_TWO_CUT : 1) : 0; return Math.max(1, f - cut); };
 
     /* ---------- basic queries ---------- */
     const pdef = p => p.hero.master ? C[p.hero.master] : HEROES[p.heroId];
@@ -4870,6 +4876,12 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       await H.anim('bossTurn', { name: raid.short });
       log(`— ${raid.short}'s turn —`, 'turn');
       B.minions.forEach(m => { m.ex = false; m.sick = false; });
+      // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
+      if (g.round >= RB.ENRAGE_ROUND) {
+        B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
+        log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round from now on.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
+        if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
+      }
       if (raid.counter) {
         B.counter += raid.counterPerTurn || 1;
         await H.anim('counter', { value: B.counter, max: raid.counter.max });
@@ -5205,10 +5217,18 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     if (loc && E.locationReady(p, loc)) {
       const d = C[loc.c.id];
       let s = 0, target = null;
-      if (d.id === 'citadel' || d.id === 'encampment') s = 9;
-      else if (d.id === 'moonwell') { target = mostWoundedFriendly(E, 'friendlyHero'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 3 ? 7 : -1; }
-      else if (d.id === 'library') s = 6;
+      // fix-sim: the AI only knew the five core locations, so Frontier and raid-treasure locations were claimed and never used
+      const heroDmg = E.heroMax(p) - E.heroHp(p), tags = d.tags || [];
+      if (d.id === 'moonwell') { target = mostWoundedFriendly(E, 'friendlyHero'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 3 ? 7 : -1; }
+      else if (d.ltarget) { target = (E.targetsFor(d.ltarget, p) || [])[0] || null; s = target ? 4 : -1; }
       else if (d.id === 'ashenforge') s = E.canAttackWith(p, 'hero') ? 5 : -1;
+      else if (d.id === 'spireforge') s = p.hero.ex ? 8 : (E.canAttackWith(p, 'hero') ? 4 : -1);
+      else if (d.id === 'emberanvil') s = p.allies.length ? 6 : -1;
+      else if (d.id === 'emptythrone') s = p.grave.some(c => C[c.id].type === 'ally') && p.hand.length <= 7 ? 6 : -1;
+      else if (d.id === 'lighthouse') s = 4 + (heroDmg >= 2 ? 2 : 0);
+      else if (d.id === 'stagshrine') s = 4 + 1.5 * (E.heroes().length - 1);
+      else s = LOC_VALUE[d.id] || (tags.includes('summon') ? 8 : tags.includes('draw') ? 6 : tags.includes('shield') ? 5 : tags.includes('dmg') ? 6 : 4);
+      if ((d.id === 'library' || d.id === 'harbormarket' || d.id === 'whispervault') && p.hand.length > 7) s = 2;
       if (s > 0) acts.push({ s, go: () => E.useLocation(p, loc, target) });
     }
     // power
@@ -5283,15 +5303,21 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     return acts;
   }
 
+  // how good a location is to hold (used for claiming and for using it)
+  const LOC_VALUE = { citadel: 9, encampment: 9, gryphonroost: 8, whispervault: 7, library: 6, harbormarket: 6, starlessrift: 6, moonwell: 6, highwatch: 5, emberanvil: 5, emptythrone: 5, spireforge: 5, stagshrine: 5, lighthouse: 4, ashenforge: 3 };
+  const locRank = d => LOC_VALUE[d.id] || 4;
   function chooseResource(E, p) {
     const res = p.res.length;
     const hand = p.hand;
     if (!hand.length) return null;
     const quest = hand.find(c => C[c.id].type === 'quest');
     const location = hand.find(c => C[c.id].type === 'location');
-    if (location && !p.res.some(r => r.loc)) return location;
+    // only claim a new location when it beats the one you hold (claiming replaces it)
+    const cur = p.res.find(r => r.loc);
+    const bestLoc = hand.filter(c => C[c.id].type === 'location').sort((a, b) => locRank(C[b.id]) - locRank(C[a.id]))[0];
+    if (bestLoc && (!cur || locRank(C[bestLoc.id]) > locRank(C[cur.c.id]))) return bestLoc;
     if (quest && res < 9) return quest;
-    if (location) return location;
+    if (location && !cur) return location;
     if (res >= 7 && hand.length <= 4) return null;
     if (res >= 9) return null;
     let worst = null, wv = 1e9;
@@ -5375,12 +5401,13 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   RB.DECK_SIZE = 30;
   const STARTER = {
     aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, caravan: 1, ancientforge: 1, citadel: 1, archon: 1 },
-    thorgrim: { aimedshot: 2, multishot: 2, companion: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, packleader: 2, cavebear: 1, gryphon: 1, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 1, caravan: 1, bounty: 1, citadel: 1, archon: 1 },
-    lyssara: { fireball: 2, frostnova: 1, missiles: 1, bandage: 2, blizzard: 2, pyroblast: 1, icebarrier: 2, polymorph: 1, manasurge: 1, footman: 2, lionknight: 1, battlemage: 2, mistranger: 1, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, caravan: 1, moonpetals: 1, library: 1, tempest: 1 },
-    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, execute: 1, shieldwall: 2, bandage: 2, grunt: 2, raider: 1, wolfrider: 1, earthwarden: 1, gorza: 1, witchdoctor: 2, cleaver: 2, skullreaver: 1, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, caravan: 1, slaybeast: 1, encampment: 1, warlord: 1 },
-    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, windcaller: 2, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, moonpetals: 1, caravan: 1, encampment: 1, tempest: 1 },
-    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 1, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, raider: 1, grunt: 2, wolfrider: 1, gorza: 1, twinfang: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, bounty: 1, encampment: 1, warlord: 1 },
+    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, caravan: 1, bounty: 1, citadel: 1, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1 },
+    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, caravan: 1, moonpetals: 1, library: 1, tempest: 1, battleplans: 1, sentinel: 2 },
+    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, caravan: 1, slaybeast: 1, encampment: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1 },
+    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, moonpetals: 1, caravan: 1, encampment: 1, tempest: 1, hedgewitch: 1, bram: 1 },
+    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 1, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, bounty: 1, encampment: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1 },
   };
+  // fix-sim: the worst-measured cards in these starters were swapped like for like (see tools/cardtest.js)
   RB.STARTER = STARTER;
   const value = (d) => ({ c: 0, u: 1, r: 2, e: 4 }[d.rarity] || 0) + (d.type === 'weapon' ? d.atk : 0) + (d.type === 'ally' ? (d.atk + d.hp) / 3 : 0);
   // Curated starter deck, upgraded with any owned raid treasure / loot that the hero can use.
@@ -5390,15 +5417,16 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     if (partySize > 1 && RB.HEROES[heroId].cls === 'priest') { const i = deck.lastIndexOf('grunt'); if (i >= 0) deck[i] = 'rebirth'; }
     if (owned) {
       const extras = Object.values(C).filter(d => (d.set !== 'core' && d.set !== 'frontier') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
-        .sort((a, b) => value(b) - value(a));
+        .sort((a, b) => RB.cardScore(b) - RB.cardScore(a));
+      // fix-sim: only take an owned card when it measures better than the starter card it replaces (rarity is not power)
       for (const d of extras) {
         const want = Math.min(RB.maxCopies(d), owned[d.id]);
         for (let k = deck.filter(x => x === d.id).length; k < want; k++) {
-          // replace the weakest card of the same type (or any non-epic card)
           const same = deck.map((id, i) => ({ id, i, d: C[id] })).filter(x => x.d.type === d.type && x.d.set === 'core');
-          const pool = same.length ? same : deck.map((id, i) => ({ id, i, d: C[id] })).filter(x => x.d.set === 'core' && x.d.type !== 'master');
+          const pool = same.length ? same : deck.map((id, i) => ({ id, i, d: C[id] })).filter(x => x.d.set === 'core' && x.d.type !== 'master' && x.d.type !== 'quest' && x.d.type !== 'location');
           if (!pool.length) break;
-          pool.sort((a, b) => value(a.d) - value(b.d));
+          pool.sort((a, b) => RB.cardScore(a.d) - RB.cardScore(b.d));
+          if (RB.cardScore(d) < RB.cardScore(pool[0].d) + 0.5) break;
           deck[pool[0].i] = d.id;
         }
       }
@@ -5416,7 +5444,15 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     molten: { armor: -1.5, heal: 1.5, shield: 1.5, dmg: 1, aoe: 1.5, aoeMinion: 1 },
     tide: { ally: -1.5, aoe: 2, aoeMinion: 2, dmg: 1.2, draw: 1, stun: 1 },
   };
+  // fix-sim: measured power (src/cardpower.js) replaces the hand-tuned guess, which barely matched real results
+  RB.cardPower = function (d, raidId) {
+    const P = RB.CARD_POWER && RB.CARD_POWER[d.id];
+    if (!P) return null;
+    const ri = { crypt: 1, molten: 2, tide: 3 }[raidId];
+    return ri ? (P[0] + P[ri]) / 2 : P[0];
+  };
   RB.cardScore = function (d, raidId) {
+    if (d.type !== 'master') { const P = RB.cardPower(d, raidId); if (P != null) return 8 + 0.45 * P; }
     const rar = { c: 0, u: 0.6, r: 1.3, e: 2.2 }[d.rarity] || 0, tags = d.tags || [], kw = d.kw || [], has = t => tags.includes(t);
     let s;
     switch (d.type) {
@@ -5500,6 +5536,11 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   };
 })(globalThis.RB);
 
+/* RAIDBOUND — measured card power (generated by tools/make_cardpower.js from tools/cardtest.js; do not edit by hand).
+   Win-rate change per copy versus a Healing Draught / free quest in starter decks (added, or removed when the starter
+   already has it), solo raids: Crypt and Molten Spire on Heroic, Sunken Cathedral on Normal. [average, crypt, molten, tide]. Used by deck builders. */
+(function (RB) { RB.CARD_POWER = {"abyssward":[-6,-4.8,-4.6,-8.8],"aegis":[-3,-3.6,-4.5,-0.9],"aimedshot":[-9.2,-8.8,-7.9,-10.8],"ambush":[-8.7,-12.1,-6.3,-7.9],"ancestralwrath":[-5.1,-3.4,-10.4,-1.7],"ancientforge":[-7.3,-5.2,-6.7,-10],"anviloath":[-7.6,-6,-7.3,-9.4],"arcaneblast":[-4.9,-4.7,-5.3,-4.7],"ashcaravan":[-3.3,-0.8,-4.2,-4.8],"ashenforge":[-10.3,-7.1,-8.6,-15.2],"aurora":[-5.3,-5.2,-5,-5.8],"avelyn":[-7.6,-7.1,-8.8,-7.1],"axethrower":[-13.6,-12.7,-9.4,-18.8],"backstab":[-5.1,-3.4,-5.4,-6.7],"bandage":[4,4.2,3.9,3.8],"bard":[-9.9,-11.3,-7,-11.3],"barrowspirit":[-11.6,-10.4,-8.1,-16.3],"battlemage":[-11.9,-13.8,-10.4,-11.7],"battleplans":[-4.4,-4.2,-6,-2.9],"battleshout":[-3.5,-2.2,-3.3,-5],"bearhide":[-6.9,-4.4,-9.2,-7.3],"beezer":[-5.1,0,-4.6,-10.8],"blackaltar":[-5.3,-4.2,-4.2,-7.7],"bladeflurry":[-4,-1.3,-5.8,-5],"blastmonger":[-13.2,-10.4,-8.5,-20.7],"blessing":[-7.2,-2.8,-12.8,-6.1],"blizzard":[-2.4,2.8,-3.9,-6.1],"bloodthirst":[0.6,-1.4,-1.7,4.7],"bombardier":[-11.3,-8.3,-7.3,-18.3],"bonedrake":[-11,-8.3,-8.3,-16.5],"bounty":[1.5,1.8,2.7,-0.2],"bram":[-15.4,-16.6,-12.9,-16.7],"breastplate":[-6.3,-7.7,-5.8,-5.4],"campcook":[-11.5,-10.8,-7.9,-15.8],"caravan":[-6.8,-7.1,-5.8,-7.5],"cavebear":[-13.6,-11.7,-9.6,-19.6],"chainlightning":[-8,-7.5,-8.6,-7.8],"challenge":[-3.7,-6.1,-3.9,-1.1],"cinderfang":[-4.9,-1.1,-4.2,-9.6],"cinderhound":[-14.3,-14.4,-8.8,-19.8],"cindersage":[-8.7,-7.3,-9.4,-9.6],"citadel":[1.7,1.1,-1,5],"cleave":[0.4,10.3,-2.5,-6.7],"cleaver":[-7.6,-7.1,-4.6,-11.1],"codex":[-7.8,-7.1,-6,-10.2],"companion":[-12.9,-14.6,-6.3,-17.9],"concordbanner":[-2.3,-0.2,-4,-2.7],"consecration":[-4.3,3.6,-12.2,-4.2],"coralplate":[-3.5,-4.4,-2.5,-3.8],"corsair":[-13.2,-12.1,-9.4,-18.1],"crossbow":[-4.4,-7.1,0.4,-6.7],"crossbowman":[-12.4,-12.9,-13.6,-10.8],"cutpurse":[-10.6,-11.9,-6.5,-13.3],"darkcrest":[-10,-3.3,-10,-16.6],"dawnamulet":[-2.8,-2.3,-2.5,-3.5],"dawnbanner":[-1.5,0.4,-2.9,-2.1],"dawnbreaker":[-1.1,1.7,-10,5],"dawngreaves":[-2.7,-2.8,-3.3,-1.9],"divineshield":[-3.4,-4.7,-3.3,-2.2],"dragonhoard":[-5.5,-4.8,-4.8,-6.9],"drakeling":[-11,-8.3,-8.3,-16.5],"draught":[-0.4,0,-0.8,-0.4],"duskshade":[-14.2,-13.7,-9.6,-19.1],"earthmace":[-2.2,0.6,-4.6,-2.5],"earthwarden":[-9.5,-7.3,-10.2,-11.1],"eclipse":[-7.6,-6,-5.2,-11.6],"elowen":[-8.9,-13.8,-6.3,-6.7],"emberanvil":[-11.5,-8.6,-8.6,-17.5],"emberbrute":[-14.7,-13.6,-9.6,-20.8],"emberhelm":[-5.6,-4.8,-6.3,-5.6],"emberstaff":[-6.3,-5,-8.1,-5.8],"emptyrobes":[-2.2,-0.2,-4.6,-1.7],"emptythrone":[-7.4,-4.8,-7.3,-10],"encampment":[-6.5,-5.6,-4.6,-9.1],"evasion":[-1.8,1.7,-2.1,-5],"eviscerate":[-7.4,-10.4,-4.5,-7.1],"execute":[-6.9,-4.5,-6.4,-9.7],"explosivetrap":[-8.1,-6.7,-5,-12.5],"fanknives":[3.6,16.6,-5,-0.8],"feigndeath":[-1,-2.5,0,-0.4],"fieldmedic":[-7.6,-6.5,-5.8,-10.4],"fireball":[-8.1,-8.6,-8,-7.8],"firebomb":[-8.4,-8.1,-7.1,-10],"fireward":[-6.5,-5,-6,-8.6],"flamewall":[-6.3,-1.7,-5.6,-11.6],"flashpowder":[-4.8,-4.8,-4.1,-5.4],"footman":[-6.9,-11.4,-4.8,-4.4],"forgegauntlets":[-0.7,4.4,-4.2,-2.3],"forgegolem":[-5.4,-1.5,-6.5,-8.3],"forgeimp":[-12,-13.1,-7.9,-15],"frostjarl":[-10.2,-8.6,-8.8,-13.3],"frostmoths":[-12.3,-11.3,-8.8,-16.9],"frostnova":[-4.5,-3.1,-5,-5.6],"furmail":[-3.5,-4.4,-2.5,-3.8],"galleon":[-8.1,-6.7,-6.5,-11],"giantelixir":[-2.8,-3.6,-0.3,-4.4],"glacialward":[-5.3,-5.6,-4,-6.5],"glacierbear":[-9.3,-8.6,-6.7,-12.7],"gorza":[-19.3,-13.8,-21.3,-22.9],"gravegloves":[-0.5,-0.2,-1,-0.2],"gravewardplate":[-5.8,-6.2,-5.8,-5.2],"greathunt":[-3.4,-3.3,-2.5,-4.4],"grimoire":[-9.4,-8.1,-6,-14.2],"grovebinder":[-9.9,-7.1,-8.1,-14.6],"grunt":[-13.6,-14.8,-9.4,-16.6],"gryphon":[-10.6,-9.4,-7.9,-14.6],"gryphonroost":[-8.9,-8.9,-10.2,-7.5],"guardianspirit":[-2.5,-4.5,-0.4,-2.5],"guinevere":[1.5,7.1,-2.5,0],"halberd":[-8.3,-4.6,-5,-15.2],"harbormarket":[-8.5,-6,-7.5,-11.9],"harpoon":[-7.6,-7.3,-3.5,-12.1],"hatchling":[-11.5,-8.8,-8.3,-17.3],"hedgewitch":[-8.9,-10.8,-7.5,-8.3],"heroicstrike":[-5.5,-4.7,-4.5,-7.2],"hidejerkin":[-8.8,-7.7,-8.9,-9.8],"highwatch":[0.5,1.3,-0.2,0.4],"hollowcrown":[-9,-7.5,-5.8,-13.8],"hollowpact":[-12.6,-9.8,-7.9,-20],"hollowtomb":[-3.5,-1.9,-2.9,-5.8],"hollowtome":[-6.5,-6.5,-4.6,-8.3],"holyfire":[-2.5,-2.5,-2.5,-2.5],"holynova":[-2.1,2,-5,-3.4],"holystrike":[-2,-2.2,-2.5,-1.4],"hourglass":[-6.3,-5.2,-4.2,-9.4],"huntersmark":[-7.8,-9.6,-6.7,-7.1],"icebarrier":[-3,-6.4,0.3,-2.8],"icelance":[-5.4,-7.5,-5,-3.6],"icetome":[-3.2,-3.1,-2.7,-3.8],"infernalbrood":[-13.1,-14.4,-8.3,-16.7],"infernocleaver":[-6.3,-3.3,-3.5,-12.1],"ironhelm":[-5,-5.6,-6.9,-2.5],"judgement":[-2.2,-2.8,-3.3,-0.6],"justice":[-7.5,-7.8,-7.2,-7.5],"kidneyshot":[-3.7,-1.6,-6.7,-3],"korrag":[-14,-9.2,-10.8,-22.1],"kraken":[-8.1,-5.2,-7.9,-11.1],"lantern":[-2.8,-1.8,-3.3,-3.1],"laststand":[-0.7,-1.9,0.6,-0.8],"leatherhood":[1,-0.6,0.2,3.3],"leviathan":[-8.1,-6.5,-6.3,-11.4],"library":[-8.5,-6,-7.5,-11.9],"lichbane":[-1.5,-1,0.4,-4],"lightbringer":[-4.5,-1.1,-7,-5.5],"lighthouse":[-6.9,-5,-6.3,-9.4],"lionknight":[-0.5,-2.5,-0.4,1.4],"longbow":[-5.4,-4.2,-6.7,-5.4],"loot_aurora":[-3.3,-1.8,-2.3,-5.6],"loot_banner":[-4.4,-3.3,-3.8,-6.3],"loot_gryphon":[-11.2,-10.8,-7.9,-14.8],"loot_kite":[-5.1,-6.5,-5,-4],"loot_lynx":[-14.2,-12.9,-9.2,-20.7],"loot_owl":[-10.4,-9.8,-6.7,-14.8],"loot_starfall":[-6,-6,-4.8,-7.1],"lostrelic":[-7.8,-8.3,-6,-9.2],"magmaspitter":[-9.1,-6.7,-7.3,-13.4],"manasurge":[-8.7,-8,-8.3,-9.7],"mend":[-1.4,-2,0.4,-2.5],"meteorstrike":[-8.1,-5.6,-5.8,-12.7],"militia":[-10.6,-12.9,-8.1,-10.8],"mindrend":[-7.6,-6.5,-6,-10.4],"missiles":[-7.4,-8.9,-6.1,-7.2],"mistranger":[-11.7,-10.6,-8.6,-15.8],"moltencore":[-4,-1.9,-3.5,-6.7],"moltenplate":[-7.1,-7.9,-6.2,-7.1],"moonpetals":[-2.4,-1.7,-1.3,-4.3],"moonweave":[-2.9,-2.9,-3.4,-2.5],"moonwell":[-1.7,-2.3,-1.3,-1.4],"mortalstrike":[-5.6,-2.8,-6.7,-7.5],"mortimer":[4.7,2.9,5.4,5.8],"multishot":[-4.7,1.3,-8.3,-7.1],"necromancer":[-12.8,-12.9,-7.9,-17.7],"nightglass":[-8.3,-7.9,-7.5,-9.6],"noctyra":[-4.6,3.3,-8.3,-8.8],"northlights":[-4.4,-2.7,-4.2,-6.3],"nullorb":[-5.4,-4.8,-3.8,-7.7],"ogre":[-10.2,-8.8,-6.5,-15.4],"packleader":[-14.3,-13.9,-9.6,-19.3],"peakhawk":[-12.1,-11.3,-8.7,-16.3],"pearl":[-2.3,-1.3,-1.9,-3.8],"pearldiver":[-12.2,-10.8,-8.5,-17.3],"phylshard":[-2.2,-2.9,-0.9,-2.7],"pickpocket":[0.1,0.4,0.4,-0.4],"poisonblades":[-6.8,-7.5,-6.3,-6.7],"polymorph":[-7.2,-7.8,-6.7,-7.2],"poultice":[-0.1,-1.1,-1.1,1.9],"prayerheal":[-3.8,-5.4,-4.2,-1.6],"pyroblast":[-10.3,-9.7,-8.9,-12.2],"pyromancer":[-14.2,-13.1,-9.4,-20],"raider":[-15,-12.5,-9.4,-23.1],"rakka":[-10.6,-9,-7.5,-15.4],"rally":[-7.9,-6.7,-6,-11],"ram":[-15,-15.4,-9.2,-20.4],"rampage":[-4.2,-2.8,-3.9,-5.8],"rapidfire":[-13.6,-10.8,-10.8,-19.2],"ravager":[-10.1,-8.9,-6.9,-14.6],"rebirth":[-4.6,-5,-4.5,-4.2],"reckoning":[-1.1,3.6,-4.4,-2.5],"recuperate":[5.6,2.1,1.3,13.3],"redhorn":[-4.9,-5.2,-3.5,-5.8],"renewal":[-4,-2.1,-7.5,-2.5],"revenant":[-13.4,-12.5,-9.8,-17.9],"rhosk":[-9.6,-5.8,-9.6,-13.3],"rifleman":[-10.4,-10.6,-9.2,-11.5],"rimefang":[-13,-13.8,-8.3,-16.8],"rocketboots":[-0.6,-4.2,-2.1,4.4],"sapper":[-6.3,-7.1,-7.1,-4.8],"satchel":[0.1,0.6,-0.2,0],"scaleshield":[-4,-4,-4.6,-3.3],"scout":[-5.1,-5.2,-3.8,-6.5],"sellsword":[-13.4,-13.6,-8.8,-17.9],"sentinel":[-4.4,0.4,-7.9,-5.8],"shadowboots":[1.7,-0.4,3.1,2.3],"shadowcowl":[0.7,-2.9,1.6,3.3],"shadowstep":[-1.5,-5.8,0.8,0.5],"shieldmaiden":[-8.7,-8.8,-8.6,-8.9],"shieldwall":[-3.2,-7.2,-3.6,1.1],"silverblade":[-6.3,-4.8,-5.2,-8.9],"silverstag":[-7.3,-5.8,-6.3,-9.8],"sinister":[-3.9,-4.2,-3.3,-4.2],"sirenconch":[-5.1,-4,-3.8,-7.7],"skullreaver":[-8.4,-5.8,-6.1,-13.4],"skyhammer":[-14.7,-15.2,-12.7,-16.3],"slaybeast":[-3.6,-1.5,-2.1,-7.3],"smeltbrew":[-9,-8.5,-6.5,-11.9],"smite":[-2.6,-2.9,-6.3,1.3],"snare":[-8.9,-9.6,-4.2,-12.9],"snowowl":[-9,-9.6,-6,-11.4],"snowsentinel":[-10.1,-10.8,-6.9,-12.7],"soulharvest":[-3.5,5.7,-6,-10.2],"soullantern":[-1.5,0,-1.9,-2.7],"soulreaper":[-3.1,-1,-3.1,-5.2],"soulrend":[-8.7,-5.6,-5.9,-14.6],"sparkring":[-3.5,-3.5,-5,-1.9],"sparkwand":[-2.3,-0.8,-3.3,-2.7],"spireforge":[-8.7,-7.3,-7.1,-11.9],"spiritbeast":[-11.8,-14.2,-4.5,-16.7],"stagshrine":[-6.3,-5.8,-6,-6.9],"starfall":[-6,-7.2,-7.2,-3.6],"starlessrift":[-11.1,-7.5,-8.3,-17.5],"starseer":[-13.2,-11.9,-8.7,-18.9],"starwanderer":[-11.9,-10.4,-8.8,-16.5],"starwarden":[-10.1,-8.8,-10.4,-11],"starwellorb":[-4.9,-5.3,-4.7,-4.7],"stiletto":[-7,-6.1,-6.9,-8.1],"stonecaller":[-6,-0.4,-7.1,-10.4],"stormlash":[-4.9,-5.8,-8.8,0],"sunkenrelic":[-7.9,-7.9,-6.5,-9.4],"supplyraid":[-2.8,-1.8,-3.3,-3.3],"tamebeast":[-12.1,-14.2,-5.4,-16.6],"taunt":[-7.3,-10.5,-5.3,-6.1],"thalen":[-8.7,-2.1,-16.6,-7.5],"thundertotem":[-4.1,-3.1,-3.8,-5.4],"tidalsurge":[-6.4,-1.9,-5.6,-11.6],"tidescout":[-11.5,-13.1,-7.3,-14.1],"tinkerer":[-16.1,-16.4,-17.5,-14.4],"tome":[-5,-3.5,-4.4,-7.1],"towershield":[-4.1,-4.6,-4.2,-3.5],"treant":[-9.4,-8.9,-11.4,-7.7],"trident":[-4.4,-2.9,-3.8,-6.5],"twinfang":[-8.8,-7.9,-7.9,-10.6],"tyrantheart":[-5.3,-4.4,-4,-7.7],"umbralwatcher":[-10.3,-8.8,-7.9,-14.1],"undertowring":[-4,-2.5,-3.5,-5.8],"urza":[-12.8,-10,-7.1,-21.3],"veilofnight":[-3.7,-4.2,-2.7,-4.2],"vestments":[-3.1,-1.9,-2.5,-5],"vigorring":[-4,-2.5,-3.5,-5.8],"voidacolyte":[-13.4,-12.7,-9.8,-17.7],"voidbolt":[-8,-7.9,-6.3,-9.8],"voidboots":[-2.8,-4,-1.2,-3.1],"voidwalker":[-4.1,-4.6,-2.5,-5.2],"volley":[-8.5,-7.5,-5,-12.9],"vortheye":[-6.1,-5,-4.4,-8.9],"wardenmail":[-7.6,-6.9,-5.4,-10.4],"warding":[0,-0.8,-0.9,1.6],"wardstone":[-1.8,-2.7,-0.6,-2.1],"warhammer":[-8.6,-8.6,-8.5,-8.8],"warhorn":[-5.4,-5.8,-4.6,-5.8],"warkilt":[-4.9,-4.8,-4,-5.8],"warpaint":[-7.6,-6.7,-6.7,-9.4],"whirlwind":[-0.6,9.4,-5.5,-5.6],"whispervault":[-7.7,-6.4,-6.8,-9.8],"windcaller":[-13.4,-11.1,-9.2,-20],"wintershard":[-8.7,-8.3,-6.1,-11.7],"winterstaff":[-2.2,-2.3,-1.7,-2.7],"witchdoctor":[-7.8,-9.2,-5.2,-8.9],"wolfhide":[1.5,1.9,0,2.7],"wolfrider":[-13.4,-11.1,-8.9,-20.2],"worldsapling":[-1.1,0,0,-3.3],"wyrmbow":[-5,-4.2,-3.8,-7.1],"wyrmrider":[-8.5,-5.2,-7.1,-13.1],"ysolde":[0.3,1.7,-0.9,0]}; })(globalThis.RB);
+
 /* RAIDBOUND — "Frontier" booster set (#27) and unlockable heroes (#26).
    Paintings come from SpriteCook (gen/<id>.webp); the layered SVG specs below are the fallback. */
 (function (RB) {
@@ -5569,7 +5610,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 190, c: '#e8b070' }], fig({ race: 'minotaur', pose: 'charge', w: 'battleaxe', pauld: 'spiked', x: 150, y: 212, s: 0.9 })] } });
   add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 2, fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
     art: { s: 'forge', p: 'embers', pn: 30, L: [glow(200, 140, 70, '#ffb040', 0.6), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 120, y: 212, s: 1.05, eye: '#ffd060' }), ['obj', { t: 'bomb', x: 210, y: 176, s: 0.7 }], ['obj', { t: 'bomb', x: 246, y: 200, s: 0.5 }]] } });
-  add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/1 Grunt with Ferocity and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
+  add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/2 Grunt with Ferocity and Protector and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
     art: { s: 'steppe', L: [['obj', { t: 'chest', x: 190, y: 184, s: 0.7 }], fig({ race: 'orc', pose: 'charge', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.72 }), ['obj', { t: 'scroll', x: 240, y: 90, s: 0.45 }]] } });
   add('urza', { name: 'Chieftain Urza Redmane', type: 'ally', cost: 6, atk: 6, hp: 5, fac: 'clans', kw: ['unique', 'ferocity'], race: 'Orc', rarity: 'r', text: 'When Urza enters play, ready all your allies. They get +1 ATK this turn.', onEnter: async (E, c) => { E.readyAllies(c.p); E.allyTempAtk(c.p, 1); }, flavor: '"Again. And this time, louder."',
     art: { s: 'steppe', L: [glow(150, 100, 100, '#ff6a3a', 0.4), ['obj', { t: 'banner', x: 240, y: 120, s: 0.6, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'heroic', w: 'battleaxe', helm: 'horned', pauld: 'spiked', cape: 1, capeCol: '#7a1010', wGlow: '#ff4a1a', x: 140, y: 214, s: 0.86, hairCol: '#c83a1a' })] } });
@@ -5660,18 +5701,24 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 
   /* =================== GOLD + BOOSTER PACKS =================== */
   RB.PACK_PRICE = 100;
+  RB.GOLD_TIER = { Veteran: 0.25, Legendary: 0.5 };
+  RB.DUNGEON_GOLD_BONUS = { experienced: 0.1, heroic: 0.25, legendary: 0.5 };
   RB.goldFor = (g, win) => {
     const bossDmg = Math.max(g.players.reduce((s, p) => s + (p.stats.bossDmg || 0), 0), Math.min(g.boss.damage, g.boss.maxHp));
     // #43/#46: about 150-250 gold per raid
     const parts = [
       ['Victory', win ? 100 : 30],
       // the party splits the spoils, so bigger groups don't earn more each
-      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.6 / g.players.length)],
+      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.5 / g.players.length)], // fix-sim: 0.6 -> 0.5 because bosses got 25% more health
       ['Minions destroyed', Math.round(g.minionsKilled * 3 / g.players.length)],
       ['Healing done', Math.round((g.stats.healed || 0) * 0.4 / g.players.length)],
     ];
     let total = parts.reduce((s, x) => s + x[1], 0);
-    if (g.cfg.difficulty === 'heroic') { const b = Math.round(total * 0.25); parts.push(['Heroic bonus', b]); total += b; }
+    // fix-sim: harder raids pay more (the Apprentice raid used to pay the most per round), and every harder mode pays a bonus
+    const tier = RB.GOLD_TIER[g.raid.difficulty] || 0;
+    if (tier) { const b = Math.round(total * tier); parts.push([`${g.raid.difficulty} raid bonus`, b]); total += b; }
+    const modeB = g.raid.dungeon ? (RB.DUNGEON_GOLD_BONUS[g.cfg.difficulty] || 0) : (g.cfg.difficulty === 'heroic' ? 0.25 : 0);
+    if (modeB) { const b = Math.round(total * modeB); parts.push([`${g.raid.dungeon ? (RB.DUNGEON_MODES[g.cfg.difficulty] || {}).name : 'Heroic'} bonus`, b]); total += b; }
     return { parts, total };
   };
   // RB.rollBooster lives in packs.js (#47: each wrapper is its own set)
@@ -6285,12 +6332,12 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   /* =================== 2. Bloodfang Warcamp =================== */
   tok('d_raider', { name: 'Bloodfang Raider', atk: 2, hp: 2, kw: ['ferocity'], ai: 'random', art: { img: 'raider' } });
   tok('d_rider', { name: 'Warg Rider', atk: 3, hp: 3, kw: ['ferocity'], ai: 'allies', art: { img: 'wolfrider' } });
-  tok('d_sapper', { name: 'Goblin Sapper', atk: 1, hp: 1, ai: 'random', text: 'When destroyed, deals 2 damage to each hero.', onDeath: async E => { for (const h of E.heroes()) await E.dmg(E.heroT(h), 2, { kind: 'boss' }); }, art: { img: 'blastmonger' } });
+  tok('d_sapper', { name: 'Goblin Sapper', atk: 1, hp: 1, ai: 'random', text: 'When destroyed, deals 1 damage to each hero.', onDeath: async E => { for (const h of E.heroes()) await E.dmg(E.heroT(h), 1, { kind: 'boss' }); }, art: { img: 'blastmonger' } });
   tok('d_shaman', { name: 'Bloodfang Shaman', atk: 1, hp: 4, ai: 'random', art: { img: 'witchdoctor' } });
   tok('d_ravager', { name: 'Gore Ravager', atk: 4, hp: 5, ai: 'lowest', art: { img: 'ravager' } });
   card('bfw_raiders', { name: 'Raiding Party', kind: 'summon', text: 'Summon two Bloodfang Raiders (2/2, Ferocity).', run: summon('d_raider', 2), art: { img: 'raider' } });
   card('bfw_rider', { name: 'Warg Rider', kind: 'summon', text: 'Summon a Warg Rider (3/3, Ferocity).', run: summon('d_rider'), art: { img: 'wolfrider' } });
-  card('bfw_sappers', { name: 'Goblin Sappers', kind: 'summon', text: 'Summon two Goblin Sappers (1/1). When one is destroyed it deals 2 damage to each hero.', run: summon('d_sapper', 2), art: { img: 'blastmonger' } });
+  card('bfw_sappers', { name: 'Goblin Sappers', kind: 'summon', text: 'Summon two Goblin Sappers (1/1). When one is destroyed it deals 1 damage to each hero.', run: summon('d_sapper', 2), art: { img: 'blastmonger' } });
   card('bfw_shaman', { name: 'Bloodfang Shaman', kind: 'summon', text: 'Summon a Bloodfang Shaman (1/4). Gorrash heals 4.', run: async E => { await E.summonMinion('d_shaman', 1); await E.bossHeal(4); }, art: { img: 'witchdoctor' } });
   card('bfw_ravager', { name: 'Gore Ravager', kind: 'summon', text: 'Summon a Gore Ravager (4/5).', run: summon('d_ravager'), art: { img: 'ravager' } });
   card('bfw_pauldrons', { name: 'Spiked Pauldrons', kind: 'equip', text: 'Equipment: Gorrash strikes for 1 more and melee attackers take 1 more damage back.', run: async E => E.equipBoss('Spiked Pauldrons', 1, 1), art: { s: 'steppe', L: [glow(150, 120, 80, '#ff6a3a', 0.4), ['obj', { t: 'vest', x: 150, y: 116 }]] } });
@@ -6323,7 +6370,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 
   RB.DUNGEONS = {
     thornwood: {
-      id: 'thornwood', dungeon: true, name: 'Thornwood Hollow', boss: 'Elder Gnarlroot, Heart of the Hollow', short: 'Gnarlroot', difficulty: 'Dungeon I', hp: 62, hpPer: 44, strike: 3, retaliation: 1,
+      id: 'thornwood', dungeon: true, name: 'Thornwood Hollow', boss: 'Elder Gnarlroot, Heart of the Hollow', short: 'Gnarlroot', difficulty: 'Dungeon I', hp: 56, hpPer: 64, strike: 3, retaliation: 1,
       flip: [2, 2, 3, 4], maxLevel: 4, music: 'thornwood', theme: '#8ad04a', art: { img: 'treant' },
       intro: 'A corrupted ancient tree has woken in the deep forest, and every wolf and bear for miles answers its call.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
@@ -6331,7 +6378,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       reward: 'back_thornwood',
     },
     warcamp: {
-      id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 62, hpPer: 44, strike: 4, retaliation: 2,
+      id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 54, hpPer: 62, strike: 3, retaliation: 1,
       flip: [2, 2, 3, 4], maxLevel: 4, music: 'warcamp', theme: '#ff5a3a', art: { img: 'urza' },
       intro: 'An outcast warchief has gathered raiders, warg riders and goblin sappers into a camp that burns everything nearby.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
@@ -6339,7 +6386,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       reward: 'back_warcamp',
     },
     vault: {
-      id: 'vault', dungeon: true, name: 'Vault of the Iron Sentinel', boss: 'The Iron Sentinel, Keeper of the Vault', short: 'Iron Sentinel', difficulty: 'Dungeon III', hp: 78, hpPer: 54, strike: 5, retaliation: 2,
+      id: 'vault', dungeon: true, name: 'Vault of the Iron Sentinel', boss: 'The Iron Sentinel, Keeper of the Vault', short: 'Iron Sentinel', difficulty: 'Dungeon III', hp: 68, hpPer: 78, strike: 5, retaliation: 2,
       flip: [2, 2, 3, 4], maxLevel: 4, music: 'vault', theme: '#6ab8ff', art: { img: 'sentinel' },
       intro: 'Below the old mage-library a rune-powered guardian still protects its vault, with a crew of goblin tinkers keeping it running.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
@@ -6362,20 +6409,26 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   RB.dungeonDeck = (heroId, owned, swaps) => {
     const C = RB.CARDS, deck = RB.buildDeck(heroId, null, 1);
     if (!swaps || !owned) return deck;
+    // fix-sim: swap like for like (an ally for an ally, a quest or location for a quest or location...), never more than
+    // 2 mana dearer, and only when the owned card measures better. The old version threw out armor, items and free
+    // resource cards for 6-7 mana legends, so higher dungeon levels made decks weaker.
+    const grp = d => d.type === 'location' ? 'quest' : d.type;
     const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1);
     const cands = [];
     for (const d of Object.values(C)) {
-      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0)) continue;
+      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0) || d.type === 'master') continue;
       const room = Math.min(RB.maxCopies(d), owned[d.id]) - (counts[d.id] || 0);
-      for (let k = 0; k < room; k++) cands.push({ id: d.id, s: RB.cardScore(d) - k * 0.5 });
+      for (let k = 0; k < room; k++) cands.push({ id: d.id, s: RB.cardScore(d) - k * 0.3 });
     }
     cands.sort((a, b) => b.s - a.s);
     let done = 0;
     for (const c of cands) {
       if (done >= swaps) break;
-      if (C[c.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue;
-      const outs = deck.map((id, i) => ({ i, s: RB.cardScore(C[id]) })).filter(x => !deck[x.i].startsWith('asc_')).sort((a, b) => a.s - b.s);
-      if (!outs.length || outs[0].s >= c.s) break;
+      const d = C[c.id];
+      const outs = deck.map((id, i) => ({ i, id, s: RB.cardScore(C[id]) }))
+        .filter(x => !x.id.startsWith('asc_') && C[x.id].type !== 'master' && grp(C[x.id]) === grp(d) && d.cost <= Math.max(3, C[x.id].cost + 2))
+        .sort((a, b) => a.s - b.s);
+      if (!outs.length || outs[0].s + 0.5 > c.s) continue;
       deck[outs[0].i] = c.id; done++;
     }
     return deck;
@@ -7074,7 +7127,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
     const el = U.show('setup', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
-      <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health and strikes 1 harder. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
+      <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
       <div class="difficulty"><span class="seg"><button class="${!setup.asBoss ? 'on' : ''}" data-side="heroes">Play the heroes</button><button class="${setup.asBoss ? 'on' : ''}" data-side="boss">Play the raid boss</button></span><span style="color:var(--muted);font-size:.92rem">${setup.asBoss ? `You are ${esc(R[setup.raid].boss)}. Each turn you hold a hand of boss cards and pick which to play, then choose who your minions and your strike attack. The AI plays the heroes.` : 'You lead the heroes against the AI-controlled boss.'}</span></div>
       <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
       <div class="seats">${seats}</div>
@@ -7107,7 +7160,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     const r = R[raidId], hv = diff === 'heroic';
     const hp = Math.round((r.hp + r.hpPer * (n - 1)) * (hv ? 1.3 : 1) * (asBoss ? 1.15 : 1));
     const strike = r.strike + (hv ? 1 : 0) + (n - 1) + (n >= 2 ? 1 : 0);
-    return `<div class="bossscale"><b>${esc(r.short)} scales to ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${strike} · reveals ${n} boss card${n > 1 ? 's' : ''} a turn${n >= 2 ? ' · minion attacks +1' : ''}${r.id === 'tide' && n >= 3 ? ` · starts with ${n} tentacles` : ''}</div>`;
+    return `<div class="bossscale"><b>${esc(r.short)} scales to ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${strike} · reveals ${n + (hv ? RB.HEROIC_EXTRA_CARDS || 0 : 0)} boss card${n + (hv ? RB.HEROIC_EXTRA_CARDS || 0 : 0) > 1 ? 's' : ''} a turn${n >= 2 ? ' · minion attacks +1' : ''}${r.id === 'tide' && n >= 3 ? ` · starts with ${n} tentacles` : ''}</div>`;
   };
   U.startRaid = async function () {
     const autos = [];
@@ -7297,7 +7350,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       <section><h4>Your turn</h4><p>Ready everything, draw two cards, then act in any order: play one resource, play cards, attack, use items, complete quests, use your location and use your hero power. Press <b>End turn</b> when you're done, or <b>Auto-play turn</b> to let the AI finish it for you.</p></section>
       <section><h4>Combat</h4><p>Attacks always target one enemy: the boss or one of its minions. The defender strikes back, so both sides take damage. Long-Range attackers take nothing back. Damage stays between turns, so every fight costs you something. Heroes attack with an equipped weapon by paying its strike cost; a weapon can also strike back when your hero is attacked.</p></section>
       <section><h4>Card types</h4><ul><li><b>Allies</b> fight beside you. They can attack the turn after they arrive, unless they have Ferocity.</li><li><b>Abilities</b> take effect at once. Basic abilities are played on your turn; Instants can also be played when a boss card is revealed.</li><li><b>Weapons</b> add attack. Pay the strike cost each time you use one.</li><li><b>Armor</b> goes in a slot (head, chest, hands, legs, feet or off-hand). When your hero would take damage, exhaust it and pay its cost to block.</li><li><b>Items</b> are rings, potions and trinkets with lasting or one-shot effects.</li><li><b>Quests</b> are resources you can complete for a reward; they then turn face down.</li><li><b>Locations</b> are resources with an ability you can use once per turn. You control one at a time.</li><li><b>Master Heroes</b> replace your hero. Damage and gear carry over, but your original power does not.</li><li><b>Loot cards</b> play like normal cards and hide a scratch-off code for the Vault.</li></ul></section>
-      <section><h4>The boss turn</h4><p>After every hero has acted, the boss takes its turn. It reveals cards from its own deck: attacks, minions, curses and lingering events. Its minions attack, then the boss strikes the hero with the most threat. Threat comes from damage you dealt this round, and Taunt effects force the boss to strike you. Each raid has custom rules and phases that change the fight as the boss weakens.</p></section>
+      <section><h4>The boss turn</h4><p>After every hero has acted, the boss takes its turn. It reveals cards from its own deck: attacks, minions, curses and lingering events. Its minions attack, then the boss strikes the hero with the most threat. Threat comes from damage you dealt this round, and Taunt effects force the boss to strike you. Each raid has custom rules and phases that change the fight as the boss weakens. If a fight drags on to round 25, the boss becomes <b>Enraged</b>: its strikes grow 1 stronger every round until someone falls.</p></section>
       <section><h4>Keywords</h4><ul>${kw}</ul></section>
       <section><h4>Party play</h4><p>Up to four heroes can join a raid. You take each hero's turn in order, so friends can pass the device around. The boss grows tougher with each hero: it has more health, reveals an extra card per hero, and its strikes and minions hit harder.</p></section>
       <section><h4>Treasure</h4><p>Victory opens a treasure pack of five cards: one epic from the boss's treasure, holofoil cards, and sometimes a loot card. New cards join your collection and are added to your starter decks automatically.</p></section>
@@ -7440,7 +7493,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
-          <div class="bossrow">${raid.dungeon ? `<span class="chip dlevel" title="The dungeon levels up at 70% and 40% health">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+          <div class="bossrow">${raid.dungeon ? `<span class="chip dlevel" title="The dungeon levels up at 70% and 40% health">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span>${B.enrage ? `<span class="chip guard" title="From round ${RB.ENRAGE_ROUND} the boss strikes 1 harder every round">🔥 Enraged +${B.enrage}</span>` : ''}<span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
         </div>
         <div class="bossstage">
           <div class="minions left" style="--mn:${minL.length}">${minL.join('')}</div>
@@ -7681,14 +7734,14 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   async function seatControl(c) {
     const p = E.g.players[c.seat]; if (!p) return;
     if (c.t === 'human') { p.auto = false; U.toast(`${E.g.cfg.party[p.idx].name} is back.`); return; }
-    p.auto = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
+    p.auto = true; p.wasAi = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
     if (E.g.phase === 'main' && E.g.turn === p.idx && !E.g.over) await doAction('auto', [p]);
   }
   async function netAnswer(seatIdx) {
     for (;;) {
       const m = await net.next();
       if (m.c.t === 'ans') return m.c.v;
-      if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) p.auto = true; if (m.c.seat === seatIdx) return null; }
+      if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) { p.auto = true; p.wasAi = true; } if (m.c.seat === seatIdx) return null; }
       if (m.c.t === 'human') { const p = E.g.players[m.c.seat]; if (p) p.auto = false; }
     }
   }
@@ -7953,7 +8006,8 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     const slain = g.players.filter(p => p.hero.dead).length;
     // #59: beating AI heroes is easy money, so it pays much less (and Heroic, which makes the boss stronger, pays less again).
     // Against real players the full payout stands.
-    const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some(s => s && !s.auto && s.owner));
+    // fix-sim: a seat the AI took over (player left) no longer counts as a human opponent
+    const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some((s, i) => s && !s.auto && s.owner && g.players[i] && !g.players[i].wasAi));
     const n = Math.max(1, g.players.length), heroic = g.cfg.difficulty === 'heroic';
     const raw = vsHumans ? [['Result', bossWon ? 110 : 35], ['Heroes defeated', slain * 20], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.4 / n)]]
       : [['Result', bossWon ? 50 : 15], ['Heroes defeated', slain * 8], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.15 / n)]];
@@ -8263,8 +8317,10 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
           if (save.gold < RB.PACK_PRICE) return U.toast(`A pack costs ${RB.PACK_PRICE} gold. You have ${save.gold}.`);
           if (packBusy) return; packBusy = true;
           save.gold -= RB.PACK_PRICE; U.persist(); U.hidePreview();
-          const packEl = a.classList.contains('tcgpack') ? a : $('.againbox .tcgpack', el);
-          return U.openPack(null, false, packEl, RB.rollBooster());
+          // #74 (user): keep the wrapper the player picked; the big button repeats this pack's set
+          const st = RB.PACK_SETS[a.dataset.style] ? a.dataset.style : style;
+          const packEl = a.classList.contains('tcgpack') ? a : ($(`.againbox .tcgpack[data-style="${st}"]`, el) || $('.againbox .tcgpack', el));
+          return U.openPack(null, false, packEl, RB.rollBooster(null, st));
         }
         if (a.dataset.act === 'col') return U.collection();
         if (a.dataset.act === 'title') return U.title();
@@ -8416,14 +8472,14 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       const tb = e.target.closest('[data-tab]'); if (tb) return U.market({ tab: tb.dataset.tab });
       const a = e.target.closest('[data-act]');
       const bh = e.target.closest('[data-buyhero]');
-      if (bh) { const id = bh.dataset.buyhero, cost = +RB.HEROES[id].unlock.how.slice(5); if (save.gold < cost) return U.toast('Not enough gold yet.'); save.gold -= cost; save.heroes.push(id); U.persist(); U.sfx.quest(); U.toast(`${RB.HEROES[id].name} joins you! Pick them in raid setup.`); return U.market({ keep: true }); }
+      if (bh) { const id = bh.dataset.buyhero, hd = RB.HEROES[id]; if (!hd || !hd.unlock || !String(hd.unlock.how).startsWith('gold:') || U.heroOpen(id) || save.heroes.includes(id)) return; const cost = +hd.unlock.how.slice(5); if (save.gold < cost) return U.toast('Not enough gold yet.'); save.gold -= cost; save.heroes.push(id); U.persist(); U.sfx.quest(); U.toast(`${RB.HEROES[id].name} joins you! Pick them in raid setup.`); return U.market({ keep: true }); }
       const sh = e.target.closest('[data-shop]');
-      if (sh) { const id = sh.dataset.shop, cost = SHOP_PRICE[C[id].rarity] || 80, st = shopState(); if (st.bought.includes(id) || save.gold < cost) return; save.gold -= cost; grant(id); st.bought.push(id); U.persist(); U.sfx.treasure(); U.toast(`${C[id].name} added to your collection.`); return U.market({ keep: true }); }
+      if (sh) { const id = sh.dataset.shop; if (!C[id] || !RB.shopStock().includes(id)) return; const cost = SHOP_PRICE[C[id].rarity] || 80, st = shopState(); if (st.bought.includes(id) || save.gold < cost) return; save.gold -= cost; grant(id); st.bought.push(id); U.persist(); U.sfx.treasure(); U.toast(`${C[id].name} added to your collection.`); return U.market({ keep: true }); }
       const cr = e.target.closest('[data-craft]');
-      if (cr) { const d = C[cr.dataset.craft], [dc, gc] = CRAFT[d.rarity] || CRAFT.c; if (save.dust < dc || save.gold < gc) return; save.dust -= dc; save.gold -= gc; grant(d.id); U.persist(); U.sfx.quest(); U.toast(`Crafted ${d.name}!`); return U.market({ keep: true }); }
+      if (cr) { const d = C[cr.dataset.craft]; if (!d || !RB.FRONTIER.includes(d.id)) return; const [dc, gc] = CRAFT[d.rarity] || CRAFT.c; if (save.dust < dc || save.gold < gc) return; save.dust -= dc; save.gold -= gc; grant(d.id); U.persist(); U.sfx.quest(); U.toast(`Crafted ${d.name}!`); return U.market({ keep: true }); }
       const ss = e.target.closest('[data-wsset]'); if (ss) { U._ws.set = ss.dataset.wsset; return U.market({ keep: true }); }
       const sb = e.target.closest('[data-skinbuy]');
-      if (sb) { const sid = sb.dataset.skinbuy; if (save.gold < RB.SKIN_PRICE || U.ownsSkin(sid)) return; save.gold -= RB.SKIN_PRICE; (save.skinsOwned = save.skinsOwned || []).push(sid); (save.skins = save.skins || {})[RB.SKINS[sid].hero] = sid; U.persist(); U.sfx.quest(); U.toast(`${RB.SKINS[sid].name} unlocked and in use.`); return U.market({ keep: true }); }
+      if (sb) { const sid = sb.dataset.skinbuy; if (!RB.SKINS[sid] || !U.heroOpen(RB.SKINS[sid].hero) || save.gold < RB.SKIN_PRICE || U.ownsSkin(sid)) return; save.gold -= RB.SKIN_PRICE; (save.skinsOwned = save.skinsOwned || []).push(sid); (save.skins = save.skins || {})[RB.SKINS[sid].hero] = sid; U.persist(); U.sfx.quest(); U.toast(`${RB.SKINS[sid].name} unlocked and in use.`); return U.market({ keep: true }); }
       const su = e.target.closest('[data-skinuse]'); if (su) { const sid = su.dataset.skinuse; (save.skins = save.skins || {})[RB.SKINS[sid].hero] = sid; U.persist(); U.sfx.flip(); return U.market({ keep: true }); }
       const so = e.target.closest('[data-skinoff]'); if (so) { delete (save.skins || {})[so.dataset.skinoff]; U.persist(); U.sfx.flip(); return U.market({ keep: true }); }
       if (!a) return;

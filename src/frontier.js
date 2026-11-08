@@ -67,7 +67,7 @@
     art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 190, c: '#e8b070' }], fig({ race: 'minotaur', pose: 'charge', w: 'battleaxe', pauld: 'spiked', x: 150, y: 212, s: 0.9 })] } });
   add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 2, fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
     art: { s: 'forge', p: 'embers', pn: 30, L: [glow(200, 140, 70, '#ffb040', 0.6), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 120, y: 212, s: 1.05, eye: '#ffd060' }), ['obj', { t: 'bomb', x: 210, y: 176, s: 0.7 }], ['obj', { t: 'bomb', x: 246, y: 200, s: 0.5 }]] } });
-  add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/1 Grunt with Ferocity and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
+  add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/2 Grunt with Ferocity and Protector and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
     art: { s: 'steppe', L: [['obj', { t: 'chest', x: 190, y: 184, s: 0.7 }], fig({ race: 'orc', pose: 'charge', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.72 }), ['obj', { t: 'scroll', x: 240, y: 90, s: 0.45 }]] } });
   add('urza', { name: 'Chieftain Urza Redmane', type: 'ally', cost: 6, atk: 6, hp: 5, fac: 'clans', kw: ['unique', 'ferocity'], race: 'Orc', rarity: 'r', text: 'When Urza enters play, ready all your allies. They get +1 ATK this turn.', onEnter: async (E, c) => { E.readyAllies(c.p); E.allyTempAtk(c.p, 1); }, flavor: '"Again. And this time, louder."',
     art: { s: 'steppe', L: [glow(150, 100, 100, '#ff6a3a', 0.4), ['obj', { t: 'banner', x: 240, y: 120, s: 0.6, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'heroic', w: 'battleaxe', helm: 'horned', pauld: 'spiked', cape: 1, capeCol: '#7a1010', wGlow: '#ff4a1a', x: 140, y: 214, s: 0.86, hairCol: '#c83a1a' })] } });
@@ -158,18 +158,24 @@
 
   /* =================== GOLD + BOOSTER PACKS =================== */
   RB.PACK_PRICE = 100;
+  RB.GOLD_TIER = { Veteran: 0.25, Legendary: 0.5 };
+  RB.DUNGEON_GOLD_BONUS = { experienced: 0.1, heroic: 0.25, legendary: 0.5 };
   RB.goldFor = (g, win) => {
     const bossDmg = Math.max(g.players.reduce((s, p) => s + (p.stats.bossDmg || 0), 0), Math.min(g.boss.damage, g.boss.maxHp));
     // #43/#46: about 150-250 gold per raid
     const parts = [
       ['Victory', win ? 100 : 30],
       // the party splits the spoils, so bigger groups don't earn more each
-      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.6 / g.players.length)],
+      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.5 / g.players.length)], // fix-sim: 0.6 -> 0.5 because bosses got 25% more health
       ['Minions destroyed', Math.round(g.minionsKilled * 3 / g.players.length)],
       ['Healing done', Math.round((g.stats.healed || 0) * 0.4 / g.players.length)],
     ];
     let total = parts.reduce((s, x) => s + x[1], 0);
-    if (g.cfg.difficulty === 'heroic') { const b = Math.round(total * 0.25); parts.push(['Heroic bonus', b]); total += b; }
+    // fix-sim: harder raids pay more (the Apprentice raid used to pay the most per round), and every harder mode pays a bonus
+    const tier = RB.GOLD_TIER[g.raid.difficulty] || 0;
+    if (tier) { const b = Math.round(total * tier); parts.push([`${g.raid.difficulty} raid bonus`, b]); total += b; }
+    const modeB = g.raid.dungeon ? (RB.DUNGEON_GOLD_BONUS[g.cfg.difficulty] || 0) : (g.cfg.difficulty === 'heroic' ? 0.25 : 0);
+    if (modeB) { const b = Math.round(total * modeB); parts.push([`${g.raid.dungeon ? (RB.DUNGEON_MODES[g.cfg.difficulty] || {}).name : 'Heroic'} bonus`, b]); total += b; }
     return { parts, total };
   };
   // RB.rollBooster lives in packs.js (#47: each wrapper is its own set)

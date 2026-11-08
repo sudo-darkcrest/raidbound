@@ -131,7 +131,7 @@
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
-          <div class="bossrow">${raid.dungeon ? `<span class="chip dlevel" title="The dungeon levels up at 70% and 40% health">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+          <div class="bossrow">${raid.dungeon ? `<span class="chip dlevel" title="The dungeon levels up at 70% and 40% health">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span>${B.enrage ? `<span class="chip guard" title="From round ${RB.ENRAGE_ROUND} the boss strikes 1 harder every round">🔥 Enraged +${B.enrage}</span>` : ''}<span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
         </div>
         <div class="bossstage">
           <div class="minions left" style="--mn:${minL.length}">${minL.join('')}</div>
@@ -372,14 +372,14 @@
   async function seatControl(c) {
     const p = E.g.players[c.seat]; if (!p) return;
     if (c.t === 'human') { p.auto = false; U.toast(`${E.g.cfg.party[p.idx].name} is back.`); return; }
-    p.auto = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
+    p.auto = true; p.wasAi = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
     if (E.g.phase === 'main' && E.g.turn === p.idx && !E.g.over) await doAction('auto', [p]);
   }
   async function netAnswer(seatIdx) {
     for (;;) {
       const m = await net.next();
       if (m.c.t === 'ans') return m.c.v;
-      if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) p.auto = true; if (m.c.seat === seatIdx) return null; }
+      if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) { p.auto = true; p.wasAi = true; } if (m.c.seat === seatIdx) return null; }
       if (m.c.t === 'human') { const p = E.g.players[m.c.seat]; if (p) p.auto = false; }
     }
   }
@@ -644,7 +644,8 @@
     const slain = g.players.filter(p => p.hero.dead).length;
     // #59: beating AI heroes is easy money, so it pays much less (and Heroic, which makes the boss stronger, pays less again).
     // Against real players the full payout stands.
-    const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some(s => s && !s.auto && s.owner));
+    // fix-sim: a seat the AI took over (player left) no longer counts as a human opponent
+    const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some((s, i) => s && !s.auto && s.owner && g.players[i] && !g.players[i].wasAi));
     const n = Math.max(1, g.players.length), heroic = g.cfg.difficulty === 'heroic';
     const raw = vsHumans ? [['Result', bossWon ? 110 : 35], ['Heroes defeated', slain * 20], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.4 / n)]]
       : [['Result', bossWon ? 50 : 15], ['Heroes defeated', slain * 8], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.15 / n)]];

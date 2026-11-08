@@ -118,10 +118,18 @@
     if (loc && E.locationReady(p, loc)) {
       const d = C[loc.c.id];
       let s = 0, target = null;
-      if (d.id === 'citadel' || d.id === 'encampment') s = 9;
-      else if (d.id === 'moonwell') { target = mostWoundedFriendly(E, 'friendlyHero'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 3 ? 7 : -1; }
-      else if (d.id === 'library') s = 6;
+      // fix-sim: the AI only knew the five core locations, so Frontier and raid-treasure locations were claimed and never used
+      const heroDmg = E.heroMax(p) - E.heroHp(p), tags = d.tags || [];
+      if (d.id === 'moonwell') { target = mostWoundedFriendly(E, 'friendlyHero'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 3 ? 7 : -1; }
+      else if (d.ltarget) { target = (E.targetsFor(d.ltarget, p) || [])[0] || null; s = target ? 4 : -1; }
       else if (d.id === 'ashenforge') s = E.canAttackWith(p, 'hero') ? 5 : -1;
+      else if (d.id === 'spireforge') s = p.hero.ex ? 8 : (E.canAttackWith(p, 'hero') ? 4 : -1);
+      else if (d.id === 'emberanvil') s = p.allies.length ? 6 : -1;
+      else if (d.id === 'emptythrone') s = p.grave.some(c => C[c.id].type === 'ally') && p.hand.length <= 7 ? 6 : -1;
+      else if (d.id === 'lighthouse') s = 4 + (heroDmg >= 2 ? 2 : 0);
+      else if (d.id === 'stagshrine') s = 4 + 1.5 * (E.heroes().length - 1);
+      else s = LOC_VALUE[d.id] || (tags.includes('summon') ? 8 : tags.includes('draw') ? 6 : tags.includes('shield') ? 5 : tags.includes('dmg') ? 6 : 4);
+      if ((d.id === 'library' || d.id === 'harbormarket' || d.id === 'whispervault') && p.hand.length > 7) s = 2;
       if (s > 0) acts.push({ s, go: () => E.useLocation(p, loc, target) });
     }
     // power
@@ -196,15 +204,21 @@
     return acts;
   }
 
+  // how good a location is to hold (used for claiming and for using it)
+  const LOC_VALUE = { citadel: 9, encampment: 9, gryphonroost: 8, whispervault: 7, library: 6, harbormarket: 6, starlessrift: 6, moonwell: 6, highwatch: 5, emberanvil: 5, emptythrone: 5, spireforge: 5, stagshrine: 5, lighthouse: 4, ashenforge: 3 };
+  const locRank = d => LOC_VALUE[d.id] || 4;
   function chooseResource(E, p) {
     const res = p.res.length;
     const hand = p.hand;
     if (!hand.length) return null;
     const quest = hand.find(c => C[c.id].type === 'quest');
     const location = hand.find(c => C[c.id].type === 'location');
-    if (location && !p.res.some(r => r.loc)) return location;
+    // only claim a new location when it beats the one you hold (claiming replaces it)
+    const cur = p.res.find(r => r.loc);
+    const bestLoc = hand.filter(c => C[c.id].type === 'location').sort((a, b) => locRank(C[b.id]) - locRank(C[a.id]))[0];
+    if (bestLoc && (!cur || locRank(C[bestLoc.id]) > locRank(C[cur.c.id]))) return bestLoc;
     if (quest && res < 9) return quest;
-    if (location) return location;
+    if (location && !cur) return location;
     if (res >= 7 && hand.length <= 4) return null;
     if (res >= 9) return null;
     let worst = null, wv = 1e9;
@@ -288,12 +302,13 @@
   RB.DECK_SIZE = 30;
   const STARTER = {
     aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, caravan: 1, ancientforge: 1, citadel: 1, archon: 1 },
-    thorgrim: { aimedshot: 2, multishot: 2, companion: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, packleader: 2, cavebear: 1, gryphon: 1, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 1, caravan: 1, bounty: 1, citadel: 1, archon: 1 },
-    lyssara: { fireball: 2, frostnova: 1, missiles: 1, bandage: 2, blizzard: 2, pyroblast: 1, icebarrier: 2, polymorph: 1, manasurge: 1, footman: 2, lionknight: 1, battlemage: 2, mistranger: 1, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, caravan: 1, moonpetals: 1, library: 1, tempest: 1 },
-    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, execute: 1, shieldwall: 2, bandage: 2, grunt: 2, raider: 1, wolfrider: 1, earthwarden: 1, gorza: 1, witchdoctor: 2, cleaver: 2, skullreaver: 1, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, caravan: 1, slaybeast: 1, encampment: 1, warlord: 1 },
-    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, windcaller: 2, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, moonpetals: 1, caravan: 1, encampment: 1, tempest: 1 },
-    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 1, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, raider: 1, grunt: 2, wolfrider: 1, gorza: 1, twinfang: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, bounty: 1, encampment: 1, warlord: 1 },
+    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, caravan: 1, bounty: 1, citadel: 1, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1 },
+    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, caravan: 1, moonpetals: 1, library: 1, tempest: 1, battleplans: 1, sentinel: 2 },
+    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, caravan: 1, slaybeast: 1, encampment: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1 },
+    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, moonpetals: 1, caravan: 1, encampment: 1, tempest: 1, hedgewitch: 1, bram: 1 },
+    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 1, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, bounty: 1, encampment: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1 },
   };
+  // fix-sim: the worst-measured cards in these starters were swapped like for like (see tools/cardtest.js)
   RB.STARTER = STARTER;
   const value = (d) => ({ c: 0, u: 1, r: 2, e: 4 }[d.rarity] || 0) + (d.type === 'weapon' ? d.atk : 0) + (d.type === 'ally' ? (d.atk + d.hp) / 3 : 0);
   // Curated starter deck, upgraded with any owned raid treasure / loot that the hero can use.
@@ -303,15 +318,16 @@
     if (partySize > 1 && RB.HEROES[heroId].cls === 'priest') { const i = deck.lastIndexOf('grunt'); if (i >= 0) deck[i] = 'rebirth'; }
     if (owned) {
       const extras = Object.values(C).filter(d => (d.set !== 'core' && d.set !== 'frontier') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
-        .sort((a, b) => value(b) - value(a));
+        .sort((a, b) => RB.cardScore(b) - RB.cardScore(a));
+      // fix-sim: only take an owned card when it measures better than the starter card it replaces (rarity is not power)
       for (const d of extras) {
         const want = Math.min(RB.maxCopies(d), owned[d.id]);
         for (let k = deck.filter(x => x === d.id).length; k < want; k++) {
-          // replace the weakest card of the same type (or any non-epic card)
           const same = deck.map((id, i) => ({ id, i, d: C[id] })).filter(x => x.d.type === d.type && x.d.set === 'core');
-          const pool = same.length ? same : deck.map((id, i) => ({ id, i, d: C[id] })).filter(x => x.d.set === 'core' && x.d.type !== 'master');
+          const pool = same.length ? same : deck.map((id, i) => ({ id, i, d: C[id] })).filter(x => x.d.set === 'core' && x.d.type !== 'master' && x.d.type !== 'quest' && x.d.type !== 'location');
           if (!pool.length) break;
-          pool.sort((a, b) => value(a.d) - value(b.d));
+          pool.sort((a, b) => RB.cardScore(a.d) - RB.cardScore(b.d));
+          if (RB.cardScore(d) < RB.cardScore(pool[0].d) + 0.5) break;
           deck[pool[0].i] = d.id;
         }
       }
@@ -329,7 +345,15 @@
     molten: { armor: -1.5, heal: 1.5, shield: 1.5, dmg: 1, aoe: 1.5, aoeMinion: 1 },
     tide: { ally: -1.5, aoe: 2, aoeMinion: 2, dmg: 1.2, draw: 1, stun: 1 },
   };
+  // fix-sim: measured power (src/cardpower.js) replaces the hand-tuned guess, which barely matched real results
+  RB.cardPower = function (d, raidId) {
+    const P = RB.CARD_POWER && RB.CARD_POWER[d.id];
+    if (!P) return null;
+    const ri = { crypt: 1, molten: 2, tide: 3 }[raidId];
+    return ri ? (P[0] + P[ri]) / 2 : P[0];
+  };
   RB.cardScore = function (d, raidId) {
+    if (d.type !== 'master') { const P = RB.cardPower(d, raidId); if (P != null) return 8 + 0.45 * P; }
     const rar = { c: 0, u: 0.6, r: 1.3, e: 2.2 }[d.rarity] || 0, tags = d.tags || [], kw = d.kw || [], has = t => tags.includes(t);
     let s;
     switch (d.type) {

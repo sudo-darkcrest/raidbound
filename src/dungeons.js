@@ -48,12 +48,12 @@
   /* =================== 2. Bloodfang Warcamp =================== */
   tok('d_raider', { name: 'Bloodfang Raider', atk: 2, hp: 2, kw: ['ferocity'], ai: 'random', art: { img: 'raider' } });
   tok('d_rider', { name: 'Warg Rider', atk: 3, hp: 3, kw: ['ferocity'], ai: 'allies', art: { img: 'wolfrider' } });
-  tok('d_sapper', { name: 'Goblin Sapper', atk: 1, hp: 1, ai: 'random', text: 'When destroyed, deals 2 damage to each hero.', onDeath: async E => { for (const h of E.heroes()) await E.dmg(E.heroT(h), 2, { kind: 'boss' }); }, art: { img: 'blastmonger' } });
+  tok('d_sapper', { name: 'Goblin Sapper', atk: 1, hp: 1, ai: 'random', text: 'When destroyed, deals 1 damage to each hero.', onDeath: async E => { for (const h of E.heroes()) await E.dmg(E.heroT(h), 1, { kind: 'boss' }); }, art: { img: 'blastmonger' } });
   tok('d_shaman', { name: 'Bloodfang Shaman', atk: 1, hp: 4, ai: 'random', art: { img: 'witchdoctor' } });
   tok('d_ravager', { name: 'Gore Ravager', atk: 4, hp: 5, ai: 'lowest', art: { img: 'ravager' } });
   card('bfw_raiders', { name: 'Raiding Party', kind: 'summon', text: 'Summon two Bloodfang Raiders (2/2, Ferocity).', run: summon('d_raider', 2), art: { img: 'raider' } });
   card('bfw_rider', { name: 'Warg Rider', kind: 'summon', text: 'Summon a Warg Rider (3/3, Ferocity).', run: summon('d_rider'), art: { img: 'wolfrider' } });
-  card('bfw_sappers', { name: 'Goblin Sappers', kind: 'summon', text: 'Summon two Goblin Sappers (1/1). When one is destroyed it deals 2 damage to each hero.', run: summon('d_sapper', 2), art: { img: 'blastmonger' } });
+  card('bfw_sappers', { name: 'Goblin Sappers', kind: 'summon', text: 'Summon two Goblin Sappers (1/1). When one is destroyed it deals 1 damage to each hero.', run: summon('d_sapper', 2), art: { img: 'blastmonger' } });
   card('bfw_shaman', { name: 'Bloodfang Shaman', kind: 'summon', text: 'Summon a Bloodfang Shaman (1/4). Gorrash heals 4.', run: async E => { await E.summonMinion('d_shaman', 1); await E.bossHeal(4); }, art: { img: 'witchdoctor' } });
   card('bfw_ravager', { name: 'Gore Ravager', kind: 'summon', text: 'Summon a Gore Ravager (4/5).', run: summon('d_ravager'), art: { img: 'ravager' } });
   card('bfw_pauldrons', { name: 'Spiked Pauldrons', kind: 'equip', text: 'Equipment: Gorrash strikes for 1 more and melee attackers take 1 more damage back.', run: async E => E.equipBoss('Spiked Pauldrons', 1, 1), art: { s: 'steppe', L: [glow(150, 120, 80, '#ff6a3a', 0.4), ['obj', { t: 'vest', x: 150, y: 116 }]] } });
@@ -86,7 +86,7 @@
 
   RB.DUNGEONS = {
     thornwood: {
-      id: 'thornwood', dungeon: true, name: 'Thornwood Hollow', boss: 'Elder Gnarlroot, Heart of the Hollow', short: 'Gnarlroot', difficulty: 'Dungeon I', hp: 62, hpPer: 44, strike: 3, retaliation: 1,
+      id: 'thornwood', dungeon: true, name: 'Thornwood Hollow', boss: 'Elder Gnarlroot, Heart of the Hollow', short: 'Gnarlroot', difficulty: 'Dungeon I', hp: 56, hpPer: 64, strike: 3, retaliation: 1,
       flip: [2, 2, 3, 4], maxLevel: 4, music: 'thornwood', theme: '#8ad04a', art: { img: 'treant' },
       intro: 'A corrupted ancient tree has woken in the deep forest, and every wolf and bear for miles answers its call.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
@@ -94,7 +94,7 @@
       reward: 'back_thornwood',
     },
     warcamp: {
-      id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 62, hpPer: 44, strike: 4, retaliation: 2,
+      id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 54, hpPer: 62, strike: 3, retaliation: 1,
       flip: [2, 2, 3, 4], maxLevel: 4, music: 'warcamp', theme: '#ff5a3a', art: { img: 'urza' },
       intro: 'An outcast warchief has gathered raiders, warg riders and goblin sappers into a camp that burns everything nearby.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
@@ -102,7 +102,7 @@
       reward: 'back_warcamp',
     },
     vault: {
-      id: 'vault', dungeon: true, name: 'Vault of the Iron Sentinel', boss: 'The Iron Sentinel, Keeper of the Vault', short: 'Iron Sentinel', difficulty: 'Dungeon III', hp: 78, hpPer: 54, strike: 5, retaliation: 2,
+      id: 'vault', dungeon: true, name: 'Vault of the Iron Sentinel', boss: 'The Iron Sentinel, Keeper of the Vault', short: 'Iron Sentinel', difficulty: 'Dungeon III', hp: 68, hpPer: 78, strike: 5, retaliation: 2,
       flip: [2, 2, 3, 4], maxLevel: 4, music: 'vault', theme: '#6ab8ff', art: { img: 'sentinel' },
       intro: 'Below the old mage-library a rune-powered guardian still protects its vault, with a crew of goblin tinkers keeping it running.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
@@ -125,20 +125,26 @@
   RB.dungeonDeck = (heroId, owned, swaps) => {
     const C = RB.CARDS, deck = RB.buildDeck(heroId, null, 1);
     if (!swaps || !owned) return deck;
+    // fix-sim: swap like for like (an ally for an ally, a quest or location for a quest or location...), never more than
+    // 2 mana dearer, and only when the owned card measures better. The old version threw out armor, items and free
+    // resource cards for 6-7 mana legends, so higher dungeon levels made decks weaker.
+    const grp = d => d.type === 'location' ? 'quest' : d.type;
     const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1);
     const cands = [];
     for (const d of Object.values(C)) {
-      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0)) continue;
+      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0) || d.type === 'master') continue;
       const room = Math.min(RB.maxCopies(d), owned[d.id]) - (counts[d.id] || 0);
-      for (let k = 0; k < room; k++) cands.push({ id: d.id, s: RB.cardScore(d) - k * 0.5 });
+      for (let k = 0; k < room; k++) cands.push({ id: d.id, s: RB.cardScore(d) - k * 0.3 });
     }
     cands.sort((a, b) => b.s - a.s);
     let done = 0;
     for (const c of cands) {
       if (done >= swaps) break;
-      if (C[c.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue;
-      const outs = deck.map((id, i) => ({ i, s: RB.cardScore(C[id]) })).filter(x => !deck[x.i].startsWith('asc_')).sort((a, b) => a.s - b.s);
-      if (!outs.length || outs[0].s >= c.s) break;
+      const d = C[c.id];
+      const outs = deck.map((id, i) => ({ i, id, s: RB.cardScore(C[id]) }))
+        .filter(x => !x.id.startsWith('asc_') && C[x.id].type !== 'master' && grp(C[x.id]) === grp(d) && d.cost <= Math.max(3, C[x.id].cost + 2))
+        .sort((a, b) => a.s - b.s);
+      if (!outs.length || outs[0].s + 0.5 > c.s) continue;
       deck[outs[0].i] = c.id; done++;
     }
     return deck;

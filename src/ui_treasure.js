@@ -64,8 +64,10 @@
           if (save.gold < RB.PACK_PRICE) return U.toast(`A pack costs ${RB.PACK_PRICE} gold. You have ${save.gold}.`);
           if (packBusy) return; packBusy = true;
           save.gold -= RB.PACK_PRICE; U.persist(); U.hidePreview();
-          const packEl = a.classList.contains('tcgpack') ? a : $('.againbox .tcgpack', el);
-          return U.openPack(null, false, packEl, RB.rollBooster());
+          // #74 (user): keep the wrapper the player picked; the big button repeats this pack's set
+          const st = RB.PACK_SETS[a.dataset.style] ? a.dataset.style : style;
+          const packEl = a.classList.contains('tcgpack') ? a : ($(`.againbox .tcgpack[data-style="${st}"]`, el) || $('.againbox .tcgpack', el));
+          return U.openPack(null, false, packEl, RB.rollBooster(null, st));
         }
         if (a.dataset.act === 'col') return U.collection();
         if (a.dataset.act === 'title') return U.title();

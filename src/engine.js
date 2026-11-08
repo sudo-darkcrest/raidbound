@@ -6,6 +6,9 @@
   const shuffle = (a, rnd) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const noop = async () => { };
 
+  RB.ENRAGE_ROUND = 25; // fix-sim: see bossTurn
+  RB.DUNGEON_PARTY_STRIKE = 1; // fix-sim: each extra hero adds 1 more to dungeon strikes (on top of the usual +1)
+  RB.HEROIC_EXTRA_CARDS = 1; // fix-sim: Heroic raids reveal one more boss card each turn (smarter decks made Heroic too easy)
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
@@ -41,11 +44,12 @@
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
       maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: heroic && raid.counter ? 1 : 0,
-      cardsPerTurn: 1, strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
+      cardsPerTurn: 1 + (heroic && !D ? (RB.HEROIC_EXTRA_CARDS || 0) : 0), strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
     };
-    if (D) g.boss.strikeBonus += g.boss.level - 1;
-    const flipCount = () => { const f = raid.flip[Math.min(g.boss.level, raid.flip.length) - 1]; return Math.max(1, f - Math.floor((3 - Math.min(3, n)) / 2)); };
+    if (D) g.boss.strikeBonus += g.boss.level - 1 + (RB.DUNGEON_PARTY_STRIKE || 0) * (n - 1); // fix-sim: dungeon attacks were spread over the party but barely grew with it
+    // #fix-sim: two heroes flip one card fewer like a solo hero (they were facing a three-hero dungeon)
+    const flipCount = () => { const f = raid.flip[Math.min(g.boss.level, raid.flip.length) - 1]; const cut = n === 1 ? 1 : n === 2 ? (RB.DUNGEON_TWO_CUT != null ? RB.DUNGEON_TWO_CUT : 1) : 0; return Math.max(1, f - cut); };
 
     /* ---------- basic queries ---------- */
     const pdef = p => p.hero.master ? C[p.hero.master] : HEROES[p.heroId];
@@ -496,6 +500,12 @@
       await H.anim('bossTurn', { name: raid.short });
       log(`— ${raid.short}'s turn —`, 'turn');
       B.minions.forEach(m => { m.ex = false; m.sick = false; });
+      // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
+      if (g.round >= RB.ENRAGE_ROUND) {
+        B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
+        log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round from now on.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
+        if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
+      }
       if (raid.counter) {
         B.counter += raid.counterPerTurn || 1;
         await H.anim('counter', { value: B.counter, max: raid.counter.max });
