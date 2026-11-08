@@ -156,11 +156,15 @@
 
   /* ---------- hover preview ---------- */
   let pv = null;
+  // #38 phones: one layout that switches on small or short screens
+  U.PHONE_Q = '(max-width: 760px), (max-height: 500px)';
+  U.isPhone = () => typeof matchMedia !== 'undefined' && matchMedia(U.PHONE_Q).matches;
   U.preview = function (html, anchor) {
     U.hidePreview();
     if (!html) return;
     pv = document.createElement('div'); pv.className = 'preview'; pv.innerHTML = html;
     document.body.appendChild(pv);
+    if (U.isPhone()) { const w = Math.min(innerWidth * 0.7, innerHeight * 0.5, 280); pv.style.setProperty('--cw', w + 'px'); pv.style.left = (innerWidth - w) / 2 + 'px'; pv.style.top = Math.max(8, (innerHeight - w * 1.4) / 2) + 'px'; return; }
     const r = anchor.getBoundingClientRect(), w = 230, hgt = w * 1.4;
     let x = r.right + 14, y = r.top + r.height / 2 - hgt / 2;
     if (x + w > innerWidth - 8) x = r.left - w - 14;
@@ -192,8 +196,16 @@
   };
   if (typeof document !== 'undefined') document.addEventListener('keydown', e => { if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test((e.target.tagName || ''))) U.toggleMute(); });
   U.closePop = () => { if (pop) { pop.remove(); pop = null; } $$('.hc.open').forEach(e => e.classList.remove('open')); };
-  U.popover = function (anchor, title, items) {
+  U.popover = function (anchor, title, items, opts) {
     U.closePop(); U.hidePreview();
+    // #38: on phones the choices slide up from the bottom, with the full card shown big
+    if (U.isPhone()) {
+      pop = document.createElement('div'); pop.className = 'sheetov';
+      pop.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${opts && opts.card ? `<div class="sheetcard">${opts.card}</div>` : ''}<div class="sbody">${title ? `<div class="ttl">${esc(title)}</div>` : ''}${items.map((it, i) => it.why ? `<div class="why">${esc(it.why)}</div>` : `<button class="btn ${i === 0 && !it.disabled && opts && opts.card ? 'primary' : ''}" data-i="${i}" ${it.disabled ? 'disabled' : ''}>${it.label}</button>`).join('')}<button class="btn ghost" data-close>${items.some(it => !it.why) ? 'Cancel' : 'Close'}</button></div></div>`;
+      document.body.appendChild(pop);
+      pop.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) { const it = items[+b.dataset.i]; U.closePop(); it.go && it.go(); return; } if (e.target === pop || e.target.closest('[data-close]')) U.closePop(); });
+      return pop;
+    }
     pop = document.createElement('div'); pop.className = 'popover';
     pop.innerHTML = (title ? `<div class="ttl">${esc(title)}</div>` : '') + items.map((it, i) => it.why ? `<div class="why">${esc(it.why)}</div>` : `<button class="btn small" data-i="${i}" ${it.disabled ? 'disabled' : ''}>${it.label}</button>`).join('');
     document.body.appendChild(pop);

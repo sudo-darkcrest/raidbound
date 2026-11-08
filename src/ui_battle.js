@@ -83,7 +83,7 @@
     const gslot = (e, label, val, act, can) => e ? `<div class="gslot has ${e.ex ? 'ex' : ''} ${can ? 'can' : ''}" data-act="${act}" data-gid="${e.c.uid}" data-card="${e.c.id}"><img alt="" src="${U.cardArt(e.c.id)}"><span class="gn"><b>${esc(C[e.c.id].name)}</b>${label}</span><span class="gv">${val}</span></div>` : '';
     let gear = p.weapon ? gslot(p.weapon, `Strike ${C[p.weapon.c.id].strike}${p.weapon.ex ? ' · used' : ''}`, '⚔ ' + C[p.weapon.c.id].atk, 'weapon', false) : `<div class="gslot">No weapon</div>`;
     for (const slot of Object.keys(RB.SLOTS)) if (p.armor[slot]) { const d = C[p.armor[slot].c.id]; gear += gslot(p.armor[slot], `${RB.SLOTS[slot]} · pay ${d.use}${p.armor[slot].ex ? ' · used' : ''}`, '⛨ ' + d.def, 'armor', false); }
-    for (const it of p.items) { const d = C[it.c.id]; gear += gslot(it, d.use ? (it.ex ? 'Used this turn' : 'Click to use') : 'Item', d.use ? (d.use.cost ? d.use.cost + '◆' : '') : '', 'item', canAct && E.itemReady(p, it)); }
+    for (const it of p.items) { const d = C[it.c.id]; gear += gslot(it, d.use ? (it.ex ? 'Used this turn' : (U.isPhone() ? 'Tap to use' : 'Click to use')) : 'Item', d.use ? (d.use.cost ? d.use.cost + '◆' : '') : '', 'item', canAct && E.itemReady(p, it)); }
     if (!Object.keys(p.armor).length && !p.items.length) gear += `<div class="gslot">No armor or items</div>`;
     const resOrder = p.res.map((r, i) => i).sort((a, b) => ((p.res[a].quest || p.res[a].loc) ? 1 : 0) - ((p.res[b].quest || p.res[b].loc) ? 1 : 0));
     const resCards = resOrder.map(i => { const r = p.res[i];
@@ -118,8 +118,9 @@
 
     morph(root, `<div class="table">
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
-        <span class="bossdeck" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
-        <button class="btn small ghost" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost iconbtn" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost" data-act="rulesref">Rules</button><button class="btn small ghost" data-act="quit">Leave raid</button></div>
+        <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button><button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
+        <span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
+        <button class="btn small ghost wide-only" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
       <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
         <div class="bossbar ${barFx}">
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
@@ -142,7 +143,8 @@
         <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
-    <div class="side"><div class="roster"><h5>Party</h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
+    <div class="side"><div class="roster"><h5>Party<button class="btn small ghost narrow-only drawerx" data-act="drawer">✕ Close</button></h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
+    root.classList.toggle('drawer', !!view.drawer);
     const lb = $('.logbox', root); if (lb) lb.scrollTop = lb.scrollHeight;
     const hEl = $('.hand', root);
     if (hEl && n && !g.cfg.bossPlayer && hEl.querySelector('.hc')) { const hc = hEl.querySelector('.hc'); const cw = hc.offsetWidth || 140; const room = hEl.clientWidth - cw * 0.5; const ov = Math.min(-cw * 0.12, (room - n * cw) / (2 * n)); view.ov = Math.max(-cw * 0.42, ov) + 'px'; hEl.style.setProperty('--ov', Math.max(-cw * 0.42, ov) + 'px'); }
@@ -427,7 +429,7 @@
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
     }
     anchor.classList.add('open');
-    U.popover(anchor, null, items);
+    U.popover(anchor, null, items, { card: U.cardHTML(inst.id, { holo: inst.holo }) });
   }
   function playWithTarget(p, inst) {
     const d = C[inst.id];
@@ -445,7 +447,7 @@
     } else if (!p.hero.ex) items.push({ why: p.weapon ? (p.weapon.ex ? 'Your weapon has already been used this round.' : `You need ${C[p.weapon.c.id].strike} ready resource${C[p.weapon.c.id].strike === 1 ? '' : 's'} to strike with your weapon.`) : 'Your hero needs a weapon (or an attack bonus) to attack.' });
     else items.push({ why: 'Your hero has already attacked this turn.' });
     if (!p.hero.powerUsed && !p.hero.master) items.push({ label: `Use ${esc(HE[p.heroId].power.name)} (once per game)`, go: () => usePower(p) });
-    U.popover(anchor, E.pdef(p).name, items);
+    U.popover(anchor, E.pdef(p).name, items, { card: p.hero.master ? U.cardHTML(p.hero.master) : U.heroCardHTML(p.heroId) });
   }
   function usePower(p) {
     const pw = HE[p.heroId].power;
@@ -456,27 +458,54 @@
   }
   function itemAction(p, e, anchor) {
     const d = C[e.c.id];
-    if (!d.use) return U.popover(anchor, d.name, [{ why: d.text }]);
+    const card = { card: U.cardHTML(e.c.id) };
+    if (!d.use) return U.popover(anchor, d.name, [{ why: d.text }], card);
     const ok = E.itemReady(p, e);
     const items = [{ label: `Use ${esc(d.name)}${d.use.cost ? ` (pay ${d.use.cost})` : ''}`, disabled: !ok, go: () => {
       if (d.use.target && d.use.target !== 'none') { const friendly = d.use.target.startsWith('friendly'); startTargeting(`${d.name}: choose a target`, E.targetsFor(d.use.target, p), friendly, t => doAct('useItem', p, e, t)); }
       else doAct('useItem', p, e, null);
     } }];
     if (!ok) items.push({ why: e.ex ? 'Already used this turn.' : 'Not enough ready resources.' });
-    U.popover(anchor, null, items);
+    U.popover(anchor, null, items, card);
   }
   function resAction(p, r, anchor) {
-    const d = C[r.c.id];
+    const d = C[r.c.id], card = { card: U.cardHTML(r.c.id) };
     if (r.quest) {
-      if (r.done) return U.popover(anchor, d.name, [{ why: 'Completed. It still counts as a resource.' }]);
+      if (r.done) return U.popover(anchor, d.name, [{ why: 'Completed. It still counts as a resource.' }], card);
       const ok = E.questReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])]);
+      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])], card);
     }
     if (r.loc) {
       const ok = E.locationReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])]);
+      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])], card);
     }
   }
+  function allyCard(p, a) { return U.cardHTML(a.id, { atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, holo: a.c && a.c.holo }); }
+  // #38 phones have no hover, so a tap shows the full card instead
+  function phonePeek(t) {
+    const acting = myTurn() && fp() === E.g.players[E.g.turn] && view.curtain == null;
+    const show = (el, card, title) => { U.popover(el, title || null, [], { card }); return true; };
+    const bc = t.closest('[data-bc]'); if (bc && !t.closest('.hc')) return show(bc, U.cardHTML(bc.dataset.bc));
+    const rg = t.closest('.rgear, .rplay'); if (rg) return show(rg, U.cardHTML(rg.dataset.card));
+    const mu = t.closest('.unit.minion'); if (mu) { const m = E.g.boss.minions.find(x => x.uid === mu.dataset.ref); if (m) return show(mu, U.cardHTML(m.id, { atk: E.minAtk(m), hp: E.minMax(m) - m.damage })); }
+    if (t.closest('.bosscard')) { showRules(); return true; }
+    if (acting) return false;
+    const au = t.closest('.unit[data-kind=ally]'); if (au) { for (const q of E.g.players) { const a = q.allies.find(x => x.uid === au.dataset.ref); if (a) return show(au, allyCard(q, a)); } }
+    const hc = t.closest('.herocard'); if (hc) { const q = fp(); return show(hc, q.hero.master ? U.cardHTML(q.hero.master) : U.heroCardHTML(q.heroId)); }
+    const gs = t.closest('.gslot[data-card], .rcard[data-card]'); if (gs) return show(gs, U.cardHTML(gs.dataset.card));
+    return false;
+  }
+  function phoneMenu(anchor) {
+    const s = save.settings, B = E.g.boss;
+    U.popover(anchor, `${E.raid.short} · boss deck ${B.deck.length} · discard ${B.grave.length}`, [
+      { label: `Speed: ${speed() === 1 ? 'normal' : speed() < 0.3 ? 'very fast' : 'fast'} (tap to change)`, go: () => { s.speed = s.speed === 1 ? 0.55 : s.speed > 0.3 ? 0.15 : 1; U.persist(); render(); } },
+      { label: s.muted ? '🔇 Turn sound on' : '🔊 Mute all sound', go: () => { U.toggleMute(); render(); } },
+      { label: 'Volume', go: () => U.soundPop(anchor) },
+      { label: 'Raid rules', go: () => showRules() },
+      { label: 'Leave raid', go: () => leave() }
+    ]);
+  }
+  function showRules() { return U.dialog(`<h3>${esc(E.raid.name)}</h3><ul style="padding-left:1.1rem;color:#d8ccb0;line-height:1.5">${E.raid.rules.map(r => `<li><b style="color:var(--vellum)">${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul><p style="font-size:.92rem">${U.isPhone() ? 'Tap a card in your hand to see it big and play it. Tap an ally or your hero to attack. Glowing cards and units are ready to use. Tap the boss, a minion or any gear to see its card.' : 'Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.'}</p><div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok' }); }
   function onClick(e) {
     if (!E) return;
     const t = e.target;
@@ -484,22 +513,26 @@
     if (act && act.dataset.act === 'cancel') { view.mode = null; return render(); }
     if (act && act.dataset.act === 'reveal') { view.curtain = null; view.focus = E.g.turn; return render(); }
     if (act && act.dataset.act === 'quit') return leave();
-    if (act && act.dataset.act === 'rulesref') return U.dialog(`<h3>${esc(E.raid.name)}</h3><ul style="padding-left:1.1rem;color:#d8ccb0;line-height:1.5">${E.raid.rules.map(r => `<li><b style="color:var(--vellum)">${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul><p style="font-size:.92rem">Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.</p><div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok' });
+    if (act && act.dataset.act === 'rulesref') return showRules();
     if (act && act.dataset.act === 'mute') { U.toggleMute(); return render(); }
     if (act && act.dataset.act === 'soundpop') return U.soundPop(act);
     if (act && act.dataset.act === 'speed') { const s = save.settings; s.speed = s.speed === 1 ? 0.55 : s.speed > 0.3 ? 0.15 : 1; U.persist(); return render(); }
+    if (act && act.dataset.act === 'menu') return phoneMenu(act);
+    if (act && act.dataset.act === 'drawer') { view.drawer = !view.drawer; return render(); }
+    if (t === root && view.drawer) { view.drawer = false; return render(); }
     const focus = t.closest('[data-focus]');
     // targeting mode
     if (view.mode) {
       const refEl = t.closest('[data-ref]');
       if (refEl) {
         const tgt = view.mode.valid.find(x => E.refId(x) === refEl.dataset.ref);
-        if (tgt) { const go = view.mode.go; view.mode = null; return go(tgt); }
+        if (tgt) { const go = view.mode.go; view.mode = null; view.drawer = false; return go(tgt); }
       }
-      if (focus && !refEl) { view.focus = +focus.dataset.focus; return render(); }
+      if (focus && !refEl) { view.focus = +focus.dataset.focus; view.drawer = false; return render(); }
       return;
     }
-    if (focus && !t.closest('[data-ref]')) { view.focus = +focus.dataset.focus; return render(); }
+    if (U.isPhone() && phonePeek(t)) return;
+    if (focus && !t.closest('[data-ref]')) { view.focus = +focus.dataset.focus; view.drawer = false; return render(); }
     if (!myTurn()) return;
     const p = E.g.players[E.g.turn];
     if (fp() !== p) { view.focus = E.g.turn; return render(); }
@@ -511,14 +544,15 @@
         case 'hero': return heroActions(p, act);
         case 'item': { const it = p.items.find(x => x.c.uid === act.dataset.gid); if (it) return itemAction(p, it, act); return; }
         case 'res': { const r = p.res[+act.dataset.ri]; if (r) return resAction(p, r, act); return; }
-        case 'weapon': return U.popover(act, C[p.weapon.c.id].name, [{ why: `Attack with your hero to use this weapon (strike cost ${C[p.weapon.c.id].strike}). It can also strike back when your hero is attacked.` }]);
-        case 'armor': return U.popover(act, C[act.dataset.card].name, [{ why: 'Armor blocks automatically when your hero takes damage, if you have enough ready resources to pay its cost.' }]);
+        case 'weapon': return U.popover(act, C[p.weapon.c.id].name, [{ why: `Attack with your hero to use this weapon (strike cost ${C[p.weapon.c.id].strike}). It can also strike back when your hero is attacked.` }], { card: U.cardHTML(p.weapon.c.id) });
+        case 'armor': return U.popover(act, C[act.dataset.card].name, [{ why: 'Armor blocks automatically when your hero takes damage, if you have enough ready resources to pay its cost.' }], { card: U.cardHTML(act.dataset.card) });
       }
     }
     const hc = t.closest('.hc'); if (hc) { const inst = p.hand.find(c => c.uid === hc.dataset.uid); if (inst) return cardActions(p, inst, hc); }
     const unit = t.closest('.unit[data-kind=ally]');
     if (unit) {
       const a = p.allies.find(x => x.uid === unit.dataset.ref);
+      if (a && U.isPhone()) { const go = () => startTargeting(`${E.allyDef(a).name} attacks: choose an enemy`, E.attackTargets(), false, tg => doAct('attack', p, a, tg)); return U.popover(unit, null, E.canAttackWith(p, a) ? [{ label: `Attack · ${E.allyAtk(p, a)} damage`, go }] : [{ why: a.sick ? 'Just arrived — it can attack next turn.' : a.frozen ? 'Frozen solid this round.' : a.ex ? 'Already exhausted this round.' : 'This ally can\'t attack right now.' }], { card: allyCard(p, a) }); }
       if (a && E.canAttackWith(p, a)) return startTargeting(`${E.allyDef(a).name} attacks: choose an enemy`, E.attackTargets(), false, tg => doAct('attack', p, a, tg));
       if (a) return U.popover(unit, E.allyDef(a).name, [{ why: a.sick ? 'Just arrived — it can attack next turn.' : a.frozen ? 'Frozen solid this round.' : a.ex ? 'Already exhausted this round.' : 'This ally can\'t attack right now.' }]);
     }
@@ -582,7 +616,7 @@
     const goldBox = `<div class="goldbox"><div class="gtitle">+${gold.total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${gold.parts.map(([k, v]) => `<span>${esc(k)} <b>+${v}</b></span>`).join('')}</div>${win ? '<div class="gnote">Open your treasure first — then visit the Market from the title screen.</div>' : '<button class="btn small" data-act="market">Spend it in the Market</button>'}</div>`
       + (newHeroes.length ? `<div class="newvault"><b>New hero unlocked:</b> ${newHeroes.map(id => `<span><img alt="" src="${U.cardArt(id)}">${esc(RB.HEROES[id].name)}</span>`).join('')}</div>` : '');
     const el = U.show('end', win
-      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}${goldBox}${U.packHTML({ theme: raid.id === 'crypt' ? 'void' : raid.id === 'tide' ? 'frost' : 'ember', img: U.art(raid.art, 'raid:' + raid.id), wide: true, act: 'open', cls: 'treasure', title: 'Raid Treasure', set: raid.name + (heroic ? ' · Heroic' : ''), count: '5 cards', fine: 'A guaranteed epic treasure card<br>Holofoils and a chance of loot', burst: true, label: 'Open treasure pack' })}<p style="color:var(--muted)">Click the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
+      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}${goldBox}${U.packHTML({ theme: raid.id === 'crypt' ? 'void' : raid.id === 'tide' ? 'frost' : 'ember', img: U.art(raid.art, 'raid:' + raid.id), wide: true, act: 'open', cls: 'treasure', title: 'Raid Treasure', set: raid.name + (heroic ? ' · Heroic' : ''), count: '5 cards', fine: 'A guaranteed epic treasure card<br>Holofoils and a chance of loot', burst: true, label: 'Open treasure pack' })}<p style="color:var(--muted)">${U.isPhone() ? 'Tap' : 'Click'} the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
       : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}${goldBox}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {
       const a = e.target.closest('[data-act]'); if (!a) return;
