@@ -42,7 +42,7 @@ S = {
 # ---------------- Voidshade ----------------
 'voidacolyte': (VOID, 'a hooded acolyte in dark violet robes with glowing purple eyes, purple void energy crackling between his hands'),
 'duskshade': (VOID, 'a ghostly assassin made of shadow and pale light, crouched on a moonlit rooftop holding two glowing daggers'),
-'starseer': (VOID, 'an elf oracle in starry indigo robes holding a staff, reading the stars and constellations swirling above her'),
+'starseer': (VOID, 'an elf oracle in starry indigo robes holding a staff, gazing up at glowing stars swirling above her in the night sky'),
 'nullorb': (VOID, 'a floating black orb that swallows light, ringed by a thin halo of purple light, space bending around it'),
 'voidbolt': (VOID, 'a crackling bolt of purple void energy streaking through a starry void'),
 'mindrend': (VOID, 'a spectral purple skull screaming as jagged bolts of purple psychic energy tear around it, dark void background'),
