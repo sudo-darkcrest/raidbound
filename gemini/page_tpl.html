@@ -32,6 +32,10 @@ label.chk{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:1
 <script>
 const ITEMS=__ITEMS__;const HERO=__HERO__;const STYLE=__STYLE__;
 let done={};try{done=JSON.parse(localStorage.getItem('rb_gemini_done')||'{}')}catch(e){}
+// Each new page version clears ticks on pictures that aren't actually in the game yet
+// (everything you've made gets added before the page is republished, so a leftover tick is a mistake).
+const VER='__VER__';let oldVer='';try{oldVer=localStorage.getItem('rb_gemini_ver')||''}catch(e){}
+if(oldVer!==VER){const keep={};ITEMS.forEach(it=>{if(it.have)keep[it.file]=true});done=keep;try{localStorage.setItem('rb_gemini_ver',VER);localStorage.setItem('rb_gemini_done',JSON.stringify(done))}catch(e){}}
 ITEMS.forEach(it=>{if(it.have)done[it.file]=true});
 let hideDone=false;const save=()=>{try{localStorage.setItem('rb_gemini_done',JSON.stringify(done))}catch(e){}};
 function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}

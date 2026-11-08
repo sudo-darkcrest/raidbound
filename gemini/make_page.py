@@ -34,7 +34,7 @@ for h in HEROES:
     items.append(dict(sec="Ascended heroes (attach that hero's picture)", file='asc_' + h + '.png', refs='hero_' + h, title=names[h] + ' (Ascended)', have=('asc_' + h) in in_game,
                       prompt='Repaint the attached character as an ascended, empowered version of themselves: the same character, face and pose, now wearing grander ornate armour or robes with gold filigree, surrounded by a radiant glowing aura and light rays, floating sparkles, epic and heroic. Keep the same painted fantasy card-art style.' + SUFFIX))
 tpl = (here / 'page_tpl.html').read_text()
-html = tpl.replace('__COUNT__', str(len(items))).replace('__HAVE__', str(sum(1 for i in items if i['have']))).replace('__ITEMS__', json.dumps(items)).replace('__HERO__', json.dumps(hero_th)).replace('__STYLE__', json.dumps(style_th)) \
+html = tpl.replace('__COUNT__', str(len(items))).replace('__HAVE__', str(sum(1 for i in items if i['have']))).replace('__ITEMS__', json.dumps(items)).replace('__VER__', __import__('hashlib').sha1(json.dumps(sorted(in_game)).encode()).hexdigest()[:10]).replace('__HERO__', json.dumps(hero_th)).replace('__STYLE__', json.dumps(style_th)) \
           .replace('__STYLEFIG__', ''.join(f'<figure><img src="{t}" alt="style reference {i+1}">style_{i+1}.png</figure>' for i, t in enumerate(style_th)))
 (here / 'prompts.html').write_text(html)
 print(len(items), 'items,', sum(1 for i in items if i['have']), 'already in the game')
