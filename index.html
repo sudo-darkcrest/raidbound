@@ -6826,10 +6826,13 @@ globalThis.RB.WEB_BUILD = true;
     musBus.gain.setTargetAtTime(on('music') ? mv * 1.5 : 0, ac.currentTime, 0.08);
   };
   AU.attach = function (a) { stopMusic(true); build(a); return AU; };
+  // the page is hidden (browser minimised, tab switched, phone screen off): all audio is paused until it's back
+  let away = typeof document !== 'undefined' && !!document.hidden;
+  const canWake = () => ac && !away && ac.state !== 'running' && ac.state !== 'closed' && ac.resume;
   function ctx() {
     if (!on('sound') && !on('music')) return null;
     if (!ac) { try { build(new (window.AudioContext || window.webkitAudioContext)()); } catch (e) { return null; } }
-    if (ac.state === 'suspended' && ac.resume) ac.resume();
+    if (canWake()) ac.resume().catch(() => {});
     return ac;
   }
   const T = (d = 0) => ac.currentTime + 0.012 + d;
@@ -7110,12 +7113,26 @@ globalThis.RB.WEB_BUILD = true;
     if (mus && mus.name === name) return;
     stopMusic();
     if (!name || !on('music')) return;
-    if (!ac || ac.state !== 'running') { if (ac && ac.resume) ac.resume().then(() => { if (pending === name && !mus) startMusic(name); }).catch(() => {}); return; }
+    if (!ac || ac.state !== 'running') { if (canWake()) ac.resume().then(() => { if (pending === name && !mus) startMusic(name); }).catch(() => {}); return; }
     startMusic(name);
   };
   AU.refresh = function () { AU.setVolumes(); if (!on('music')) stopMusic(); else if (pending && !mus) { if (ctx()) AU.music(pending); } };
   // browsers only allow audio after a user gesture: unlock on the first click/key and start any waiting music
-  const unlock = () => { if (!ctx()) return; if (ac.state === 'running' && pending && !mus && on('music')) startMusic(pending); else if (ac.resume) ac.resume().then(() => { if (pending && !mus && on('music')) startMusic(pending); }).catch(() => {}); };
+  const unlock = () => { if (!ctx()) return; if (ac.state === 'running' && pending && !mus && on('music')) startMusic(pending); else if (canWake()) ac.resume().then(() => { if (pending && !mus && on('music')) startMusic(pending); }).catch(() => {}); };
+  // Pause everything while the page can't be seen. Music is scheduled on the audio clock, which stops while the
+  // context is suspended, so it carries on from where it was when you come back. (Phones kept playing with the screen off.)
+  const sleep = () => { away = true; if (ac && ac.state === 'running' && ac.suspend) ac.suspend().catch(() => {}); };
+  const wake = () => {
+    if (typeof document !== 'undefined' && document.hidden) return;
+    away = false;
+    if (!ac || (!on('sound') && !on('music'))) return;
+    if (canWake()) ac.resume().then(() => { if (pending && !mus && on('music')) startMusic(pending); }).catch(() => {});
+  };
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => (document.hidden ? sleep() : wake()));
+    window.addEventListener('pagehide', sleep); window.addEventListener('pageshow', wake);
+    document.addEventListener('freeze', sleep); document.addEventListener('resume', wake);
+  }
   if (typeof document !== 'undefined') { ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, unlock, { capture: true })); document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.btn, .seg button, .raid, .traid, .heropick button')) U.sfx.click(); }, { capture: true }); }
 })(globalThis.RB = globalThis.RB || {});
 
