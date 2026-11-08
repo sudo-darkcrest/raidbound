@@ -1,0 +1,11 @@
+<!DOCTYPE html><html><head><style>body{background:#111;color:#ddd;font:12px sans-serif;margin:0;width:1500px}.g{display:grid;grid-template-columns:repeat(6,240px);gap:8px;padding:8px}.g div{text-align:center}img{width:240px;height:176px;display:block}</style></head><body><div class="g" id="g"></div>
+<script src="../src/art_photos.js"></script><script src="../src/art_gen.js"></script><script src="../src/art_core.js"></script><script src="../src/art_fig.js"></script><script src="../src/art_obj.js"></script><script src="../src/art_hero.js"></script><script src="../src/data.js"></script>
+<script>
+const which = location.hash.slice(1) || 'cards0';
+let items = [];
+const C = RB.CARDS;
+if (which.startsWith('cards')) { const all = Object.values(C); const k = +which.slice(5); items = all.slice(k*48, k*48+48).map(d => [d.id + ' · ' + d.name, d.art, 'c:' + d.id]); }
+if (which === 'boss') items = Object.values(RB.BOSSCARDS).map(d => [d.name, d.art, 'b:' + d.id]).concat(Object.values(RB.TOKENS).map(d=>[d.name, d.art, 't:'+d.id]));
+if (which === 'heroes') items = Object.values(RB.HEROES).map(d => [d.name, d.art, 'h:' + d.id]).concat(Object.values(RB.RAIDS).map(r=>[r.name, r.art, 'r:'+r.id]));
+document.getElementById('g').innerHTML = items.map(([n, a, k]) => `<div><img src="${RB.ART.uri(a, k)}">${n}</div>`).join('');
+</script></body></html>

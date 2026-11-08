@@ -32,9 +32,10 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
   - Vault of the Iron Sentinel
 
   Dungeons run themselves. Each turn the dungeon flips cards, marks a hero at random and attacks them, and levels up as you hurt it. There are four difficulties, from Novice to Legendary. Winning earns Dungeon XP, and each dungeon level lets more of your own cards into your starter deck.
+- **Your collection:** you start with the cards for each starting hero's starter deck, plus two free Raidbound Core booster packs. Each hero you unlock brings the cards for their starter deck. Every hero can always play their Starter deck.
 - **Market:**
-  - Spend the gold you earn on three booster sets (Emberfall, Frostwing and Voidshade, 35 cards each), single cards, extra raid treasure and hero skins.
-  - The Workshop turns spare cards into dust for crafting.
+  - Spend the gold you earn on Raidbound Core packs (75 gold, core cards for every class), three themed booster sets (Emberfall, Frostwing and Voidshade, 35 cards each, 100 gold), single cards, extra raid treasure and hero skins.
+  - The Workshop turns spare cards into dust for crafting core and booster cards.
 - **The Vault:** 35 cosmetics (15 card backs, 13 table themes and 7 companion pets) and 18 hero skins. You earn them from raids, dungeons, packs and loot codes.
 - **Party play:** up to four heroes share one device. The AI can run any seat, and bosses scale with party size. You can also play as the raid boss against AI heroes.
 - **Online:** one player creates a party and shares a 5-letter code, and friends join from their own computer or phone.

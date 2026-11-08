@@ -520,6 +520,10 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .tcgpack { --trim: #f2c76a; --trim2: #a8701e; --glow: rgba(255, 140, 40, .45); position: relative; width: 236px; aspect-ratio: 236 / 420; cursor: pointer; display: flex; flex-direction: column; filter: drop-shadow(0 22px 26px rgba(0, 0, 0, .7)); transition: transform .25s ease; user-select: none; }
 .tcgpack.v-frost { --trim: #d8f2ff; --trim2: #4a8ab8; --glow: rgba(120, 200, 255, .45); }
 .tcgpack.v-void { --trim: #e2c8ff; --trim2: #6a3aa8; --glow: rgba(170, 100, 255, .45); }
+.tcgpack.v-core { --trim: #f6e7bd; --trim2: #8c6a2a; --glow: rgba(255, 220, 140, .5); }
+.giftnote { max-width: 46rem; margin: .4rem auto 1rem; padding: .7rem 1.1rem; text-align: center; border: 1px solid rgba(240, 212, 138, .55); border-radius: 10px; background: linear-gradient(180deg, rgba(240, 212, 138, .14), rgba(240, 212, 138, .05)); color: var(--vellum, #f3e6c8); }
+.giftnote b { color: var(--gilt-hi, #f0d48a); }
+.freebadge { display: inline-block; margin-left: .35rem; padding: .05rem .45rem; border-radius: 999px; background: #3fa44a; color: #fff; font-size: .72rem; font-weight: 700; letter-spacing: .02em; vertical-align: middle; }
 .tcgpack:hover, .tcgpack:focus-visible { transform: translateY(-8px) rotate(-1.5deg) scale(1.02); outline: none; }
 /* #73 (user): the plastic hang tab sits behind the foil; the crimped top overlaps its lower edge */
 .tcgpack .hang { position: relative; z-index: 0; align-self: center; width: 44%; height: 10.5%; margin-bottom: -6.2%; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, rgba(250, 250, 248, .97), rgba(214, 216, 214, .93) 55%, rgba(236, 238, 236, .95)); box-shadow: inset 0 1px 0 #fff, inset 0 -6px 6px rgba(0, 0, 0, .18); }

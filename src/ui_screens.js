@@ -7,6 +7,8 @@
 
   U.show = function (name, html, keepScroll) {
     U.closePop(); U.hidePreview();
+    // a hero unlocked since the last screen (raid win, purchase) brings their starter deck's cards into the collection
+    if (U.syncStarters && U.syncStarters()) U.persist();
     const prev = keepScroll && $('#' + name) ? $('#' + name).scrollTop : 0;
     $$('.screen').forEach(s => s.classList.add('hidden'));
     let el = $('#' + name);
@@ -29,7 +31,7 @@
     const el = U.show('title', `<img class="bgart" alt="" src="${bg}"><div class="veil"></div>
       <div class="center"><h1 class="logo">Raidbound</h1><p class="tagline">Gather your party. Build your deck. Bring down the raid boss.</p>
       <div class="menu"><div class="row"><button class="btn primary" data-go="setup">Begin a raid</button><button class="btn primary" data-go="dungeons">Dungeons</button><button class="btn primary" data-go="online">Play online</button></div>
-      <div class="row"><button class="btn" data-go="market">Market <span class="goldchip">${save.gold}</span></button><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
+      <div class="row"><button class="btn" data-go="market">Market <span class="goldchip">${save.gold}</span>${save.freeCore > 0 ? `<span class="freebadge">${save.freeCore} free pack${save.freeCore > 1 ? 's' : ''}</span>` : ''}</button><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
       <div class="traids">${raids}</div>
       ${wins ? `<div class="wins">Raids conquered: ${wins} · Cards collected: ${Object.keys(save.owned).filter(k => save.owned[k] > 0).length}</div>` : ''}</div>`);
@@ -178,7 +180,7 @@
       const el = U.show('collection', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters">${Object.entries(sets).map(([k, v]) => `<button class="btn small ${set === k ? '' : 'ghost'}" data-set="${k}">${v}</button>`).join('')}</div>
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
-        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 && d.set !== 'core' ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
+        <div class="pool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });
@@ -283,6 +285,7 @@
       <section><h4>Keywords</h4><ul>${kw}</ul></section>
       <section><h4>Party play</h4><p>Up to four heroes can join a raid. You take each hero's turn in order, so friends can pass the device around. The boss grows tougher with each hero: it has more health, reveals an extra card per hero, and its strikes and minions hit harder.</p></section>
       <section><h4>Treasure</h4><p>Victory opens a treasure pack of five cards: one epic from the boss's treasure, holofoil cards, and sometimes a loot card. New cards join your collection and are added to your starter decks automatically.</p></section>
+      <section><h4>Your cards</h4><p>You start with the cards for each starting hero's starter deck, and each hero you unlock brings the cards for theirs. Every hero can always use their <b>Starter deck</b>, even with cards you haven't collected. Build your own deck from the cards you own. Get more from <b>Raidbound Core</b> packs (${RB.CORE_PACK_PRICE} gold), the themed booster packs (${RB.PACK_PRICE} gold), the daily card shop, crafting in the Workshop, and raid treasure. New players get two free Core packs.</p></section>
       <section class="credits"><h4>Art credits</h4><p>Every card, hero, raid and boss illustration was generated with <a href="https://spritecook.ai" target="_blank" rel="noopener">SpriteCook</a> and art-directed for Raidbound. Card frames, icons and interface are hand-built for the game.</p></section>
       </div></div>`);
     el.onclick = e => { if (e.target.closest('[data-act=back]')) U.title(); };

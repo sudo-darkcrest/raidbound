@@ -93,14 +93,35 @@
     art: { s: 'void', L: [glow(150, 100, 140, '#7a3aff', 0.6), ['wisps', { x: 150, y: 110, w: 280, h: 120, n: 12, c: '#d0b0ff' }], fig({ race: 'elf', pose: 'cast', robe: 1, helm: 'crown', crownCol: '#c8a0ff', gem: '#e0b0ff', glowL: '#c8a0ff', glowR: '#c8a0ff', cape: 1, capeCol: '#120a24', x: 150, y: 218, s: 1, cloth: '#2a1050', hairCol: '#e8e0ff' })] } });
 
   RB.FRONTIER = Object.values(C).filter(d => d.set === 'frontier').map(d => d.id);
-  RB.packPool = style => Object.values(C).filter(d => d.set === 'frontier' && d.pack === style);
+  // Raidbound Core pack (Nov 8, 2026): the core set, cheaper than the themed boosters. Ascended (Master Hero) cards are
+  // never in packs: each hero brings their own when you can play them (see U.syncStarters).
+  RB.PACK_SETS.core = { name: 'Raidbound Core', short: 'Core', theme: 'The heart of every deck', blurb: 'Soldiers, spells, gear and quests for every class. The cards your starter decks are built from, and more of them.', col: '#f0d48a' };
+  RB.CORE_PACK_PRICE = 75;
+  RB.packPrice = style => style === 'core' ? RB.CORE_PACK_PRICE : RB.PACK_PRICE;
+  RB.CORE_POOL = () => Object.values(C).filter(d => d.set === 'core' && d.type !== 'master');
+  RB.packPool = style => style === 'core' ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'frontier' && d.pack === style);
+  RB.BOOSTER_SETS = ['ember', 'frost', 'void'];
+
+  // five core cards: one uncommon or better, then mostly commons
+  RB.rollCore = rand => {
+    rand = rand || Math.random;
+    const pool = RB.CORE_POOL(), pk = a => a[Math.floor(rand() * a.length)];
+    const of = r => pk(pool.filter(d => d.rarity === r)).id;
+    const out = [];
+    out.push({ id: of(rand() < 0.3 ? 'r' : 'u'), holo: rand() < 0.15 });
+    out.push({ id: of((x => x < 0.04 ? 'r' : x < 0.38 ? 'u' : 'c')(rand())), holo: rand() < 0.08 });
+    for (let i = 0; i < 3; i++) out.push({ id: of((x => x < 0.03 ? 'r' : x < 0.22 ? 'u' : 'c')(rand())), holo: rand() < 0.06 });
+    out.style = 'core';
+    return out;
+  };
 
   /* ---------- booster roll: five cards, mostly from the wrapper's own set ---------- */
   RB.rollBooster = (rand, style) => {
     rand = rand || Math.random;
-    if (!RB.PACK_SETS[style]) style = Object.keys(RB.PACK_SETS)[Math.floor(rand() * 3)];
+    if (style === 'core') return RB.rollCore(rand);
+    if (!RB.BOOSTER_SETS.includes(style)) style = RB.BOOSTER_SETS[Math.floor(rand() * 3)];
     const pk = a => a[Math.floor(rand() * a.length)];
-    const own = RB.packPool(style), core = Object.values(C).filter(d => d.set === 'core');
+    const own = RB.packPool(style), core = RB.CORE_POOL();
     const byR = (list, r) => list.filter(d => d.rarity === r);
     const rarity = () => { const x = rand(); return x < 0.006 ? 'l' : x < 0.066 ? 'e' : x < 0.24 ? 'r' : x < 0.55 ? 'u' : 'c'; };
     const from = (list, r) => { let l = byR(list, r); while (!l.length) { r = { l: 'e', e: 'r', r: 'u', u: 'c', c: 'c' }[r]; l = byR(list, r); if (r === 'c' && !l.length) l = list; } return pk(l); };

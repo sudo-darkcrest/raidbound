@@ -10,14 +10,35 @@
   /* ---------- persistence (per-browser; safe if storage is unavailable) ---------- */
   const KEY = 'raidbound.save.v1';
   const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, gold: 0, heroes: [], settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
-  let save = fresh();
-  try { const raw = localStorage.getItem(KEY); if (raw) save = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { }
-  // base collection: two of every core card
-  for (const d of Object.values(C)) if (d.set === 'core' && !(save.owned[d.id] >= 2)) save.owned[d.id] = Math.max(save.owned[d.id] || 0, 2);
+  let save = fresh(), hadSave = false;
+  try { const raw = localStorage.getItem(KEY); if (raw) { save = Object.assign(fresh(), JSON.parse(raw)); hadSave = true; } } catch (e) { }
+  // Starting collection (Nov 8, 2026): a new player owns just the cards in each starting hero's starter deck, and gets
+  // two free Raidbound Core booster packs. Saves from before this change were given two of every core card, and keep them.
+  if (!save.econ) {
+    if (hadSave) {
+      for (const d of Object.values(C)) if (d.set === 'core' && !(save.owned[d.id] >= 2)) save.owned[d.id] = Math.max(save.owned[d.id] || 0, 2);
+    } else {
+      save.freeCore = 2;
+    }
+    save.econ = 2;
+  }
+  // every hero you can play (the six starting heroes, and each hero once unlocked) brings the cards of their starter deck
+  U.syncStarters = () => {
+    save.starterGot = save.starterGot || [];
+    let changed = false;
+    for (const hid of Object.keys(RB.HEROES)) {
+      if (save.starterGot.includes(hid) || !RB.heroUnlocked(hid, save)) continue;
+      for (const [id, k] of Object.entries(RB.STARTER[hid] || {})) if (C[id] && (save.owned[id] || 0) < k) save.owned[id] = k;
+      save.starterGot.push(hid); changed = true;
+    }
+    return changed;
+  };
+  U.syncStarters();
   U.save = save;
   // #57: saved decks that held a retired Master Hero card get that hero's Ascended card instead
   if (RB.fixDeck) for (const [hid, ids] of Object.entries(save.decks || {})) if (Array.isArray(ids)) save.decks[hid] = RB.fixDeck(hid, ids);
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
+  U.persist();
   if (!save.heroicWins) save.heroicWins = {};
   if (typeof save.gold !== 'number') save.gold = 0;
   if (!Array.isArray(save.heroes)) save.heroes = [];

@@ -13,20 +13,24 @@
 
   const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   const untilMidnight = () => { const d = new Date(), m = new Date(d); m.setHours(24, 0, 0, 0); const mins = Math.round((m - d) / 60000); return `${Math.floor(mins / 60)}h ${mins % 60}m`; };
-  // today's stock: one card from each booster set plus one wildcard, never Legendary
+  // today's stock: one card from each booster set, one wildcard (rare or epic), and one uncommon or rare core card; never Legendary
   RB.shopStock = (key) => {
     const r = A.rng(A.hash('raidbound-shop-' + (key || dayKey())));
     const pool = k => RB.packPool(k).filter(d => d.rarity !== 'l');
     const out = [];
-    for (const k of ['ember', 'frost', 'void']) { const p = pool(k).filter(d => !out.includes(d.id)); out.push(p[Math.floor(r() * p.length)].id); }
+    for (const k of RB.BOOSTER_SETS) { const p = pool(k).filter(d => !out.includes(d.id)); out.push(p[Math.floor(r() * p.length)].id); }
     const all = RB.FRONTIER.map(id => C[id]).filter(d => d.rarity !== 'l' && !out.includes(d.id) && (d.rarity === 'r' || d.rarity === 'e'));
     out.push(all[Math.floor(r() * all.length)].id);
+    const core = RB.CORE_POOL().filter(d => d.rarity === 'u' || d.rarity === 'r');
+    out.push(core[Math.floor(r() * core.length)].id);
     return out;
   };
+  const setOf = d => d.set === 'core' ? RB.PACK_SETS.core : RB.PACK_SETS[d.pack];
   const shopState = () => { if (!save.shop || save.shop.day !== dayKey()) save.shop = { day: dayKey(), bought: [] }; return save.shop; };
 
-  // spares = copies beyond what one deck can use (booster and raid treasure cards; core and loot cards never)
-  const dustable = d => d && d.set !== 'core' && d.set !== 'loot';
+  // spares = copies beyond what one deck can use (core, booster and raid treasure cards; loot cards never)
+  const dustable = d => d && d.set !== 'loot';
+  const craftable = d => d && d.type !== 'master' && (d.set === 'core' || d.set === 'frontier');
   const spares = () => Object.entries(save.owned).map(([id, n]) => ({ d: C[id], n: n - RB.maxCopies(C[id] || {}) })).filter(x => dustable(x.d) && x.n > 0);
   const grant = id => { save.owned[id] = (save.owned[id] || 0) + 1; };
 
@@ -43,31 +47,33 @@
 
     if (tab === 'packs') {
       const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
-      body = `<p class="lede">Every raid pays you gold, win or lose. Each wrapper is its own set of cards. A pack holds <b>5 cards</b>: at least three from that set (one uncommon or better), and the rest are usually from the set too, with the odd regular card. Some come as holofoils, and each set hides one very rare <b class="legend">Legendary</b>. Open 5 of one kind to unlock its table theme.</p>
-      <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => { const PS = RB.PACK_SETS[k], pool = RB.packPool(k), got = pool.filter(d => (save.owned[d.id] || 0) > 0).length, opened = (save.packs || {})[k] || 0;
-        return `<div class="packpick setpick" style="--sc:${PS.col}">${U.packHTML({ theme: k, art: v.art, act: 'buy', set: PS.name + ' Set', data: `data-style="${k}"`, label: `Buy a ${v.name} booster pack for ${price} gold` })}<div class="pname">${v.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(PS.blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${save.gold >= price ? 'primary' : ''}" data-act="buy" data-style="${k}" ${save.gold >= price ? '' : 'disabled'}>Buy — ${price} gold</button></div>`; }).join('')}</div>
-      ${save.gold < price ? `<p class="lede" style="text-align:center">You need ${price - save.gold} more gold for a pack. Go raid!</p>` : ''}
+      const cheapest = RB.CORE_PACK_PRICE;
+      body = `<p class="lede">Every raid pays you gold, win or lose. A pack holds <b>5 cards</b>, and some come as holofoils. The <b>Raidbound Core</b> pack (${RB.CORE_PACK_PRICE} gold) has the core cards every class uses: one uncommon or better, the rest mostly commons. Each themed wrapper (${price} gold) is its own set: at least three cards from that set (one uncommon or better), the rest usually from the set too, with the odd core card. Each themed set hides one very rare <b class="legend">Legendary</b>, and opening 5 of one kind unlocks its table theme.</p>
+      ${save.freeCore > 0 ? `<div class="giftnote"><b>Welcome gift:</b> you have <b>${save.freeCore} free Raidbound Core pack${save.freeCore > 1 ? 's' : ''}</b>. ${U.isPhone() ? 'Tap' : 'Click'} the Core pack to open ${save.freeCore > 1 ? 'one' : 'it'}.</div>` : ''}
+      <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => { const PS = RB.PACK_SETS[k], pool = RB.packPool(k), got = pool.filter(d => (save.owned[d.id] || 0) > 0).length, opened = (save.packs || {})[k] || 0, pr = RB.packPrice(k), free = k === 'core' && save.freeCore > 0, can = free || save.gold >= pr;
+        return `<div class="packpick setpick" style="--sc:${PS.col}">${U.packHTML({ theme: k, art: v.art, act: 'buy', set: (PS.short || PS.name) + ' Set', data: `data-style="${k}"`, label: free ? `Open a free ${v.name} pack` : `Buy a ${v.name} booster pack for ${pr} gold` })}<div class="pname">${v.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(PS.blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${can ? 'primary' : ''}" data-act="buy" data-style="${k}" ${can ? '' : 'disabled'}>${free ? `Open free pack (${save.freeCore} left)` : `Buy — ${pr} gold`}</button></div>`; }).join('')}</div>
+      ${save.gold < cheapest && !(save.freeCore > 0) ? `<p class="lede" style="text-align:center">You need ${cheapest - save.gold} more gold for a Core pack. Go raid!</p>` : ''}
       <p class="lede" style="text-align:center">You have found <b>${have} of ${fr.length}</b> booster cards.</p>
       <div class="codebox goldcode"><span>Have a gold code?</span><input id="goldcode" placeholder="RBG-XXXXX-XXXXX" aria-label="Gold code" maxlength="17"><button class="btn" data-act="goldcode">Redeem</button>${opts.msg ? `<span class="${opts.msg.ok ? 'okmsg' : 'errmsg'}">${esc(opts.msg.text)}</span>` : ''}</div>`;
     }
 
     if (tab === 'shop') {
       const st = shopState(), stock = RB.shopStock();
-      body = `<p class="lede">Four booster cards for sale today, one from each set plus a rare find. Buy the exact card you want instead of hoping for it in a pack. Each one can be bought once a day. <b>New stock in ${untilMidnight()}.</b></p>
-      <div class="shopgrid">${stock.map(id => { const d = C[id], cost = SHOP_PRICE[d.rarity] || 80, bought = st.bought.includes(id), own = save.owned[id] || 0, PS = RB.PACK_SETS[d.pack];
+      body = `<p class="lede">Five cards for sale today: one from each themed set, a rare find, and a core card. Buy the exact card you want instead of hoping for it in a pack. Each one can be bought once a day. <b>New stock in ${untilMidnight()}.</b></p>
+      <div class="shopgrid">${stock.map(id => { const d = C[id], cost = SHOP_PRICE[d.rarity] || 80, bought = st.bought.includes(id), own = save.owned[id] || 0, PS = setOf(d);
         return `<div class="shopitem" style="--sc:${PS ? PS.col : '#d8a84a'}"><div class="shopcard" data-card="${id}">${U.cardHTML(id, {})}</div><div class="sinfo"><span class="rar-${d.rarity}">${RAR[d.rarity]}</span> · ${PS ? PS.name : ''}<br><small>You own ${own}</small></div>
           ${bought ? '<button class="btn small" disabled>Bought today</button>' : `<button class="btn small ${save.gold >= cost ? 'primary' : ''}" data-shop="${id}" ${save.gold >= cost ? '' : 'disabled'}>Buy — ${cost} gold</button>`}</div>`; }).join('')}</div>`;
     }
 
     if (tab === 'workshop') {
       const sp = spares(), spN = sp.reduce((s, x) => s + x.n, 0), spDust = sp.reduce((s, x) => s + x.n * (DUST_VALUE[x.d.rarity] || 5), 0);
-      const ws = U._ws || (U._ws = { set: 'ember', missing: true });
-      const list = RB.FRONTIER.map(id => C[id]).filter(d => d.pack === ws.set && (!ws.missing || !(save.owned[d.id] > 0))).sort((a, b) => 'curel'.indexOf(a.rarity) - 'curel'.indexOf(b.rarity) || a.cost - b.cost);
+      const ws = U._ws || (U._ws = { set: 'core', missing: true });
+      const list = (ws.set === 'core' ? RB.CORE_POOL() : RB.FRONTIER.map(id => C[id]).filter(d => d.pack === ws.set)).filter(d => !ws.missing || !(save.owned[d.id] > 0)).sort((a, b) => 'curel'.indexOf(a.rarity) - 'curel'.indexOf(b.rarity) || a.cost - b.cost);
       body = `<p class="lede">Turn spare cards into <b>dust</b>, then spend dust and a little gold to make the exact card you want. A spare is any copy beyond what a deck can hold (2 of most cards, 1 of Unique cards). Your deck copies are never touched.</p>
       <div class="dustbox"><div><b>${spN}</b> spare card${spN === 1 ? '' : 's'} → <b>✦ ${spDust} dust</b><br><small>${sp.slice(0, 8).map(x => `${esc(x.d.name)} ×${x.n}`).join(', ')}${sp.length > 8 ? '…' : ''}</small></div>
         <button class="btn ${spN ? 'primary' : ''}" data-act="dust" ${spN ? '' : 'disabled'}>Turn spares into dust</button></div>
       <p class="kwhat">Dust per spare: ${Object.entries(DUST_VALUE).map(([r, v]) => `${RAR[r]} ${v}`).join(' · ')}. Crafting costs: ${Object.entries(CRAFT).map(([r, [d, g]]) => `${RAR[r]} ${d} dust + ${g} gold`).join(' · ')}.</p>
-      <div class="filters">${Object.entries(RB.PACK_SETS).map(([k, v]) => `<button class="btn small ${ws.set === k ? '' : 'ghost'}" data-wsset="${k}">${v.name}</button>`).join('')}<label class="toggle" style="margin-left:1rem"><input type="checkbox" data-wsmiss ${ws.missing ? 'checked' : ''}> Only cards I don't have</label></div>
+      <div class="filters">${Object.keys(RB.PACK_STYLES).map(k => `<button class="btn small ${ws.set === k ? '' : 'ghost'}" data-wsset="${k}">${RB.PACK_SETS[k].short || RB.PACK_SETS[k].name}</button>`).join('')}<label class="toggle" style="margin-left:1rem"><input type="checkbox" data-wsmiss ${ws.missing ? 'checked' : ''}> Only cards I don't have</label></div>
       <div class="craftgrid">${list.map(d => { const [dc, gc] = CRAFT[d.rarity] || CRAFT.c, can = save.dust >= dc && save.gold >= gc, own = save.owned[d.id] || 0;
         return `<div class="craftitem"><div class="shopcard" data-card="${d.id}">${U.cardHTML(d.id, {})}</div><small>Own ${own}</small><button class="btn small ${can ? 'primary' : ''}" data-craft="${d.id}" ${can ? '' : 'disabled'}>Craft — ✦${dc} + ${gc}g</button></div>`; }).join('') || '<p class="lede">You have every card in this set. Nice!</p>'}</div>`;
     }
@@ -109,7 +115,7 @@
       const sh = e.target.closest('[data-shop]');
       if (sh) { const id = sh.dataset.shop; if (!C[id] || !RB.shopStock().includes(id)) return; const cost = SHOP_PRICE[C[id].rarity] || 80, st = shopState(); if (st.bought.includes(id) || save.gold < cost) return; save.gold -= cost; grant(id); st.bought.push(id); U.persist(); U.sfx.treasure(); U.toast(`${C[id].name} added to your collection.`); return U.market({ keep: true }); }
       const cr = e.target.closest('[data-craft]');
-      if (cr) { const d = C[cr.dataset.craft]; if (!d || !RB.FRONTIER.includes(d.id)) return; const [dc, gc] = CRAFT[d.rarity] || CRAFT.c; if (save.dust < dc || save.gold < gc) return; save.dust -= dc; save.gold -= gc; grant(d.id); U.persist(); U.sfx.quest(); U.toast(`Crafted ${d.name}!`); return U.market({ keep: true }); }
+      if (cr) { const d = C[cr.dataset.craft]; if (!craftable(d)) return; const [dc, gc] = CRAFT[d.rarity] || CRAFT.c; if (save.dust < dc || save.gold < gc) return; save.dust -= dc; save.gold -= gc; grant(d.id); U.persist(); U.sfx.quest(); U.toast(`Crafted ${d.name}!`); return U.market({ keep: true }); }
       const ss = e.target.closest('[data-wsset]'); if (ss) { U._ws.set = ss.dataset.wsset; return U.market({ keep: true }); }
       const sb = e.target.closest('[data-skinbuy]');
       if (sb) { const sid = sb.dataset.skinbuy; if (!RB.SKINS[sid] || !U.heroOpen(RB.SKINS[sid].hero) || save.gold < RB.SKIN_PRICE || U.ownsSkin(sid)) return; save.gold -= RB.SKIN_PRICE; (save.skinsOwned = save.skinsOwned || []).push(sid); (save.skins = save.skins || {})[RB.SKINS[sid].hero] = sid; U.persist(); U.sfx.quest(); U.toast(`${RB.SKINS[sid].name} unlocked and in use.`); return U.market({ keep: true }); }
@@ -125,10 +131,10 @@
         save.dust += gained; U.persist(); U.sfx.heal && U.sfx.heal(); U.toast(`${n} spare card${n === 1 ? '' : 's'} turned into ${gained} dust.`); return U.market({ keep: true });
       }
       if (act === 'buy') {
-        if (save.gold < price) return U.toast(`A pack costs ${price} gold. You have ${save.gold}.`);
-        if (!U.packLock()) return;
-        save.gold -= price; U.persist();
-        const st = a.dataset.style || 'ember';
+        const st = RB.PACK_STYLES[a.dataset.style] ? a.dataset.style : 'core';
+        if (!U.payForPack(st)) return;
+        if (!U.packLock()) { U.refundPack(st); return; }
+        U.persist();
         const packEl = a.classList.contains('tcgpack') ? a : $(`.tcgpack[data-style="${st}"]`, el);
         return U.openPack(null, false, packEl, RB.rollBooster(null, st));
       }

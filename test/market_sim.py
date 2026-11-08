@@ -27,6 +27,34 @@ async def main():
         def expect(tag, cond, detail=''):
             log.append(('OK  ' if cond else 'BAD ') + tag + (' ' + detail if detail else ''))
             if not cond: problems.append(tag + ' ' + detail)
+        # ---- a brand-new player: the starting heroes' starter cards and two free Core packs ----
+        np = await pg.evaluate("""(() => { const s=RB.UI.save, C=RB.CARDS, start=Object.keys(RB.HEROES).filter(h=>!RB.UNLOCK_HEROES.includes(h)), need={};
+          for (const h of start) for (const [id,k] of Object.entries(RB.STARTER[h])) need[id]=Math.max(need[id]||0,k);
+          const missing=Object.entries(need).filter(([id,k])=>(s.owned[id]||0)<k).length, extra=Object.keys(s.owned).filter(id=>!need[id]&&s.owned[id]>0).length;
+          return { free:s.freeCore, missing, extra, copies:Object.values(s.owned).reduce((a,b)=>a+b,0), heroes:(s.starterGot||[]).length }; })()""")
+        expect('new player owns exactly the starter cards of the 6 starting heroes', np['missing'] == 0 and np['extra'] == 0 and np['heroes'] == 6, str(np))
+        expect('new player has 2 free Core packs', np['free'] == 2, str(np))
+        await pg.evaluate("RB.UI.title()"); await pg.wait_for_timeout(150)
+        expect('title shows the free pack badge', await pg.evaluate("!!document.querySelector('#title .freebadge')"))
+        # free Core packs cost nothing, then Core packs cost 75
+        for i in (1, 2):
+            await market('packs', 0); a = await snap()
+            await pg.click('.setpick button[data-style=core]'); await pg.wait_for_timeout(1300)
+            z = await snap(); fc = await pg.evaluate('RB.UI.save.freeCore')
+            expect(f'free Core pack {i}', z['gold'] == 0 and z['cards'] == a['cards'] + 5 and fc == 2 - i, f'{a}->{z} free={fc}')
+            await inv(f'free core {i}')
+        await market('packs', 74); a = await snap()
+        await pg.evaluate("document.querySelector('.setpick .tcgpack[data-style=core]').click()"); await pg.wait_for_timeout(1300)
+        z = await snap(); expect('Core pack with 74 gold refused', z['gold'] == 74 and z['cards'] == a['cards'], f'{a}->{z}')
+        await market('packs', 200); a = await snap()
+        await pg.click('.setpick button[data-style=core]'); await pg.wait_for_timeout(1300)
+        z = await snap(); expect('Core pack costs 75', z['gold'] == 125 and z['cards'] == a['cards'] + 5, f'{a}->{z}')
+        a = await snap(); await pg.evaluate("document.querySelector('.againbox button[data-act=buyagain]').click()"); await pg.wait_for_timeout(1400)
+        z = await snap(); expect('Core buy-again costs 75', z['gold'] == 50 and z['cards'] == a['cards'] + 5, f'{a}->{z}')
+        asc = await pg.evaluate("Object.keys(RB.UI.save.owned).filter(id=>RB.CARDS[id].type==='master'&&!RB.UI.save.starterGot.includes(RB.CARDS[id].hero)).length")
+        expect('no Ascended card of a locked hero from packs', asc == 0, str(asc))
+        await inv('core packs')
+
         # fresh save
         await pg.evaluate("Object.assign(RB.UI.save,{gold:0,dust:0,owned:{},holo:{},packs:{},heroes:[],skinsOwned:[],skins:{},wins:{},heroicWins:{},shop:null,goldCodes:[]}); RB.UI.persist()")
 
@@ -89,11 +117,11 @@ async def main():
         # ---- workshop: dust and craft ----
         await pg.evaluate("(() => { const s=RB.UI.save; const ids=RB.FRONTIER.slice(0,6); ids.forEach(id=>{s.owned[id]=5; s.holo[id]=5;}); s.owned.guinevere=3; s.holo.guinevere=1; s.owned.footman=9; })()")
         await market('workshop', 3000); a = await snap()
-        exp = await pg.evaluate("(() => { const V={c:5,u:10,r:25,e:60,l:150}; let d=0; for (const [id,n] of Object.entries(RB.UI.save.owned)) { const c=RB.CARDS[id]; if (!c||c.set==='core'||c.set==='loot') continue; const sp=n-RB.maxCopies(c); if (sp>0) d+=sp*(V[c.rarity]||5); } return d; })()")
+        exp = await pg.evaluate("(() => { const V={c:5,u:10,r:25,e:60,l:150}; let d=0; for (const [id,n] of Object.entries(RB.UI.save.owned)) { const c=RB.CARDS[id]; if (!c||c.set==='loot') continue; const sp=n-RB.maxCopies(c); if (sp>0) d+=sp*(V[c.rarity]||5); } return d; })()")
         await pg.click('button[data-act=dust]'); await pg.wait_for_timeout(200)
         z = await snap(); expect('dust spares', z['dust'] == a['dust'] + exp and z['gold'] == a['gold'], f"dust {a['dust']}->{z['dust']} expected +{exp}")
         left = await pg.evaluate("(() => { const s=RB.UI.save, o=[]; for (const id of RB.FRONTIER.slice(0,6)) o.push(s.owned[id]+'/'+s.holo[id]); o.push('footman '+s.owned.footman); return o; })()")
-        expect('dust keeps a full playset and core cards', all(x.startswith(('1/', '2/')) for x in left[:6]) and left[6] == 'footman 9', str(left))
+        expect('dust keeps a full playset (core spares are dusted too)', all(x.startswith(('1/', '2/')) for x in left[:6]) and left[6] == 'footman 2', str(left))
         await inv('dust')
         for rar in ['c', 'u', 'r', 'e', 'l']:
             cid = await pg.evaluate(f"(RB.FRONTIER.map(id=>RB.CARDS[id]).find(d=>d.rarity==='{rar}')||{{}}).id")
@@ -104,7 +132,7 @@ async def main():
         await pg.evaluate("RB.UI.save.dust=0"); await market('workshop', 3000); a = await snap()
         await pg.evaluate("(() => { const b=document.createElement('button'); b.dataset.craft=RB.FRONTIER[0]; document.querySelector('#market .page').appendChild(b); b.click(); })()"); await pg.wait_for_timeout(150)
         z = await snap(); expect('craft with 0 dust blocked', z['cards'] == a['cards'])
-        for bad in ['footman', 'concordbanner', 'malgareth', 'loot_owl']:
+        for bad in ['asc_aldric', 'malgareth', 'loot_owl']:
             await pg.evaluate("RB.UI.save.dust=5000"); await market('workshop', 5000); a = await snap()
             await pg.evaluate(f"(() => {{ const b=document.createElement('button'); b.dataset.craft='{bad}'; document.querySelector('#market .page').appendChild(b); try {{ b.click(); }} catch(e) {{}} }})()"); await pg.wait_for_timeout(150)
             z = await snap(); expect(f'forged craft of non-workshop card {bad} blocked', z['cards'] == a['cards'], f"{a}->{z}")
