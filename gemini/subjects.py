@@ -66,7 +66,7 @@ S = {
 # ---------------- Core set ----------------
 'militia': (CORE, 'a young village militiaman in a padded tunic holding a long pike, a castle and village behind at dusk'),
 'campcook': (CORE, 'a cheerful dwarf camp cook stirring a big pot over a fire, with potions and pans in a cozy tavern'),
-'rifleman': (CORE, 'a dwarf rifleman in a horned helm aiming a long crossbow-rifle on a snowy mountain ridge'),
+'rifleman': (CORE, 'a stout dwarf marksman in a horned iron helm and fur cloak, kneeling to aim a long black-powder rifle with a brass-banded wooden stock, a puff of smoke at the muzzle, on a snowy mountain ridge'),
 'ogre': (CORE, 'a huge dim-witted ogre swinging a giant stone hammer, a war camp behind him'),
 'ram': (CORE, 'a big highland mountain ram with curled horns charging down a rocky slope'),
 'bard': (CORE, 'an elf bard in a purple cape playing a lute in a tavern, glowing musical notes swirling'),
