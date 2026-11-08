@@ -246,6 +246,7 @@
       <div class="settingsgrid">
       <div><h3 class="sec" style="margin-top:0">Game speed</h3><span class="seg">${[[1, 'Normal'], [0.55, 'Fast'], [0.15, 'Very fast']].map(([v, l]) => `<button class="${s.speed === v ? 'on' : ''}" data-speed="${v}">${l}</button>`).join('')}</span></div>
       <div class="audioset"><h3 class="sec" style="margin-top:0">Sound</h3>
+        <label class="toggle" style="margin-bottom:.4rem"><input type="checkbox" data-k="muted" ${s.muted ? 'checked' : ''}> Mute everything (press M any time, or use the 🔊 button during a raid)</label>
         <div class="vrow"><label class="toggle"><input type="checkbox" data-k="sound" ${s.sound !== false ? 'checked' : ''}> Sound effects</label><input type="range" min="0" max="1" step="0.05" value="${s.sfxVol ?? 0.8}" data-vol="sfxVol" aria-label="Sound effects volume"><button class="btn small ghost" data-act="testfx">Test</button></div>
         <div class="vrow"><label class="toggle"><input type="checkbox" data-k="music" ${s.music !== false ? 'checked' : ''}> Music</label><input type="range" min="0" max="1" step="0.05" value="${s.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"><span></span></div></div>
       <label class="toggle"><input type="checkbox" data-k="autoDefend" ${s.autoDefend ? 'checked' : ''}> Defend automatically (use armor and strike back with your weapon without asking)</label>

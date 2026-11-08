@@ -30,6 +30,7 @@
     if (k === 'win') return 'Defeat ' + raid.short + ' in ' + raid.name;
     if (k === 'heroic') return 'Defeat ' + raid.short + ' on Heroic';
     if (k === 'allraids') return 'Defeat all three raid bosses';
+    if (k === 'packtotal') { const n = +r, have = Object.values(save.packs || {}).reduce((a, b) => a + b, 0); return `Open ${n} booster packs of any kind (${Math.min(have, n)}/${n})`; }
     if (k === 'packs') { const PS = RB.PACK_SETS && RB.PACK_SETS[r], n = +c.get.split(':')[2], have = (save.packs || {})[r] || 0; return `Open ${n} ${PS ? PS.name : ''} booster packs (${Math.min(have, n)}/${n})`; }
     return '';
   };
@@ -39,7 +40,7 @@
     for (const [id, c] of Object.entries(RB.COSMETICS)) {
       if (save.cos.includes(id)) continue;
       const [k, r] = c.get.split(':');
-      const ok = k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
+      const ok = k === 'packtotal' ? Object.values(save.packs || {}).reduce((a, b) => a + b, 0) >= +r : k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
       if (ok) { save.cos.push(id); got.push(id); }
     }
     if (got.length) U.persist();
@@ -74,6 +75,10 @@
   /* ---------- art ---------- */
   U.art = (spec, key) => A.uri(spec, key);
   U.cardArt = id => { const d = C[id] || RB.TOKENS[id] || RB.BOSSCARDS[id] || RB.HEROES[id]; return d && d.art ? A.uri(d.art, 'c:' + id) : ''; };
+  // #45: a hero's chosen skin replaces their painting everywhere it is shown
+  U.ownsSkin = sid => (save.skinsOwned || []).includes(sid);
+  U.heroSkin = hid => { const sid = save.skins && save.skins[hid]; return sid && RB.SKINS && RB.SKINS[sid] && U.ownsSkin(sid) && GEN()['skin_' + sid] ? sid : ''; };
+  { const base = U.cardArt; U.cardArt = id => { const sid = RB.HEROES[id] && U.heroSkin(id); return sid ? GEN()['skin_' + sid] : base(id); }; }
 
   /* ---------- rules text ---------- */
   function kwText(d) { return (d.kw || []).filter(k => k !== 'unique' || true).map(k => `<b class="kw">${RB.KEYWORDS[k] ? RB.KEYWORDS[k][0] : k}.</b>`).join(' '); }
@@ -162,6 +167,24 @@
 
   /* ---------- popover / toast / dialog ---------- */
   let pop = null;
+  // #51: mute and volume from anywhere (battle top bar, M key)
+  U.toggleMute = () => { const st = save.settings; st.muted = !st.muted; U.persist(); RB.AUDIO.refresh(); U.toast(st.muted ? 'Sound muted. Press M to turn it back on.' : 'Sound on.'); document.querySelectorAll('[data-act=mute]').forEach(b => { b.textContent = st.muted ? '🔇' : '🔊'; }); };
+  U.soundPop = anchor => {
+    let sp = document.querySelector('.soundpop'); if (sp) { sp.remove(); return; }
+    const st = save.settings, r = anchor.getBoundingClientRect();
+    sp = document.createElement('div'); sp.className = 'soundpop';
+    sp.innerHTML = `<h5>Sound</h5>
+      <label>Sound effects<input type="range" min="0" max="1" step="0.05" value="${st.sfxVol ?? 0.8}" data-vol="sfxVol" aria-label="Sound effects volume"></label>
+      <label>Music<input type="range" min="0" max="1" step="0.05" value="${st.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"></label>
+      <label class="toggle"><input type="checkbox" data-mute ${st.muted ? 'checked' : ''}> Mute everything</label>`;
+    sp.style.top = (r.bottom + 8) + 'px'; sp.style.left = Math.max(8, Math.min(innerWidth - 268, r.left - 100)) + 'px';
+    document.body.appendChild(sp);
+    sp.oninput = e => { const v = e.target.closest('[data-vol]'); if (v) { st[v.dataset.vol] = +v.value; if (st.muted && +v.value > 0) { st.muted = false; sp.querySelector('[data-mute]').checked = false; RB.AUDIO.refresh(); } U.persist(); RB.AUDIO.setVolumes(); } };
+    sp.onchange = e => { if (e.target.matches('[data-vol=sfxVol]')) U.sfx.hit(3); if (e.target.matches('[data-mute]')) U.toggleMute(); };
+    const close = e => { if (!sp.contains(e.target) && !e.target.closest('[data-act=soundpop]')) { sp.remove(); document.removeEventListener('pointerdown', close, true); } };
+    setTimeout(() => document.addEventListener('pointerdown', close, true), 0);
+  };
+  if (typeof document !== 'undefined') document.addEventListener('keydown', e => { if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey && !/INPUT|TEXTAREA|SELECT/.test((e.target.tagName || ''))) U.toggleMute(); });
   U.closePop = () => { if (pop) { pop.remove(); pop = null; } $$('.hc.open').forEach(e => e.classList.remove('open')); };
   U.popover = function (anchor, title, items) {
     U.closePop(); U.hidePreview();

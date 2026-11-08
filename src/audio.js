@@ -6,7 +6,7 @@
   const U = RB.UI = RB.UI || {};
   const AU = RB.AUDIO = {};
   const S = () => (U.save && U.save.settings) || {};
-  const on = k => S()[k] !== false;
+  const on = k => !S().muted && S()[k] !== false; // #51: master mute
   let ac = null, master, comp, sfxBus, musBus, duckG, verbIn, NB = {}, shaper = null;
 
   /* ---------- graph ---------- */

@@ -681,3 +681,45 @@ body.painted-back .cardback::before, body.painted-back .cardback::after { displa
 .setpick .pblurb { margin: .1rem 0; font-size: .9rem; color: var(--muted); line-height: 1.35; min-height: 3.6em; }
 .setpick .pgot { font-size: .85rem; color: var(--muted); } .setpick .pgot b { color: var(--sc); font-size: 1.05rem; }
 .packrow.mini .pname small { color: var(--muted); font-size: .75em; }
+
+/* #51 volume pop-up and mute */
+.iconbtn { font-size: 1rem; padding-inline: .55rem; }
+.soundpop { position: fixed; z-index: 400; width: 260px; padding: .8rem 1rem 1rem; border-radius: 10px; background: linear-gradient(#20180e, #120c08); border: 1px solid var(--gilt-lo); box-shadow: 0 14px 40px rgba(0, 0, 0, .7); display: flex; flex-direction: column; gap: .6rem; }
+.soundpop h5 { margin: 0; font-family: var(--f-sc); color: var(--gilt-hi); letter-spacing: .08em; }
+.soundpop label { display: flex; flex-direction: column; gap: .25rem; font-size: .9rem; color: var(--vellum); }
+.soundpop label.toggle { flex-direction: row; align-items: center; gap: .5rem; }
+.soundpop input[type=range] { width: 100%; accent-color: var(--gilt); }
+
+/* #52 Legendary rarity: molten-gold gem and a slow shimmering frame */
+.card.r-l .rar { background: radial-gradient(circle at 35% 30%, #fff6c0, #ff9a1a 55%, #8a3a04); box-shadow: 0 0 2.4cqw #ffb040, 0 0 .8cqw #fff; }
+.card.r-l { box-shadow: 0 0 0 2px #ffcf6a, 0 0 18px rgba(255, 170, 60, .55), 0 8px 18px rgba(0, 0, 0, .5); animation: legendglow 3.5s ease-in-out infinite; }
+@keyframes legendglow { 0%, 100% { box-shadow: 0 0 0 2px #ffcf6a, 0 0 14px rgba(255, 170, 60, .45), 0 8px 18px rgba(0, 0, 0, .5); } 50% { box-shadow: 0 0 0 2px #fff0b0, 0 0 30px rgba(255, 200, 90, .8), 0 8px 18px rgba(0, 0, 0, .5); } }
+
+/* #44 Market tabs, card shop, workshop, raid treasure · #45 skins */
+.dustchip { font-family: var(--f-sc); color: #d8c8ff; border: 1px solid rgba(200, 170, 255, .45); border-radius: 99px; padding: .3rem .8rem; margin-right: .5rem; background: rgba(40, 20, 70, .5); }
+.mtabs { display: flex; gap: .3rem; flex-wrap: wrap; margin: .2rem 0 1.2rem; border-bottom: 1px solid var(--gilt-lo); }
+.mtabs button { font-family: var(--f-sc); font-size: .95rem; letter-spacing: .04em; color: var(--muted); background: none; border: 1px solid transparent; border-bottom: none; padding: .55rem 1rem; border-radius: 8px 8px 0 0; cursor: pointer; }
+.mtabs button:hover { color: var(--vellum); }
+.mtabs button.on { color: var(--gilt-hi); background: rgba(246, 220, 149, .08); border-color: var(--gilt-lo); }
+b.legend { color: #ffb040; text-shadow: 0 0 8px rgba(255, 170, 60, .6); }
+.shopgrid, .craftgrid { display: grid; gap: 1.2rem 1rem; --cw: 100%; }
+.shopgrid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); max-width: 1000px; margin: 0 auto; }
+.craftgrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.shopitem, .craftitem { display: flex; flex-direction: column; align-items: center; gap: .45rem; text-align: center; }
+.shopitem { padding: .8rem; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--sc) 45%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--sc) 12%, transparent), rgba(10, 8, 14, .5)); }
+.shopcard { width: 100%; } .shopcard .card { width: 100%; cursor: zoom-in; }
+.sinfo { font-size: .85rem; color: var(--muted); } .sinfo small { font-size: .8rem; }
+.rar-c { color: #c8c0b0; } .rar-u { color: #5ae08a; } .rar-r { color: #6aaaff; } .rar-e { color: #d08aff; } .rar-l { color: #ffb040; }
+.craftitem small { color: var(--muted); }
+.dustbox { display: flex; gap: 1.2rem; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 1rem 1.2rem; border-radius: 12px; border: 1px solid rgba(200, 170, 255, .4); background: linear-gradient(90deg, rgba(60, 30, 100, .45), rgba(14, 10, 20, .6)); margin-bottom: .6rem; }
+.dustbox small { color: var(--muted); }
+.treasurepick.locked .tcgpack { filter: grayscale(.9) brightness(.45); cursor: not-allowed; }
+.treasurepick .btn { width: 100%; }
+.skingrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; }
+.skin { padding: .7rem; border-radius: 12px; border: 1px solid var(--gilt-lo); background: rgba(10, 8, 14, .45); display: flex; flex-direction: column; gap: .35rem; }
+.skin.using { border-color: var(--gilt-hi); box-shadow: 0 0 0 1px var(--gilt-hi), 0 0 18px rgba(246, 220, 149, .25); }
+.skinimg { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 300/220; background: #000; }
+.skinimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.skinimg .eq { position: absolute; top: .4rem; left: .4rem; font-family: var(--f-sc); font-size: .75rem; background: var(--gilt-hi); color: #2a1a08; padding: .1rem .45rem; border-radius: 4px; }
+.skin h4 { margin: .2rem 0 0; font-family: var(--f-display); color: var(--vellum); }
+.skin .cdesc { margin: 0; font-size: .85rem; color: var(--muted); flex: 1; }

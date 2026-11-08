@@ -394,6 +394,10 @@
     board_emberfall: { kind: 'board', name: 'Emberfall Mosaic', get: 'packs:ember:5', desc: 'A blazing sunburst of fire-coloured mosaic tiles.' },
     board_frostwing: { kind: 'board', name: 'Frostwing Crystal', get: 'packs:frost:5', desc: 'A great six-armed snowflake on faceted blue ice.' },
     board_voidshade: { kind: 'board', name: 'Voidshade Starfield', get: 'packs:void:5', desc: 'Constellations and a crescent moon drifting through a violet nebula.' },
+    // #54
+    board_tapestry: { kind: 'board', name: 'Royal Tapestry', get: 'default', desc: 'Crimson damask woven with gold, under a crowned royal crest.' },
+    back_sigil: { kind: 'back', name: 'Runic Sigil', get: 'default', desc: 'A gold summoning sigil of rings and runes on deep crimson.' },
+    back_dragonscale: { kind: 'back', name: 'Dragonscale', get: 'packtotal:10', desc: 'Emerald dragon scales around a gold-set ruby.' },
     pet_gryphon: { kind: 'pet', name: 'Spectral Gryphon', get: 'loot', also: 'back_aether', desc: 'A ghostly gryphon made of pale blue light.' },
     pet_kite: { kind: 'pet', name: 'Paper Wyrm', get: 'loot', also: 'board_sky', desc: 'A grinning paper dragon kite with streaming ribbons.' },
     pet_wisp: { kind: 'pet', name: 'Crowned Wisp', get: 'heroic:crypt', desc: 'A tiny crowned skull wrapped in friendly green soul-flame.' },

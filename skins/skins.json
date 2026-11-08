@@ -1,0 +1,92 @@
+{
+ "aldric_shadow": {
+  "hero": "aldric",
+  "name": "Blackguard Aldric",
+  "desc": "Obsidian plate with a violet sheen. The crimson cape stays."
+ },
+ "aldric_gilded": {
+  "hero": "aldric",
+  "name": "Sunforged Aldric",
+  "desc": "Polished gold plate fit for a lord commander."
+ },
+ "thorgrim_shadow": {
+  "hero": "thorgrim",
+  "name": "Thorgrim the Black",
+  "desc": "Blackened iron helm, mail and crossbow."
+ },
+ "thorgrim_gilded": {
+  "hero": "thorgrim",
+  "name": "Goldbeard Thorgrim",
+  "desc": "Gilded helm and mail, polished for the feast hall."
+ },
+ "hruna_shadow": {
+  "hero": "hruna",
+  "name": "Hruna of the Dusk",
+  "desc": "Robes dyed the deep violet of a storm at nightfall."
+ },
+ "hruna_frost": {
+  "hero": "hruna",
+  "name": "Hruna Frostcaller",
+  "desc": "Pale ice-blue robes and frosted silver charms."
+ },
+ "lyssara_crimson": {
+  "hero": "lyssara",
+  "name": "Bloodmoon Lyssara",
+  "desc": "Crimson robes embroidered in gold."
+ },
+ "lyssara_frost": {
+  "hero": "lyssara",
+  "name": "Frostweave Lyssara",
+  "desc": "Robes of pale winter blue."
+ },
+ "snix_shadow": {
+  "hero": "snix",
+  "name": "Snix Nightcloak",
+  "desc": "A hood and leathers black as a moonless alley."
+ },
+ "snix_crimson": {
+  "hero": "snix",
+  "name": "Redcap Snix",
+  "desc": "A blood-red hood so everyone knows who robbed them."
+ },
+ "grukka_shadow": {
+  "hero": "grukka",
+  "name": "Grukka Ironhide",
+  "desc": "Charcoal leathers and black iron spikes."
+ },
+ "grukka_gilded": {
+  "hero": "grukka",
+  "name": "Warlord Grukka",
+  "desc": "Gold-capped spikes and a golden axe, taken from a king."
+ },
+ "vaelith_frost": {
+  "hero": "vaelith",
+  "name": "Moonsilver Vaelith",
+  "desc": "Leathers of pale moonlit silver."
+ },
+ "brannoc_gilded": {
+  "hero": "brannoc",
+  "name": "Goldvow Brannoc",
+  "desc": "A shield-oath sealed in gold."
+ },
+ "tavra_shadow": {
+  "hero": "tavra",
+  "name": "Obsidian Tavra",
+  "desc": "Her golden plate turned to black glass."
+ },
+ "korga_frost": {
+  "hero": "korga",
+  "name": "Frostfang Korga",
+  "desc": "Ice-blue steel and a frost-touched bow."
+ },
+ "zizzik_arcane": {
+  "hero": "zizzik",
+  "name": "Starweave Zizzik",
+  "desc": "His singed orange robe swapped for royal blue."
+ },
+ "seraphine_shadow": {
+  "hero": "seraphine",
+  "name": "Seraphine of the Veil",
+  "desc": "Black robes of a priestess who walks among the dead."
+ }
+}

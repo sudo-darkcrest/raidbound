@@ -145,7 +145,7 @@
     }
     const el = U.show('online', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Play online</h2><span class="sp"></span></div>
       ${body}<p class="netstatus">${esc(S.status)}</p>${S.err ? `<p class="neterr">${esc(S.err)}</p>` : ''}
-      <p class="sub" style="margin-top:2rem">Good to know: the online server runs on a free plan, so the first connection of the day can take up to a minute. If a friend drops out mid-raid, the AI plays their hero until they come back with the same code. Online play needs the game opened from the website or the downloaded file — it can't connect from inside the Claude preview.</p></div>`, true);
+      <p class="sub" style="margin-top:2rem">Good to know: the online server runs on a free plan, so the first connection of the day can take up to a minute. If a friend drops out mid-raid, the AI plays their hero until they come back with the same code.</p></div>`, true);
     el.onclick = onClick;
     el.onchange = e => { const sel = e.target.closest('.botpick'); if (!sel) return; const hid = sel.value; sendRaw({ t: 'botset', id: sel.dataset.bot, hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: RB.buildDeck(hid, null, S.lobby.players.length) }); };
   }

@@ -119,7 +119,7 @@
     morph(root, `<div class="table">
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <span class="bossdeck" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
-        <button class="btn small ghost" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost" data-act="rulesref">Rules</button><button class="btn small ghost" data-act="quit">Leave raid</button></div>
+        <button class="btn small ghost" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost iconbtn" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost" data-act="rulesref">Rules</button><button class="btn small ghost" data-act="quit">Leave raid</button></div>
       <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
         <div class="bossbar ${barFx}">
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<i class="orn r"></i></div>
@@ -480,6 +480,8 @@
     if (act && act.dataset.act === 'reveal') { view.curtain = null; view.focus = E.g.turn; return render(); }
     if (act && act.dataset.act === 'quit') return leave();
     if (act && act.dataset.act === 'rulesref') return U.dialog(`<h3>${esc(E.raid.name)}</h3><ul style="padding-left:1.1rem;color:#d8ccb0;line-height:1.5">${E.raid.rules.map(r => `<li><b style="color:var(--vellum)">${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul><p style="font-size:.92rem">Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.</p><div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok' });
+    if (act && act.dataset.act === 'mute') { U.toggleMute(); return render(); }
+    if (act && act.dataset.act === 'soundpop') return U.soundPop(act);
     if (act && act.dataset.act === 'speed') { const s = save.settings; s.speed = s.speed === 1 ? 0.55 : s.speed > 0.3 ? 0.15 : 1; U.persist(); return render(); }
     const focus = t.closest('[data-focus]');
     // targeting mode

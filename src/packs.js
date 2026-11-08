@@ -27,7 +27,7 @@
 
   /* ---------- tokens ---------- */
   TK.rimewolf = { id: 'rimewolf', name: 'Rimefang Wolf', type: 'ally', atk: 2, hp: 2, kw: ['ferocity'], race: 'Beast', art: { s: 'frost', L: [glow(150, 170, 80, '#bfeaff', 0.4), ['beast', { t: 'wolf', x: 150, y: 208, s: 1, fur: '#dfe8f4', eye: '#7ad8ff' }], ['fx', { t: 'frost', x: 150, y: 120 }]] } };
-  TK.hatchling = { id: 'hatchling', name: 'Gryphon Hatchling', type: 'ally', atk: 2, hp: 2, kw: ['ferocity'], race: 'Beast', art: { s: 'peaks', L: [glow(150, 120, 70, '#fff0c0', 0.4), ['beast', { t: 'gryphon', x: 150, y: 170, s: 0.6 }]] } };
+  TK.gryphlet = { id: 'gryphlet', name: 'Gryphon Hatchling', type: 'ally', atk: 2, hp: 2, kw: ['ferocity'], race: 'Beast', art: { s: 'peaks', L: [glow(150, 120, 70, '#fff0c0', 0.4), ['beast', { t: 'gryphon', x: 150, y: 170, s: 0.6 }]] } };
   TK.voidmote = { id: 'voidmote', name: 'Void Mote', atk: 0, hp: 1, ai: 'random', art: { s: 'void', L: [glow(150, 130, 70, '#b98aff', 0.7), ['obj', { t: 'shard', x: 150, y: 130, s: 0.8, col: '#b98aff' }], ['wisps', { x: 150, y: 130, w: 160, h: 90, n: 7, c: '#d0b0ff' }]] } };
 
   /* =================== EMBERFALL — fire, forge and fury (7 new) =================== */
@@ -57,7 +57,7 @@
     art: { s: 'frost', L: [glow(150, 120, 90, '#9ae8ff', 0.7), ['obj', { t: 'shard', x: 150, y: 116, s: 1.1, col: '#9ae8ff' }], ['fx', { t: 'frost', x: 150, y: 120 }]] } });
   add('frost', 'aurora', { name: 'Aurora Blessing', type: 'ability', speed: 'basic', cost: 3, rarity: 'u', target: 'none', tags: ['healAll', 'heal'], text: 'Heal 4 damage from each friendly hero.', run: async (E, c) => { for (const h of E.heroes()) await E.heal(E.heroT(h), 4); }, flavor: 'The sky remembers every hero who ever looked up.',
     art: { s: 'frost', pal: { light: '#b8ffe0' }, L: [['wisps', { x: 150, y: 70, w: 300, h: 70, n: 12, c: '#9affd0' }], glow(150, 80, 140, '#9affd0', 0.35), ['fx', { t: 'heal', x: 150, y: 120, c: '#b8ffe0' }], fig({ pose: 'pray', robe: 1, helm: 'hood', x: 150, y: 212, s: 0.7, cloth: '#e8f0f8' })] } });
-  add('frost', 'gryphonroost', { name: 'Skyreach Gryphon Roost', type: 'location', cost: 0, fac: 'concord', rarity: 'r', lcost: 4, text: 'Play as a resource. Once per turn: pay 4 to summon a 2/2 Gryphon Hatchling with Ferocity.', lrun: async (E, c) => E.summonAlly(c.p, 'hatchling', 1),
+  add('frost', 'gryphonroost', { name: 'Skyreach Gryphon Roost', type: 'location', cost: 0, fac: 'concord', rarity: 'r', lcost: 4, text: 'Play as a resource. Once per turn: pay 4 to summon a 2/2 Gryphon Hatchling with Ferocity.', lrun: async (E, c) => E.summonAlly(c.p, 'gryphlet', 1),
     art: { s: 'peaks', L: [glow(150, 110, 110, '#fff0c0', 0.4), ['beast', { t: 'gryphon', x: 170, y: 150, s: 0.75 }], ['beast', { t: 'gryphon', x: 70, y: 196, s: 0.38 }], ['obj', { t: 'banner', x: 250, y: 140, s: 0.45, col: '#2c50a6', em: '#ffd060' }]] } });
   add('frost', 'ysolde', { name: 'Ysolde, Frostwing Queen', type: 'ally', cost: 7, atk: 5, hp: 7, kw: ['unique', 'protector'], race: 'Elf', rarity: 'e', tags: ['stunAll', 'shield'], text: 'When Ysolde enters play, stun each enemy minion and prevent the next 4 damage to each friendly hero.', onEnter: async (E, c) => { for (const t of E.minions()) E.stun(t); for (const h of E.heroes()) E.shield(h, 4); },
     art: { s: 'frost', L: [glow(150, 100, 130, '#bfeaff', 0.6), ['beast', { t: 'gryphon', x: 236, y: 120, s: 0.5 }], ['fx', { t: 'frost', x: 150, y: 90 }], fig({ race: 'elf', pose: 'staff', w: 'staff', robe: 1, helm: 'crown', crownCol: '#bfeaff', gem: '#7ad8ff', glowL: '#bfeaff', cape: 1, capeCol: '#2a4a7a', x: 140, y: 216, s: 0.95, cloth: '#e8f0ff', hairCol: '#f4f8ff' })] } });
@@ -102,8 +102,8 @@
     const pk = a => a[Math.floor(rand() * a.length)];
     const own = RB.packPool(style), core = Object.values(C).filter(d => d.set === 'core');
     const byR = (list, r) => list.filter(d => d.rarity === r);
-    const rarity = () => { const x = rand(); return x < 0.06 ? 'e' : x < 0.24 ? 'r' : x < 0.55 ? 'u' : 'c'; };
-    const from = (list, r) => { let l = byR(list, r); while (!l.length) { r = { e: 'r', r: 'u', u: 'c', c: 'c' }[r]; l = byR(list, r); if (r === 'c' && !l.length) l = list; } return pk(l); };
+    const rarity = () => { const x = rand(); return x < 0.006 ? 'l' : x < 0.066 ? 'e' : x < 0.24 ? 'r' : x < 0.55 ? 'u' : 'c'; };
+    const from = (list, r) => { let l = byR(list, r); while (!l.length) { r = { l: 'e', e: 'r', r: 'u', u: 'c', c: 'c' }[r]; l = byR(list, r); if (r === 'c' && !l.length) l = list; } return pk(l); };
     const out = [];
     // three guaranteed cards from this wrapper's set, one uncommon or better
     out.push({ id: from(own, (() => { const r = rarity(); return r === 'c' ? 'u' : r; })()).id, holo: rand() < 0.2 });

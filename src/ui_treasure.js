@@ -20,7 +20,10 @@
     if (heroic) { const plain = out.find(x => !x.holo); if (plain) plain.holo = true; }
     return out;
   };
-  U.openPack = function (raidId, heroic, packEl, given) {
+  let packBusy = false; // #53: one purchase at a time; cleared when the cards are shown
+  U.packLock = () => { if (packBusy) return false; packBusy = true; return true; };
+  U.openPack = function (raidId, heroic, packEl, given, opts) {
+    const fromMarket = !!(opts && opts.market);
     const cards = given || U.rollPack(raidId, heroic);
     const booster = !!given;
     const style = booster ? (given.style || 'ember') : null, PS = booster ? RB.PACK_SETS[style] : null;
@@ -42,7 +45,8 @@
         ${booster ? `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">${RB.PACK_PRICE} gold each</span></div>
           <div class="packrow mini">${Object.entries(RB.PACK_STYLES).map(([k, v]) => `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buyagain', set: RB.PACK_SETS[k].name + ' Set', cls: save.gold >= RB.PACK_PRICE ? '' : 'broke', data: `data-style="${k}"`, label: `Buy another ${v.name} booster pack for ${RB.PACK_PRICE} gold` })}<div class="pname">${v.name}${k === style ? ' <small>(again)</small>' : ''}</div></div>`).join('')}</div>
           ${save.gold >= RB.PACK_PRICE ? `<button class="btn primary" data-act="buyagain">Another ${PS.name} pack — ${RB.PACK_PRICE} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${RB.PACK_PRICE - save.gold} more gold for another pack. Go raid!</p>`}</div>` : ''}
-        <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">Raid again</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+        <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster || fromMarket ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">Raid again</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+      packBusy = false;
       if (newBoards && newBoards.length) setTimeout(() => U.toast(`Unlocked: ${newBoards.map(id => RB.COSMETICS[id].name).join(', ')}! Pick it in the Vault.`), 1200);
       $$('.packcards .card', el).forEach(c => c.style.setProperty('--cw', '100%'));
       $$('.packcards .card', el).forEach(c => { c.style.width = '100%'; });
@@ -53,10 +57,10 @@
         const a = e.target.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'all') return $$('.flip', el).forEach((f, i) => setTimeout(() => flip(f), i * 180));
         if (a.dataset.act === 'again') return U.setup();
-        if (a.dataset.act === 'market') return U.market();
+        if (a.dataset.act === 'market') return U.market(fromMarket ? { tab: 'treasure' } : null);
         if (a.dataset.act === 'buyagain') {
           if (save.gold < RB.PACK_PRICE) return U.toast(`A pack costs ${RB.PACK_PRICE} gold. You have ${save.gold}.`);
-          if (el.dataset.busy) return; el.dataset.busy = '1';
+          if (packBusy) return; packBusy = true;
           save.gold -= RB.PACK_PRICE; U.persist(); U.hidePreview();
           const packEl = a.classList.contains('tcgpack') ? a : $('.againbox .tcgpack', el);
           return U.openPack(null, false, packEl, RB.rollBooster());
@@ -88,42 +92,7 @@
       <div class="crimp bottom"></div></div>`;
   };
 
-  /* ---------- the Market: spend raid gold on booster packs and heroes (#26, #27) ---------- */
-  U.market = function (opts) {
-    const price = RB.PACK_PRICE;
-    const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
-    const heroes = RB.UNLOCK_HEROES.map(id => {
-      const h = RB.HEROES[id], open = U.heroOpen(id), buy = h.unlock.how.startsWith('gold:') ? +h.unlock.how.slice(5) : 0;
-      return `<div class="mhero ${open ? 'open' : ''}"><img alt="" src="${U.cardArt(id)}"><div><h4>${esc(h.name)}</h4><div class="sub">${RB.FACTIONS[h.fac].short} ${esc(h.race)} ${RB.CLASSES[h.cls].name} · ${h.hp} health</div><p><b>${esc(h.power.name)}:</b> ${esc(h.power.text)}</p>
-        ${open ? '<span class="chip ok">Unlocked — pick them in raid setup</span>' : buy ? `<button class="btn small ${save.gold >= buy ? 'primary' : ''}" data-buyhero="${id}" ${save.gold >= buy ? '' : 'disabled'}>Buy for ${buy} gold</button>` : `<span class="chip">To unlock: ${esc(h.unlock.text)}</span>`}</div></div>`;
-    }).join('');
-    const el = U.show('market', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Market</h2><span class="sp"></span><span class="goldchip big">${save.gold} gold</span></div>
-      <p class="lede">Every raid pays you gold, win or lose. You get more for winning, for damage dealt to the boss, for each minion destroyed and for healing your party. Heroic raids pay 25% extra.</p>
-      <h3 class="sec">Booster packs</h3>
-      <p class="lede">Each wrapper is its own set of cards. Every pack holds <b>5 cards</b>: at least three from that set (one uncommon or better), and the rest are usually from the set too, with the odd regular card. Some come as holofoils. Open 5 of one kind to unlock its table theme.</p>
-      <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => { const PS = RB.PACK_SETS[k], pool = RB.packPool(k), got = pool.filter(d => (save.owned[d.id] || 0) > 0).length, opened = (save.packs || {})[k] || 0;
-        return `<div class="packpick setpick" style="--sc:${PS.col}">${U.packHTML({ theme: k, art: v.art, act: 'buy', set: PS.name + ' Set', data: `data-style="${k}"`, label: `Buy a ${v.name} booster pack for ${price} gold` })}<div class="pname">${v.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(PS.blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${save.gold >= price ? 'primary' : ''}" data-act="buy" data-style="${k}" ${save.gold >= price ? '' : 'disabled'}>Buy — ${price} gold</button></div>`; }).join('')}</div>
-      ${save.gold < price ? `<p class="lede" style="text-align:center">You need ${price - save.gold} more gold for a pack. Go raid!</p>` : ''}
-      <p class="lede" style="text-align:center">You have found <b>${have} of ${fr.length}</b> booster cards. New cards go straight into your collection and can be used in <b>My deck</b> and <b>Auto deck</b>.</p>
-      <div class="codebox goldcode"><span>Have a gold code?</span><input id="goldcode" placeholder="RBG-XXXXX-XXXXX" aria-label="Gold code" maxlength="17"><button class="btn" data-act="goldcode">Redeem</button>${opts && opts.msg ? `<span class="${opts.msg.ok ? 'okmsg' : 'errmsg'}">${esc(opts.msg.text)}</span>` : ''}</div>
-      <h3 class="sec">Heroes for hire</h3><p class="lede">Six new heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p>
-      <div class="mheroes">${heroes}</div></div>`);
-    el.onclick = e => {
-      const a = e.target.closest('[data-act]'), bh = e.target.closest('[data-buyhero]');
-      if (bh) { const id = bh.dataset.buyhero, cost = +RB.HEROES[id].unlock.how.slice(5); if (save.gold < cost) return U.toast('Not enough gold yet.'); save.gold -= cost; save.heroes.push(id); U.persist(); U.sfx.quest(); U.toast(`${RB.HEROES[id].name} joins you! Pick them in raid setup.`); return U.market(); }
-      if (!a) return;
-      if (a.dataset.act === 'back') return U.title();
-      if (a.dataset.act === 'goldcode') return U.market({ msg: U.redeemGold($('#goldcode').value) });
-      if (a.dataset.act === 'buy') {
-        if (save.gold < price) return U.toast(`A pack costs ${price} gold. You have ${save.gold}.`);
-        save.gold -= price; U.persist();
-        const st = a.dataset.style || 'ember';
-        const packEl = a.classList.contains('tcgpack') ? a : $(`.tcgpack[data-style="${st}"]`, el);
-        return U.openPack(null, false, packEl, RB.rollBooster(null, st));
-      }
-    };
-    el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'buy') e.target.click(); if (e.key === 'Enter' && e.target.id === 'goldcode') el.querySelector('[data-act=goldcode]').click(); };
-  };
+  /* the Market lives in market.js */
 
   /* ---------- boot ---------- */
   function boot() {
