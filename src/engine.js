@@ -429,10 +429,12 @@
       if (!isActive(p) || !itemReady(p, e)) return { ok: false, why: 'This item can\'t be used right now.' };
       if (d.use.target && d.use.target !== 'none' && (!target || !targetsFor(d.use.target, p).some(t => same(t, target)))) return { ok: false, why: 'Choose a target.' };
       pay(p, d.use.cost);
-      if (d.use.destroy) { p.items.splice(p.items.indexOf(e), 1); p.grave.push(e.c); }
+      if (d.use.destroy) p.items.splice(p.items.indexOf(e), 1);
       if (d.use.exhaust) e.ex = true;
       log(`${pdef(p).name} uses ${d.name}.`, 'play');
       await d.urun(api, { p, target });
+      // #78: a used-up item reaches the discard only after its effect, so "destroy this to draw" can't reshuffle and redraw itself
+      if (d.use.destroy) p.grave.push(e.c);
       H.update();
       return { ok: true };
     }
@@ -503,7 +505,7 @@
       // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
       if (g.round >= RB.ENRAGE_ROUND) {
         B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
-        log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round from now on.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
+        log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round and can no longer be intercepted by Protectors.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
         if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
       }
       if (raid.counter) {
@@ -571,7 +573,8 @@
     async function resolveEnemyAttack(attackerName, atkVal, targetT, attackerRef, isBoss) {
       let defT = targetT;
       if (targetT.t === 'hero') {
-        const pr = protectorFor(targetT.p);
+        // #78: an Enraged boss's strike goes straight past Protectors (a wall of fresh tokens could stall a fight forever)
+        const pr = isBoss && g.boss.enrage ? null : protectorFor(targetT.p);
         if (pr) { pr.ex = true; defT = T.ally(targetT.p, pr); log(`${allyDef(pr).name} steps in to protect ${pdef(targetT.p).name}!`, 'def'); }
       }
       log(`${attackerName} attacks ${nameOf(defT)}.`, 'boss');
