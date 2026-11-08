@@ -322,7 +322,6 @@
  "campcook": "9b8d0af7-2a7a-4659-9526-e70eb9aab95c",
  "warhammer": "c945064b-d2b5-4cd0-b90e-c14b68c9c6bf",
  "tamebeast": "b95be5e2-9593-464c-b450-d842e4ea1cd6",
- "volley": "d353f230-299f-4d16-ab03-63938ac7a285",
  "bladeflurry": "d9cb8d5e-5588-4cf6-acf9-43ad6d001359",
  "sinister": "14bc4fca-a167-4879-815b-2a28b34116da",
  "holynova": "d7c46d12-6e9b-40c6-8c84-64eb4805a4a3",
@@ -332,5 +331,6 @@
  "rimefang": "48b2340f-1c7d-4159-a763-7acc2128bb02",
  "starseer": "31892082-8f2a-48b1-9efc-863bec04d4b7",
  "gryphonroost": "3ae3df2a-f66a-438e-a82c-5416cffa41b5",
- "voidacolyte": "cff2ea4d-b55e-48e5-9f54-41d69034dfd5"
+ "voidacolyte": "cff2ea4d-b55e-48e5-9f54-41d69034dfd5",
+ "volley_rejected": "d353f230-299f-4d16-ab03-63938ac7a285"
 }

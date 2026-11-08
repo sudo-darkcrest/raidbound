@@ -80,7 +80,7 @@ S = {
 'holynova': (CORE, 'a priest with a golden sun pendant releasing a burst of holy golden light in an expanding ring inside a temple'),
 'sinister': (CORE, 'a hooded rogue striking with a dagger, a quick glowing slash, dark alley'),
 'bladeflurry': (CORE, 'a rogue spinning with two daggers, a blur of slashes around her under the moon'),
-'volley': (CORE, 'a volley of arrows darkening the sky over a pine forest, an elf archer firing'),
+'volley': (CORE, 'a line of elf archers on a forested ridge loosing their bows together, dozens of arrows flying side by side in one smooth arc across the sky toward the far side of the valley, every arrow pointing the same way'),
 'tamebeast': (CORE, 'a ranger calming a huge wild boar with bristly ridged back in a forest clearing'),
 'warhammer': (CORE, 'a heavy two-handed steel warhammer resting against a boulder on a mountainside'),
 'satchel': (CORE, "a plain brown leather healer's satchel spilling glowing green and red potions and rolled bandages onto a wooden table"),
