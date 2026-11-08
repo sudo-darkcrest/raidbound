@@ -122,8 +122,8 @@
         <button class="btn small ghost" data-act="speed" title="Animation speed">${speed() === 1 ? 'Speed: normal' : speed() < 0.3 ? 'Speed: very fast' : 'Speed: fast'}</button><button class="btn small ghost iconbtn" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost" data-act="rulesref">Rules</button><button class="btn small ghost" data-act="quit">Leave raid</button></div>
       <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
         <div class="bossbar ${barFx}">
-          <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<i class="orn r"></i></div>
-          <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}<div class="txt">${bhp} <small>/ ${B.maxHp}</small><em>${Math.ceil(hpPct)}%</em></div></div><span class="cap r"></span></div>
+          <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
+          <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
           <div class="bossrow">${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span><span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
         </div>
@@ -137,7 +137,7 @@
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
         <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
-      <div class="handbar"><div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) && showHand ? '' : 'other'} ${showHand ? '' : 'hidden'}">${hand}${!showHand && view.curtain == null ? `<div class="handnote">${esc(E.pdef(p).name)}'s hand · ${p.hand.length} card${p.hand.length === 1 ? '' : 's'} · hidden</div>` : ''}</div>
+      <div class="handbar">${g.cfg.bossPlayer ? `<div class="hand bosshand">${(B.hand || []).map((id, k, arr) => `<div class="hc bosshc" data-bc="${id}" style="transform:rotate(${((k - (arr.length - 1) / 2) * 3).toFixed(1)}deg)">${U.cardHTML(id)}</div>`).join('') || '<div class="handnote">Your boss cards arrive on your turn</div>'}<div class="bhlabel">${esc(raid.short)}\'s hand</div>` : `<div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) && showHand ? '' : 'other'} ${showHand ? '' : 'hidden'}">${hand}${!showHand && view.curtain == null ? `<div class="handnote">${esc(E.pdef(p).name)}'s hand · ${p.hand.length} card${p.hand.length === 1 ? '' : 's'} · hidden</div>` : ''}`}</div>
         ${view.curtain != null && view.curtain === p.idx ? `<div class="curtain"><b>${esc(E.pdef(p).name)}'s turn</b><span>Pass the computer to ${esc(E.pdef(p).name)}'s player. Everyone else, look away!</span><button class="btn primary" data-act="reveal">Show my hand</button></div>` : ''}
         <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
@@ -145,7 +145,7 @@
     <div class="side"><div class="roster"><h5>Party</h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
     const lb = $('.logbox', root); if (lb) lb.scrollTop = lb.scrollHeight;
     const hEl = $('.hand', root);
-    if (hEl && n) { const hc = hEl.querySelector('.hc'); const cw = hc.offsetWidth || 140; const room = hEl.clientWidth - cw * 0.5; const ov = Math.min(-cw * 0.12, (room - n * cw) / (2 * n)); view.ov = Math.max(-cw * 0.42, ov) + 'px'; hEl.style.setProperty('--ov', Math.max(-cw * 0.42, ov) + 'px'); }
+    if (hEl && n && !g.cfg.bossPlayer && hEl.querySelector('.hc')) { const hc = hEl.querySelector('.hc'); const cw = hc.offsetWidth || 140; const room = hEl.clientWidth - cw * 0.5; const ov = Math.min(-cw * 0.12, (room - n * cw) / (2 * n)); view.ov = Math.max(-cw * 0.42, ov) + 'px'; hEl.style.setProperty('--ov', Math.max(-cw * 0.42, ov) + 'px'); }
     if (view.hpGhost !== hpPct) setTimeout(() => { view.hpGhost = hpPct; const gh = $('.hpbar .ghost', root); if (gh) gh.style.width = hpPct + '%'; }, 30);
   }
 
@@ -269,7 +269,7 @@
     if (kind === 'bossPick') {
       const v = await U.dialog(`<h3>${esc(E.raid.short)}: play a card</h3><p>You are the raid boss. Choose a card from your hand to play — <b>${d.left} more</b> this turn. Cards you don't play stay in your hand for next turn.</p>
         <div class="cards">${d.hand.map((id, i) => `<div class="pick" data-v="${i}">${U.cardHTML(id)}</div>`).join('')}</div>
-        <div class="acts"><button class="btn ghost" data-v="0">Play the first card</button></div>`, { dismiss: '0' });
+        <div class="acts"><button class="btn ghost" data-v="0">Play the first card</button></div>`, { dismiss: '0', cls: 'wide bosspick' });
       return v == null ? 0 : +v;
     }
     if (kind === 'bossTarget') {
@@ -589,12 +589,20 @@
   function bossEndScreen() {
     const g = E.g, raid = g.raid, bossWon = g.over === 'lose';
     const slain = g.players.filter(p => p.hero.dead).length;
-    const parts = [['Result', bossWon ? 110 : 35], ['Heroes defeated', slain * 20], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.4 / Math.max(1, g.players.length))]];
+    // #59: beating AI heroes is easy money, so it pays much less (and Heroic, which makes the boss stronger, pays less again).
+    // Against real players the full payout stands.
+    const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some(s => s && !s.auto && s.owner));
+    const n = Math.max(1, g.players.length), heroic = g.cfg.difficulty === 'heroic';
+    const raw = vsHumans ? [['Result', bossWon ? 110 : 35], ['Heroes defeated', slain * 20], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.4 / n)]]
+      : [['Result', bossWon ? 50 : 15], ['Heroes defeated', slain * 8], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.15 / n)]];
+    const mult = vsHumans ? 1 : heroic ? 0.7 : 1;
+    const parts = raw.map(([k, v]) => [k, Math.round(v * mult)]);
+    if (!vsHumans) parts.push([heroic ? 'Against AI heroes · Heroic (boss is stronger) ×0.7' : 'Against AI heroes', 0]);
     const total = parts.reduce((s, x) => s + x[1], 0);
     save.gold = (save.gold || 0) + total; save.bossWins = (save.bossWins || 0) + (bossWon ? 1 : 0); U.persist();
     if (bossWon) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
     const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${slain}/${g.players.length}</b>heroes defeated</div><div><b>${Math.max(0, E.bossHp())}</b>health left</div></div>`;
-    const goldBox = `<div class="goldbox"><div class="gtitle">+${total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${parts.map(([k, v]) => `<span>${esc(k)} <b>+${v}</b></span>`).join('')}</div></div>`;
+    const goldBox = `<div class="goldbox"><div class="gtitle">+${total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${parts.map(([k, v]) => v ? `<span>${esc(k)} <b>+${v}</b></span>` : `<span class="gnote">${esc(k)}</span>`).join('')}</div></div>`;
     const el = U.show('end', `<div class="endscreen ${bossWon ? '' : 'lose'}"><h2>${bossWon ? 'The raid is crushed' : 'The heroes prevail'}</h2><p class="tagline">${bossWon ? `As ${esc(raid.boss)}, you wiped the whole party.` : `${esc(raid.boss)} has fallen. The heroes will tell this story for years.`}</p>${stats}${goldBox}
       <div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Play again</button><button class="btn" data-act="party">Change heroes</button><button class="btn" data-act="market">Market</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {

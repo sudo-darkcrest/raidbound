@@ -49,7 +49,7 @@
     const heroHp = p => heroMax(p) - p.hero.damage;
     const alive = () => g.players.filter(p => !p.hero.dead);
     const gear = p => [p.weapon, ...Object.values(p.armor), ...p.items].filter(Boolean);
-    const spellPower = p => gear(p).reduce((s, e) => s + (C[e.c.id].spell || 0), 0);
+    const spellPower = p => gear(p).reduce((s, e) => s + (C[e.c.id].spell || 0), 0) + (p.hero.master ? (C[p.hero.master].spell || 0) : 0);
     const itemSum = (p, key) => p.items.reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
     const heroAtk = p => p.hero.tempAtk + gear(p).reduce((s, e) => s + (C[e.c.id].heroAtk || 0), 0) + (p.hero.master ? (C[p.hero.master].heroAtk || 0) : 0);
     const allyDef = a => def(a.id);

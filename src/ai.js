@@ -275,6 +275,7 @@
   RB.legalFor = function (heroId, d) {
     const h = RB.HEROES[heroId];
     if (!d || d.type === 'hero') return false;
+    if (d.hero && d.hero !== heroId) return false; // #57: an Ascended Master Hero belongs to one hero
     if (d.fac !== 'neutral' && d.fac !== h.fac) return false;
     if (d.cls && !d.cls.includes(h.cls)) return false;
     if (d.prof && !h.profs.includes(d.prof)) return false;

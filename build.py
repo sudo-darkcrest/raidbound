@@ -5,7 +5,7 @@ fonts = [('Grenze Gotisch', 500, 'normal', 'grenze-gotisch-latin-500-normal.woff
          ('Alegreya SC', 700, 'normal', 'alegreya-sc-latin-700-normal.woff2'), ('Alegreya SC', 800, 'normal', 'alegreya-sc-latin-800-normal.woff2')]
 ff = ''.join(f"@font-face{{font-family:'{n}';font-weight:{w};font-style:{s};font-display:swap;src:url(data:font/woff2;base64,{base64.b64encode((src/f).read_bytes()).decode()}) format('woff2');}}\n" for n, w, s, f in fonts)
 css = (src/'style.css').read_text()
-js = '\n'.join((src/f).read_text() for f in ['art_gen.js', 'art_core.js', 'art_fig.js', 'art_obj.js', 'art_hero.js', 'data.js', 'engine.js', 'ai.js', 'frontier.js', 'packs.js', 'expansion.js', 'skins.js', 'ui_core.js', 'audio.js', 'ui_screens.js', 'ui_battle.js', 'online.js', 'ui_treasure.js', 'market.js'])
+js = '\n'.join((src/f).read_text() for f in ['art_gen.js', 'art_core.js', 'art_fig.js', 'art_obj.js', 'art_hero.js', 'data.js', 'engine.js', 'ai.js', 'frontier.js', 'packs.js', 'expansion.js', 'skins.js', 'masters.js', 'ui_core.js', 'audio.js', 'ui_screens.js', 'ui_battle.js', 'online.js', 'ui_treasure.js', 'market.js'])
 html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
