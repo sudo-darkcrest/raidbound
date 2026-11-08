@@ -576,6 +576,8 @@
   A.uri = function (spec, key) {
     const k = key || JSON.stringify(spec);
     if (cache[k]) return cache[k];
+    // painted art already has the vignette baked in: hand back the picture itself (a URL on the website, data URI offline)
+    if (A.BAKED && spec.img !== false) { const gk = spec.img || (key && key.indexOf(':') > 0 ? key.split(':')[1] : null); if (gk && A.GEN && A.GEN[gk]) return (cache[k] = A.GEN[gk]); }
     const svg = A.svg(spec, key);
     // blob URLs keep the (photo-carrying) SVGs out of the DOM strings; data URIs are the fallback
     if (A.useBlobs === true) {

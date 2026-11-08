@@ -32,6 +32,7 @@
       <div class="row"><button class="btn" data-go="market">Market <span class="goldchip">${save.gold}</span></button><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
       <div class="traids">${raids}</div>
+      ${RB.WEB_BUILD ? '<a class="dl" href="Raidbound.html" download="Raidbound.html">⬇ Download to play offline</a>' : ''}
       ${wins ? `<div class="wins">Raids conquered: ${wins} · Cards collected: ${Object.keys(save.owned).filter(k => save.owned[k] > 0).length}</div>` : ''}</div>`);
     el.classList.toggle('alt', alt);
     el.onclick = e => {

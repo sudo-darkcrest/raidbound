@@ -9,4 +9,4 @@ for spec in sys.argv[1:]:
     W,H=im.size; tw=int(H*300/220); x0=max(0,min(W-tw,int((W-tw)*cx)))
     im.crop((x0,0,x0+tw,H)).resize((600,440),Image.LANCZOS).save(f'gen/{cid}.webp','WEBP',quality=80,method=6)
     print('ok',cid)
-subprocess.run(['python3','gen_art.py'],check=True)
+subprocess.run(["python3","gen_art.py"],check=True)

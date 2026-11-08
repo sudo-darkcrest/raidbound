@@ -547,6 +547,8 @@
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
     U.currentGame = E;
+    // website build: warm the cache with this fight's pictures so cards don't pop in
+    if (RB.WEB_BUILD) { const ids = new Set([...cfg.party.map(s => s.hero), ...cfg.party.flatMap(s => s.deck.map(c => typeof c === 'string' ? c : c.id)), ...E.g.boss.deck, ...Object.keys(RB.TOKENS)]); setTimeout(() => ids.forEach(id => { const u = U.cardArt(id); if (u && !u.startsWith('data:')) { const im = new Image(); im.decoding = 'async'; im.src = u; } }), 50); }
     E.g.onAiStep = () => wait(550);
     RB.AUDIO.music((E.raid && E.raid.music) || cfg.raid);
     root.onclick = onClick;

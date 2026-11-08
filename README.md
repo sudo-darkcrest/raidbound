@@ -2,12 +2,10 @@
 
 A high-fantasy raid card game. One to four heroes, each with their own deck, take on a raid boss that plays a deck of its own. Build a party, gear up with weapons and armour, complete quests, and bring down the boss for treasure.
 
-The whole game is a single self-contained HTML file. It needs no install or server, and it works offline.
-
 ## Play
 
-- Download `index.html` and double-click it, or
-- turn on **GitHub Pages** for this repo (Settings → Pages → Deploy from branch → `main` / root). The game is then at `https://sudo-darkcrest.github.io/raidbound/`.
+- **Online:** https://raidbound.onrender.com — a small page that loads pictures only as they are needed, so it starts fast.
+- **Offline:** download `public/Raidbound.html` (or use the *Download to play offline* link on the title screen) and double-click it. Every picture is packed inside, so it needs no internet.
 
 Progress (collection, decks, loot codes, cosmetics) is saved in your browser.
 
@@ -33,7 +31,7 @@ Progress (collection, decks, loot codes, cosmetics) is saved in your browser.
 The game is plain JavaScript and CSS in `src/`. You need Python 3 to bundle it:
 
 ```
-python build.py        # writes index.html (fonts, photos and code all embedded)
+python build.py        # optimises gen/*.webp and writes dist/raidbound.html (single file) and dist/web/ (index.html + art/)
 python gen_photos.py   # rebuilds src/art_photos.js after you change photos/*.jpg
 node tools/sim.js 20   # optional: AI-vs-boss balance simulation (20 games per matchup)
 ```

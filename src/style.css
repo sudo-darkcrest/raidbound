@@ -781,3 +781,4 @@ b.legend { color: #ffb040; text-shadow: 0 0 8px rgba(255, 170, 60, .6); }
 .usedloot { margin: .6rem 0 0; padding: .5rem .8rem; border-radius: 8px; background: rgba(10, 8, 14, .45); border: 1px solid var(--gilt-lo); }
 .usedloot summary { cursor: pointer; color: var(--muted); } .usedloot ul { margin: .4rem 0 0; padding-left: 1rem; font-size: .9rem; } .usedloot code { color: #ffe0a0; }
 .cosgrid.lootgrid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.title .dl, #title .dl { display: inline-block; margin-top: .8rem; font-family: var(--f-sc); font-size: .85rem; color: var(--gilt-hi); text-decoration: none; border-bottom: 1px dotted var(--gilt-lo); opacity: .85; } #title .dl:hover { opacity: 1; }
