@@ -69,6 +69,8 @@ S = {
 'rifleman': (CORE, 'a stout dwarf marksman in a horned iron helm and fur cloak, kneeling to aim a long black-powder rifle with a brass-banded wooden stock, a puff of smoke at the muzzle, on a snowy mountain ridge'),
 'ogre': (CORE, 'a huge dim-witted ogre swinging a giant wooden club, a war camp behind him'),
 'ram': (CORE, 'a big highland mountain ram with curled horns charging down a rocky slope'),
+'mistranger': (CORE, 'Mistwood Ranger, a hooded elf archer in a dark green cloak and leather armour, standing among ferns in a misty ancient forest, shooting a longbow with correct archery form: the bow is held upright in her outstretched left hand, an arrow is nocked on the string and rests against the bow beside her left hand, and her right hand draws the string straight back to her cheek, so the arrow points forward at an unseen target'),
+'greathunt': ('Frostwing set (ice, beasts and the far north)', 'The Great Hunt: a stout bearded dwarf hunter in a horned helm and fur cloak kneeling on a mossy boulder, aiming a heavy crossbow at a huge brown bear rearing up and roaring in a misty pine forest; the crossbow is loaded, with a steel-tipped bolt clearly resting in its groove, the string drawn back and locked, ready to fire'),
 'squire': (CORE, 'an eager young human squire in a simple blue-and-gold tabard raising a round shield in front of a wounded knight, a golden glow of protection around them, castle courtyard'),
 'bard': (CORE, 'an elf bard in a purple cape playing a lute in a tavern, swirls of golden light rising from the strings'),
 'divineshield': (CORE, 'a paladin kneeling inside a glowing golden dome of holy light, radiant beams, a dark battlefield around him'),

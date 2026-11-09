@@ -35,7 +35,8 @@ def main(args):
         if sid not in SKINS: print('unknown skin', sid); continue
         hero = SKINS[sid]['hero']
         src = Image.open(path).convert('RGB')
-        card, x0, score = best_crop(src, Image.open(gen / f'{hero}.webp').convert('RGB'))
+        art = {'dawnarchon': 'archon', 'redwarlord': 'warlord', 'tempestavatar': 'tempest'}.get(hero, hero)  # the gold-bought heroes' paintings have older names
+        card, x0, score = best_crop(src, Image.open(gen / f'{art}.webp').convert('RGB'))
         card = card.resize((600, 440), Image.LANCZOS)
         card.save(painted / f'{sid}.webp', 'WEBP', quality=86, method=6)
         card.save(gen / f'skin_{sid}.webp', 'WEBP', quality=80, method=6)

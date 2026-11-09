@@ -40,5 +40,9 @@ def ascend(src, col, cx, cy, seed):
         dr.polygon([(x, y - s * 2.2), (x + s * .45, y - s * .45), (x + s * 2.2, y), (x + s * .45, y + s * .45), (x, y + s * 2.2), (x - s * .45, y + s * .45), (x - s * 2.2, y), (x - s * .45, y - s * .45)], fill=fill)
     return res
 if __name__ == '__main__':
+    import json
+    # Ascended heroes painted in Gemini (listed in gemini/in_game.json) are never overwritten
+    painted = set(json.loads((gen.parent / 'gemini' / 'in_game.json').read_text()))
     for i, (hid, (src, col, cx, cy)) in enumerate(HEROES.items()):
+        if f'asc_{hid}' in painted: print('skip (painted)', hid); continue
         p = gen / f'asc_{hid}.webp'; ascend(src, col, cx, cy, i * 7 + 3).save(p, 'WEBP', quality=80, method=6); print(p.name, p.stat().st_size // 1024, 'KB')
