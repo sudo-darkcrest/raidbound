@@ -384,8 +384,10 @@ body:has(> .overlay:not(.clear)) .floater { z-index: 40; } /* numbers stay behin
 .pack.tear { animation: tear .6s forwards; }
 @keyframes tear { 40% { transform: scale(1.06) rotate(2deg); } 100% { transform: translateY(-60vh) rotate(-25deg); opacity: 0; } }
 .packcards { display: flex; gap: 1.1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; --cw: clamp(150px, 14vw, 200px); }
-.packcards.many { --cw: clamp(110px, 9.5vw, 160px); gap: .8rem; max-width: 1100px; margin-left: auto; margin-right: auto; }
-.packcards.lots { --cw: clamp(96px, 8.4vw, 140px); gap: .6rem; }
+/* #106: 10- and 20-card packs open in neat rows of 5 */
+.packcards.many { display: grid; grid-template-columns: repeat(5, var(--cw)); justify-content: center; --cw: clamp(112px, 11.5vw, 178px); gap: .8rem; }
+.packcards.lots { --cw: clamp(100px, 9.6vw, 150px); gap: .6rem; }
+@media (max-width: 760px) { .packcards.many, .packcards.lots { --cw: calc((100vw - 2.6rem) / 5 - .35rem); gap: .35rem; } }
 .bulkbuy { display: flex; flex-direction: column; gap: .35rem; margin-top: .4rem; align-items: center; }
 .flip { width: var(--cw); aspect-ratio: 5/7; perspective: 1200px; cursor: pointer; animation: dealin .5s backwards; }
 .flip .inner { position: relative; width: 100%; height: 100%; transition: transform .7s cubic-bezier(.3, 1.3, .5, 1); transform-style: preserve-3d; }
@@ -1193,6 +1195,17 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   .fg-u { min-width: 4.4rem; } .fg-u .fg-i { width: 2.8rem; height: 2.8rem; }
   .dialog.guidedlg .fg-pages { max-height: 62vh; }
 }
+
+/* #108 raid and dungeon stories */
+.lore { max-width: 1100px; margin: 1.2rem auto 0; padding: 1rem 1.4rem 1.1rem; border-radius: 8px; border: 1px solid rgba(201, 162, 90, .35); border-left: 4px solid var(--lc, var(--gilt-hi));
+  background: radial-gradient(120% 90% at 0% 0%, rgba(255, 236, 196, .06), transparent 60%), linear-gradient(#1a140e, #120e0a); }
+.lore h3 { margin: 0 0 .4rem; font-family: var(--f-display); color: var(--gilt-hi); font-size: 1.4rem; }
+.lore p { margin: .45rem 0 0; color: #ddd0b2; line-height: 1.6; font-size: 1rem; }
+.lore p:first-of-type::first-letter { font-family: var(--f-display); font-weight: 900; font-size: 2.6em; float: left; line-height: .78; margin: .1em .08em 0 0; color: var(--ember-hi); }
+.lore.inline { margin: .6rem 0 .8rem; padding: .2rem 0 .2rem .9rem; border: 0; border-left: 3px solid var(--dc, var(--gilt-hi)); background: none; border-radius: 0; }
+.lore.inline p { font-size: .95rem; }
+.fg-page .fg-lore { font-style: italic; color: #e2d4b4; margin: .35rem 0; }
+@media (max-width: 760px) { .lore { padding: .8rem .9rem; } .lore p { font-size: .94rem; } }
 
 </style>
 </head>
@@ -4129,7 +4142,7 @@ globalThis.RB.WEB_BUILD = true;
     thorgrim: {
       id: 'thorgrim', name: 'Thorgrim Ashbeard', fac: 'concord', race: 'Dwarf', cls: 'ranger', spec: 'Beastmaster', profs: ['engineering', 'skinning'], hp: 33,
       flavor: '"Me and Skarr have never missed. Well. Skarr hasn\'t."',
-      power: { name: 'Volley of the Peaks', text: 'Deal 3 damage to each enemy.', target: 'none', tags: ['aoe'], run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 3, { p: c.p, kind: 'power' }); } },
+      power: { name: 'Volley of the Peaks', text: 'Deal 3 damage to each enemy.', target: 'none', tags: ['aoe'], run: async (E, c) => { for (const t of E.aoe(E.enemies(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'power' }); } },
       art: { s: 'peaks', L: [fig({ race: 'dwarf', pose: 'aim', w: 'crossbow', helm: 'horned', pauld: 'fur', x: 130, y: 210, s: 1.05, belt: '#c89a50' }), ['beast', { t: 'bird', x: 236, y: 112, s: 0.42, eye: '#ffe27a' }]] },
     },
     lyssara: {
@@ -4199,7 +4212,7 @@ globalThis.RB.WEB_BUILD = true;
   add('holystrike', { name: 'Holy Strike', type: 'ability', speed: 'basic', cost: 1, cls: ['paladin'], target: 'enemy', tags: ['dmg', 'heal'], dmg: 3, text: 'Deal 3 damage to an enemy. Heal 2 damage from your hero.', run: async (E, c) => { await E.dmg(c.target, 3, { p: c.p, kind: 'spell' }); await E.heal(E.heroT(c.p), 2); }, art: { s: 'holy', L: [fig({ pose: 'heroic', w: 'hammer', helm: 'great', wGlow: '#fff6c0', x: 140, y: 210, s: 0.9, pauld: 'plate' }), ['fx', { t: 'sparkle', n: 8 }]] } });
   add('aegis', { name: 'Divine Aegis', type: 'ability', speed: 'instant', react: 'friendHero', cost: 2, cls: ['paladin'], target: 'friendlyHero', tags: ['shield'], shield: 6, text: 'Prevent the next 6 damage to a friendly hero.', run: async (E, c) => E.shield(c.target.p, 6), art: { s: 'holy', L: [fig({ pose: 'pray', helm: 'great', plume: false, pauld: 'plate', x: 150, y: 196, s: 0.85 }), ['fx', { t: 'barrier', r: 95, c: '#fff2b0' }]] } });
   add('challenge', { name: 'Righteous Challenge', type: 'ability', speed: 'basic', cost: 1, cls: ['paladin'], target: 'none', tags: ['taunt', 'shield'], shield: 3, text: 'Taunt: the boss and its minions must attack your hero until your next turn. Prevent the next 3 damage to your hero.', run: async (E, c) => { E.taunt(c.p); E.shield(c.p, 3); }, art: { s: 'castle', L: [['fx', { t: 'shout', x: 150, y: 110 }], fig({ pose: 'heroic', w: 'sword', off: 'shield', helm: 'great', cape: 1, x: 150, y: 210, s: 0.88 })] } });
-  add('consecration', { name: 'Consecration', type: 'ability', speed: 'basic', cost: 3, cls: ['paladin'], target: 'none', tags: ['aoe'], dmg: 2, rarity: 'u', text: 'Deal 2 damage to each enemy.', run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); }, art: { s: 'temple', L: [['fx', { t: 'runes', x: 150, y: 190, r: 120, c: '#ffe080' }], fig({ pose: 'pray', w: 'hammer', helm: 'great', x: 150, y: 200, s: 0.8 })] } });
+  add('consecration', { name: 'Consecration', type: 'ability', speed: 'basic', cost: 3, cls: ['paladin'], target: 'none', tags: ['aoe'], dmg: 2, rarity: 'u', text: 'Deal 2 damage to each enemy.', run: async (E, c) => { for (const t of E.aoe(E.enemies(), 2)) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); }, art: { s: 'temple', L: [['fx', { t: 'runes', x: 150, y: 190, r: 120, c: '#ffe080' }], fig({ pose: 'pray', w: 'hammer', helm: 'great', x: 150, y: 200, s: 0.8 })] } });
   add('blessing', { name: 'Blessing of Might', type: 'ability', speed: 'basic', cost: 2, cls: ['paladin'], target: 'ally', tags: ['buff'], text: 'Give a friendly ally +2 ATK and +2 health permanently.', run: async (E, c) => E.buffAlly(c.target, 2, 2), art: { s: 'holy', L: [['fx', { t: 'buff', x: 150, y: 150 }], fig({ pose: 'cast', helm: 'great', x: 150, y: 206, s: 0.85, glowL: '#ffe890', glowR: '#ffe890' })] } });
   add('reckoning', { name: 'Light\'s Reckoning', type: 'ability', speed: 'basic', cost: 5, cls: ['paladin'], target: 'enemy', tags: ['dmg', 'heal'], dmg: 8, rarity: 'r', text: 'Deal 8 damage to an enemy. Heal 4 damage from your hero.', run: async (E, c) => { await E.dmg(c.target, 8, { p: c.p, kind: 'spell' }); await E.heal(E.heroT(c.p), 4); }, art: { s: 'holy', L: [['fx', { t: 'holy', x: 150, wings: 1, wy: 110 }], fig({ pose: 'heroic', w: 'greatsword', helm: 'great', cape: 1, wGlow: '#fff4c0', x: 150, y: 210, s: 0.85 })] } });
 
@@ -4207,7 +4220,7 @@ globalThis.RB.WEB_BUILD = true;
   add('mortalstrike', { name: 'Mortal Strike', type: 'ability', speed: 'basic', cost: 2, cls: ['warrior'], target: 'enemy', tags: ['dmg'], dmg: 4, text: 'Deal 4 damage to an enemy. If your hero has a weapon, deal 6 instead.', run: async (E, c) => E.dmg(c.target, c.p.weapon ? 6 : 4, { p: c.p, kind: 'spell' }), art: { s: 'steppe', L: [['fx', { t: 'slash', x: 210, y: 100, c: '#ff4a2a' }], fig({ race: 'orc', pose: 'charge', w: 'greatsword', helm: 'horned', x: 130, y: 210, s: 0.88, wGlow: '#ff6a3a' })] } });
   add('shieldwall', { name: 'Shield Wall', type: 'ability', speed: 'instant', react: 'hero', cost: 3, cls: ['warrior'], target: 'none', tags: ['shield'], shield: 8, text: 'Prevent the next 8 damage to your hero.', run: async (E, c) => E.shield(c.p, 8), art: { s: 'castle', L: [fig({ race: 'dwarf', pose: 'stand', off: 'tower', oA: 0, w: 'axe', helm: 'great', plume: false, x: 150, y: 210, s: 1.0, emblem: GOLD }), ['fx', { t: 'barrier', r: 80, c: '#ffd890' }]] } });
   add('battleshout', { name: 'Battle Shout', type: 'ability', speed: 'basic', cost: 1, cls: ['warrior'], target: 'none', tags: ['draw', 'buff'], text: 'Your hero and allies get +1 ATK this turn. Draw a card.', run: async (E, c) => { E.tempAtk(c.p, 1); E.allyTempAtk(c.p, 1); await E.draw(c.p, 1); }, art: { s: 'steppe', L: [['fx', { t: 'shout', x: 150, y: 90, c: '#ffb070' }], fig({ race: 'orc', pose: 'cast', helm: 'mohawk', pauld: 'spiked', x: 150, y: 210, s: 0.86 })] } });
-  add('whirlwind', { name: 'Whirlwind', type: 'ability', speed: 'basic', cost: 3, cls: ['warrior'], target: 'none', tags: ['aoe'], dmg: 3, rarity: 'u', text: 'Deal 3 damage to each enemy minion and 2 damage to the boss.', run: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'spell' }); await E.dmg(E.bossT(), 2, { p: c.p, kind: 'spell' }); }, art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 140, c: '#ffc090' }], fig({ race: 'orc', pose: 'dual', w: 'axe', off: 'axe', x: 150, y: 210, s: 0.86 })] } });
+  add('whirlwind', { name: 'Whirlwind', type: 'ability', speed: 'basic', cost: 3, cls: ['warrior'], target: 'none', tags: ['aoe'], dmg: 3, rarity: 'u', text: 'Deal 3 damage to each enemy minion and 2 damage to the boss.', run: async (E, c) => { for (const t of E.aoe(E.minions(), 3, 4)) await E.dmg(t, 3, { p: c.p, kind: 'spell' }); await E.dmg(E.bossT(), 2, { p: c.p, kind: 'spell' }); }, art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 140, c: '#ffc090' }], fig({ race: 'orc', pose: 'dual', w: 'axe', off: 'axe', x: 150, y: 210, s: 0.86 })] } });
   add('taunt', { name: 'Taunting Roar', type: 'ability', speed: 'basic', cost: 1, cls: ['warrior'], target: 'none', tags: ['taunt', 'draw'], text: 'Taunt: the boss and its minions must attack your hero until your next turn. Draw a card.', run: async (E, c) => { E.taunt(c.p); await E.draw(c.p, 1); }, art: { s: 'storm', L: [['fx', { t: 'shout', x: 160, y: 100 }], fig({ race: 'orc', pose: 'heroic', w: 'axe', off: 'round', helm: 'horned', x: 150, y: 210, s: 0.86 })] } });
   add('execute', { name: 'Execute', type: 'ability', speed: 'basic', cost: 3, cls: ['warrior'], target: 'enemy', tags: ['dmg'], dmg: 4, rarity: 'u', text: 'Deal 4 damage to an enemy. If it is at half health or less, deal 10 instead.', run: async (E, c) => E.dmg(c.target, E.hpOf(c.target) * 2 <= E.maxHpOf(c.target) ? 10 : 4, { p: c.p, kind: 'spell' }), art: { s: 'volcano', L: [fig({ race: 'orc', pose: 'heroic', w: 'battleaxe', helm: 'mohawk', wGlow: '#ff3a1a', x: 150, y: 214, s: 0.86 }), ['fx', { t: 'slash', x: 160, y: 120, c: '#ff2a1a' }]] } });
 
@@ -4215,9 +4228,9 @@ globalThis.RB.WEB_BUILD = true;
 
   // ---------- Mage ----------
   add('fireball', { name: 'Fireball', type: 'ability', speed: 'basic', cost: 2, cls: ['mage'], target: 'enemy', tags: ['dmg'], dmg: 4, text: 'Deal 4 damage to an enemy.', run: D(4), flavor: 'The oldest spell. Still the most persuasive.', art: { s: 'void', L: [['fx', { t: 'fireball', x: 200, y: 92, ang: 28 }], fig({ race: 'elf', pose: 'castF', robe: 1, helm: 'hair', glowR: '#ff9a3a', x: 80, y: 214, s: 0.7 })] } });
-  add('frostnova', { name: 'Frost Nova', type: 'ability', speed: 'instant', cost: 2, cls: ['mage'], target: 'none', tags: ['stunAll'], text: 'Deal 1 damage to each enemy minion. They can\'t attack during the next boss turn.', run: async (E, c) => { for (const t of E.minions()) { await E.dmg(t, 1, { p: c.p, kind: 'spell' }); E.stun(t); } }, art: { s: 'frost', L: [fig({ race: 'elf', pose: 'cast', robe: 1, helm: 'hair', glowL: '#bff4ff', glowR: '#bff4ff', x: 150, y: 206, s: 0.82 }), ['fx', { t: 'frost', x: 150, y: 180, s: 1.1 }]] } });
+  add('frostnova', { name: 'Frost Nova', type: 'ability', speed: 'instant', cost: 2, cls: ['mage'], target: 'none', tags: ['stunAll'], text: 'Deal 1 damage to each enemy minion. They can\'t attack during the next boss turn.', run: async (E, c) => { for (const t of E.aoe(E.minions(), 1)) { await E.dmg(t, 1, { p: c.p, kind: 'spell' }); E.stun(t); } }, art: { s: 'frost', L: [fig({ race: 'elf', pose: 'cast', robe: 1, helm: 'hair', glowL: '#bff4ff', glowR: '#bff4ff', x: 150, y: 206, s: 0.82 }), ['fx', { t: 'frost', x: 150, y: 180, s: 1.1 }]] } });
   add('missiles', { name: 'Arcane Missiles', type: 'ability', speed: 'basic', cost: 1, cls: ['mage'], target: 'none', tags: ['dmgRandom'], dmg: 3, text: 'Deal 1 damage to a random enemy three times.', run: async (E, c) => { for (let i = 0; i < 3; i++) { const t = E.randomEnemy(); if (t) await E.dmg(t, 1, { p: c.p, kind: 'spell' }); } }, art: { s: 'arcane', L: [['fx', { t: 'meteors', n: 4, c: '#c890ff' }], ['fx', { t: 'runes', x: 90, y: 170, r: 50 }], fig({ race: 'elf', pose: 'castF', robe: 1, helm: 'hood', glowR: '#d0a0ff', x: 90, y: 210, s: 0.72 })] } });
-  add('blizzard', { name: 'Blizzard', type: 'ability', speed: 'basic', cost: 4, cls: ['mage'], target: 'none', tags: ['aoe'], dmg: 3, rarity: 'u', text: 'Deal 3 damage to each enemy.', run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 3, { p: c.p, kind: 'spell' }); }, art: { s: 'frost', p: 'snow', pn: 60, L: [['fx', { t: 'frost', x: 80, y: 60, s: 0.6 }], ['fx', { t: 'frost', x: 220, y: 90, s: 0.7 }], ['fx', { t: 'frost', x: 150, y: 150, s: 0.5 }]] } });
+  add('blizzard', { name: 'Blizzard', type: 'ability', speed: 'basic', cost: 4, cls: ['mage'], target: 'none', tags: ['aoe'], dmg: 3, rarity: 'u', text: 'Deal 3 damage to each enemy.', run: async (E, c) => { for (const t of E.aoe(E.enemies(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'spell' }); }, art: { s: 'frost', p: 'snow', pn: 60, L: [['fx', { t: 'frost', x: 80, y: 60, s: 0.6 }], ['fx', { t: 'frost', x: 220, y: 90, s: 0.7 }], ['fx', { t: 'frost', x: 150, y: 150, s: 0.5 }]] } });
   add('pyroblast', { name: 'Pyroblast', type: 'ability', speed: 'basic', cost: 6, cls: ['mage'], target: 'enemy', tags: ['dmg'], dmg: 10, rarity: 'r', text: 'Deal 10 damage to an enemy.', run: D(10), art: { s: 'volcano', L: [['fx', { t: 'fireball', x: 170, y: 104, ang: 10, s: 1.5 }], fig({ race: 'human', pose: 'cast', robe: 1, helm: 'wizard', glowL: '#ffb040', glowR: '#ffb040', x: 70, y: 214, s: 0.62 })] } });
   add('manasurge', { name: 'Mana Surge', type: 'ability', speed: 'basic', cost: 0, cls: ['mage'], target: 'none', tags: ['ramp'], text: 'Gain 2 extra resources this turn.', run: async (E, c) => E.gainRes(c.p, 2), art: { s: 'arcane', L: [['fx', { t: 'runes', x: 150, y: 120, r: 90, flat: 1, c: '#9ad0ff' }], ['obj', { t: 'shard', x: 150, y: 120, s: 0.9, col: '#9ad0ff' }]] } });
   add('polymorph', { name: 'Polymorph', type: 'ability', speed: 'basic', cost: 3, cls: ['mage'], target: 'minion', tags: ['removal'], rarity: 'u', text: 'Transform an enemy minion into a 0/1 Sheep with no abilities.', run: async (E, c) => E.transform(c.target, 'sheep'), flavor: 'Baa.', art: { s: 'forest', L: [['beast', { t: 'sheep', x: 150, y: 200, s: 1.3 }], ['fx', { t: 'sparkle', n: 14, c: '#e6d0ff' }]] } });
@@ -4238,7 +4251,7 @@ globalThis.RB.WEB_BUILD = true;
   add('backstab', { name: 'Backstab', type: 'ability', speed: 'basic', cost: 0, cls: ['rogue'], target: 'enemy', tags: ['dmg'], dmg: 2, text: 'Deal 2 damage to an enemy. If your hero has a dagger, deal 4 instead.', run: async (E, c) => E.dmg(c.target, c.p.weapon && C[c.p.weapon.c.id].wtype === 'dagger' ? 4 : 2, { p: c.p, kind: 'spell' }), art: { s: 'rooftops', L: [fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', wGlow: '#ff4a6a', x: 150, y: 210, s: 1.1, eye: '#ffd060' })] } });
   add('poisonblades', { name: 'Poisoned Blades', type: 'ability', speed: 'basic', cost: 1, cls: ['rogue'], target: 'none', tags: ['buff'], text: 'Your hero gets +3 ATK until end of turn.', run: async (E, c) => E.tempAtk(c.p, 3), art: { s: 'altar', pal: { light: '#b0ff8a', glow: '#8aff5a' }, L: [['obj', { t: 'daggers', x: 150, y: 110, glow: '#8aff5a', venom: '#8aff5a' }]] } });
   add('evasion', { name: 'Evasion', type: 'ability', speed: 'instant', react: 'hero', cost: 1, cls: ['rogue'], target: 'none', tags: ['elusive'], text: 'Your hero is Shrouded until your next turn.', run: async (E, c) => E.elusive(c.p), art: { s: 'rooftops', L: [['fx', { t: 'shadow', x: 150, y: 140, c: '#6a5aff' }], fig({ race: 'goblin', pose: 'crouch', w: 'dagger', off: 'dagger', helm: 'hood', spectral: '#8a7aff', x: 150, y: 206, s: 1.05 })] } });
-  add('fanknives', { name: 'Fan of Knives', type: 'ability', speed: 'basic', cost: 2, cls: ['rogue'], target: 'none', tags: ['aoeMinion', 'draw'], dmg: 2, text: 'Deal 2 damage to each enemy minion. Draw a card.', run: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); await E.draw(c.p, 1); }, art: { s: 'rooftops', L: [['fx', { t: 'shadow', x: 150, y: 110, daggers: 7, c: '#9a8aff' }], fig({ race: 'goblin', pose: 'dual', helm: 'hood', x: 150, y: 210, s: 1.05 })] } });
+  add('fanknives', { name: 'Fan of Knives', type: 'ability', speed: 'basic', cost: 2, cls: ['rogue'], target: 'none', tags: ['aoeMinion', 'draw'], dmg: 2, text: 'Deal 2 damage to each enemy minion. Draw a card.', run: async (E, c) => { for (const t of E.aoe(E.minions(), 2)) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); await E.draw(c.p, 1); }, art: { s: 'rooftops', L: [['fx', { t: 'shadow', x: 150, y: 110, daggers: 7, c: '#9a8aff' }], fig({ race: 'goblin', pose: 'dual', helm: 'hood', x: 150, y: 210, s: 1.05 })] } });
   add('ambush', { name: 'Ambush', type: 'ability', speed: 'basic', cost: 3, cls: ['rogue'], target: 'enemy', tags: ['dmg'], dmg: 6, rarity: 'u', text: 'Deal 6 damage to an enemy.', run: D(6), art: { s: 'forest', L: [fig({ race: 'goblin', pose: 'charge', w: 'dagger', off: 'dagger', helm: 'hood', x: 170, y: 150, s: 0.9, rot: 0, eye: '#ffd060' }), ['fx', { t: 'slash', x: 120, y: 160, c: '#c0a0ff' }]] } });
   add('pickpocket', { name: 'Pickpocket', type: 'ability', speed: 'basic', cost: 1, cls: ['rogue'], target: 'none', tags: ['draw'], text: 'Draw 2 cards.', run: async (E, c) => E.draw(c.p, 2), art: { s: 'tavern', L: [fig({ race: 'goblin', pose: 'castF', helm: 'hood', x: 120, y: 212, s: 1.1, eye: '#ffd060' }), ['obj', { t: 'coin', x: 210, y: 120, s: 0.5 }], ['obj', { t: 'coin', x: 230, y: 140, s: 0.4 }]] } });
   add('kidneyshot', { name: 'Kidney Shot', type: 'ability', speed: 'instant', cost: 2, cls: ['rogue'], target: 'enemy', tags: ['stun'], text: 'Stun an enemy. A stunned minion can\'t attack next boss turn; a stunned boss skips its next strike.', run: async (E, c) => E.stun(c.target), art: { s: 'rooftops', L: [['fx', { t: 'sparkle', n: 8, c: '#ffe080' }], fig({ race: 'goblin', pose: 'charge', w: 'mace', helm: 'hood', x: 150, y: 210, s: 1.05 })] } });
@@ -4247,7 +4260,7 @@ globalThis.RB.WEB_BUILD = true;
 
   // ---------- Ranger ----------
   add('aimedshot', { name: 'Aimed Shot', type: 'ability', speed: 'basic', cost: 2, cls: ['ranger'], target: 'enemy', tags: ['dmg'], dmg: 4, text: 'Deal 4 damage to an enemy. If your hero has a bow or crossbow, deal 5 instead.', run: async (E, c) => E.dmg(c.target, c.p.weapon && ['bow', 'crossbow'].includes(C[c.p.weapon.c.id].wtype) ? 5 : 4, { p: c.p, kind: 'spell' }), art: { s: 'peaks', L: [fig({ race: 'dwarf', pose: 'aim', w: 'bow', wGlow: '#ffe080', helm: 'horned', x: 130, y: 210, s: 1.0 })] } });
-  add('multishot', { name: 'Multi-Shot', type: 'ability', speed: 'basic', cost: 3, cls: ['ranger'], target: 'none', tags: ['aoe'], dmg: 2, text: 'Deal 2 damage to each enemy.', run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); }, art: { s: 'castle', L: [['fx', { t: 'arrows', n: 12 }]] } });
+  add('multishot', { name: 'Multi-Shot', type: 'ability', speed: 'basic', cost: 3, cls: ['ranger'], target: 'none', tags: ['aoe'], dmg: 2, text: 'Deal 2 damage to each enemy.', run: async (E, c) => { for (const t of E.aoe(E.enemies(), 2)) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); }, art: { s: 'castle', L: [['fx', { t: 'arrows', n: 12 }]] } });
   add('companion', { name: 'Call Companion', type: 'ability', speed: 'basic', cost: 2, cls: ['ranger'], target: 'none', tags: ['summon'], text: 'Summon a 2/2 Wolf Companion with Swift and Bulwark.', run: async (E, c) => E.summonAlly(c.p, 'wolfcomp', 1), art: { s: 'forest', L: [['beast', { t: 'wolf', x: 190, y: 206, s: 0.9, shadow: 60 }], fig({ race: 'dwarf', pose: 'stand', w: 'axe', helm: 'horned', x: 90, y: 210, s: 0.85 })] } });
   add('huntersmark', { name: 'Hunter\'s Mark', type: 'ability', speed: 'basic', cost: 1, cls: ['ranger'], target: 'none', tags: ['mark'], text: 'Until your next turn, the boss takes 2 extra damage from every source.', run: async (E, c) => E.mark(c.p, 2), art: { s: 'forest', L: [['fx', { t: 'runes', x: 150, y: 110, r: 60, flat: 1, c: '#ff5a3a' }], ['fx', { t: 'runes', x: 150, y: 110, r: 30, flat: 1, c: '#ffb090' }]] } });
   add('rapidfire', { name: 'Rapid Fire', type: 'ability', speed: 'basic', cost: 4, cls: ['ranger'], target: 'none', tags: ['dmgRandom'], dmg: 8, rarity: 'u', text: 'Deal 2 damage to a random enemy four times.', run: async (E, c) => { for (let i = 0; i < 4; i++) { const t = E.randomEnemy(); if (t) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); } }, art: { s: 'storm', L: [['fx', { t: 'arrows', n: 8, ang: 8 }], fig({ race: 'dwarf', pose: 'aim', w: 'bow', helm: 'horned', x: 90, y: 210, s: 0.9 })] } });
@@ -4270,7 +4283,7 @@ globalThis.RB.WEB_BUILD = true;
   add('twinfang', { name: 'Twinfang Daggers', type: 'weapon', wtype: 'dagger', cost: 1, atk: 2, strike: 0, flavor: 'One for each kidney.', art: { s: 'rooftops', L: [['obj', { t: 'daggers', x: 150, y: 110 }]] } });
   add('stiletto', { name: 'Venomkiss Stiletto', type: 'weapon', wtype: 'dagger', cost: 3, atk: 3, strike: 1, rarity: 'u', text: 'When your hero attacks with this, deal 2 damage to a random enemy.', onAttack: async (E, c) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); }, art: { s: 'grove', L: [['obj', { t: 'daggers', x: 150, y: 110, single: 1, glow: '#8aff5a', venom: '#8aff5a' }]] } });
   add('earthmace', { name: 'Mace of the Earthmother', type: 'weapon', wtype: 'mace', cost: 2, atk: 2, strike: 1, text: 'When your hero attacks with this, heal 2 damage from your most wounded hero.', onAttack: async (E, c) => { const h = E.mostWounded(); if (h) await E.heal(E.heroT(h), 2); }, art: { s: 'grove', L: [['obj', { t: 'maceItem', x: 150, y: 110 }]] } });
-  add('halberd', { name: 'Stormreach Halberd', type: 'weapon', wtype: 'polearm', cost: 3, atk: 4, strike: 1, rarity: 'u', text: 'When your hero attacks with this, deal 1 damage to each enemy minion.', onAttack: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, art: { s: 'storm', L: [['obj', { t: 'polearmItem', x: 150, y: 110, s: 0.9, lightning: 1 }]] } });
+  add('halberd', { name: 'Stormreach Halberd', type: 'weapon', wtype: 'polearm', cost: 3, atk: 4, strike: 1, rarity: 'u', text: 'When your hero attacks with this, deal 1 damage to each enemy minion.', onAttack: async (E, c) => { for (const t of E.aoe(E.minions(), 1)) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, art: { s: 'storm', L: [['obj', { t: 'polearmItem', x: 150, y: 110, s: 0.9, lightning: 1 }]] } });
 
   // ---------- armor ----------
   add('breastplate', { name: 'Dawnforged Breastplate', type: 'armor', slot: 'chest', atype: 'plate', cost: 3, def: 3, use: 1, art: { s: 'forge', L: [['obj', { t: 'breastplate', x: 150, y: 110, emblem: '#ffd060' }]] } });
@@ -4322,7 +4335,7 @@ globalThis.RB.WEB_BUILD = true;
   add('tempest', { name: 'Avatar of the Tempest', type: 'master', cost: 6, hp: 30, rarity: 'r', text: 'Replaces your hero (damage and gear carry over). At the start of your turn, deal 3 damage to a random enemy.', mstart: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 3, { p, kind: 'effect' }); }, art: { s: 'storm', L: [['fx', { t: 'bolt', x1: 100, y1: 0, x2: 140, y2: 80 }], ['fx', { t: 'bolt', x1: 220, y1: 0, x2: 170, y2: 90 }], fig({ pose: 'cast', robe: 1, helm: 'flowhair', glowL: '#cfe8ff', glowR: '#cfe8ff', x: 150, y: 196, s: 0.85, spectral: '#9ac8ff', eye: '#fff' })] } });
 
   // ---------- raid treasure (epic) ----------
-  add('cinderfang', { name: 'Cinderfang, Tyrant\'s Edge', type: 'weapon', wtype: 'sword', cost: 3, atk: 5, strike: 1, rarity: 'e', set: 'molten', text: 'When your hero attacks with this, deal 1 damage to each other enemy.', onAttack: async (E, c) => { for (const t of E.enemies()) if (!E.same(t, c.defender)) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, art: { s: 'volcano', L: [['obj', { t: 'sword', x: 150, y: 100, s: 0.95, glow: '#ff6a1a', flame: 1, gem: '#ff3a1a' }]] } });
+  add('cinderfang', { name: 'Cinderfang, Tyrant\'s Edge', type: 'weapon', wtype: 'sword', cost: 3, atk: 5, strike: 1, rarity: 'e', set: 'molten', text: 'When your hero attacks with this, deal 1 damage to each other enemy.', onAttack: async (E, c) => { for (const t of E.aoe(E.enemies().filter(t => !E.same(t, c.defender)), 1, 4)) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, art: { s: 'volcano', L: [['obj', { t: 'sword', x: 150, y: 100, s: 0.95, glow: '#ff6a1a', flame: 1, gem: '#ff3a1a' }]] } });
   add('tyrantheart', { name: 'Heart of the Cinder Tyrant', type: 'item', cost: 3, rarity: 'e', set: 'molten', spell: 1, text: 'Your spells and powers deal +1 damage. At the start of your turn, deal 1 damage to a random enemy.', start: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 1, { p, kind: 'effect' }); }, art: { s: 'volcano', L: [['obj', { t: 'heart', x: 150, y: 110 }]] } });
   add('hatchling', { name: 'Emberwing Hatchling', type: 'ally', cost: 3, atk: 3, hp: 4, kw: ['ferocity', 'longrange'], race: 'Dragonkin', rarity: 'e', set: 'molten', flavor: 'It imprinted on the first thing it saw. Unfortunately, that was you.', art: { s: 'volcano', L: [['dragon', { x: 150, y: 150, s: 0.6, eye: '#ffe27a' }]] } });
   add('soulreaper', { name: 'Soulreaper Scythe', type: 'weapon', wtype: 'polearm', cost: 4, atk: 5, strike: 1, rarity: 'e', set: 'crypt', text: 'When your hero attacks with this, heal 3 damage from your hero.', onAttack: async (E, c) => E.heal(E.heroT(c.p), 3), art: { s: 'crypthall', L: [['obj', { t: 'polearmItem', kind: 'scythe', x: 160, y: 110, glow: '#4aff9a', tilt: -20 }]] } });
@@ -4605,6 +4618,8 @@ globalThis.RB.WEB_BUILD = true;
   const noop = async () => { };
 
   RB.ENRAGE_ROUND = 25; // fix-sim: see bossTurn
+  RB.AOE_CAP = 5; // #109: players' hit-all effects reach at most this many enemies
+  RB.BOSS_MINION_CAP = 7; // #109: the most minions a boss can have on the table at once
   RB.DUNGEON_PARTY_STRIKE = 1; // fix-sim: each extra hero adds 1 more to dungeon strikes (on top of the usual +1)
   RB.HEROIC_EXTRA_CARDS = 1; // fix-sim: Heroic raids reveal one more boss card each turn (smarter decks made Heroic too easy)
   RB.newGame = function (cfg, hooks) {
@@ -5486,6 +5501,23 @@ globalThis.RB.WEB_BUILD = true;
       // the round whose boss turn brings the next omen (for the battle screen)
       nextOmenRound: () => { if (!g.boss.omens || !g.boss.omens.length) return null; let r = g.round; while (!api.omenDue(r) || g.boss.omenRound === r) r++; return r; },
       strikeNow: () => raid.strike + g.boss.strikeBonus + (g.boss.tempStrike || 0) + g.partyFury,
+      // #109: a player's hit-all effect reaches at most 5 enemies. The game keeps the boss, then the minions it hurts most:
+      // Guardians (and the Leviathan Maw) first, then the ones this hit would kill, then the hardest hitters. Bosses' own effects are not limited.
+      aoe: (list, amount, cap) => {
+        const CAP = cap || RB.AOE_CAP; // cap 4 when the same card also hits the boss or a chosen target
+        if (!list || list.length <= CAP) return list;
+        const n = amount || 0, boss = list.filter(t => t.t === 'boss'), mins = list.filter(t => t.t === 'minion');
+        const score = t => {
+          const d = minDef(t.m), hp = hpOf(t), real = n - (hasKw(d, 'thickhide') ? 1 : 0);
+          let s = minAtk(t.m) * 5 - hp * 0.2;
+          if (hasKw(d, 'guardian')) s += 1000;
+          if (raid.halvedBy && t.m.id === raid.halvedBy) s += 900;
+          if (n && hp <= real) s += 500;
+          return s;
+        };
+        const keep = new Set([...boss, ...mins.slice().sort((a, b) => score(b) - score(a)).slice(0, Math.max(0, CAP - boss.length))]);
+        return list.filter(t => keep.has(t));
+      },
       takeOff, canBail: p => !!(raid.bail && isActive(p) && g.boss.counter > 0 && !p.bailed && available(p) >= raid.bail.cost),
       bail: async p => {
         if (!api.canBail(p)) return { ok: false, why: raid.bail ? (p.bailed ? 'You have already bailed water this turn.' : g.boss.counter <= 0 ? 'The water is already low.' : `Bailing costs ${raid.bail.cost} resource.`) : 'Nothing to bail here.' };
@@ -5542,7 +5574,12 @@ globalThis.RB.WEB_BUILD = true;
       transform: async (t, id) => { if (t.t !== 'minion') return; const old = minDef(t.m).name; t.m.id = id; t.m.damage = 0; t.m.atkB = 0; t.m.hpB = 0; log(`${old} is transformed into a ${TK[id].name}!`, 'def'); await H.anim('summon', { ref: t.m.uid }); H.update(); },
       revive: async (p, hp) => { if (!p.hero.dead) return; p.hero.dead = false; p.hero.damage = heroMax(p) - hp; log(`${pdef(p).name} returns to the fight!`, 'win'); await H.anim('heal', { ref: 'hero' + p.idx, amount: hp }); H.update(); },
       summonAlly: async (p, id, k) => { for (let i = 0; i < k; i++) { const a = { uid: uid(), id, c: null, damage: 0, ex: false, sick: true, atkB: 0, hpB: 0, tmp: 0, frozen: false, token: id }; a.sick = !allyKw(p, a, 'ferocity'); p.allies.push(a); H.update(); await H.anim('summon', { ref: a.uid }); } log(`${pdef(p).name} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'play'); },
-      summonMinion: async (id, k) => { if (g.players.length === 1 && k > 1) k = Math.ceil(k / 2); for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); for (const p of g.players) { const q = perkIs(p, 'firstMinion'); if (q && !p.hero.petUsed && !p.hero.dead && g.boss.minions.includes(m)) { p.hero.petUsed = true; log(`${petName(p)} dives at the ${TK[id].name}.`, 'def'); await dmg(T.minion(m), q.n, { p, kind: 'effect' }); } } } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
+      summonMinion: async (id, k) => { if (g.players.length === 1 && k > 1) k = Math.ceil(k / 2);
+        // #109: the boss's side of the table holds at most 7 minions (players' hit-all cards stop at 5, so endless swarms would be unbeatable)
+        const room = RB.BOSS_MINION_CAP - g.boss.minions.length;
+        if (room <= 0) { log(`${raid.short}'s side of the table is full: no more minions can join.`, 'boss'); return; }
+        k = Math.min(k, room);
+        for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); for (const p of g.players) { const q = perkIs(p, 'firstMinion'); if (q && !p.hero.petUsed && !p.hero.dead && g.boss.minions.includes(m)) { p.hero.petUsed = true; log(`${petName(p)} dives at the ${TK[id].name}.`, 'def'); await dmg(T.minion(m), q.n, { p, kind: 'effect' }); } } } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
       buffMinions: (a, h) => { g.boss.minions.forEach(m => { m.atkB += a; m.hpB += h; }); H.update(); },
       bossHeal: async k => heal(T.boss(), k),
       addCounter: async k => { if (!raid.counter) return; g.boss.counter += k; H.update(); if (g.boss.counter >= raid.counter.max) { g.boss.counter = 0; await raid.counter.onMax(api); } },
@@ -5577,9 +5614,11 @@ globalThis.RB.WEB_BUILD = true;
   function enemyValue(E, t, dmg) {
     const shieldId = E.raid.halvedBy, shielded = shieldId && E.g.boss.minions.some(m => m.id === shieldId); // #102 the Maw halves Nethys's damage
     if (t.t === 'boss') { const hp = E.bossHp(), B = E.g.boss, d2 = shielded ? Math.ceil(dmg / 2) : dmg; return hp <= d2 ? 1000 : d2 * 1.05 + (B.flying ? (B.ground + dmg >= B.groundMax ? 8 : dmg * 0.4) : 0); }
-    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), guard = (d.kw || []).includes('guardian') || d.id === shieldId;
-    if (dmg >= hp) return 10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3;
-    return dmg * 0.55 + (guard ? 4 : 0);
+    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), kw = d.kw || [], guard = kw.includes('guardian') || d.id === shieldId;
+    // #110: Thick Hide soaks 1 of every hit; Ambush and Crushing minions are worth killing first; chipping a Frenzy minion only makes it angrier
+    const eff = Math.max(0, dmg - (kw.includes('thickhide') ? 1 : 0));
+    if (eff >= hp) return 10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3 + (kw.includes('ambush') ? 3 : 0) + (kw.includes('crushing') ? 2 : 0);
+    return eff * 0.55 + (guard ? 4 : 0) - (kw.includes('frenzy') && eff > 0 ? 1.5 : 0);
   }
   function bestEnemy(E, p, dmg, list) {
     let best = null, bs = -1;
@@ -5597,6 +5636,29 @@ globalThis.RB.WEB_BUILD = true;
     return best;
   }
   AI.enemyTarget = (E, p, dmg) => bestEnemy(E, p, dmg).t;
+  // #110: is something nasty coming this boss turn? (a Soak omen or an omen that powers up the strike)
+  function dangerSoon(E) {
+    const B = E.g.boss;
+    if (!B.omens || !B.omens.length || !E.nextOmenRound || E.nextOmenRound() !== E.g.round) return false;
+    const o = RB.BOSSCARDS[B.omens[B.omens.length - 1]];
+    return !!(o && (o.soak || /strike this turn/.test(o.text || '')));
+  }
+  // #110: keep enough resources ready on your turn to play a React card (or defensive Instant) when the boss comes for you.
+  // Resources ready again at the start of your own turn, so holding one back costs nothing next turn.
+  function reactReserve(E, p) {
+    let cheapest = null;
+    for (const c of p.hand) {
+      const d = C[c.id], t = d.tags || [];
+      if (d.type !== 'ability' || d.speed !== 'instant' || !(d.react || t.includes('shield') || t.includes('elusive'))) continue;
+      if (cheapest == null || d.cost < cheapest) cheapest = d.cost;
+    }
+    if (cheapest == null) return 0;
+    const hpPct = E.heroHp(p) / E.heroMax(p), heroes = E.heroes();
+    const top = heroes.reduce((a, b) => (b.threat > a.threat ? b : a), heroes[0]);
+    const likely = heroes.length === 1 || top === p || hpPct < 0.6 || dangerSoon(E) || (E.raid.dungeon && hpPct < 0.75);
+    return likely ? cheapest : 0;
+  }
+  AI.reactReserve = reactReserve;
 
   // score a playable card; returns {s, target}
   function scoreCard(E, p, inst) {
@@ -5648,7 +5710,7 @@ globalThis.RB.WEB_BUILD = true;
         }
         if (tags.includes('aoe') || tags.includes('aoeMinion')) {
           const dmg = (d.dmg || 2) + sp; let s = 0;
-          for (const t of (tags.includes('aoeMinion') ? E.minions() : E.enemies())) s += t.t === 'boss' ? dmg : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
+          for (const t of E.aoe(tags.includes('aoeMinion') ? E.minions() : E.enemies(), dmg)) s += t.t === 'boss' ? dmg : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
           if (d.id === 'whirlwind') s += 2 + sp;
           return { s: s + (tags.includes('draw') ? 4 : 0) };
         }
@@ -5711,7 +5773,7 @@ globalThis.RB.WEB_BUILD = true;
       const bossPct = E.bossHp() / E.g.boss.maxHp;
       let s = -1, target = null;
       if (tags.includes('dmg')) { const b = bestEnemy(E, p, (pw.dmg || 8) + E.spellPower(p)); target = b.t; s = (bossPct < 0.45 || E.g.round >= 6 || (b.t && b.t.t === 'minion' && b.s > 20)) ? 25 : -1; }
-      else if (tags.includes('aoe')) { const n = E.enemies().length; s = (n >= 3 || E.g.round >= 6) ? 18 + n * 4 : -1; }
+      else if (tags.includes('aoe')) { const n = Math.min(RB.AOE_CAP || 5, E.enemies().length); s = (n >= 3 || E.g.round >= 6) ? 18 + n * 4 : -1; }
       else if (tags.includes('heal')) { target = mostWoundedFriendly(E, 'friendly'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 10 ? 30 : -1; }
       else if (tags.includes('healAll')) { let tot = 0; for (const t of E.friendlyChars()) tot += Math.min(6, E.maxHpOf(t) - E.hpOf(t)); s = tot >= 14 ? 30 : -1; }
       else if (tags.includes('buff')) s = (E.g.round >= 4 && (p.weapon || E.heroAtk(p) > 0)) ? 16 : -1;
@@ -5719,18 +5781,24 @@ globalThis.RB.WEB_BUILD = true;
       if (s > 0) acts.push({ s, go: () => E.usePower(p, target) });
     }
     // cards
+    const reserve = reactReserve(E, p), avail = E.available(p);
     for (const inst of p.hand) {
       const d = C[inst.id];
       if (!E.canPlay(p, inst).ok) continue;
       const sc = scoreCard(E, p, inst);
       if (sc.s <= 0) continue;
       if (E.needsTarget(inst) && !sc.target) continue;
-      acts.push({ s: sc.s - d.cost * 0.15, go: () => E.playCard(p, inst, sc.target) });
+      // #110: dipping into the React reserve needs a clearly better play
+      const keepsReserve = !reserve || d.speed === 'instant' || d.type === 'quest' || d.type === 'location' || avail - d.cost >= reserve;
+      const s = sc.s - d.cost * 0.15 - (keepsReserve ? 0 : 7);
+      if (s <= 0) continue;
+      acts.push({ s, go: () => E.playCard(p, inst, sc.target) });
     }
     // #102 bail water before a Tidal Surge
     if (E.canBail && E.canBail(p)) {
       const B = E.g.boss, mx = E.raid.counter.max;
-      const s = B.counter >= mx - 1 ? 9 : B.counter >= mx - 2 && E.available(p) >= 3 ? 3 : -1;
+      // urgent when the Surge is one tick away; otherwise bail with whatever is left at the end of the turn (it refreshes anyway)
+      const s = B.counter >= mx - 1 ? 9 : B.counter >= mx - 2 && E.available(p) >= 3 ? 3 : B.counter >= 1 && E.available(p) - E.raid.bail.cost >= reserve ? 0.5 : -1;
       if (s > 0) acts.push({ s, go: () => E.bail(p) });
     }
     // items
@@ -6092,7 +6160,7 @@ globalThis.RB.WEB_BUILD = true;
   const fig = o => ['fig', o];
   const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
   const add = (id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; C[id] = o; };
-  const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
+  const minionsDmg = async (E, c, n, kind, cap) => { for (const t of E.aoe(E.minions(), n, cap)) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
   const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
 
   /* ---------- tokens for the new cards ---------- */
@@ -6122,7 +6190,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'forest', L: [['beast', { t: 'bear', x: 196, y: 210, s: 0.8, shadow: 60 }], fig({ race: 'dwarf', pose: 'aim', w: 'crossbow', helm: 'horned', pauld: 'fur', x: 90, y: 214, s: 0.72 }), ['obj', { t: 'horn', x: 250, y: 96, s: 0.5 }]] } });
   add('flashpowder', { name: 'Flashpowder', type: 'ability', speed: 'instant', cost: 1, target: 'enemy', tags: ['stun'], text: 'Stun an enemy. A stunned minion can\'t attack next boss turn; a stunned boss skips its next strike.', run: async (E, c) => E.stun(c.target),
     art: { s: 'rooftops', L: [glow(170, 120, 90, '#fff6c0', 0.85), ['obj', { t: 'bomb', x: 150, y: 130, s: 0.9 }], ['fx', { t: 'sparkle', x: 170, y: 110 }], ['fx', { t: 'shout', x: 170, y: 120, c: '#fff6c0' }]] } });
-  add('firebomb', { name: 'Alchemist\'s Firebomb', type: 'ability', speed: 'basic', cost: 2, target: 'enemy', tags: ['dmg'], dmg: 2, text: 'Deal 2 damage to an enemy, then 1 damage to each enemy minion.', run: async (E, c) => { await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); await minionsDmg(E, c, 1); },
+  add('firebomb', { name: 'Alchemist\'s Firebomb', type: 'ability', speed: 'basic', cost: 2, target: 'enemy', tags: ['dmg'], dmg: 2, text: 'Deal 2 damage to an enemy, then 1 damage to each enemy minion.', run: async (E, c) => { await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); await minionsDmg(E, c, 1, undefined, 4); },
     art: { s: 'forge', p: 'embers', pn: 40, L: [glow(170, 120, 90, '#ff8a2a', 0.7), ['obj', { t: 'potion', x: 120, y: 130, col: '#ff6a1a', shape: 'flask' }], ['fx', { t: 'fireball', x: 200, y: 110, c: '#ff8a3a', ang: 20 }]] } });
   add('vigorring', { name: 'Ring of Stubborn Vigor', type: 'item', cost: 2, rarity: 'u', allyHp: 1, text: 'Your allies have +1 health.',
     art: { s: 'altar', L: [glow(150, 120, 60, '#ff9a7a', 0.6), ['obj', { t: 'ring', x: 150, y: 120, s: 1.2, gem: '#ff5a4a' }], ['fx', { t: 'buff', x: 150, y: 120, c: '#ff9a7a' }]] } });
@@ -6148,11 +6216,11 @@ globalThis.RB.WEB_BUILD = true;
   /* =================== CLANS (7) =================== */
   add('axethrower', { name: 'Bonechew Axe-Thrower', type: 'ally', cost: 2, atk: 3, hp: 4, fac: 'clans', kw: ['longrange'], race: 'Orc', flavor: 'He never runs out of axes. Nobody asks where he gets them.',
     art: { s: 'steppe', L: [fig({ race: 'orc', pose: 'charge', w: 'axe', off: 'axe', helm: 'mohawk', x: 140, y: 212, s: 0.9 }), ['fx', { t: 'slash', x: 220, y: 110 }]] } });
-  add('thundertotem', { name: 'Thunderhoof Totem', type: 'item', cost: 3, fac: 'clans', rarity: 'u', tags: ['aoeMinion'], text: 'At the start of your turn, deal 1 damage to each enemy minion.', start: async (E, p) => { for (const t of E.minions()) await E.dmg(t, 1, { p, kind: 'effect' }); },
+  add('thundertotem', { name: 'Thunderhoof Totem', type: 'item', cost: 3, fac: 'clans', rarity: 'u', tags: ['aoeMinion'], text: 'At the start of your turn, deal 1 damage to each enemy minion.', start: async (E, p) => { for (const t of E.aoe(E.minions(), 1)) await E.dmg(t, 1, { p, kind: 'effect' }); },
     art: { s: 'storm', L: [['fx', { t: 'bolt', x: 150, y: 60 }], glow(150, 150, 70, '#9ac8ff', 0.6), ['obj', { t: 'horn', x: 150, y: 140, s: 1 }], ['fx', { t: 'runes', x: 150, y: 200, r: 80, flat: 1, c: '#9ac8ff' }]] } });
-  add('ravager', { name: 'Steppe Ravager', type: 'ally', cost: 5, atk: 5, hp: 4, fac: 'clans', kw: ['ferocity'], race: 'Minotaur', rarity: 'u', text: 'When this enters play, deal 1 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, flavor: 'The ground shakes first. Then it really shakes.',
+  add('ravager', { name: 'Steppe Ravager', type: 'ally', cost: 5, atk: 5, hp: 4, fac: 'clans', kw: ['ferocity'], race: 'Minotaur', rarity: 'u', text: 'When this enters play, deal 1 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.aoe(E.enemies(), 1)) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, flavor: 'The ground shakes first. Then it really shakes.',
     art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 190, c: '#e8b070' }], fig({ race: 'minotaur', pose: 'charge', w: 'battleaxe', pauld: 'spiked', x: 150, y: 212, s: 0.9 })] } });
-  add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 3, kw: ['protector'], fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
+  add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 3, kw: ['protector'], fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.aoe(E.minions(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
     art: { s: 'forge', p: 'embers', pn: 30, L: [glow(200, 140, 70, '#ffb040', 0.6), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 120, y: 212, s: 1.05, eye: '#ffd060' }), ['obj', { t: 'bomb', x: 210, y: 176, s: 0.7 }], ['obj', { t: 'bomb', x: 246, y: 200, s: 0.5 }]] } });
   add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/2 Grunt with Swift and Bulwark and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
     art: { s: 'steppe', L: [['obj', { t: 'chest', x: 190, y: 184, s: 0.7 }], fig({ race: 'orc', pose: 'charge', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.72 }), ['obj', { t: 'scroll', x: 240, y: 90, s: 0.45 }]] } });
@@ -6214,7 +6282,7 @@ globalThis.RB.WEB_BUILD = true;
   hero('zizzik', { name: 'Zizzik Sparkwhistle', fac: 'clans', race: 'Goblin', cls: 'mage', spec: 'Sparkwright', profs: ['engineering', 'alchemy'], hp: 30,
     unlock: { how: 'gold:1000', text: 'Buy for 1,000 gold in the Market' },
     flavor: '"Safety goggles are for people who plan to miss."',
-    power: { name: 'Overcharged Rocket', text: 'Deal 4 damage to each enemy. Your hero takes 1 damage.', target: 'none', tags: ['aoe'], dmg: 4, run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 4, { p: c.p, kind: 'power' }); await E.dmg(E.heroT(c.p), 1, { kind: 'effect' }); } },
+    power: { name: 'Overcharged Rocket', text: 'Deal 4 damage to each enemy. Your hero takes 1 damage.', target: 'none', tags: ['aoe'], dmg: 4, run: async (E, c) => { for (const t of E.aoe(E.enemies(), 4)) await E.dmg(t, 4, { p: c.p, kind: 'power' }); await E.dmg(E.heroT(c.p), 1, { kind: 'effect' }); } },
     art: { s: 'forge', p: 'embers', pn: 50, L: [glow(200, 110, 80, '#ffb040', 0.6), ['fx', { t: 'fireball', x: 220, y: 100, c: '#ffb040', ang: 30 }], fig({ race: 'goblin', pose: 'castF', off: 'wand', helm: 'hood', robe: 1, glowR: '#ffd060', x: 120, y: 212, s: 1.08, cloth: '#c86a1a', eye: '#ffd060' })] } });
   hero('seraphine', { name: 'Seraphine Vale', fac: 'concord', race: 'Human', cls: 'priest', spec: 'Lightwarden', profs: ['herbalism', 'tailoring'], hp: 30,
     unlock: { how: 'gold:1000', text: 'Buy for 1,000 gold in the Market' },
@@ -6278,7 +6346,7 @@ globalThis.RB.WEB_BUILD = true;
   const fig = o => ['fig', o];
   const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
   const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
-  const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
+  const minionsDmg = async (E, c, n, kind, cap) => { for (const t of E.aoe(E.minions(), n, cap)) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
 
   RB.PACK_SETS = {
     ember: { name: 'Emberfall', theme: 'Fire, forge and fury', blurb: 'Orc chieftains, dwarven smiths, bombs and burning blades. Hit hard and hit everything.', col: '#ff8a3a' },
@@ -6310,11 +6378,11 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'forge', p: 'embers', pn: 30, L: [glow(150, 130, 80, '#ffb040', 0.7), ['obj', { t: 'hammer', x: 150, y: 120, s: 0.95, glow: '#ffb040' }], ['fx', { t: 'buff', x: 150, y: 170, c: '#ffb040' }], ['fx', { t: 'sparkle', x: 150, y: 110 }]] } });
   add('ember', 'redhorn', { name: 'Warhorn of the Red Steppe', type: 'item', cost: 3, fac: 'clans', rarity: 'u', tags: ['buff'], text: 'At the start of your turn, your allies get +1 ATK this turn.', start: async (E, p) => { if (p.allies.length) E.allyTempAtk(p, 1); },
     art: { s: 'steppe', L: [glow(150, 110, 90, '#ff6a3a', 0.45), ['obj', { t: 'horn', x: 150, y: 126, s: 1.15 }], ['fx', { t: 'shout', x: 210, y: 110, c: '#ffb070' }], ['obj', { t: 'banner', x: 52, y: 130, s: 0.45, col: '#7a1010', em: '#ffb070', glyph: 'axes' }]] } });
-  add('ember', 'infernocleaver', { name: 'Infernal Cleaver', type: 'weapon', wtype: 'axe', cost: 3, atk: 3, strike: 1, cls: ['warrior', 'ranger'], rarity: 'r', text: 'When your hero attacks with this, deal 1 damage to each enemy minion.', onAttack: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); },
+  add('ember', 'infernocleaver', { name: 'Infernal Cleaver', type: 'weapon', wtype: 'axe', cost: 3, atk: 3, strike: 1, cls: ['warrior', 'ranger'], rarity: 'r', text: 'When your hero attacks with this, deal 1 damage to each enemy minion.', onAttack: async (E, c) => { for (const t of E.aoe(E.minions(), 1)) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); },
     art: { s: 'volcano', p: 'embers', pn: 40, L: [glow(150, 120, 100, '#ff4a1a', 0.7), ['obj', { t: 'axe', x: 150, y: 116, glow: '#ff6a2a' }], ['fx', { t: 'whirl', x: 150, y: 180, c: '#ff8a3a' }]] } });
-  add('ember', 'flamewall', { name: 'Wall of Flame', type: 'ability', speed: 'basic', cost: 4, rarity: 'r', target: 'none', tags: ['aoeMinion', 'dmg'], dmg: 3, text: 'Deal 3 damage to each enemy minion and 1 damage to the boss.', run: async (E, c) => { await minionsDmg(E, c, 3, 'spell'); await E.dmg(E.bossT(), 1, { p: c.p, kind: 'spell' }); },
+  add('ember', 'flamewall', { name: 'Wall of Flame', type: 'ability', speed: 'basic', cost: 4, rarity: 'r', target: 'none', tags: ['aoeMinion', 'dmg'], dmg: 3, text: 'Deal 3 damage to each enemy minion and 1 damage to the boss.', run: async (E, c) => { await minionsDmg(E, c, 3, 'spell', 4); await E.dmg(E.bossT(), 1, { p: c.p, kind: 'spell' }); },
     art: { s: 'volcano', p: 'embers', pn: 60, L: [glow(150, 190, 130, '#ff5a1a', 0.8), ['fx', { t: 'meteors', n: 5, c: '#ff8a3a' }], ['fx', { t: 'fireball', x: 90, y: 150, c: '#ffb040', ang: 0 }], ['fx', { t: 'fireball', x: 210, y: 150, c: '#ffb040', ang: 180 }], ['fx', { t: 'fireball', x: 150, y: 120, c: '#ffd070', ang: 90 }]] } });
-  add('ember', 'korrag', { name: 'Korrag the Pyre-Lord', type: 'ally', cost: 7, atk: 7, hp: 7, fac: 'clans', kw: ['unique', 'ferocity'], race: 'Orc', rarity: 'e', tags: ['aoe'], text: 'When Korrag enters play, deal 2 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); },
+  add('ember', 'korrag', { name: 'Korrag the Pyre-Lord', type: 'ally', cost: 7, atk: 7, hp: 7, fac: 'clans', kw: ['unique', 'ferocity'], race: 'Orc', rarity: 'e', tags: ['aoe'], text: 'When Korrag enters play, deal 2 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.aoe(E.enemies(), 2)) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); },
     art: { s: 'volcano', p: 'embers', pn: 70, L: [glow(150, 110, 130, '#ff3a10', 0.6), ['fx', { t: 'meteors', n: 4, c: '#ff8a3a' }], fig({ race: 'orc', pose: 'heroic', w: 'battleaxe', helm: 'horned', pauld: 'spiked', cape: 1, capeCol: '#3a0a04', wGlow: '#ff6a1a', eye: '#ffd060', x: 150, y: 220, s: 1, cloth: '#5a1008' })] } });
 
   /* =================== FROSTWING — ice, beasts and the high north (7 new) =================== */
@@ -6330,7 +6398,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'frost', pal: { light: '#b8ffe0' }, L: [['wisps', { x: 150, y: 70, w: 300, h: 70, n: 12, c: '#9affd0' }], glow(150, 80, 140, '#9affd0', 0.35), ['fx', { t: 'heal', x: 150, y: 120, c: '#b8ffe0' }], fig({ pose: 'pray', robe: 1, helm: 'hood', x: 150, y: 212, s: 0.7, cloth: '#e8f0f8' })] } });
   add('frost', 'gryphonroost', { name: 'Skyreach Gryphon Roost', type: 'location', cost: 0, fac: 'concord', rarity: 'r', lcost: 4, text: 'Play as a resource. Once per turn: pay 4 to summon a 2/2 Gryphon Hatchling with Swift.', lrun: async (E, c) => E.summonAlly(c.p, 'gryphlet', 1),
     art: { s: 'peaks', L: [glow(150, 110, 110, '#fff0c0', 0.4), ['beast', { t: 'gryphon', x: 170, y: 150, s: 0.75 }], ['beast', { t: 'gryphon', x: 70, y: 196, s: 0.38 }], ['obj', { t: 'banner', x: 250, y: 140, s: 0.45, col: '#2c50a6', em: '#ffd060' }]] } });
-  add('frost', 'ysolde', { name: 'Ysolde, Frostwing Queen', type: 'ally', cost: 7, atk: 5, hp: 7, kw: ['unique', 'protector'], race: 'Elf', rarity: 'e', tags: ['stunAll', 'shield'], text: 'When Ysolde enters play, stun each enemy minion and prevent the next 4 damage to each friendly hero.', onEnter: async (E, c) => { for (const t of E.minions()) E.stun(t); for (const h of E.heroes()) E.shield(h, 4); },
+  add('frost', 'ysolde', { name: 'Ysolde, Frostwing Queen', type: 'ally', cost: 7, atk: 5, hp: 7, kw: ['unique', 'protector'], race: 'Elf', rarity: 'e', tags: ['stunAll', 'shield'], text: 'When Ysolde enters play, stun each enemy minion and prevent the next 4 damage to each friendly hero.', onEnter: async (E, c) => { for (const t of E.aoe(E.minions(), 0)) E.stun(t); for (const h of E.heroes()) E.shield(h, 4); },
     art: { s: 'frost', L: [glow(150, 100, 130, '#bfeaff', 0.6), ['beast', { t: 'gryphon', x: 236, y: 120, s: 0.5 }], ['fx', { t: 'frost', x: 150, y: 90 }], fig({ race: 'elf', pose: 'staff', w: 'staff', robe: 1, helm: 'crown', crownCol: '#bfeaff', gem: '#7ad8ff', glowL: '#bfeaff', cape: 1, capeCol: '#2a4a7a', x: 140, y: 216, s: 0.95, cloth: '#e8f0ff', hairCol: '#f4f8ff' })] } });
 
   /* =================== VOIDSHADE — shadow, stars and secrets (14 new) =================== */
@@ -6360,7 +6428,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'void', L: [glow(150, 110, 120, '#5a2aff', 0.6), ['fx', { t: 'runes', x: 150, y: 110, r: 100, c: '#9a7aff' }], ['wisps', { x: 150, y: 110, w: 260, h: 120, n: 10, c: '#b98aff' }]] } });
   add('void', 'codex', { name: 'Read the Forbidden Codex', type: 'quest', cost: 0, qcost: 2, text: 'Play as a resource. Complete (pay 2): draw 2 cards.', reward: async (E, c) => E.draw(c.p, 2),
     art: { s: 'arcane', L: [glow(150, 120, 90, '#c8a0ff', 0.6), ['obj', { t: 'tome', x: 150, y: 126, s: 1.1 }], ['fx', { t: 'runes', x: 150, y: 120, r: 70, c: '#d0b0ff' }]] } });
-  add('void', 'noctyra', { name: 'Noctyra, the Void Empress', type: 'ally', cost: 7, atk: 6, hp: 6, kw: ['unique', 'longrange'], race: 'Elf', rarity: 'e', tags: ['removal'], text: 'When Noctyra enters play, turn the strongest enemy minion into a 0/1 Void Mote. At the start of your turn, deal 1 damage to each enemy.', onEnter: async (E, c) => { const ms = E.minions(); if (ms.length) await E.transform(ms.reduce((a, b) => E.atkOf(b) > E.atkOf(a) ? b : a), 'voidmote'); }, start: async (E, p) => { for (const t of E.enemies()) await E.dmg(t, 1, { p, kind: 'effect' }); },
+  add('void', 'noctyra', { name: 'Noctyra, the Void Empress', type: 'ally', cost: 7, atk: 6, hp: 6, kw: ['unique', 'longrange'], race: 'Elf', rarity: 'e', tags: ['removal'], text: 'When Noctyra enters play, turn the strongest enemy minion into a 0/1 Void Mote. At the start of your turn, deal 1 damage to each enemy.', onEnter: async (E, c) => { const ms = E.minions(); if (ms.length) await E.transform(ms.reduce((a, b) => E.atkOf(b) > E.atkOf(a) ? b : a), 'voidmote'); }, start: async (E, p) => { for (const t of E.aoe(E.enemies(), 1)) await E.dmg(t, 1, { p, kind: 'effect' }); },
     art: { s: 'void', L: [glow(150, 100, 140, '#7a3aff', 0.6), ['wisps', { x: 150, y: 110, w: 280, h: 120, n: 12, c: '#d0b0ff' }], fig({ race: 'elf', pose: 'cast', robe: 1, helm: 'crown', crownCol: '#c8a0ff', gem: '#e0b0ff', glowL: '#c8a0ff', glowR: '#c8a0ff', cape: 1, capeCol: '#120a24', x: 150, y: 218, s: 1, cloth: '#2a1050', hairCol: '#e8e0ff' })] } });
 
   RB.FRONTIER = Object.values(C).filter(d => d.set === 'frontier').map(d => d.id);
@@ -6420,7 +6488,7 @@ globalThis.RB.WEB_BUILD = true;
   const fig = o => ['fig', o];
   const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
   const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
-  const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
+  const minionsDmg = async (E, c, n, kind, cap) => { for (const t of E.aoe(E.minions(), n, cap)) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
   const myAllies = (E, p) => E.allAllies().filter(t => t.p === p);
   const addP = (pack, id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; o.pack = pack; C[id] = o; };
   const addC = (id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'core'; C[id] = o; };
@@ -6452,11 +6520,11 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'forge', p: 'embers', pn: 40, L: [glow(150, 150, 90, '#ff8a2a', 0.6), ['obj', { t: 'hammer', x: 170, y: 110, s: 0.8 }], ['fx', { t: 'sparkle', x: 150, y: 150, n: 12 }]] } });
   addP('ember', 'bombardier', { name: 'Goblin Bombardier', type: 'ally', cost: 3, atk: 3, hp: 4, fac: 'clans', kw: ['longrange'], race: 'Goblin', rarity: 'u', tags: ['dmgRandom'], text: 'When this enters play, deal 2 damage to a random enemy twice.', onEnter: async (E, c) => { for (let i = 0; i < 2; i++) { const t = E.randomEnemy(); if (t) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); } },
     art: { s: 'rooftops', L: [glow(200, 120, 70, '#ffb040', 0.6), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 110, y: 212, s: 1.05 }), ['obj', { t: 'bomb', x: 200, y: 140, s: 0.7 }], ['obj', { t: 'bomb', x: 240, y: 100, s: 0.5 }]] } });
-  addP('ember', 'meteorstrike', { name: 'Meteor Strike', type: 'ability', speed: 'basic', cost: 5, rarity: 'r', target: 'enemy', tags: ['dmg', 'aoeMinion'], dmg: 6, text: 'Deal 6 damage to an enemy and 2 damage to each other enemy minion.', run: async (E, c) => { await E.dmg(c.target, 6, { p: c.p, kind: 'spell' }); for (const t of E.minions()) if (!E.same(t, c.target)) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); },
+  addP('ember', 'meteorstrike', { name: 'Meteor Strike', type: 'ability', speed: 'basic', cost: 5, rarity: 'r', target: 'enemy', tags: ['dmg', 'aoeMinion'], dmg: 6, text: 'Deal 6 damage to an enemy and 2 damage to each other enemy minion.', run: async (E, c) => { await E.dmg(c.target, 6, { p: c.p, kind: 'spell' }); for (const t of E.aoe(E.minions().filter(t => !E.same(t, c.target)), 2, 4)) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); },
     art: { s: 'volcano', p: 'embers', pn: 60, L: [glow(170, 120, 120, '#ff5a1a', 0.7), ['fx', { t: 'fireball', x: 180, y: 120, c: '#ffd070', ang: 40 }], ['fx', { t: 'meteors', n: 6, c: '#ff8a3a' }]] } });
 
   /* ======================= FROSTWING +10 ======================= */
-  addP('frost', 'guinevere', { name: 'Guinevere, the Prism Dragon', type: 'ally', cost: 8, atk: 6, hp: 8, kw: ['unique', 'longrange'], race: 'Dragon', rarity: 'l', tags: ['healAll', 'aoe'], text: 'When she enters play, heal 6 damage from each friendly hero and ally. Each turn, she deals 2 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.friendlyChars()) await E.heal(t, 6); }, start: async (E, p) => { for (const t of E.enemies()) await E.dmg(t, 2, { p, kind: 'effect' }); },
+  addP('frost', 'guinevere', { name: 'Guinevere, the Prism Dragon', type: 'ally', cost: 8, atk: 6, hp: 8, kw: ['unique', 'longrange'], race: 'Dragon', rarity: 'l', tags: ['healAll', 'aoe'], text: 'When she enters play, heal 6 damage from each friendly hero and ally. Each turn, she deals 2 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.friendlyChars()) await E.heal(t, 6); }, start: async (E, p) => { for (const t of E.aoe(E.enemies(), 2)) await E.dmg(t, 2, { p, kind: 'effect' }); },
     art: { s: 'holy', pal: { light: '#ffffff' }, L: [glow(150, 110, 150, '#ffffff', 0.45), glow(60, 90, 80, '#ff7ad8', 0.55), glow(120, 50, 70, '#ffe07a', 0.5), glow(190, 50, 70, '#8aff9a', 0.45), glow(250, 100, 80, '#7ad8ff', 0.55), glow(150, 200, 90, '#b08aff', 0.45), ['wisps', { x: 150, y: 110, w: 300, h: 140, n: 14, c: '#e8f0ff' }], ['dragon', { x: 150, y: 150, s: 0.95, tone: '#f2eaff', belly: '#fff0fa', eye: '#7affff' }], glow(150, 140, 90, '#ffffff', 0.25), ['fx', { t: 'sparkle', x: 150, y: 90, n: 16 }], ['fx', { t: 'holy', x: 150 }]] } });
   addP('frost', 'frostjarl', { name: 'Frost Giant Jarl', type: 'ally', cost: 6, atk: 5, hp: 7, kw: ['protector'], race: 'Giant', rarity: 'r', tags: ['stun'], text: 'When this enters play, stun two random enemy minions.', onEnter: async (E, c) => { const ms = [...E.minions()]; for (let i = 0; i < 2 && ms.length; i++) { const t = ms.splice(Math.floor(E.rnd() * ms.length), 1)[0]; E.stun(t); } },
     art: { s: 'frost', L: [glow(150, 110, 110, '#bfeaff', 0.45), ['fx', { t: 'frost', x: 150, y: 90 }], fig({ race: 'giant', pose: 'heroic', w: 'hammer', pauld: 'fur', x: 150, y: 222, s: 0.95, cloth: '#3a5a7a', eye: '#9ae8ff' })] } });
@@ -6484,7 +6552,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'void', L: [glow(150, 130, 100, '#7a4aff', 0.6), fig({ race: 'giant', pose: 'stand', spectral: 1, x: 150, y: 222, s: 0.85 })] } });
   addP('void', 'cutpurse', { name: 'Shadowmarket Cutpurse', type: 'ally', cost: 1, atk: 1, hp: 2, kw: ['protector'], race: 'Goblin', tags: ['ramp'], text: 'When this enters play, gain 1 extra resource this turn.', onEnter: async (E, c) => E.gainRes(c.p, 1), flavor: 'Your purse feels lighter. His feels just right.',
     art: { s: 'rooftops', L: [glow(220, 70, 40, '#e8e0ff', 0.4), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 140, y: 212, s: 1.05 }), ['obj', { t: 'coin', x: 220, y: 180, s: 0.4 }]] } });
-  addP('void', 'eclipse', { name: 'Eclipse', type: 'ability', speed: 'basic', cost: 5, rarity: 'r', target: 'none', tags: ['stunAll', 'stun'], text: 'Stun the boss and each enemy minion.', run: async (E, c) => { E.stun(E.bossT()); for (const t of E.minions()) E.stun(t); },
+  addP('void', 'eclipse', { name: 'Eclipse', type: 'ability', speed: 'basic', cost: 5, rarity: 'r', target: 'none', tags: ['stunAll', 'stun'], text: 'Stun the boss and each enemy minion.', run: async (E, c) => { E.stun(E.bossT()); for (const t of E.aoe(E.minions(), 0, 4)) E.stun(t); },
     art: { s: 'void', L: [glow(150, 100, 110, '#ffe8b0', 0.35), ['obj', { t: 'pearl', x: 150, y: 100, s: 1.1, emboss: false }], ['fx', { t: 'shadow', x: 150, y: 100 }], ['fx', { t: 'sparkle', x: 150, y: 100, n: 14 }]] } });
   addP('void', 'soulrend', { name: 'Soul Rend', type: 'ability', speed: 'instant', cost: 2, rarity: 'u', target: 'minion', tags: ['dmg', 'draw'], dmg: 3, text: 'Deal 3 damage to an enemy minion. If it is destroyed, draw a card.', run: async (E, c) => { await E.dmg(c.target, 3, { p: c.p, kind: 'spell' }); if (!E.isAlive(c.target)) await E.draw(c.p, 1); },
     art: { s: 'void', L: [glow(150, 120, 90, '#c87aff', 0.6), ['fx', { t: 'slash', x: 150, y: 120 }], ['fx', { t: 'skull', x: 150, y: 120, s: 0.7 }]] } });
@@ -6520,7 +6588,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'steppe', L: [['fx', { t: 'slash', x: 160, y: 120 }], fig({ pose: 'charge', w: 'sword', off: 'round', helm: 'great', x: 140, y: 214, s: 0.86 })] } });
   addC('laststand', { name: 'Last Stand', type: 'ability', speed: 'instant', react: 'hero', cost: 2, cls: ['warrior'], target: 'none', tags: ['shield'], text: 'Prevent the next 6 damage to your hero.', run: async (E, c) => E.shield(c.p, 6),
     art: { s: 'storm', L: [glow(150, 140, 90, '#ffd27a', 0.4), fig({ pose: 'stand', w: 'sword', off: 'tower', helm: 'great', x: 150, y: 214, s: 0.9 }), ['fx', { t: 'barrier', x: 150, y: 150 }]] } });
-  addC('arcaneblast', { name: 'Spellburst', type: 'ability', speed: 'basic', cost: 3, cls: ['mage'], target: 'none', tags: ['aoeMinion'], dmg: 2, rarity: 'u', text: 'Deal 2 damage to each enemy minion and 1 damage to the boss.', run: async (E, c) => { await minionsDmg(E, c, 2, 'spell'); await E.dmg(E.bossT(), 1, { p: c.p, kind: 'spell' }); },
+  addC('arcaneblast', { name: 'Spellburst', type: 'ability', speed: 'basic', cost: 3, cls: ['mage'], target: 'none', tags: ['aoeMinion'], dmg: 2, rarity: 'u', text: 'Deal 2 damage to each enemy minion and 1 damage to the boss.', run: async (E, c) => { await minionsDmg(E, c, 2, 'spell', 4); await E.dmg(E.bossT(), 1, { p: c.p, kind: 'spell' }); },
     art: { s: 'arcane', L: [glow(150, 140, 120, '#c8a0ff', 0.7), ['fx', { t: 'runes', x: 150, y: 140, r: 100, c: '#e0c8ff' }], fig({ race: 'elf', pose: 'castF', robe: 1, helm: 'hair', glowL: '#e0c8ff', glowR: '#e0c8ff', x: 150, y: 214, s: 0.8 })] } });
   addC('icelance', { name: 'Frost Spear', type: 'ability', speed: 'basic', cost: 1, cls: ['mage'], target: 'minion', tags: ['dmg', 'stun'], dmg: 2, text: 'Deal 2 damage to an enemy minion and stun it.', run: async (E, c) => { await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); if (E.isAlive(c.target)) E.stun(c.target); },
     art: { s: 'frost', L: [glow(150, 120, 80, '#9ae8ff', 0.6), ['obj', { t: 'shard', x: 150, y: 116, s: 0.9, col: '#bfeaff' }], ['fx', { t: 'frost', x: 150, y: 110 }]] } });
@@ -6532,7 +6600,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'rooftops', L: [['fx', { t: 'slash', x: 170, y: 120 }], fig({ pose: 'charge', w: 'dagger', helm: 'hood', x: 130, y: 212, s: 0.9, cloth: '#2a2a3a' })] } });
   addC('bladeflurry', { name: 'Whirling Blades', type: 'ability', speed: 'basic', cost: 3, cls: ['rogue'], target: 'none', tags: ['aoeMinion', 'buff'], dmg: 2, rarity: 'u', text: 'Deal 2 damage to each enemy minion. Your hero gets +1 ATK this turn.', run: async (E, c) => { await minionsDmg(E, c, 2, 'spell'); E.tempAtk(c.p, 1); },
     art: { s: 'rooftops', L: [['fx', { t: 'whirl', x: 150, y: 170, c: '#e0e0ff' }], ['fx', { t: 'slash', x: 120, y: 120 }], ['fx', { t: 'slash', x: 190, y: 140 }], fig({ pose: 'dual', w: 'dagger', off: 'dagger', helm: 'hood', x: 150, y: 212, s: 0.88 })] } });
-  addC('volley', { name: 'Volley', type: 'ability', speed: 'basic', cost: 4, cls: ['ranger'], target: 'none', tags: ['aoe'], dmg: 2, rarity: 'u', text: 'Deal 2 damage to each enemy.', run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); },
+  addC('volley', { name: 'Volley', type: 'ability', speed: 'basic', cost: 4, cls: ['ranger'], target: 'none', tags: ['aoe'], dmg: 2, rarity: 'u', text: 'Deal 2 damage to each enemy.', run: async (E, c) => { for (const t of E.aoe(E.enemies(), 2)) await E.dmg(t, 2, { p: c.p, kind: 'spell' }); },
     art: { s: 'forest', L: [['fx', { t: 'arrows', x: 150, y: 90 }], ['fx', { t: 'arrows', x: 220, y: 120 }], fig({ race: 'elf', pose: 'aim', w: 'bow', helm: 'hood', x: 100, y: 214, s: 0.8 })] } });
   addC('tamebeast', { name: 'Tame Beast', type: 'ability', speed: 'basic', cost: 3, cls: ['ranger'], target: 'none', tags: ['summon'], text: 'Summon a 3/3 Ridgeback Boar with Swift and Bulwark.', run: async (E, c) => E.summonAlly(c.p, 'boar_t', 1),
     art: TK.boar_t.art });
@@ -6571,7 +6639,7 @@ globalThis.RB.WEB_BUILD = true;
   const fig = o => ['fig', o];
   const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
   const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
-  const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
+  const minionsDmg = async (E, c, n, kind, cap) => { for (const t of E.aoe(E.minions(), n, cap)) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
   const myAllies = (E, p) => E.allAllies().filter(t => t.p === p);
   const addP = (pack, id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; o.pack = pack; C[id] = o; };
   const addT = (raid, id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'r'; o.set = raid; C[id] = o; RB.RAIDS[raid].treasure.push(id); };
@@ -6630,7 +6698,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'volcano', L: [glow(150, 100, 80, '#ff8a2a', 0.65), ['obj', { t: 'staffItem', x: 150, y: 116, glow: '#ffb040' }], ['fx', { t: 'fireball', x: 150, y: 70, c: '#ffb040', ang: 90 }]] } });
   molten('wyrmrider', { name: 'Wyrmrider Outcast', type: 'ally', cost: 5, atk: 4, hp: 4, kw: ['ferocity', 'longrange'], race: 'Orc',
     art: { s: 'volcano', L: [['dragon', { x: 160, y: 160, s: 0.75 }], fig({ race: 'orc', pose: 'heroic', w: 'polearm', helm: 'mohawk', x: 150, y: 118, s: 0.5 })] } });
-  molten('moltencore', { name: 'Molten Core', type: 'item', cost: 4, rarity: 'e', tags: ['aoeMinion'], text: 'At the start of your turn, deal 2 damage to each enemy minion.', start: async (E, p) => { for (const t of E.minions()) await E.dmg(t, 2, { p, kind: 'effect' }); },
+  molten('moltencore', { name: 'Molten Core', type: 'item', cost: 4, rarity: 'e', tags: ['aoeMinion'], text: 'At the start of your turn, deal 2 damage to each enemy minion.', start: async (E, p) => { for (const t of E.aoe(E.minions(), 2)) await E.dmg(t, 2, { p, kind: 'effect' }); },
     art: { s: 'volcano', p: 'embers', pn: 60, L: [glow(150, 120, 100, '#ff4a1a', 0.8), ['fx', { t: 'whirl', x: 150, y: 150, c: '#ff8a2a' }], ['obj', { t: 'shard', x: 150, y: 118, s: 1.2, col: '#ff5a1a' }], ['fx', { t: 'sparkle', x: 150, y: 110, n: 10 }]] } });
   molten('dragonhoard', { name: 'Plunder the Dragon\'s Hoard', type: 'quest', cost: 0, qcost: 3, tags: ['ramp'], text: 'Play as a resource. Complete (pay 3): draw 2 cards and gain 2 extra resources this turn.', reward: async (E, c) => { await E.draw(c.p, 2); E.gainRes(c.p, 2); },
     art: { s: 'volcano', L: [glow(150, 160, 100, '#ffd060', 0.55), ['obj', { t: 'chest', x: 150, y: 170, s: 1 }], ['obj', { t: 'coin', x: 90, y: 190, s: 0.5 }], ['obj', { t: 'crown', x: 210, y: 150, s: 0.5 }]] } });
@@ -6695,7 +6763,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'arcane', L: [glow(150, 120, 90, '#a0c0ff', 0.6), ['fx', { t: 'runes', x: 150, y: 120, r: 90, c: '#e8c060' }], ['obj', { t: 'hourglass', x: 150, y: 125, s: 1.1 }], ['fx', { t: 'meteors', n: 4, c: '#e0e8ff' }]] } });
   loot('loot_kingscrown', { name: 'Crown of the First King', type: 'item', cost: 3, allyHp: 2, tags: ['buff'], text: 'Your allies have +2 health.', flavor: 'Whoever wears it, the old banners still kneel.', loot: { reward: 'back_kingscrown', label: 'First King\'s Crown card back' },
     art: { s: 'castle', L: [glow(150, 110, 90, '#ffe08a', 0.7), ['obj', { t: 'crown', x: 150, y: 115, s: 1.4 }], ['fx', { t: 'holy', x: 150, y: 100 }]] } });
-  loot('loot_stormwing', { name: 'Stormwing Wyvern', type: 'ally', cost: 4, atk: 4, hp: 3, kw: ['ferocity', 'longrange'], race: 'Beast', tags: ['aoe'], text: 'Swift. Volley. When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); }, flavor: 'Thunder is just the sound of it arriving.', loot: { reward: 'back_stormwing', label: 'Stormwing card back' },
+  loot('loot_stormwing', { name: 'Stormwing Wyvern', type: 'ally', cost: 4, atk: 4, hp: 3, kw: ['ferocity', 'longrange'], race: 'Beast', tags: ['aoe'], text: 'Swift. Volley. When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => { for (const t of E.aoe(E.minions(), 2)) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); }, flavor: 'Thunder is just the sound of it arriving.', loot: { reward: 'back_stormwing', label: 'Stormwing card back' },
     art: { s: 'storm', L: [glow(150, 90, 90, '#a0d8ff', 0.6), ['beast', { t: 'gryphon', x: 150, y: 150, s: 0.8, eye: '#a0e8ff' }], ['fx', { t: 'bolt', x: 150, y: 60 }]] } });
   Object.assign(RB.COSMETICS, {
     back_phoenix: { kind: 'back', name: 'Phoenix Ascendant', get: 'loot', special: true, desc: 'A phoenix rising on wings of gold flame from a burst of embers.' },
@@ -6839,7 +6907,7 @@ globalThis.RB.WEB_BUILD = true;
     art: C.warlord.art });
   hero('tempestavatar', { name: 'Avatar of the Tempest', fac: 'concord', race: 'Elemental', cls: 'mage', spec: 'Stormheart', profs: ['enchanting', 'engineering'], hp: 28,
     unlock: { how: 'heroicall', text: 'Defeat all three raid bosses on Heroic' }, flavor: 'Thunder is just the storm clearing its throat.',
-    power: { name: 'Eye of the Storm', text: 'Deal 3 damage to each enemy.', target: 'none', tags: ['aoe'], run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 3, { p: c.p, kind: 'power' }); } },
+    power: { name: 'Eye of the Storm', text: 'Deal 3 damage to each enemy.', target: 'none', tags: ['aoe'], run: async (E, c) => { for (const t of E.aoe(E.enemies(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'power' }); } },
     art: C.tempest.art });
   RB.UNLOCK_HEROES.push('dawnarchon', 'redwarlord', 'tempestavatar');
   const baseUnlocked = RB.heroUnlocked;
@@ -6854,9 +6922,9 @@ globalThis.RB.WEB_BUILD = true;
   /* ---------- Ascended Master Heroes: one per hero ---------- */
   const asc = (heroId, o) => { const h = H[heroId]; const id = 'asc_' + heroId; o.id = id; o.type = 'master'; o.cost = o.cost || 7; o.hero = heroId; o.fac = h.fac; o.rarity = 'r'; o.set = 'core';
     const short = h.name.replace(/^(Ser|Lord|Sister|Brother) /, '').split(/[ ,]/)[0]; o.text = `${short} only. Becomes your hero; damage and gear stay. ` + o.text; o.art = { s: 'holy', L: [['glow', { x: 150, y: 110, r: 130, c: o.col || '#fff0b0', op: 0.6 }]] }; C[id] = o; return id; };
-  const minAll = async (E, p, n) => { for (const t of E.minions()) await E.dmg(t, n, { p, kind: 'effect' }); };
+  const minAll = async (E, p, n) => { for (const t of E.aoe(E.minions(), n)) await E.dmg(t, n, { p, kind: 'effect' }); };
   asc('aldric', { name: 'Aldric, Lightsworn Champion', hp: 36, heroAtk: 1, col: '#fff0a0', text: 'Your hero has +1 ATK. Each turn: prevent the next 3 damage to each friendly hero.', mstart: async (E, p) => { for (const h of E.heroes()) E.shield(h, 3); } });
-  asc('thorgrim', { name: 'Thorgrim, Lord of the Peaks', hp: 39, col: '#bfe8ff', text: 'Each turn: deal 1 damage to each enemy.', mstart: async (E, p) => { for (const t of E.enemies()) await E.dmg(t, 1, { p, kind: 'effect' }); } });
+  asc('thorgrim', { name: 'Thorgrim, Lord of the Peaks', hp: 39, col: '#bfe8ff', text: 'Each turn: deal 1 damage to each enemy.', mstart: async (E, p) => { for (const t of E.aoe(E.enemies(), 1)) await E.dmg(t, 1, { p, kind: 'effect' }); } });
   asc('lyssara', { name: 'Lyssara, Starborn Archmage', hp: 34, spell: 2, col: '#d0a8ff', text: 'Spells and powers deal +2 damage. Each turn: deal 3 damage to a random enemy.', mstart: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 3, { p, kind: 'effect' }); } });
   asc('grukka', { name: 'Grukka the Unchained', hp: 42, heroAtk: 3, allyFerocity: true, col: '#ff6a3a', text: 'Your hero has +3 ATK. Your allies have Swift.' });
   asc('hruna', { name: 'Hruna, Voice of the Ancestors', hp: 38, col: '#9affd0', text: 'Each turn: heal 3 damage from each friendly hero and ally.', mstart: async (E, p) => { for (const t of E.friendlyChars()) await E.heal(t, 3); } });
@@ -7076,6 +7144,35 @@ globalThis.RB.WEB_BUILD = true;
   });
   // an existing card becomes a scratch-off loot card for the Little Ram
   const ram = C.ram; if (ram) { ram.set = 'loot'; ram.rarity = 'e'; ram.loot = { reward: 'pet_ram', label: 'Little Ram companion' }; }
+
+  // #108: a two-paragraph story for each raid and dungeon (shown in raid setup, on the Dungeons screen and in the Field Guide)
+  RB.LORE = {
+    "crypt": [
+      "Long before the Concord and the Clans drew their borders, Malgareth ruled the river valley from a throne of white stone. When his healers told him death was coming, he made a bargain instead of a will: he bound his soul into a phylactery, sank his chapel beneath the marsh, and waited. The king who walked out of that black water was hollow. He had no heartbeat and no warmth, only a cold green fire behind his eyes and a hunger for subjects who would never leave him.",
+      "The crypt below the drowned chapel is his court now. Bones line the walls in neat shelves, the old Soul Bell still tolls in its broken tower, and every warrior who falls there stands up again as one of his thralls. Raiders bring healers and lanterns for good reason: the Hollow King's dead shrink from honest light. When Malgareth is pressed hard he hides his soul away and lets the crypt fight for him. Break the phylactery, and the king remembers he can die."
+    ],
+    "molten": [
+      "The Molten Spire was a forge-mountain once, where Clan smiths and Concord runecrafters traded secrets under a rare truce. Then the mountain woke, and with it Vorthrax, the last of the great fire wyrms, who had slept coiled around its burning heart for a thousand years. He melted the forges, took the smiths' gold for his hoard, and claimed every slope from the ash fields to the summit.",
+      "Climbing the Spire means walking on stone that is never quite solid. Lava vents split the paths, embers drift up from every crack, and Vorthrax's whelps hatch in nests of molten rock. The Cinder Tyrant fights on the ground until his embers burn white-hot, then takes to the smoke-black sky and rains fire on everyone below. Only archers and spellcasters can reach him up there. Bring him down, and he falls like a burning star."
+    ],
+    "tide": [
+      "The Cathedral of the Tides was built on the cliffs above the Saltmarsh so that sailors could see its lamps from far out at sea. One storm took it in a single night, cliff and all, and the sea closed over its spires. The fishermen say the bells kept ringing after it sank, and that Nethys was the one ringing them: a sea witch who had waited for centuries beneath that cliff, and who made the drowned cathedral her own.",
+      "Now the tide rises and falls inside the nave as she pleases. Tentacles coil around the pillars, murk-eyed things lurk under the black water, and the Leviathan Maw sleeps in the deep beneath the altar until she calls it up. Raiders wade in carrying buckets as well as blades, because if the water climbs too high it decides the fight for them. Nethys calls herself the Mother of Tides, and no one has beaten her on her own ground in three hundred years."
+    ],
+    "thornwood": [
+      "The Thornwood is older than any kingdom, and its heart is a hollow where the trees grow so close that noon looks like dusk. For centuries Elder Gnarlroot stood at its centre, a tree giant who kept the forest's peace. Then something sour seeped up through its roots. The woodsfolk blame the crypt beneath the drowned chapel; others blame the witch who moved into the brambles. Either way, the old guardian woke angry, its runes glowing a sickly green.",
+      "Now the forest fights anyone who enters. Fenna, the Bramble Witch, guards the path with hexes of nettle and thorn, and she heals faster than most blades can cut. Past her waits Grizzlemaw, the oldest bear in the Thornwood, his hide so thick with scars and moss that weapons glance off it. And in the hollow itself, Gnarlroot calls the wolves, the bears and the very roots of the earth to crush the intruders."
+    ],
+    "warcamp": [
+      "Gorrash Bloodfang was too savage even for the Ember Clans. When the clan elders cast him out for burning a village that had already surrendered, he walked into the badlands with his axe and a handful of loyal raiders. A year later his camp sprawls across the plain under red banners and black smoke, and every outcast, bandit and broken warband with nowhere else to go has answered his horn.",
+      "Reaching the warchief means fighting through his camp. Skrit, the Sapper Boss, holds the outer palisade with more bombs than sense, and when he falls his bomb pouch goes off with him. Ulva Wargmother raised every warg in the camp by hand, and when she joins the fight the whole pack fights harder. Gorrash waits by the great fire with his axe on his shoulder. He does not believe in surrender, his own or anyone else's."
+    ],
+    "vault": [
+      "The mages who built the great library sealed their most dangerous books in a vault beneath it, and they forged a warden to guard the door: Thuldrak, a giant of stone and iron with a crystal heart, bound by runes to let no one pass. The mages are centuries gone and the library above is a ruin, but the warden is still at his post. He no longer remembers who he is guarding the books from. He only knows that everyone is a thief.",
+      "A crew of goblin tinkers found their way in long ago, and rather than fight the warden, they adopted him. Chief Tinker Bolts and his gang keep Thuldrak oiled, patched and very, very angry, and they help themselves to whatever the vault leaves lying around. Deeper in, Archivist Vex still shelves books that crumbled to dust a hundred years ago, bound to the vault as a wraith and furious at anyone who touches her collection. Past her stand the great iron doors, and Thuldrak waiting behind them with his core blazing."
+    ]
+  };
+  for (const [k, v] of Object.entries(RB.LORE)) { const r = (RB.RAIDS && RB.RAIDS[k]) || (RB.DUNGEONS && RB.DUNGEONS[k]); if (r) r.lore = v; }
 })(globalThis.RB);
 
 /* RAIDBOUND — UI core: persistence, card rendering, icons, sound, small widgets */
@@ -7804,6 +7901,7 @@ globalThis.RB.WEB_BUILD = true;
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
     const el = U.show('setup', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
+      ${R[setup.raid].lore ? `<div class="lore" style="--lc:${R[setup.raid].theme || '#c9a25a'}"><h3>The tale of ${esc(R[setup.raid].name)}</h3>${R[setup.raid].lore.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
       <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
       <div class="difficulty"><span class="seg"><button class="${!setup.asBoss ? 'on' : ''}" data-side="heroes">Play the heroes</button><button class="${setup.asBoss ? 'on' : ''}" data-side="boss">Play the raid boss</button></span><span style="color:var(--muted);font-size:.92rem">${setup.asBoss ? `You are ${esc(R[setup.raid].boss)}. Each turn you hold a hand of boss cards and pick which to play, then choose who your minions and your strike attack. The AI plays the heroes.` : 'You lead the heroes against the AI-controlled boss.'}</span></div>
       <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
@@ -8041,6 +8139,7 @@ globalThis.RB.WEB_BUILD = true;
       { id: 'combat', icon: '⚔', title: 'Steel and blood', html: `
         <section><h4>Attacking</h4><p>Attacks always target one enemy: the boss or one of its minions. The defender strikes back, so both sides take damage. <b>Damage stays between turns</b>, so every fight costs you something. While a minion with <b>Guardian</b> stands, the boss can't be attacked.</p>
         ${fgEx(fgU(ca('treant'), 'Ironbark Treant', '3 ATK · 7 health') + fgA('attacks') + fgU(ca('thrall'), 'Risen Thrall', '2 ATK · 2 health') + fgA('result') + fgU('', 'Thrall falls', 'Treant keeps 2 damage', 'ok'), 'Both sides hit at once. The Treant wins, but carries 2 damage into the next turn.')}</section>
+        <section><h4>Hitting everything at once</h4><p>A card or power that hits <b>each enemy</b> reaches at most <b>5 targets</b>. If there are more, it always hits the boss, then the minions it hurts most: Guardians first, then the ones it can finish off, then the hardest hitters. If the same card also hits the boss or a target you chose, it reaches 4 others. Party-wide heals and wards still reach everyone, and the boss's own hit-all cards have no limit. To keep that fair, a boss can have at most <b>7 minions</b> on the table at once.</p></section>
         <section><h4>Volley and melee</h4><p><b>Volley</b> attackers take nothing back. Melee attackers that hit the boss also take its <b>retaliation</b> (Cold Hands, Molten Scales, Coral Hide). Volley is the only way to reach a boss in the air.</p></section>
         <section><h4>Your hero's weapon</h4><p>Heroes attack with an equipped weapon by paying its strike cost. When your hero is attacked, a ready weapon can also <b>strike back</b> if you can pay for it.</p></section>
         <section><h4>Armor, wards and healing</h4><p><b>Armor</b> can block when your hero is hit, if you have enough ready resources to pay its cost; it then exhausts until your turn. A <b>ward</b> (◈) is a shield from a card: it prevents the next damage and then fades. <b>Healing</b> removes damage but never raises health above the maximum.</p>
@@ -8077,10 +8176,11 @@ globalThis.RB.WEB_BUILD = true;
         <section><h4>Soak</h4><p>A <b>Soak</b> omen drops a fixed amount of damage into a circle. Each hero chooses to <b>step in</b> or stay out. The damage is shared evenly between everyone who steps in. If <b>nobody</b> steps in, it hits <b>every hero in full</b>. Wards and armor still help.</p>
         <div class="fg-tablewrap"><table class="fg-table"><thead><tr><th>Party</th><th>Total</th><th>1 in</th><th>2 in</th><th>3 in</th><th>4 in</th><th>Nobody</th></tr></thead><tbody>${soakRows}</tbody></table></div>
         <p class="small">Raiding alone, you always take the whole Soak: there is no one to share it with.</p></section>` },
-      { id: 'raids', icon: '🔥', title: 'Raid by raid', html: `
-        <p>Every raid has its own rules and <b>phases</b>. Phases begin when the boss's health drops past the marks on its health bar.</p>
-        ${raids.map(([id, r]) => `<section class="fg-raid"><div class="fg-raidhead"><img alt="" src="${raidArt(id)}"><div><h4>${esc(r.name)}</h4><small>${esc(r.boss || r.short)}</small></div></div><ul>${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul></section>`).join('')}
-        <section><h4>Dungeons</h4><p>Dungeons are run by a dungeon hero instead of a raid boss. It flips cards each turn, marks one hero at random to attack, and levels up as you beat its under-bosses. Your heroes keep their health, cards and allies from one boss to the next.</p></section>` },
+      { id: 'raids', icon: '🔥', title: 'Raids and dungeons', html: `
+        <p>Every raid has its own story, rules and <b>phases</b>. Phases begin when the boss's health drops past the marks on its health bar.</p>
+        ${raids.map(([id, r]) => `<section class="fg-raid"><div class="fg-raidhead"><img alt="" src="${raidArt(id)}"><div><h4>${esc(r.name)}</h4><small>${esc(r.boss || r.short)}</small></div></div>${(r.lore || []).map(t => `<p class="fg-lore">${esc(t)}</p>`).join('')}<ul>${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul></section>`).join('')}
+        <section><h4>Dungeons</h4><p>Dungeons are run by a dungeon hero instead of a raid boss. It flips cards each turn, marks one hero at random to attack, and levels up as you beat its under-bosses. Your heroes keep their health, cards and allies from one boss to the next.</p></section>
+        ${Object.entries(RB.DUNGEONS || {}).map(([id, d]) => `<section class="fg-raid"><div class="fg-raidhead"><img alt="" src="${U.art(d.art, 'raid:' + id)}"><div><h4>${esc(d.name)}</h4><small>${(d.stages || []).map(st => esc(st.main ? d.boss : st.boss)).join(' → ') || esc(d.boss)}</small></div></div>${(d.lore || []).map(t => `<p class="fg-lore">${esc(t)}</p>`).join('')}</section>`).join('')}` },
       { id: 'keywords', icon: '✦', title: 'Keywords', html: `<p>Keywords are printed in bold on cards. The small letter shows on allies and minions on the table.</p><ul class="fg-kws">${Object.keys(RB.KEYWORDS).map(kwRow).join('')}</ul>` },
       { id: 'more', icon: '🎒', title: 'Collecting', html: `
         <section><h4>Party play</h4><p>Up to four heroes can join a raid. You take each hero's turn in order, so friends can pass the device around, or play online. The boss grows tougher with each hero: it has more health, reveals an extra card per hero, sees more omens, and its strikes and minions hit harder.</p></section>
@@ -9424,7 +9524,7 @@ globalThis.RB.WEB_BUILD = true;
       <p class="lede">A dungeon runs itself: no boss player needed. Up to three heroes go in with their <b>starter decks</b>. Each turn the dungeon <b>flips</b> cards from its deck (allies, equipment and attacks), then <b>marks</b> one hero at random — and everything it has attacks that hero. Fight through <b>two under-bosses</b>, then the master of the dungeon, in one fight. The dungeon levels up each time an under-boss falls. Win to earn Dungeon XP: every level lets more of your own cards into your deck.</p>
       ${xpBar()}
       <div class="dcards">${cards}</div>
-      <div class="dinfo" style="--dc:${d.theme}"><h3>${esc(d.name)}</h3><p class="lede">${esc(d.intro)}</p>${d.stages ? `<ol class="gauntlet">${d.stages.map((s, i) => `<li><img alt="" src="${U.art(s.main ? d.art : s.art, s.main ? 'raid:' + d.id : 'ub:' + i + d.id)}"><div><b>${esc(s.main ? d.boss : s.boss)}</b><small>${s.main ? 'Master of the dungeon' : `Under-boss ${i + 1}${s.rule ? ` · ${esc(s.rule.name)}: ${esc(s.rule.text)}` : ''}`}</small></div></li>`).join('')}</ol>` : ''}<ul>${d.rules.map(r => `<li><b>${esc(r.name)}:</b> ${esc(r.text)}</li>`).join('')}</ul></div>
+      <div class="dinfo" style="--dc:${d.theme}"><h3>${esc(d.name)}</h3><p class="lede">${esc(d.intro)}</p>${d.lore ? `<div class="lore inline">${d.lore.map(p => `<p>${esc(p)}</p>`).join('')}</div>` : ''}${d.stages ? `<ol class="gauntlet">${d.stages.map((s, i) => `<li><img alt="" src="${U.art(s.main ? d.art : s.art, s.main ? 'raid:' + d.id : 'ub:' + i + d.id)}"><div><b>${esc(s.main ? d.boss : s.boss)}</b><small>${s.main ? 'Master of the dungeon' : `Under-boss ${i + 1}${s.rule ? ` · ${esc(s.rule.name)}: ${esc(s.rule.text)}` : ''}`}</small></div></li>`).join('')}</ol>` : ''}<ul>${d.rules.map(r => `<li><b>${esc(r.name)}:</b> ${esc(r.text)}</li>`).join('')}</ul></div>
       <h3 class="sec">Difficulty</h3><div class="difficulty"><span class="seg">${Object.entries(M).map(([k, m]) => `<button class="${k === st.mode ? 'on' : ''}" data-mode="${k}">${m.name}</button>`).join('')}</span><p class="kwhat">${esc(mode.text)}</p></div>
       <h3 class="sec">Your party (up to 3)</h3><div class="dseats">${seats}${n < 3 ? `<button class="btn" data-act="add">+ Add a hero</button>` : ''}</div>
       <div class="bossscale"><b>${esc(d.short)} for ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${d.strike + (n - 1) + mode.level - 1} · starts at level ${mode.level} · ${mode.first ? 'goes first' : 'you go first'}</div>

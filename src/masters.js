@@ -16,7 +16,7 @@
     art: C.warlord.art });
   hero('tempestavatar', { name: 'Avatar of the Tempest', fac: 'concord', race: 'Elemental', cls: 'mage', spec: 'Stormheart', profs: ['enchanting', 'engineering'], hp: 28,
     unlock: { how: 'heroicall', text: 'Defeat all three raid bosses on Heroic' }, flavor: 'Thunder is just the storm clearing its throat.',
-    power: { name: 'Eye of the Storm', text: 'Deal 3 damage to each enemy.', target: 'none', tags: ['aoe'], run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 3, { p: c.p, kind: 'power' }); } },
+    power: { name: 'Eye of the Storm', text: 'Deal 3 damage to each enemy.', target: 'none', tags: ['aoe'], run: async (E, c) => { for (const t of E.aoe(E.enemies(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'power' }); } },
     art: C.tempest.art });
   RB.UNLOCK_HEROES.push('dawnarchon', 'redwarlord', 'tempestavatar');
   const baseUnlocked = RB.heroUnlocked;
@@ -31,9 +31,9 @@
   /* ---------- Ascended Master Heroes: one per hero ---------- */
   const asc = (heroId, o) => { const h = H[heroId]; const id = 'asc_' + heroId; o.id = id; o.type = 'master'; o.cost = o.cost || 7; o.hero = heroId; o.fac = h.fac; o.rarity = 'r'; o.set = 'core';
     const short = h.name.replace(/^(Ser|Lord|Sister|Brother) /, '').split(/[ ,]/)[0]; o.text = `${short} only. Becomes your hero; damage and gear stay. ` + o.text; o.art = { s: 'holy', L: [['glow', { x: 150, y: 110, r: 130, c: o.col || '#fff0b0', op: 0.6 }]] }; C[id] = o; return id; };
-  const minAll = async (E, p, n) => { for (const t of E.minions()) await E.dmg(t, n, { p, kind: 'effect' }); };
+  const minAll = async (E, p, n) => { for (const t of E.aoe(E.minions(), n)) await E.dmg(t, n, { p, kind: 'effect' }); };
   asc('aldric', { name: 'Aldric, Lightsworn Champion', hp: 36, heroAtk: 1, col: '#fff0a0', text: 'Your hero has +1 ATK. Each turn: prevent the next 3 damage to each friendly hero.', mstart: async (E, p) => { for (const h of E.heroes()) E.shield(h, 3); } });
-  asc('thorgrim', { name: 'Thorgrim, Lord of the Peaks', hp: 39, col: '#bfe8ff', text: 'Each turn: deal 1 damage to each enemy.', mstart: async (E, p) => { for (const t of E.enemies()) await E.dmg(t, 1, { p, kind: 'effect' }); } });
+  asc('thorgrim', { name: 'Thorgrim, Lord of the Peaks', hp: 39, col: '#bfe8ff', text: 'Each turn: deal 1 damage to each enemy.', mstart: async (E, p) => { for (const t of E.aoe(E.enemies(), 1)) await E.dmg(t, 1, { p, kind: 'effect' }); } });
   asc('lyssara', { name: 'Lyssara, Starborn Archmage', hp: 34, spell: 2, col: '#d0a8ff', text: 'Spells and powers deal +2 damage. Each turn: deal 3 damage to a random enemy.', mstart: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 3, { p, kind: 'effect' }); } });
   asc('grukka', { name: 'Grukka the Unchained', hp: 42, heroAtk: 3, allyFerocity: true, col: '#ff6a3a', text: 'Your hero has +3 ATK. Your allies have Swift.' });
   asc('hruna', { name: 'Hruna, Voice of the Ancestors', hp: 38, col: '#9affd0', text: 'Each turn: heal 3 damage from each friendly hero and ally.', mstart: async (E, p) => { for (const t of E.friendlyChars()) await E.heal(t, 3); } });

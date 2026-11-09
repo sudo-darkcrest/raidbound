@@ -6,9 +6,11 @@
   function enemyValue(E, t, dmg) {
     const shieldId = E.raid.halvedBy, shielded = shieldId && E.g.boss.minions.some(m => m.id === shieldId); // #102 the Maw halves Nethys's damage
     if (t.t === 'boss') { const hp = E.bossHp(), B = E.g.boss, d2 = shielded ? Math.ceil(dmg / 2) : dmg; return hp <= d2 ? 1000 : d2 * 1.05 + (B.flying ? (B.ground + dmg >= B.groundMax ? 8 : dmg * 0.4) : 0); }
-    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), guard = (d.kw || []).includes('guardian') || d.id === shieldId;
-    if (dmg >= hp) return 10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3;
-    return dmg * 0.55 + (guard ? 4 : 0);
+    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), kw = d.kw || [], guard = kw.includes('guardian') || d.id === shieldId;
+    // #110: Thick Hide soaks 1 of every hit; Ambush and Crushing minions are worth killing first; chipping a Frenzy minion only makes it angrier
+    const eff = Math.max(0, dmg - (kw.includes('thickhide') ? 1 : 0));
+    if (eff >= hp) return 10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3 + (kw.includes('ambush') ? 3 : 0) + (kw.includes('crushing') ? 2 : 0);
+    return eff * 0.55 + (guard ? 4 : 0) - (kw.includes('frenzy') && eff > 0 ? 1.5 : 0);
   }
   function bestEnemy(E, p, dmg, list) {
     let best = null, bs = -1;
@@ -26,6 +28,29 @@
     return best;
   }
   AI.enemyTarget = (E, p, dmg) => bestEnemy(E, p, dmg).t;
+  // #110: is something nasty coming this boss turn? (a Soak omen or an omen that powers up the strike)
+  function dangerSoon(E) {
+    const B = E.g.boss;
+    if (!B.omens || !B.omens.length || !E.nextOmenRound || E.nextOmenRound() !== E.g.round) return false;
+    const o = RB.BOSSCARDS[B.omens[B.omens.length - 1]];
+    return !!(o && (o.soak || /strike this turn/.test(o.text || '')));
+  }
+  // #110: keep enough resources ready on your turn to play a React card (or defensive Instant) when the boss comes for you.
+  // Resources ready again at the start of your own turn, so holding one back costs nothing next turn.
+  function reactReserve(E, p) {
+    let cheapest = null;
+    for (const c of p.hand) {
+      const d = C[c.id], t = d.tags || [];
+      if (d.type !== 'ability' || d.speed !== 'instant' || !(d.react || t.includes('shield') || t.includes('elusive'))) continue;
+      if (cheapest == null || d.cost < cheapest) cheapest = d.cost;
+    }
+    if (cheapest == null) return 0;
+    const hpPct = E.heroHp(p) / E.heroMax(p), heroes = E.heroes();
+    const top = heroes.reduce((a, b) => (b.threat > a.threat ? b : a), heroes[0]);
+    const likely = heroes.length === 1 || top === p || hpPct < 0.6 || dangerSoon(E) || (E.raid.dungeon && hpPct < 0.75);
+    return likely ? cheapest : 0;
+  }
+  AI.reactReserve = reactReserve;
 
   // score a playable card; returns {s, target}
   function scoreCard(E, p, inst) {
@@ -77,7 +102,7 @@
         }
         if (tags.includes('aoe') || tags.includes('aoeMinion')) {
           const dmg = (d.dmg || 2) + sp; let s = 0;
-          for (const t of (tags.includes('aoeMinion') ? E.minions() : E.enemies())) s += t.t === 'boss' ? dmg : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
+          for (const t of E.aoe(tags.includes('aoeMinion') ? E.minions() : E.enemies(), dmg)) s += t.t === 'boss' ? dmg : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
           if (d.id === 'whirlwind') s += 2 + sp;
           return { s: s + (tags.includes('draw') ? 4 : 0) };
         }
@@ -140,7 +165,7 @@
       const bossPct = E.bossHp() / E.g.boss.maxHp;
       let s = -1, target = null;
       if (tags.includes('dmg')) { const b = bestEnemy(E, p, (pw.dmg || 8) + E.spellPower(p)); target = b.t; s = (bossPct < 0.45 || E.g.round >= 6 || (b.t && b.t.t === 'minion' && b.s > 20)) ? 25 : -1; }
-      else if (tags.includes('aoe')) { const n = E.enemies().length; s = (n >= 3 || E.g.round >= 6) ? 18 + n * 4 : -1; }
+      else if (tags.includes('aoe')) { const n = Math.min(RB.AOE_CAP || 5, E.enemies().length); s = (n >= 3 || E.g.round >= 6) ? 18 + n * 4 : -1; }
       else if (tags.includes('heal')) { target = mostWoundedFriendly(E, 'friendly'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 10 ? 30 : -1; }
       else if (tags.includes('healAll')) { let tot = 0; for (const t of E.friendlyChars()) tot += Math.min(6, E.maxHpOf(t) - E.hpOf(t)); s = tot >= 14 ? 30 : -1; }
       else if (tags.includes('buff')) s = (E.g.round >= 4 && (p.weapon || E.heroAtk(p) > 0)) ? 16 : -1;
@@ -148,18 +173,24 @@
       if (s > 0) acts.push({ s, go: () => E.usePower(p, target) });
     }
     // cards
+    const reserve = reactReserve(E, p), avail = E.available(p);
     for (const inst of p.hand) {
       const d = C[inst.id];
       if (!E.canPlay(p, inst).ok) continue;
       const sc = scoreCard(E, p, inst);
       if (sc.s <= 0) continue;
       if (E.needsTarget(inst) && !sc.target) continue;
-      acts.push({ s: sc.s - d.cost * 0.15, go: () => E.playCard(p, inst, sc.target) });
+      // #110: dipping into the React reserve needs a clearly better play
+      const keepsReserve = !reserve || d.speed === 'instant' || d.type === 'quest' || d.type === 'location' || avail - d.cost >= reserve;
+      const s = sc.s - d.cost * 0.15 - (keepsReserve ? 0 : 7);
+      if (s <= 0) continue;
+      acts.push({ s, go: () => E.playCard(p, inst, sc.target) });
     }
     // #102 bail water before a Tidal Surge
     if (E.canBail && E.canBail(p)) {
       const B = E.g.boss, mx = E.raid.counter.max;
-      const s = B.counter >= mx - 1 ? 9 : B.counter >= mx - 2 && E.available(p) >= 3 ? 3 : -1;
+      // urgent when the Surge is one tick away; otherwise bail with whatever is left at the end of the turn (it refreshes anyway)
+      const s = B.counter >= mx - 1 ? 9 : B.counter >= mx - 2 && E.available(p) >= 3 ? 3 : B.counter >= 1 && E.available(p) - E.raid.bail.cost >= reserve ? 0.5 : -1;
       if (s > 0) acts.push({ s, go: () => E.bail(p) });
     }
     // items

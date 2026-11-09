@@ -7,6 +7,8 @@
   const noop = async () => { };
 
   RB.ENRAGE_ROUND = 25; // fix-sim: see bossTurn
+  RB.AOE_CAP = 5; // #109: players' hit-all effects reach at most this many enemies
+  RB.BOSS_MINION_CAP = 7; // #109: the most minions a boss can have on the table at once
   RB.DUNGEON_PARTY_STRIKE = 1; // fix-sim: each extra hero adds 1 more to dungeon strikes (on top of the usual +1)
   RB.HEROIC_EXTRA_CARDS = 1; // fix-sim: Heroic raids reveal one more boss card each turn (smarter decks made Heroic too easy)
   RB.newGame = function (cfg, hooks) {
@@ -888,6 +890,23 @@
       // the round whose boss turn brings the next omen (for the battle screen)
       nextOmenRound: () => { if (!g.boss.omens || !g.boss.omens.length) return null; let r = g.round; while (!api.omenDue(r) || g.boss.omenRound === r) r++; return r; },
       strikeNow: () => raid.strike + g.boss.strikeBonus + (g.boss.tempStrike || 0) + g.partyFury,
+      // #109: a player's hit-all effect reaches at most 5 enemies. The game keeps the boss, then the minions it hurts most:
+      // Guardians (and the Leviathan Maw) first, then the ones this hit would kill, then the hardest hitters. Bosses' own effects are not limited.
+      aoe: (list, amount, cap) => {
+        const CAP = cap || RB.AOE_CAP; // cap 4 when the same card also hits the boss or a chosen target
+        if (!list || list.length <= CAP) return list;
+        const n = amount || 0, boss = list.filter(t => t.t === 'boss'), mins = list.filter(t => t.t === 'minion');
+        const score = t => {
+          const d = minDef(t.m), hp = hpOf(t), real = n - (hasKw(d, 'thickhide') ? 1 : 0);
+          let s = minAtk(t.m) * 5 - hp * 0.2;
+          if (hasKw(d, 'guardian')) s += 1000;
+          if (raid.halvedBy && t.m.id === raid.halvedBy) s += 900;
+          if (n && hp <= real) s += 500;
+          return s;
+        };
+        const keep = new Set([...boss, ...mins.slice().sort((a, b) => score(b) - score(a)).slice(0, Math.max(0, CAP - boss.length))]);
+        return list.filter(t => keep.has(t));
+      },
       takeOff, canBail: p => !!(raid.bail && isActive(p) && g.boss.counter > 0 && !p.bailed && available(p) >= raid.bail.cost),
       bail: async p => {
         if (!api.canBail(p)) return { ok: false, why: raid.bail ? (p.bailed ? 'You have already bailed water this turn.' : g.boss.counter <= 0 ? 'The water is already low.' : `Bailing costs ${raid.bail.cost} resource.`) : 'Nothing to bail here.' };
@@ -944,7 +963,12 @@
       transform: async (t, id) => { if (t.t !== 'minion') return; const old = minDef(t.m).name; t.m.id = id; t.m.damage = 0; t.m.atkB = 0; t.m.hpB = 0; log(`${old} is transformed into a ${TK[id].name}!`, 'def'); await H.anim('summon', { ref: t.m.uid }); H.update(); },
       revive: async (p, hp) => { if (!p.hero.dead) return; p.hero.dead = false; p.hero.damage = heroMax(p) - hp; log(`${pdef(p).name} returns to the fight!`, 'win'); await H.anim('heal', { ref: 'hero' + p.idx, amount: hp }); H.update(); },
       summonAlly: async (p, id, k) => { for (let i = 0; i < k; i++) { const a = { uid: uid(), id, c: null, damage: 0, ex: false, sick: true, atkB: 0, hpB: 0, tmp: 0, frozen: false, token: id }; a.sick = !allyKw(p, a, 'ferocity'); p.allies.push(a); H.update(); await H.anim('summon', { ref: a.uid }); } log(`${pdef(p).name} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'play'); },
-      summonMinion: async (id, k) => { if (g.players.length === 1 && k > 1) k = Math.ceil(k / 2); for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); for (const p of g.players) { const q = perkIs(p, 'firstMinion'); if (q && !p.hero.petUsed && !p.hero.dead && g.boss.minions.includes(m)) { p.hero.petUsed = true; log(`${petName(p)} dives at the ${TK[id].name}.`, 'def'); await dmg(T.minion(m), q.n, { p, kind: 'effect' }); } } } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
+      summonMinion: async (id, k) => { if (g.players.length === 1 && k > 1) k = Math.ceil(k / 2);
+        // #109: the boss's side of the table holds at most 7 minions (players' hit-all cards stop at 5, so endless swarms would be unbeatable)
+        const room = RB.BOSS_MINION_CAP - g.boss.minions.length;
+        if (room <= 0) { log(`${raid.short}'s side of the table is full: no more minions can join.`, 'boss'); return; }
+        k = Math.min(k, room);
+        for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); for (const p of g.players) { const q = perkIs(p, 'firstMinion'); if (q && !p.hero.petUsed && !p.hero.dead && g.boss.minions.includes(m)) { p.hero.petUsed = true; log(`${petName(p)} dives at the ${TK[id].name}.`, 'def'); await dmg(T.minion(m), q.n, { p, kind: 'effect' }); } } } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
       buffMinions: (a, h) => { g.boss.minions.forEach(m => { m.atkB += a; m.hpB += h; }); H.update(); },
       bossHeal: async k => heal(T.boss(), k),
       addCounter: async k => { if (!raid.counter) return; g.boss.counter += k; H.update(); if (g.boss.counter >= raid.counter.max) { g.boss.counter = 0; await raid.counter.onMax(api); } },

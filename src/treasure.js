@@ -5,7 +5,7 @@
   const fig = o => ['fig', o];
   const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
   const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
-  const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
+  const minionsDmg = async (E, c, n, kind, cap) => { for (const t of E.aoe(E.minions(), n, cap)) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
   const myAllies = (E, p) => E.allAllies().filter(t => t.p === p);
   const addP = (pack, id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; o.pack = pack; C[id] = o; };
   const addT = (raid, id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'r'; o.set = raid; C[id] = o; RB.RAIDS[raid].treasure.push(id); };
@@ -64,7 +64,7 @@
     art: { s: 'volcano', L: [glow(150, 100, 80, '#ff8a2a', 0.65), ['obj', { t: 'staffItem', x: 150, y: 116, glow: '#ffb040' }], ['fx', { t: 'fireball', x: 150, y: 70, c: '#ffb040', ang: 90 }]] } });
   molten('wyrmrider', { name: 'Wyrmrider Outcast', type: 'ally', cost: 5, atk: 4, hp: 4, kw: ['ferocity', 'longrange'], race: 'Orc',
     art: { s: 'volcano', L: [['dragon', { x: 160, y: 160, s: 0.75 }], fig({ race: 'orc', pose: 'heroic', w: 'polearm', helm: 'mohawk', x: 150, y: 118, s: 0.5 })] } });
-  molten('moltencore', { name: 'Molten Core', type: 'item', cost: 4, rarity: 'e', tags: ['aoeMinion'], text: 'At the start of your turn, deal 2 damage to each enemy minion.', start: async (E, p) => { for (const t of E.minions()) await E.dmg(t, 2, { p, kind: 'effect' }); },
+  molten('moltencore', { name: 'Molten Core', type: 'item', cost: 4, rarity: 'e', tags: ['aoeMinion'], text: 'At the start of your turn, deal 2 damage to each enemy minion.', start: async (E, p) => { for (const t of E.aoe(E.minions(), 2)) await E.dmg(t, 2, { p, kind: 'effect' }); },
     art: { s: 'volcano', p: 'embers', pn: 60, L: [glow(150, 120, 100, '#ff4a1a', 0.8), ['fx', { t: 'whirl', x: 150, y: 150, c: '#ff8a2a' }], ['obj', { t: 'shard', x: 150, y: 118, s: 1.2, col: '#ff5a1a' }], ['fx', { t: 'sparkle', x: 150, y: 110, n: 10 }]] } });
   molten('dragonhoard', { name: 'Plunder the Dragon\'s Hoard', type: 'quest', cost: 0, qcost: 3, tags: ['ramp'], text: 'Play as a resource. Complete (pay 3): draw 2 cards and gain 2 extra resources this turn.', reward: async (E, c) => { await E.draw(c.p, 2); E.gainRes(c.p, 2); },
     art: { s: 'volcano', L: [glow(150, 160, 100, '#ffd060', 0.55), ['obj', { t: 'chest', x: 150, y: 170, s: 1 }], ['obj', { t: 'coin', x: 90, y: 190, s: 0.5 }], ['obj', { t: 'crown', x: 210, y: 150, s: 0.5 }]] } });
@@ -129,7 +129,7 @@
     art: { s: 'arcane', L: [glow(150, 120, 90, '#a0c0ff', 0.6), ['fx', { t: 'runes', x: 150, y: 120, r: 90, c: '#e8c060' }], ['obj', { t: 'hourglass', x: 150, y: 125, s: 1.1 }], ['fx', { t: 'meteors', n: 4, c: '#e0e8ff' }]] } });
   loot('loot_kingscrown', { name: 'Crown of the First King', type: 'item', cost: 3, allyHp: 2, tags: ['buff'], text: 'Your allies have +2 health.', flavor: 'Whoever wears it, the old banners still kneel.', loot: { reward: 'back_kingscrown', label: 'First King\'s Crown card back' },
     art: { s: 'castle', L: [glow(150, 110, 90, '#ffe08a', 0.7), ['obj', { t: 'crown', x: 150, y: 115, s: 1.4 }], ['fx', { t: 'holy', x: 150, y: 100 }]] } });
-  loot('loot_stormwing', { name: 'Stormwing Wyvern', type: 'ally', cost: 4, atk: 4, hp: 3, kw: ['ferocity', 'longrange'], race: 'Beast', tags: ['aoe'], text: 'Swift. Volley. When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); }, flavor: 'Thunder is just the sound of it arriving.', loot: { reward: 'back_stormwing', label: 'Stormwing card back' },
+  loot('loot_stormwing', { name: 'Stormwing Wyvern', type: 'ally', cost: 4, atk: 4, hp: 3, kw: ['ferocity', 'longrange'], race: 'Beast', tags: ['aoe'], text: 'Swift. Volley. When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => { for (const t of E.aoe(E.minions(), 2)) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); }, flavor: 'Thunder is just the sound of it arriving.', loot: { reward: 'back_stormwing', label: 'Stormwing card back' },
     art: { s: 'storm', L: [glow(150, 90, 90, '#a0d8ff', 0.6), ['beast', { t: 'gryphon', x: 150, y: 150, s: 0.8, eye: '#a0e8ff' }], ['fx', { t: 'bolt', x: 150, y: 60 }]] } });
   Object.assign(RB.COSMETICS, {
     back_phoenix: { kind: 'back', name: 'Phoenix Ascendant', get: 'loot', special: true, desc: 'A phoenix rising on wings of gold flame from a burst of embers.' },

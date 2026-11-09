@@ -5,7 +5,7 @@
   const fig = o => ['fig', o];
   const glow = (x, y, r, c, op) => ['glow', { x, y, r, c, op: op == null ? 0.5 : op }];
   const add = (id, o) => { o.id = id; o.fac = o.fac || 'neutral'; o.rarity = o.rarity || 'c'; o.set = 'frontier'; C[id] = o; };
-  const minionsDmg = async (E, c, n, kind) => { for (const t of E.minions()) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
+  const minionsDmg = async (E, c, n, kind, cap) => { for (const t of E.aoe(E.minions(), n, cap)) await E.dmg(t, n, { p: c.p, kind: kind || 'effect' }); };
   const pick = (E, a) => a.length ? a[Math.floor(E.rnd() * a.length)] : null;
 
   /* ---------- tokens for the new cards ---------- */
@@ -35,7 +35,7 @@
     art: { s: 'forest', L: [['beast', { t: 'bear', x: 196, y: 210, s: 0.8, shadow: 60 }], fig({ race: 'dwarf', pose: 'aim', w: 'crossbow', helm: 'horned', pauld: 'fur', x: 90, y: 214, s: 0.72 }), ['obj', { t: 'horn', x: 250, y: 96, s: 0.5 }]] } });
   add('flashpowder', { name: 'Flashpowder', type: 'ability', speed: 'instant', cost: 1, target: 'enemy', tags: ['stun'], text: 'Stun an enemy. A stunned minion can\'t attack next boss turn; a stunned boss skips its next strike.', run: async (E, c) => E.stun(c.target),
     art: { s: 'rooftops', L: [glow(170, 120, 90, '#fff6c0', 0.85), ['obj', { t: 'bomb', x: 150, y: 130, s: 0.9 }], ['fx', { t: 'sparkle', x: 170, y: 110 }], ['fx', { t: 'shout', x: 170, y: 120, c: '#fff6c0' }]] } });
-  add('firebomb', { name: 'Alchemist\'s Firebomb', type: 'ability', speed: 'basic', cost: 2, target: 'enemy', tags: ['dmg'], dmg: 2, text: 'Deal 2 damage to an enemy, then 1 damage to each enemy minion.', run: async (E, c) => { await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); await minionsDmg(E, c, 1); },
+  add('firebomb', { name: 'Alchemist\'s Firebomb', type: 'ability', speed: 'basic', cost: 2, target: 'enemy', tags: ['dmg'], dmg: 2, text: 'Deal 2 damage to an enemy, then 1 damage to each enemy minion.', run: async (E, c) => { await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); await minionsDmg(E, c, 1, undefined, 4); },
     art: { s: 'forge', p: 'embers', pn: 40, L: [glow(170, 120, 90, '#ff8a2a', 0.7), ['obj', { t: 'potion', x: 120, y: 130, col: '#ff6a1a', shape: 'flask' }], ['fx', { t: 'fireball', x: 200, y: 110, c: '#ff8a3a', ang: 20 }]] } });
   add('vigorring', { name: 'Ring of Stubborn Vigor', type: 'item', cost: 2, rarity: 'u', allyHp: 1, text: 'Your allies have +1 health.',
     art: { s: 'altar', L: [glow(150, 120, 60, '#ff9a7a', 0.6), ['obj', { t: 'ring', x: 150, y: 120, s: 1.2, gem: '#ff5a4a' }], ['fx', { t: 'buff', x: 150, y: 120, c: '#ff9a7a' }]] } });
@@ -61,11 +61,11 @@
   /* =================== CLANS (7) =================== */
   add('axethrower', { name: 'Bonechew Axe-Thrower', type: 'ally', cost: 2, atk: 3, hp: 4, fac: 'clans', kw: ['longrange'], race: 'Orc', flavor: 'He never runs out of axes. Nobody asks where he gets them.',
     art: { s: 'steppe', L: [fig({ race: 'orc', pose: 'charge', w: 'axe', off: 'axe', helm: 'mohawk', x: 140, y: 212, s: 0.9 }), ['fx', { t: 'slash', x: 220, y: 110 }]] } });
-  add('thundertotem', { name: 'Thunderhoof Totem', type: 'item', cost: 3, fac: 'clans', rarity: 'u', tags: ['aoeMinion'], text: 'At the start of your turn, deal 1 damage to each enemy minion.', start: async (E, p) => { for (const t of E.minions()) await E.dmg(t, 1, { p, kind: 'effect' }); },
+  add('thundertotem', { name: 'Thunderhoof Totem', type: 'item', cost: 3, fac: 'clans', rarity: 'u', tags: ['aoeMinion'], text: 'At the start of your turn, deal 1 damage to each enemy minion.', start: async (E, p) => { for (const t of E.aoe(E.minions(), 1)) await E.dmg(t, 1, { p, kind: 'effect' }); },
     art: { s: 'storm', L: [['fx', { t: 'bolt', x: 150, y: 60 }], glow(150, 150, 70, '#9ac8ff', 0.6), ['obj', { t: 'horn', x: 150, y: 140, s: 1 }], ['fx', { t: 'runes', x: 150, y: 200, r: 80, flat: 1, c: '#9ac8ff' }]] } });
-  add('ravager', { name: 'Steppe Ravager', type: 'ally', cost: 5, atk: 5, hp: 4, fac: 'clans', kw: ['ferocity'], race: 'Minotaur', rarity: 'u', text: 'When this enters play, deal 1 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, flavor: 'The ground shakes first. Then it really shakes.',
+  add('ravager', { name: 'Steppe Ravager', type: 'ally', cost: 5, atk: 5, hp: 4, fac: 'clans', kw: ['ferocity'], race: 'Minotaur', rarity: 'u', text: 'When this enters play, deal 1 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.aoe(E.enemies(), 1)) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, flavor: 'The ground shakes first. Then it really shakes.',
     art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 190, c: '#e8b070' }], fig({ race: 'minotaur', pose: 'charge', w: 'battleaxe', pauld: 'spiked', x: 150, y: 212, s: 0.9 })] } });
-  add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 3, kw: ['protector'], fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
+  add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 3, kw: ['protector'], fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.aoe(E.minions(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
     art: { s: 'forge', p: 'embers', pn: 30, L: [glow(200, 140, 70, '#ffb040', 0.6), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 120, y: 212, s: 1.05, eye: '#ffd060' }), ['obj', { t: 'bomb', x: 210, y: 176, s: 0.7 }], ['obj', { t: 'bomb', x: 246, y: 200, s: 0.5 }]] } });
   add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/2 Grunt with Swift and Bulwark and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
     art: { s: 'steppe', L: [['obj', { t: 'chest', x: 190, y: 184, s: 0.7 }], fig({ race: 'orc', pose: 'charge', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.72 }), ['obj', { t: 'scroll', x: 240, y: 90, s: 0.45 }]] } });
@@ -127,7 +127,7 @@
   hero('zizzik', { name: 'Zizzik Sparkwhistle', fac: 'clans', race: 'Goblin', cls: 'mage', spec: 'Sparkwright', profs: ['engineering', 'alchemy'], hp: 30,
     unlock: { how: 'gold:1000', text: 'Buy for 1,000 gold in the Market' },
     flavor: '"Safety goggles are for people who plan to miss."',
-    power: { name: 'Overcharged Rocket', text: 'Deal 4 damage to each enemy. Your hero takes 1 damage.', target: 'none', tags: ['aoe'], dmg: 4, run: async (E, c) => { for (const t of E.enemies()) await E.dmg(t, 4, { p: c.p, kind: 'power' }); await E.dmg(E.heroT(c.p), 1, { kind: 'effect' }); } },
+    power: { name: 'Overcharged Rocket', text: 'Deal 4 damage to each enemy. Your hero takes 1 damage.', target: 'none', tags: ['aoe'], dmg: 4, run: async (E, c) => { for (const t of E.aoe(E.enemies(), 4)) await E.dmg(t, 4, { p: c.p, kind: 'power' }); await E.dmg(E.heroT(c.p), 1, { kind: 'effect' }); } },
     art: { s: 'forge', p: 'embers', pn: 50, L: [glow(200, 110, 80, '#ffb040', 0.6), ['fx', { t: 'fireball', x: 220, y: 100, c: '#ffb040', ang: 30 }], fig({ race: 'goblin', pose: 'castF', off: 'wand', helm: 'hood', robe: 1, glowR: '#ffd060', x: 120, y: 212, s: 1.08, cloth: '#c86a1a', eye: '#ffd060' })] } });
   hero('seraphine', { name: 'Seraphine Vale', fac: 'concord', race: 'Human', cls: 'priest', spec: 'Lightwarden', profs: ['herbalism', 'tailoring'], hp: 30,
     unlock: { how: 'gold:1000', text: 'Buy for 1,000 gold in the Market' },

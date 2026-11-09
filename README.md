@@ -30,6 +30,7 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
   - Each raid has its own gauge: the Crypt's light sears the undead when you heal, Vorthrax takes to the air when his Embers fill (only Volley can reach him until you shoot him down), and you can bail water to hold back Nethys's Tide.
 - **Defending together:** Bulwark allies can **cover** any friendly hero or ally (covering a teammate draws the boss's eye), and **React** cards answer an attack the moment it comes. Keywords: Bulwark, Swift, Volley, Shrouded, Guardian, Ambush, Crushing, Frenzy, Thick Hide and Tend.
 - **The Raider's Field Guide:** the How to play screen is a small illustrated book, and the Rules button in battle opens the chapters you need mid-fight.
+- **Stories:** every raid and dungeon has its own two-part tale, shown in raid setup, on the Dungeons screen and in the Field Guide.
 - **3 dungeons:**
   - Thornwood Hollow
   - Bloodfang Warcamp

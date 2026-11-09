@@ -187,4 +187,33 @@
   });
   // an existing card becomes a scratch-off loot card for the Little Ram
   const ram = C.ram; if (ram) { ram.set = 'loot'; ram.rarity = 'e'; ram.loot = { reward: 'pet_ram', label: 'Little Ram companion' }; }
+
+  // #108: a two-paragraph story for each raid and dungeon (shown in raid setup, on the Dungeons screen and in the Field Guide)
+  RB.LORE = {
+    "crypt": [
+      "Long before the Concord and the Clans drew their borders, Malgareth ruled the river valley from a throne of white stone. When his healers told him death was coming, he made a bargain instead of a will: he bound his soul into a phylactery, sank his chapel beneath the marsh, and waited. The king who walked out of that black water was hollow. He had no heartbeat and no warmth, only a cold green fire behind his eyes and a hunger for subjects who would never leave him.",
+      "The crypt below the drowned chapel is his court now. Bones line the walls in neat shelves, the old Soul Bell still tolls in its broken tower, and every warrior who falls there stands up again as one of his thralls. Raiders bring healers and lanterns for good reason: the Hollow King's dead shrink from honest light. When Malgareth is pressed hard he hides his soul away and lets the crypt fight for him. Break the phylactery, and the king remembers he can die."
+    ],
+    "molten": [
+      "The Molten Spire was a forge-mountain once, where Clan smiths and Concord runecrafters traded secrets under a rare truce. Then the mountain woke, and with it Vorthrax, the last of the great fire wyrms, who had slept coiled around its burning heart for a thousand years. He melted the forges, took the smiths' gold for his hoard, and claimed every slope from the ash fields to the summit.",
+      "Climbing the Spire means walking on stone that is never quite solid. Lava vents split the paths, embers drift up from every crack, and Vorthrax's whelps hatch in nests of molten rock. The Cinder Tyrant fights on the ground until his embers burn white-hot, then takes to the smoke-black sky and rains fire on everyone below. Only archers and spellcasters can reach him up there. Bring him down, and he falls like a burning star."
+    ],
+    "tide": [
+      "The Cathedral of the Tides was built on the cliffs above the Saltmarsh so that sailors could see its lamps from far out at sea. One storm took it in a single night, cliff and all, and the sea closed over its spires. The fishermen say the bells kept ringing after it sank, and that Nethys was the one ringing them: a sea witch who had waited for centuries beneath that cliff, and who made the drowned cathedral her own.",
+      "Now the tide rises and falls inside the nave as she pleases. Tentacles coil around the pillars, murk-eyed things lurk under the black water, and the Leviathan Maw sleeps in the deep beneath the altar until she calls it up. Raiders wade in carrying buckets as well as blades, because if the water climbs too high it decides the fight for them. Nethys calls herself the Mother of Tides, and no one has beaten her on her own ground in three hundred years."
+    ],
+    "thornwood": [
+      "The Thornwood is older than any kingdom, and its heart is a hollow where the trees grow so close that noon looks like dusk. For centuries Elder Gnarlroot stood at its centre, a tree giant who kept the forest's peace. Then something sour seeped up through its roots. The woodsfolk blame the crypt beneath the drowned chapel; others blame the witch who moved into the brambles. Either way, the old guardian woke angry, its runes glowing a sickly green.",
+      "Now the forest fights anyone who enters. Fenna, the Bramble Witch, guards the path with hexes of nettle and thorn, and she heals faster than most blades can cut. Past her waits Grizzlemaw, the oldest bear in the Thornwood, his hide so thick with scars and moss that weapons glance off it. And in the hollow itself, Gnarlroot calls the wolves, the bears and the very roots of the earth to crush the intruders."
+    ],
+    "warcamp": [
+      "Gorrash Bloodfang was too savage even for the Ember Clans. When the clan elders cast him out for burning a village that had already surrendered, he walked into the badlands with his axe and a handful of loyal raiders. A year later his camp sprawls across the plain under red banners and black smoke, and every outcast, bandit and broken warband with nowhere else to go has answered his horn.",
+      "Reaching the warchief means fighting through his camp. Skrit, the Sapper Boss, holds the outer palisade with more bombs than sense, and when he falls his bomb pouch goes off with him. Ulva Wargmother raised every warg in the camp by hand, and when she joins the fight the whole pack fights harder. Gorrash waits by the great fire with his axe on his shoulder. He does not believe in surrender, his own or anyone else's."
+    ],
+    "vault": [
+      "The mages who built the great library sealed their most dangerous books in a vault beneath it, and they forged a warden to guard the door: Thuldrak, a giant of stone and iron with a crystal heart, bound by runes to let no one pass. The mages are centuries gone and the library above is a ruin, but the warden is still at his post. He no longer remembers who he is guarding the books from. He only knows that everyone is a thief.",
+      "A crew of goblin tinkers found their way in long ago, and rather than fight the warden, they adopted him. Chief Tinker Bolts and his gang keep Thuldrak oiled, patched and very, very angry, and they help themselves to whatever the vault leaves lying around. Deeper in, Archivist Vex still shelves books that crumbled to dust a hundred years ago, bound to the vault as a wraith and furious at anyone who touches her collection. Past her stand the great iron doors, and Thuldrak waiting behind them with his core blazing."
+    ]
+  };
+  for (const [k, v] of Object.entries(RB.LORE)) { const r = (RB.RAIDS && RB.RAIDS[k]) || (RB.DUNGEONS && RB.DUNGEONS[k]); if (r) r.lore = v; }
 })(globalThis.RB);
