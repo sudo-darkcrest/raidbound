@@ -263,7 +263,7 @@ SENTINEL_PROMPT = ('Repaint the attached Iron Sentinel picture exactly: the same
                    'Keep the glowing runes on its arms and legs as simple rune shapes, never letters or words. Keep the same painted fantasy card-art style.')
 
 # #101 Omens (Nov 9, 2026): 21 pictures for the three raids' Omen decks. Until painted they borrow code-drawn art.
-OCR = 'Omen: Crypt of the Hollow King (green soul-fire, undead, bones, old bells)'
+OCR = 'Omen: Crypt of the Hollow King (green soul-fire, undead, bones, stone tombs)'
 OMO = 'Omen: The Molten Spire (red dragon, fire, lava and smoke)'
 OTI = 'Omen: The Sunken Cathedral (flooded ruins, sea witch, tentacles, deep water)'
 S.update({
