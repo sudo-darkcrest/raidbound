@@ -407,6 +407,28 @@
     pet_wisp: { kind: 'pet', name: 'Crowned Wisp', get: 'heroic:crypt', desc: 'A tiny crowned skull wrapped in friendly green soul-flame.' },
     pet_whelp: { kind: 'pet', name: 'Ember Whelp', get: 'heroic:molten', desc: 'A chubby baby dragon that puffs little flames.' },
     pet_seahorse: { kind: 'pet', name: 'Pearl Seahorse', get: 'heroic:tide', desc: 'A shimmering seahorse holding a glowing pearl, trailing bubbles.' },
+    // #91: companions that come with a card (get 'card:<id>': own at least one copy)
+    pet_emberpup: { kind: 'pet', name: 'Ember Wolf Pup', get: 'card:beezer', desc: 'A smouldering wolf pup with glowing ember eyes, one of Beezer\'s brood.' },
+    pet_prismling: { kind: 'pet', name: 'Prism Dragonling', get: 'card:guinevere', desc: 'A tiny white dragon with rainbow crystal wings, from Guinevere\'s clutch.' },
+    pet_raven: { kind: 'pet', name: 'Starless Raven', get: 'card:darkcrest', desc: 'A raven with violet, star-flecked feathers that keeps watch for Sir Darkcrest.' },
+    pet_bearcub: { kind: 'pet', name: 'Cave Bear Cub', get: 'card:cavebear', desc: 'A round, sleepy brown bear cub with a big black nose.' },
+    pet_gryphchick: { kind: 'pet', name: 'Gryphon Chick', get: 'card:gryphon', desc: 'A fluffy golden gryphon chick with oversized wings and a tiny beak.' },
+  };
+
+  /* #90: each companion gives its hero one tiny bonus in raids and dungeons (not in boss mode). Used by the engine. */
+  RB.PET_PERKS = {
+    pet_gryphon: { k: 'ward', n: 3, text: 'Your hero starts each fight with Ward 3 (blocks the first 3 damage).' },
+    pet_kite: { k: 'firstRes', n: 1, text: '+1 resource to spend on your first turn.' },
+    pet_wisp: { k: 'allyDraw', text: 'The first time one of your allies falls, draw a card.' },
+    pet_whelp: { k: 'bossDmg', n: 3, text: 'Puffs fire at the boss for 3 damage when the fight starts.' },
+    pet_seahorse: { k: 'trickle', n: 5, text: 'Heals your hero 1 at the start of your turn when hurt (up to 5 times a fight).' },
+    pet_owl: { k: 'hand', n: 1, text: 'Draw 1 extra card in your opening hand.' },
+    pet_ram: { k: 'firstAtk', n: 2, text: 'Your hero\'s first attack each fight deals +2 damage.' },
+    pet_emberpup: { k: 'firstAlly', text: 'The first ally you play each fight gets +1 ATK and +1 health.' },
+    pet_prismling: { k: 'halfHeal', n: 3, text: 'The first time your hero drops to half health, heals each friendly hero 3.' },
+    pet_raven: { k: 'firstMinion', n: 2, text: 'Deals 2 damage to the first minion the boss summons.' },
+    pet_bearcub: { k: 'maxhp', n: 2, text: '+2 max health for your hero.' },
+    pet_gryphchick: { k: 'firstFero', text: 'The first ally you play each fight can attack right away.' },
   };
 
 

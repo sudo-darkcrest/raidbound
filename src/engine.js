@@ -36,6 +36,12 @@
         resPlayed: false, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
       });
     });
+    // #90: companion perks (one tiny bonus per hero; never in boss mode). petUsed marks once-per-fight perks.
+    const perk = p => (!cfg.bossPlayer && p.hero.pet && RB.PET_PERKS && RB.PET_PERKS[p.hero.pet]) || null;
+    const perkIs = (p, k) => { const q = perk(p); return q && q.k === k ? q : null; };
+    const petName = p => (RB.COSMETICS && RB.COSMETICS[p.hero.pet] ? RB.COSMETICS[p.hero.pet].name : 'Companion');
+    g.players.forEach(p => { p.hero.petUsed = false; p.hero.petN = 0; p.hero.petRes = 0; const q = perk(p); if (q && q.k === 'maxhp') p.hero.hpB = q.n; });
+    const openHand = p => 7 + ((perkIs(p, 'hand') || {}).n || 0);
     const n = g.players.length;
     g.partyFury = n >= 2 ? 1 : 0;
     const heroic = cfg.difficulty === 'heroic';
@@ -53,7 +59,7 @@
 
     /* ---------- basic queries ---------- */
     const pdef = p => p.hero.master ? C[p.hero.master] : HEROES[p.heroId];
-    const heroMax = p => (p.hero.master ? C[p.hero.master].hp : HEROES[p.heroId].hp);
+    const heroMax = p => (p.hero.master ? C[p.hero.master].hp : HEROES[p.heroId].hp) + (p.hero.hpB || 0);
     const heroHp = p => heroMax(p) - p.hero.damage;
     const alive = () => g.players.filter(p => !p.hero.dead);
     const gear = p => [p.weapon, ...Object.values(p.armor), ...p.items].filter(Boolean);
@@ -143,6 +149,8 @@
       H.update();
       await checkDeath(target, src);
       if (target.t === 'boss') await checkPhases();
+      if (target.t === 'hero' && !g.over) { const p = target.p, q = perkIs(p, 'halfHeal');
+        if (q && !p.hero.petUsed && !p.hero.dead && heroHp(p) <= heroMax(p) / 2) { p.hero.petUsed = true; log(`${petName(p)} shimmers and heals the party.`, 'def'); for (const h of alive()) await heal(T.hero(h), q.n); } }
       return n;
     }
     async function useArmor(p, n) {
@@ -197,6 +205,7 @@
         H.update();
         if (d.onDeath) await d.onDeath(api, { p, a });
         if (raid.onAllyDeath) await raid.onAllyDeath(api, p, a);
+        if (perkIs(p, 'allyDraw') && !p.hero.petUsed && !p.hero.dead) { p.hero.petUsed = true; log(`${petName(p)} gathers the fallen soul: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
         return;
       }
       if (t.t === 'hero') {
@@ -323,6 +332,11 @@
         case 'ally': {
           const a = { uid: inst.uid, id: inst.id, c: inst, damage: 0, ex: false, sick: true, atkB: 0, hpB: 0, tmp: 0, frozen: false, token: null };
           a.sick = !allyKw(p, a, 'ferocity');
+          if ((perkIs(p, 'firstAlly') || perkIs(p, 'firstFero')) && !p.hero.petUsed) {
+            p.hero.petUsed = true;
+            if (perkIs(p, 'firstAlly')) { a.atkB += 1; a.hpB += 1; log(`${petName(p)} bounds alongside ${d.name}: +1 ATK and +1 health.`, 'def'); }
+            else { a.sick = false; log(`${petName(p)} rouses ${d.name}: it can attack right away.`, 'def'); }
+          }
           p.allies.push(a); H.update();
           await H.anim('summon', { ref: a.uid });
           if (d.onEnter) await d.onEnter(api, ctx);
@@ -373,6 +387,7 @@
         const useW = p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike;
         if (useW) { const wd = C[p.weapon.c.id]; pay(p, wd.strike); p.weapon.ex = true; longrange = hasKw(wd, 'longrange'); onAttack = wd.onAttack; wname = ` with ${wd.name}`; }
         atk = heroAttackValue(p, useW);
+        const ram = perkIs(p, 'firstAtk'); if (ram && !p.hero.petUsed) { p.hero.petUsed = true; atk += ram.n; log(`${petName(p)} charges in with ${pdef(p).name}: +${ram.n} damage.`, 'def'); }
         p.hero.ex = true;
         ironHide = (HEROES[p.heroId].ironHide && !p.hero.master) ? HEROES[p.heroId].ironHide : 0;
         attackerT = T.hero(p);
@@ -453,6 +468,8 @@
       await H.anim('turn', { p: p.idx, name: p.name, hero: pdef(p).name });
       log(`— ${pdef(p).name}'s turn (round ${g.round}) —`, 'turn');
       await draw(p, g.drawPerTurn);
+      if (p.hero.petRes) { p.tempRes += p.hero.petRes; log(`${petName(p)} brings a tailwind: +${p.hero.petRes} resource this turn.`, 'def'); p.hero.petRes = 0; H.update(); }
+      { const q = perkIs(p, 'trickle'); if (q && p.hero.petN < q.n && p.hero.damage > 0) { p.hero.petN++; await heal(T.hero(p), 1); } }
       if (p.hero.master && C[p.hero.master].mstart) await C[p.hero.master].mstart(api, p);
       for (const a of [...p.allies]) { const d = allyDef(a); if (d.start && p.allies.includes(a)) await d.start(api, p); if (g.over) return; }
       for (const e of [...p.items]) { const d = C[e.c.id]; if (d.start) await d.start(api, p); if (g.over) return; }
@@ -655,14 +672,20 @@
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
       canPlay, canEquip, needsTarget, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
-      start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, 7); } log('Each hero begins with 2 resources from the war chest.', '');
+      start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (D) for (const p of g.players) { // one mulligan each: shuffle the hand back and draw 7 new cards
           let redo = false;
           if (p.auto || cfg.allAuto || !H.ask) redo = !p.hand.some(c => C[c.id].type === 'ally' && C[c.id].cost <= 3);
           else redo = await H.ask('mulligan', { p });
-          if (redo) { p.deck.push(...p.hand.splice(0)); shuffle(p.deck, rnd); await draw(p, 7); log(`${pdef(p).name} takes a mulligan and draws a new hand of 7.`, ''); }
+          if (redo) { p.deck.push(...p.hand.splice(0)); shuffle(p.deck, rnd); await draw(p, openHand(p)); log(`${pdef(p).name} takes a mulligan and draws a new hand of ${openHand(p)}.`, ''); }
         }
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
+        for (const p of g.players) { const q = perk(p); if (!q) continue;
+          log(`${pdef(p).name}'s companion, ${petName(p)}: ${q.text}`, 'def');
+          if (q.k === 'ward') { p.hero.shield += q.n; H.update(); }
+          else if (q.k === 'firstRes') p.hero.petRes = q.n;
+          else if (q.k === 'bossDmg') await dmg(T.boss(), q.n, { p, kind: 'effect' });
+        }
         if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
       flipCount, markedHero,
       levelUp: async (k) => { const B = g.boss, top = raid.maxLevel || 4; if (B.level >= top) return; B.level = Math.min(top, B.level + (k || 1)); B.strikeBonus += (k || 1); log(`${raid.short} levels up to level ${B.level}! Strikes harder and flips more cards.`, 'boss'); H.update(); },
@@ -697,7 +720,7 @@
       transform: async (t, id) => { if (t.t !== 'minion') return; const old = minDef(t.m).name; t.m.id = id; t.m.damage = 0; t.m.atkB = 0; t.m.hpB = 0; log(`${old} is transformed into a ${TK[id].name}!`, 'def'); await H.anim('summon', { ref: t.m.uid }); H.update(); },
       revive: async (p, hp) => { if (!p.hero.dead) return; p.hero.dead = false; p.hero.damage = heroMax(p) - hp; log(`${pdef(p).name} returns to the fight!`, 'win'); await H.anim('heal', { ref: 'hero' + p.idx, amount: hp }); H.update(); },
       summonAlly: async (p, id, k) => { for (let i = 0; i < k; i++) { const a = { uid: uid(), id, c: null, damage: 0, ex: false, sick: true, atkB: 0, hpB: 0, tmp: 0, frozen: false, token: id }; a.sick = !allyKw(p, a, 'ferocity'); p.allies.push(a); H.update(); await H.anim('summon', { ref: a.uid }); } log(`${pdef(p).name} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'play'); },
-      summonMinion: async (id, k) => { if (g.players.length === 1 && k > 1) k = Math.ceil(k / 2); for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
+      summonMinion: async (id, k) => { if (g.players.length === 1 && k > 1) k = Math.ceil(k / 2); for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); for (const p of g.players) { const q = perkIs(p, 'firstMinion'); if (q && !p.hero.petUsed && !p.hero.dead && g.boss.minions.includes(m)) { p.hero.petUsed = true; log(`${petName(p)} dives at the ${TK[id].name}.`, 'def'); await dmg(T.minion(m), q.n, { p, kind: 'effect' }); } } } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
       buffMinions: (a, h) => { g.boss.minions.forEach(m => { m.atkB += a; m.hpB += h; }); H.update(); },
       bossHeal: async k => heal(T.boss(), k),
       addCounter: async k => { if (!raid.counter) return; g.boss.counter += k; H.update(); if (g.boss.counter >= raid.counter.max) { g.boss.counter = 0; await raid.counter.onMax(api); } },

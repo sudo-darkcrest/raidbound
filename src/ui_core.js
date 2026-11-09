@@ -57,6 +57,7 @@
     if (k === 'dlevel') return `Reach Dungeon level ${r}`;
     if (k === 'dlegend') return 'Clear any dungeon on Legendary';
     if (k === 'packtotal') { const n = +r, have = Object.values(save.packs || {}).reduce((a, b) => a + b, 0); return `Open ${n} booster packs of any kind (${Math.min(have, n)}/${n})`; }
+    if (k === 'card') { const d = C[r], PS = d && RB.PACK_SETS && RB.PACK_SETS[d.set === 'core' ? 'core' : d.pack]; return `Get the card ${d ? d.name : r}${PS ? ` (found in ${PS.name} packs)` : ''}`; }
     if (k === 'packs') { const PS = RB.PACK_SETS && RB.PACK_SETS[r], n = +c.get.split(':')[2], have = (save.packs || {})[r] || 0; return `Open ${n} ${PS ? PS.name : ''} booster packs (${Math.min(have, n)}/${n})`; }
     return '';
   };
@@ -66,7 +67,7 @@
     for (const [id, c] of Object.entries(RB.COSMETICS)) {
       if (save.cos.includes(id)) continue;
       const [k, r] = c.get.split(':');
-      const ok = k === 'dclear' ? ((save.dclears || {})[r] || 0) > 0 : k === 'dlevel' ? RB.dungeonLevel(save.dxp || 0) >= +r : k === 'dlegend' ? (save.dlegend || 0) > 0 : k === 'packtotal' ? Object.values(save.packs || {}).reduce((a, b) => a + b, 0) >= +r : k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
+      const ok = k === 'dclear' ? ((save.dclears || {})[r] || 0) > 0 : k === 'dlevel' ? RB.dungeonLevel(save.dxp || 0) >= +r : k === 'dlegend' ? (save.dlegend || 0) > 0 : k === 'card' ? (save.owned[r] || 0) > 0 : k === 'packtotal' ? Object.values(save.packs || {}).reduce((a, b) => a + b, 0) >= +r : k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
       if (ok) { save.cos.push(id); got.push(id); }
     }
     if (got.length) U.persist();

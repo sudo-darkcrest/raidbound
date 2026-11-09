@@ -169,7 +169,7 @@ S.update({
 'loot_aurora': ('Loot card (rare prize)', 'a brass lantern glowing with green and violet aurora light, held up under the northern lights above snowy peaks'),
 })
 
-# Vault items that are still drawn by code (Nov 8, 2026): 9 card backs, 9 table themes, 2 companions.
+# Vault items that are still drawn by code (Nov 8, 2026): 9 card backs, 9 table themes, 7 companions.
 # file name on the prompt page: cos_<id>.png   (kind: back = tall card back, board = wide play-area background, pet = cut-out companion)
 COS = {
     'back_sigil':       ('back',  'Runic Sigil',        'a glowing gold summoning sigil of concentric rings, star points and fantasy runes on deep crimson velvet'),
@@ -192,4 +192,10 @@ COS = {
     'board_aurora':     ('board', 'Northern Lights',    'green and violet aurora over snowy mountain peaks and a dark pine forest beneath a starry night sky'),
     'pet_owl':          ('pet',   'Snowfeather Owlet',  'a round, fluffy snowy-white owlet with big golden eyes and tiny feet, cute and friendly'),
     'pet_ram':          ('pet',   'Little Ram',         'a fluffy little cream-white ram with curly golden-brown horns and a big friendly smile'),
+    # #91: companions that come with a card (Nov 8, 2026)
+    'pet_emberpup':     ('pet',   'Ember Wolf Pup',     'a chubby charcoal-black wolf pup with glowing orange ember cracks in its fur, big amber eyes, orange inner ears and a small flame on the tip of its tail'),
+    'pet_prismling':    ('pet',   'Prism Dragonling',   'a tiny chubby pearl-white baby dragon with big cyan eyes, little crystal horns and small wings of faceted rainbow crystal'),
+    'pet_raven':        ('pet',   'Starless Raven',     'a round little raven with deep violet-black feathers flecked with tiny white stars, a glowing violet eye and a silver beak'),
+    'pet_bearcub':      ('pet',   'Cave Bear Cub',      'a round, sleepy brown bear cub sitting down, with a big black nose, a tan muzzle and belly, and heavy sleepy eyelids'),
+    'pet_gryphchick':   ('pet',   'Gryphon Chick',      'a fluffy golden baby gryphon with a cream feathered eagle head, a tiny hooked beak, big amber eyes, oversized stubby wings and a little lion tail'),
 }

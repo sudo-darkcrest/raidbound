@@ -9,6 +9,7 @@
     U.closePop(); U.hidePreview();
     // a hero unlocked since the last screen (raid win, purchase) brings their starter deck's cards into the collection
     if (U.syncStarters && U.syncStarters()) U.persist();
+    if (U.checkUnlocks && name !== 'end') { const got = U.checkUnlocks(); if (got.length) { U.persist(); setTimeout(() => U.toast && U.toast(`Unlocked: ${got.map(id => RB.COSMETICS[id].name).join(', ')}! Pick it in the Vault.`), 600); } }
     const prev = keepScroll && $('#' + name) ? $('#' + name).scrollTop : 0;
     $$('.screen').forEach(s => s.classList.add('hidden'));
     let el = $('#' + name);
@@ -101,7 +102,7 @@
       const ids = autos[i] ? autos[i].slice() : custom ? save.decks[s.hero].slice() : RB.buildDeck(s.hero, save.owned, setup.seats.length);
       const holoLeft = Object.assign({}, save.holo);
       const deck = ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; });
-      return { hero: s.hero, auto: s.auto, deck, name: 'Hero ' + (i + 1), pet: i === 0 ? save.sel.pet : null };
+      return { hero: s.hero, auto: s.auto, deck, name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null };
     });
     U.battle({ raid: setup.raid, difficulty: setup.diff, party, bossPlayer: !!setup.asBoss, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };
@@ -208,21 +209,21 @@
     const KINDS = [
       ['back', 'Card backs', 'Change the design on the back of every face-down card: your resource row, and the cards in treasure packs before you flip them.'],
       ['board', 'Table themes', 'Change the scene behind the battlefield during raids.'],
-      ['pet', 'Companions', 'A little creature that floats beside your hero (the first hero, in party games) during raids. Just for looks: companions never change the rules or the odds.'],
+      ['pet', 'Companions', 'A little creature that floats beside your hero (the first hero, in party games) in raids and dungeons. Each one gives your hero a tiny bonus, shown under its name. Online, every player\'s own companion helps their own hero. No bonus when you play as the boss.'],
     ];
     const tile = id => {
       const c = RB.COSMETICS[id], own = U.ownsCos(id), cur = save.sel[c.kind] && U.ownsCos(save.sel[c.kind]) ? save.sel[c.kind] : '', on = own && (cur || ({ back: 'back_classic', board: 'board_classic' }[c.kind] || '')) === id;
       const img = U.cosImg(id);
       return `<div class="cos k-${c.kind} ${own ? '' : 'locked'} ${on ? 'equipped' : ''}">
         <div class="swatch">${img ? `<img alt="" src="${img}">` : ''}${own ? '' : '<span class="lock" aria-hidden="true">&#128274;</span>'}${on ? '<span class="eq">Equipped</span>' : ''}</div>
-        <h4>${esc(c.name)}</h4><p class="cdesc">${esc(c.desc)}</p>
+        <h4>${esc(c.name)}</h4><p class="cdesc">${esc(c.desc)}</p>${c.kind === 'pet' && RB.PET_PERKS && RB.PET_PERKS[id] ? `<p class="perk"><b>Bonus:</b> ${esc(RB.PET_PERKS[id].text)}</p>` : ''}
         <p class="how ${own ? 'own' : ''}">${own ? (c.get === 'default' ? 'Owned from the start' : 'Unlocked') : esc(U.unlockText(c))}</p>
         ${own ? (on ? `<button class="btn small" disabled>In use</button>` : `<button class="btn small ghost" data-use="${id}">Use this</button>`) : ''}</div>`;
     };
     const total = Object.keys(RB.COSMETICS).length, have = Object.keys(RB.COSMETICS).filter(U.ownsCos).length;
     const sections = KINDS.map(([k, label, what]) => `<h3 class="sec">${label}</h3><p class="kwhat">${what}</p><div class="cosgrid g-${k}">${Object.keys(RB.COSMETICS).filter(id => RB.COSMETICS[id].kind === k).map(tile).join('')}</div>`).join('');
     const el = U.show('vault', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Vault</h2><span class="vcount">${have} of ${total} unlocked</span></div>
-      <p class="lede">Cosmetics change how the game looks, never how it plays. Earn them by beating raids, or redeem the scratch-off code from a loot card (find loot cards in treasure packs, then scratch the code in your Collection).</p>
+      <p class="lede">Card backs and table themes change how the game looks. Companions also give your hero one tiny bonus. Earn them by beating raids, or redeem the scratch-off code from a loot card (find loot cards in treasure packs, then scratch the code in your Collection).</p>
       <div class="codebox"><input id="code" placeholder="RB-XXXXX-XXXXX" aria-label="Loot or gold code" maxlength="17"><button class="btn primary" data-act="redeem">Redeem</button></div>
       ${msg ? `<p style="text-align:center;color:${msg.ok ? 'var(--verd-hi)' : '#ffb49a'}">${esc(msg.text)}</p>` : ''}
       ${sections}</div>`);
@@ -286,6 +287,7 @@
       <section><h4>Party play</h4><p>Up to four heroes can join a raid. You take each hero's turn in order, so friends can pass the device around. The boss grows tougher with each hero: it has more health, reveals an extra card per hero, and its strikes and minions hit harder.</p></section>
       <section><h4>Treasure</h4><p>Victory opens a treasure pack of five cards: one epic from the boss's treasure, holofoil cards, and sometimes a loot card. New cards join your collection and are added to your starter decks automatically.</p></section>
       <section><h4>Your cards</h4><p>You start with the cards for each starting hero's starter deck, and each hero you unlock brings the cards for theirs. Every hero can always use their <b>Starter deck</b>, even with cards you haven't collected. Build your own deck from the cards you own. Get more from <b>Raidbound Core</b> packs (${RB.CORE_PACK_PRICE} gold), the themed booster packs (${RB.PACK_PRICE} gold), the daily card shop, crafting in the Workshop, and raid treasure. New players get two free Core packs.</p></section>
+      <section><h4>Companions</h4><p>Pick a companion in the Vault and it floats beside your hero. Each one gives your hero a single tiny bonus in raids and dungeons, such as Ward 3 at the start, +2 max health, or an extra card in your opening hand. The raid log says when it helps. Some come from loot codes or Heroic wins; others come free when you get a certain card (for example, owning Beezer brings the Ember Wolf Pup).</p></section>
       <section class="credits"><h4>Art credits</h4><p>Every card, hero, raid and boss illustration was generated with <a href="https://spritecook.ai" target="_blank" rel="noopener">SpriteCook</a> and art-directed for Raidbound. Card frames, icons and interface are hand-built for the game.</p></section>
       </div></div>`);
     el.onclick = e => { if (e.target.closest('[data-act=back]')) U.title(); };
