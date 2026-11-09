@@ -2,7 +2,7 @@
 import sys, json, base64, io, pathlib
 here = pathlib.Path(__file__).parent; root = here.parent
 sys.path.insert(0, str(here))
-from subjects import S, SKINS_PROMPT
+from subjects import S, SKINS_PROMPT, REDO, SENTINEL_PROMPT
 from PIL import Image
 skins = json.load(open(root / 'skins/skins.json'))
 in_game = set(json.load(open(here / 'in_game.json')))
@@ -12,20 +12,28 @@ def thumb(path, w=150):
 style_th = [thumb(refs / f'style_{i+1}.png') for i in range(4)]
 HEROES = ['aldric','thorgrim','lyssara','grukka','hruna','snix','vaelith','brannoc','tavra','zizzik','seraphine','korga','dawnarchon','redwarlord','tempestavatar']
 hero_th = {h: thumb(refs / f'hero_{h}.png', 120) for h in HEROES}
+hero_th['ref_sentinel'] = thumb(refs / 'ref_sentinel.png', 120)
+REDO_SEC = 'Redo (do these first, top to bottom)'
 PREFIX = 'Painted digital fantasy card art for a high-fantasy collectible card game, matching the style of the attached reference images: rich painterly colour, dark ink outlines, dramatic lighting, lots of detail. '
 SUFFIX = ' Wide 16:9 landscape image, full-bleed to every edge. No text, no letters, no logo, no border, no frame, no card layout, no watermark. Do not include any real-world logos, emblems, crests or symbols from existing games, films or brands; invent original designs.'
-ORDER = ['Legendaries (do these first)', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
+ORDER = [REDO_SEC, 'Legendaries', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
          'Raid treasure: Crypt of the Hollow King', 'Raid treasure: The Molten Spire', 'Raid treasure: The Sunken Cathedral', 'Loot card (rare prize)', 'Dungeon under-boss', 'Dungeon boss card: Thornwood Hollow', 'Dungeon boss card: Bloodfang Warcamp', 'Dungeon boss card: Vault of the Iron Sentinel', 'Summoned creatures & minions', 'Boss cards']
 items = []
 for k, (grp, subj) in S.items():
-    if grp == 'Legendary': sec = ORDER[0]
+    if grp == 'Legendary': sec = ORDER[1]
     elif grp.startswith('Boss card'): sec = 'Boss cards'
     elif grp in ('Summoned creature', 'Boss minion'): sec = 'Summoned creatures & minions'
     elif grp.startswith('Raid treasure') or grp.startswith('Dungeon boss card'): sec = grp.split(' (')[0]
     else: sec = grp
     theme = '' if grp in ('Legendary', 'Summoned creature', 'Boss minion') else ' Theme: ' + grp + '.'
-    items.append(dict(sec=sec, file=k + '.png', refs='style', have=k in in_game, prompt=PREFIX + 'Subject: ' + subj + '.' + theme + SUFFIX))
-items.sort(key=lambda it: ORDER.index(it['sec']) if it['sec'] in ORDER else 99)
+    it = dict(sec=sec, file=k + '.png', refs='style', have=k in in_game, prompt=PREFIX + 'Subject: ' + subj + '.' + theme + SUFFIX)
+    if k in REDO:  # #97: stays in the game until the new picture replaces it
+        it.update(sec=REDO_SEC, have=False, redo=True)
+        if k.startswith('vis_'): it['refnote'] = 'the new <b>sentinel.png</b> you just made, plus the 4 style pictures'
+    items.append(it)
+items.append(dict(sec=REDO_SEC, file='sentinel.png', refs='style', refimg='ref_sentinel', title='The Iron Sentinel (Vault boss)', have=False, redo=True,
+                  refnote='<b>ref_sentinel.png</b> (in your refs folder, shown here), plus the 4 style pictures', prompt=SENTINEL_PROMPT + SUFFIX))
+items.sort(key=lambda it: (ORDER.index(it['sec']) if it['sec'] in ORDER else 99, REDO.index(it['file'][:-4]) if it.get('redo') else 0))
 names = {'aldric':'Aldric','thorgrim':'Thorgrim','lyssara':'Lyssara','grukka':'Grukka','hruna':'Hruna','snix':'Snix','vaelith':'Vaelith','brannoc':'Brannoc','tavra':'Tavra','zizzik':'Zizzik','seraphine':'Seraphine','korga':'Korga','dawnarchon':'Archon of the Dawn','redwarlord':'Warlord of the Red Moon','tempestavatar':'Avatar of the Tempest'}
 for sid, sk in skins.items():
     items.append(dict(sec="Hero skins (attach that hero's picture)", file='skin_' + sid + '.png', refs='hero_' + sk['hero'], title=sk['name'], have=('skin_' + sid) in in_game,

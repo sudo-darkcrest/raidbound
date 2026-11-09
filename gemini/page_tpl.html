@@ -6,6 +6,7 @@
 h1{font-family:Georgia,serif;color:var(--gold);margin:0 0 4px;font-size:30px}h2{font-family:Georgia,serif;color:var(--gold);margin:34px 0 10px;font-size:21px;border-bottom:1px solid #3a3420;padding-bottom:6px}
 .lede{color:var(--muted);margin:0 0 18px}.steps{background:var(--panel);border:1px solid #3a3420;border-radius:12px;padding:14px 18px;margin-bottom:16px}
 .steps ol{margin:6px 0 0 18px;padding:0}.steps li{margin:4px 0}code{background:#0a0c16;padding:1px 6px;border-radius:4px;color:#ffe0a0}
+.redo{font-size:12px;color:#ffb070;border:1px solid #7a4a20;border-radius:999px;padding:1px 8px}
 .refs{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px}.refs figure{margin:0;text-align:center;font-size:12px;color:var(--muted)}.refs img{height:84px;border-radius:6px;border:1px solid #3a3420;display:block}
 .bar{position:sticky;top:0;z-index:5;display:flex;gap:12px;align-items:center;background:rgba(13,15,28,.95);padding:10px 0;border-bottom:1px solid #2a2a3a}
 input[type=search]{flex:1;background:#0a0c16;border:1px solid #3a3420;color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px}
@@ -42,9 +43,9 @@ function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 function draw(){const q=document.getElementById('q').value.toLowerCase();let h='',sec='';let n=0;
 ITEMS.forEach((it,i)=>{if(done[it.file])n++;if(q&&!(it.file+' '+(it.title||'')+' '+it.prompt).toLowerCase().includes(q))return;if(hideDone&&done[it.file])return;
 if(it.sec!==sec){sec=it.sec;h+=`<h2>${esc(sec)}</h2>`}
-const ref=it.refs==='style'?'':HERO[it.refs.slice(5)];
-h+=`<div class="item ${done[it.file]?'done':''} ${ref?'':'noimg'}">${ref?`<img src="${ref}" alt="${it.refs}">`:''}<div><div class="top"><span class="fname" title="Click to copy the file name" data-cf="${it.file}">${it.file}</span>${it.title?`<span class="ttl">${esc(it.title)}</span>`:''}${it.have?'<span class="ingame">In the game ✓</span>':''}<label class="chk"><input type="checkbox" data-d="${it.file}" ${done[it.file]?'checked':''}> Done</label></div>
-<div class="prompt">${esc(it.prompt)}</div><div class="top"><button data-c="${i}">Copy prompt</button><span class="refnote">Attach: ${it.refs==='style'?'the 4 style pictures':'<b>'+it.refs+'.png</b> (plus the style pictures if you like)'}</span></div></div></div>`});
+const ref=it.refimg?HERO[it.refimg]:(it.refs==='style'?'':HERO[it.refs.slice(5)]);
+h+=`<div class="item ${done[it.file]?'done':''} ${ref?'':'noimg'}">${ref?`<img src="${ref}" alt="${it.refs}">`:''}<div><div class="top"><span class="fname" title="Click to copy the file name" data-cf="${it.file}">${it.file}</span>${it.title?`<span class="ttl">${esc(it.title)}</span>`:''}${it.have?'<span class="ingame">In the game ✓</span>':''}${it.redo?'<span class="redo">Redo · the old picture stays in the game until you replace it</span>':''}<label class="chk"><input type="checkbox" data-d="${it.file}" ${done[it.file]?'checked':''}> Done</label></div>
+<div class="prompt">${esc(it.prompt)}</div><div class="top"><button data-c="${i}">Copy prompt</button><span class="refnote">Attach: ${it.refnote?it.refnote:it.refs==='style'?'the 4 style pictures':'<b>'+it.refs+'.png</b> (plus the style pictures if you like)'}</span></div></div></div>`});
 document.getElementById('list').innerHTML=h||'<p class="lede">Nothing matches.</p>';document.getElementById('prog').textContent=n+' of '+ITEMS.length+' done'}
 async function copy(t,btn){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}if(btn){const o=btn.textContent;btn.textContent='Copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent=o;btn.classList.remove('copied')},1200)}}
 document.addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(c)return copy(ITEMS[+c.dataset.c].prompt,c);const f=e.target.closest('[data-cf]');if(f){copy(f.dataset.cf);f.style.color='#5ad08a';setTimeout(()=>f.style.color='',900)}
