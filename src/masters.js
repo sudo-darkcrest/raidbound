@@ -35,7 +35,7 @@
   asc('aldric', { name: 'Aldric, Lightsworn Champion', hp: 36, heroAtk: 1, col: '#fff0a0', text: 'Your hero has +1 ATK. Each turn: prevent the next 3 damage to each friendly hero.', mstart: async (E, p) => { for (const h of E.heroes()) E.shield(h, 3); } });
   asc('thorgrim', { name: 'Thorgrim, Lord of the Peaks', hp: 39, col: '#bfe8ff', text: 'Each turn: deal 1 damage to each enemy.', mstart: async (E, p) => { for (const t of E.enemies()) await E.dmg(t, 1, { p, kind: 'effect' }); } });
   asc('lyssara', { name: 'Lyssara, Starborn Archmage', hp: 34, spell: 2, col: '#d0a8ff', text: 'Spells and powers deal +2 damage. Each turn: deal 3 damage to a random enemy.', mstart: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 3, { p, kind: 'effect' }); } });
-  asc('grukka', { name: 'Grukka the Unchained', hp: 42, heroAtk: 3, allyFerocity: true, col: '#ff6a3a', text: 'Your hero has +3 ATK. Your allies have Ferocity.' });
+  asc('grukka', { name: 'Grukka the Unchained', hp: 42, heroAtk: 3, allyFerocity: true, col: '#ff6a3a', text: 'Your hero has +3 ATK. Your allies have Swift.' });
   asc('hruna', { name: 'Hruna, Voice of the Ancestors', hp: 38, col: '#9affd0', text: 'Each turn: heal 3 damage from each friendly hero and ally.', mstart: async (E, p) => { for (const t of E.friendlyChars()) await E.heal(t, 3); } });
   asc('snix', { name: 'Snix, Prince of Shadows', hp: 34, heroAtk: 2, col: '#b98aff', text: 'Your hero has +2 ATK. Each turn: draw a card.', mstart: async (E, p) => E.draw(p, 1) });
   asc('vaelith', { name: 'Vaelith, the Moon\'s Edge', hp: 33, heroAtk: 2, col: '#e0d0ff', text: 'Your hero has +2 ATK. Each turn: deal 1 damage to a random enemy three times.', mstart: async (E, p) => { for (let i = 0; i < 3; i++) { const t = E.randomEnemy(); if (t) await E.dmg(t, 1, { p, kind: 'effect' }); } } });
@@ -43,9 +43,9 @@
   asc('tavra', { name: 'Tavra, Sunhorn Exalted', hp: 40, heroAtk: 2, col: '#ffb040', text: 'Your hero has +2 ATK. Each turn: heal 3 damage from your hero.', mstart: async (E, p) => E.heal(E.heroT(p), 3) });
   asc('zizzik', { name: 'Zizzik, Master of Mayhem', hp: 34, spell: 1, col: '#ff9a3a', text: 'Spells and powers deal +1 damage. Each turn: deal 2 damage to each enemy minion.', mstart: async (E, p) => minAll(E, p, 2) });
   asc('seraphine', { name: 'Seraphine, Saint of the Veil', hp: 36, col: '#fff6e0', text: 'Each turn: heal 2 damage from each friendly hero and ally, and ward each friendly hero for 2.', mstart: async (E, p) => { for (const t of E.friendlyChars()) await E.heal(t, 2); for (const h of E.heroes()) E.shield(h, 2); } });
-  asc('korga', { name: 'Korga, Alpha of the Plains', hp: 40, allyFerocity: true, col: '#d8b080', text: 'Your allies have Ferocity. Each turn: summon a 2/2 Wolf Companion.', mstart: async (E, p) => E.summonAlly(p, 'wolfcomp', 1) });
+  asc('korga', { name: 'Korga, Alpha of the Plains', hp: 40, allyFerocity: true, col: '#d8b080', text: 'Your allies have Swift. Each turn: summon a 2/2 Wolf Companion.', mstart: async (E, p) => E.summonAlly(p, 'wolfcomp', 1) });
   asc('dawnarchon', { name: 'Archon of the Risen Sun', hp: 38, col: '#fff6c0', text: 'Each turn: heal 3 damage from each friendly hero and ally.', mstart: async (E, p) => { for (const t of E.friendlyChars()) await E.heal(t, 3); } });
-  asc('redwarlord', { name: 'Warlord of the Blood Eclipse', hp: 42, heroAtk: 2, allyFerocity: true, col: '#ff3a2a', text: 'Your hero has +2 ATK. Your allies have Ferocity.' });
+  asc('redwarlord', { name: 'Warlord of the Blood Eclipse', hp: 42, heroAtk: 2, allyFerocity: true, col: '#ff3a2a', text: 'Your hero has +2 ATK. Your allies have Swift.' });
   asc('tempestavatar', { name: 'Tempest Incarnate', hp: 34, spell: 1, col: '#9ad8ff', text: 'Spells and powers deal +1 damage. Each turn: deal 3 damage to a random enemy.', mstart: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 3, { p, kind: 'effect' }); } });
 
   /* ---------- retire the old Master Hero cards ---------- */

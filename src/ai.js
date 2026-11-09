@@ -4,8 +4,9 @@
   const AI = RB.AI = {};
 
   function enemyValue(E, t, dmg) {
-    if (t.t === 'boss') { const hp = E.bossHp(); return hp <= dmg ? 1000 : dmg * 1.05; }
-    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), guard = (d.kw || []).includes('guardian');
+    const shieldId = E.raid.halvedBy, shielded = shieldId && E.g.boss.minions.some(m => m.id === shieldId); // #102 the Maw halves Nethys's damage
+    if (t.t === 'boss') { const hp = E.bossHp(), B = E.g.boss, d2 = shielded ? Math.ceil(dmg / 2) : dmg; return hp <= d2 ? 1000 : d2 * 1.05 + (B.flying ? (B.ground + dmg >= B.groundMax ? 8 : dmg * 0.4) : 0); }
+    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), guard = (d.kw || []).includes('guardian') || d.id === shieldId;
     if (dmg >= hp) return 10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3;
     return dmg * 0.55 + (guard ? 4 : 0);
   }
@@ -155,6 +156,12 @@
       if (E.needsTarget(inst) && !sc.target) continue;
       acts.push({ s: sc.s - d.cost * 0.15, go: () => E.playCard(p, inst, sc.target) });
     }
+    // #102 bail water before a Tidal Surge
+    if (E.canBail && E.canBail(p)) {
+      const B = E.g.boss, mx = E.raid.counter.max;
+      const s = B.counter >= mx - 1 ? 9 : B.counter >= mx - 2 && E.available(p) >= 3 ? 3 : -1;
+      if (s > 0) acts.push({ s, go: () => E.bail(p) });
+    }
     // items
     for (const e of p.items) {
       if (!E.itemReady(p, e)) continue;
@@ -169,12 +176,13 @@
       if (s > 0) acts.push({ s, go: () => E.useItem(p, e, target) });
     }
     // attacks
-    const targets = E.attackTargets();
-    if (targets.length) {
+    if (E.attackTargets().length) {
       const attackers = [];
       if (E.canAttackWith(p, 'hero')) attackers.push('hero');
       for (const a of p.allies) if (E.canAttackWith(p, a)) attackers.push(a);
       for (const who of attackers) {
+        const targets = E.attackTargets(p, who);
+        if (!targets.length) continue;
         let atk, myHp, lr;
         if (who === 'hero') {
           const useW = p.weapon && !p.weapon.ex && E.available(p) >= C[p.weapon.c.id].strike;
@@ -266,6 +274,70 @@
     return out;
   };
   AI.chooseStrikeBack = () => true;
+  // #100 Cover: which ready Bulwark ally should take this hit? (null = let it land)
+  AI.chooseCover = function (E, targetT, atk, opts, attackerDef, isBoss) {
+    const crush = attackerDef && (attackerDef.kw || []).includes('crushing');
+    const tHp = E.hpOf(targetT), dies = tHp <= atk;
+    // the boss's own strike is still to come this turn: keep a Bulwark ally ready for it
+    const strikePending = !isBoss && !E.raid.dungeon && E.g.phase === 'boss' && !E.g.boss.struck && !E.g.boss.stunned && !E.g.boss.enrage;
+    let best = null, bs = -1e9;
+    for (const t of opts) {
+      const hp = E.hpOf(t), survives = hp > atk;
+      let s = (survives ? 10 : -4) + hp * 0.2 + (t.p === targetT.p ? 1 : 0);
+      if (crush && !survives) s -= 6;
+      // covering a teammate makes its hero the boss's next target: only if that hero can take it
+      if (t.p !== targetT.p) s -= E.heroHp(t.p) < 14 ? 8 : 1;
+      if (s > bs) { bs = s; best = t; }
+    }
+    if (!best) return null;
+    if (isBoss) return targetT.t === 'hero' && bs > -6 ? best : null;   // the boss strike: always cover a hero when it helps
+    const spare = opts.length >= 2;
+    if (targetT.t === 'hero') {
+      if (dies) return best;
+      if (strikePending && !spare) return atk >= 4 ? best : null;       // save the last Bulwark for the strike
+      return atk >= 2 && bs > 0 ? best : null;
+    }
+    // an ally: cover only when it would fall, the Bulwark ally survives, and one is still free for the strike
+    return dies && E.hpOf(best) > atk && (!strikePending || spare) ? best : null;
+  };
+  // #99 React: worth answering this attack? (lenient = only deciding whether to ask a human)
+  AI.chooseReact = function (E, ctx, opts, lenient) {
+    if (!opts || !opts.length) return null;
+    const d = ctx.defT, B = E.g.boss;
+    const incoming = ctx.atk + (E.g.partyFury || 0);
+    const hero = d.t === 'hero' ? d.p : null;
+    const hp = E.hpOf(d);
+    const ward = hero ? hero.hero.shield : 0;
+    const left = Math.max(0, incoming - ward);
+    let best = null, bs = 0;
+    for (const o of opts) {
+      const cd = C[o.inst.id], tags = cd.tags || [];
+      let s = 0;
+      if (tags.includes('shield') && cd.react !== 'strike') {
+        const blk = cd.shield || 6;
+        if (hero && left >= (lenient ? 2 : 3)) s = Math.min(blk, left) * 1.2 + (left >= hp ? 20 : 0) + (E.heroHp(hero) <= 16 ? 3 : 0) - cd.cost * 0.4;
+      } else if (cd.react === 'strike') {
+        const n = E.heroes().length;
+        if (ctx.isBoss && (left >= (lenient ? 3 : 5) || left >= hp)) s = 3 * Math.min(n, 4) * 0.9 + (left >= hp ? 20 : 0) - cd.cost * 0.4;
+      } else if (tags.includes('elusive')) {
+        if (hero && (left >= (lenient ? 3 : 5) || left >= hp)) s = left * 1.1 + (left >= hp ? 20 : 0) - cd.cost * 0.4;
+      } else if (tags.includes('heal')) {
+        const amt = cd.heal || 4;
+        if (left >= hp && hp + amt > left) s = 20 + (d.t === 'hero' ? 10 : 0);
+        else if (lenient && left >= hp) s = 1;
+      }
+      if (s > bs) { bs = s; best = o; }
+    }
+    return bs > (lenient ? 0 : 3) ? best : null;
+  };
+  // #101 Soak: step into the circle? The healthiest hero always does, so it never hits the whole party in full
+  AI.chooseSoak = function (E, p, total, heroes) {
+    if (heroes.length === 1) return true;
+    const healthy = heroes.filter(h => E.heroHp(h) > 8).length || 1;
+    const share = Math.ceil(total / healthy);
+    const top = heroes.reduce((a, b) => E.heroHp(b) > E.heroHp(a) ? b : a);
+    return p === top || E.heroHp(p) - share > 4;
+  };
   AI.chooseInstant = function (E, p, bc) {
     const avail = E.available(p);
     const harmful = bc.kind === 'attack' || bc.kind === 'curse';

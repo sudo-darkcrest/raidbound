@@ -114,7 +114,7 @@
   U.typeLine = function (d) {
     switch (d.type) {
       case 'ally': return `Ally — ${d.race || 'Mercenary'}`;
-      case 'ability': return d.speed === 'instant' ? 'Ability — Instant' : 'Ability';
+      case 'ability': return d.speed === 'instant' ? (d.react ? 'Ability — Instant, React' : 'Ability — Instant') : 'Ability';
       case 'weapon': return `Weapon — ${cap(d.wtype)}`;
       case 'armor': return `Armor — ${RB.SLOTS[d.slot]}, ${d.atype === 'shield' ? 'Shield' : cap(d.atype)}`;
       case 'item': return 'Item';
@@ -122,21 +122,22 @@
       case 'location': return 'Location';
       case 'master': return 'Master Hero';
       case 'hero': return `Hero — ${d.race} ${RB.CLASSES[d.cls].name}`;
-      default: return d.kind ? 'Boss ' + cap(d.kind) : 'Minion';
+      default: return d.omen ? 'Omen' : d.kind ? 'Boss ' + cap(d.kind) : 'Minion';
     }
   };
   const cap = s => s ? s[0].toUpperCase() + s.slice(1) : '';
   U.cap = cap;
   function rulesHTML(d) {
     let h = '';
-    if (d.type === 'weapon') h += `<span class="gear">Strike cost ${d.strike}${(d.kw || []).includes('longrange') ? ' · Long-Range' : ''}</span>`;
+    if (d.type === 'weapon') h += `<span class="gear">Strike cost ${d.strike}${(d.kw || []).includes('longrange') ? ' · Volley' : ''}</span>`;
     if (d.type === 'armor') h += `<span class="gear">Exhaust and pay ${d.use} to block ${d.def}</span>`;
     if (d.type === 'quest') h += `<span class="gear">${d.cond ? 'Complete when ' + d.condText : 'Complete: pay ' + d.qcost}</span>`;
     if (d.type === 'location') h += `<span class="gear">Ability cost ${d.lcost}</span>`;
     if (d.type === 'master') h += `<span class="gear">Health ${d.hp}</span>`;
     const kws = (d.type === 'weapon' ? (d.kw || []).filter(k => k !== 'longrange') : (d.kw || [])).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ');
     if (kws) h += kws + ' ';
-    if (d.text) h += esc(d.text).replace(/\b(Taunt|Protector|Ferocity|Elusive|Long-Range|Guardian|Use|Complete)\b(?=[: .,])/g, '<b class="kw">$1</b>');
+    if (d.react && RB.REACT[d.react]) h += `<b class="kw react">React</b> — ${RB.REACT[d.react]}. `; // #99
+    if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete)\b(?=[: .,])/g, '<b class="kw">$1</b>');
     if (d.loot) h += ` <span class="fl" style="font-style:normal;color:#6a3a08">Scratch-off code inside: ${esc(d.loot.label)}.</span>`;
     if (d.flavor) h += `<span class="fl">${esc(d.flavor)}</span>`;
     return h;
@@ -168,7 +169,7 @@
     if (d.type === 'armor') stats = `<div class="stat use" title="Use cost">${d.use}</div><div class="stat def">${d.def}</div>`;
     if (d.type === 'master') stats = `<div class="stat hp">${d.hp}</div>`;
     const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' ? '' : `<div class="cost">${d.cost}</div>`;
-    const type = isBoss ? `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}` : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
+    const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
     return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}"><div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
   };

@@ -22,7 +22,7 @@
   ];
   const commonRules = flip => [
     { name: 'Flip', text: `At the start of its turn the dungeon flips cards from its deck: ${flip.map((f, i) => `level ${i + 1}: ${f}`).join(', ')}. Allies and equipment stay in play; abilities resolve. Dungeon cards cost nothing.` },
-    { name: 'Marked', text: 'After flipping, the dungeon rolls a die and MARKS one hero at random. The dungeon hero and all its allies attack the marked hero (a ready Protector can still step in).' },
+    { name: 'Marked', text: 'After flipping, the dungeon rolls a die and MARKS one hero at random. The dungeon hero and all its allies attack the marked hero (a ready Bulwark can still step in).' },
     { name: 'Gauntlet', text: 'Fight through two under-bosses, then the master of the dungeon, all in one fight. Your heroes keep their health, cards and allies from one boss to the next. A boss\'s equipment leaves with it; its minions stay.' },
     { name: 'Levels', text: 'The dungeon levels up each time an under-boss falls: it flips more cards and strikes 1 harder per level.' },
   ];
@@ -33,9 +33,9 @@
   tok('d_stalker', { name: 'Mistwood Stalker', atk: 3, hp: 2, kw: ['elusive'], ai: 'random', art: { img: 'mistranger' } });
   tok('d_hag', { name: 'Bramble Hag', atk: 1, hp: 3, ai: 'random', art: { img: 'hedgewitch' } });
   tok('d_heartwood', { name: 'Heartwood Guardian', atk: 2, hp: 7, kw: ['guardian'], ai: 'lowest', art: { img: 'grovebinder' } });
-  card('thw_wolves', { name: 'Call the Pack', kind: 'summon', text: 'Summon two Thornwood Dire Wolves (2/2, Ferocity).', run: summon('d_wolf', 2), art: { img: 'packleader' } });
+  card('thw_wolves', { name: 'Call the Pack', kind: 'summon', text: 'Summon two Thornwood Dire Wolves (2/2, Swift).', run: summon('d_wolf', 2), art: { img: 'packleader' } });
   card('thw_bear', { name: 'Mossback Bear', kind: 'summon', text: 'Summon a Mossback Bear (3/5).', run: summon('d_bear'), art: { img: 'cavebear' } });
-  card('thw_stalker', { name: 'Mistwood Stalker', kind: 'summon', text: 'Summon a Mistwood Stalker (3/2, Elusive).', run: summon('d_stalker'), art: { img: 'mistranger' } });
+  card('thw_stalker', { name: 'Mistwood Stalker', kind: 'summon', text: 'Summon a Mistwood Stalker (3/2, Shrouded).', run: summon('d_stalker'), art: { img: 'mistranger' } });
   card('thw_hag', { name: 'Bramble Hag', kind: 'summon', text: 'Summon a Bramble Hag (1/3). The boss heals 4.', run: async E => { await E.summonMinion('d_hag', 1); await E.bossHeal(4); }, art: { img: 'hedgewitch' } });
   card('thw_guardian', { name: 'Heartwood Guardian', kind: 'summon', text: 'Summon a Heartwood Guardian (2/7, Guardian).', run: summon('d_heartwood'), art: { img: 'grovebinder' } });
   card('thw_bark', { name: 'Ironbark Hide', kind: 'equip', text: 'Equipment: the boss strikes for 1 more and melee attackers take 1 more damage back.', run: async E => E.equipBoss('Ironbark Hide', 1, 1), art: { s: 'forest', L: [glow(150, 120, 80, '#9a7a4a', 0.5), ['obj', { t: 'shieldItem', x: 150, y: 118, s: 0.9 }]] } });
@@ -52,8 +52,8 @@
   tok('d_sapper', { name: 'Goblin Sapper', atk: 1, hp: 1, ai: 'random', text: 'When destroyed, deals 1 damage to each hero.', onDeath: async E => { for (const h of E.heroes()) await E.dmg(E.heroT(h), 1, { kind: 'boss' }); }, art: { img: 'blastmonger' } });
   tok('d_shaman', { name: 'Bloodfang Shaman', atk: 1, hp: 4, ai: 'random', art: { img: 'witchdoctor' } });
   tok('d_ravager', { name: 'Gore Ravager', atk: 4, hp: 5, ai: 'lowest', art: { img: 'ravager' } });
-  card('bfw_raiders', { name: 'Raiding Party', kind: 'summon', text: 'Summon two Bloodfang Raiders (2/2, Ferocity).', run: summon('d_raider', 2), art: { img: 'raider' } });
-  card('bfw_rider', { name: 'Warg Rider', kind: 'summon', text: 'Summon a Warg Rider (3/3, Ferocity).', run: summon('d_rider'), art: { img: 'wolfrider' } });
+  card('bfw_raiders', { name: 'Raiding Party', kind: 'summon', text: 'Summon two Bloodfang Raiders (2/2, Swift).', run: summon('d_raider', 2), art: { img: 'raider' } });
+  card('bfw_rider', { name: 'Warg Rider', kind: 'summon', text: 'Summon a Warg Rider (3/3, Swift).', run: summon('d_rider'), art: { img: 'wolfrider' } });
   card('bfw_sappers', { name: 'Goblin Sappers', kind: 'summon', text: 'Summon two Goblin Sappers (1/1). When one is destroyed it deals 1 damage to each hero.', run: summon('d_sapper', 2), art: { img: 'blastmonger' } });
   card('bfw_shaman', { name: 'Bloodfang Shaman', kind: 'summon', text: 'Summon a Bloodfang Shaman (1/4). The boss heals 4.', run: async E => { await E.summonMinion('d_shaman', 1); await E.bossHeal(4); }, art: { img: 'witchdoctor' } });
   card('bfw_ravager', { name: 'Gore Ravager', kind: 'summon', text: 'Summon a Gore Ravager (4/5).', run: summon('d_ravager'), art: { img: 'ravager' } });
@@ -72,8 +72,8 @@
   tok('d_golem', { name: 'Rune Golem', atk: 3, hp: 6, ai: 'lowest', art: { img: 'stonecaller' } });
   tok('d_ward', { name: 'Arcane Ward Core', atk: 0, hp: 9, kw: ['guardian'], ai: 'random', art: { s: 'arcane', L: [glow(150, 120, 100, '#6ab8ff', 0.7), ['obj', { t: 'pearl', x: 150, y: 120, s: 1.4 }], ['fx', { t: 'runes', x: 150, y: 120, r: 90, c: '#9ad8ff' }]] } });
   card('vis_tinkers', { name: 'Tinker Crew', kind: 'summon', text: 'Summon two Goblin Tinkers (2/2).', run: summon('d_tinker', 2), art: { img: 'tinkerer' } });
-  card('vis_wraith', { name: 'Vault Wraith', kind: 'summon', text: 'Summon a Vault Wraith (3/2, Elusive).', run: summon('d_wraith'), art: { img: 'barrowspirit' } });
-  card('vis_drake', { name: 'Arcane Drakeling', kind: 'summon', text: 'Summon an Arcane Drakeling (3/3, Ferocity).', run: summon('d_drake'), art: { img: 'drakeling' } });
+  card('vis_wraith', { name: 'Vault Wraith', kind: 'summon', text: 'Summon a Vault Wraith (3/2, Shrouded).', run: summon('d_wraith'), art: { img: 'barrowspirit' } });
+  card('vis_drake', { name: 'Arcane Drakeling', kind: 'summon', text: 'Summon an Arcane Drakeling (3/3, Swift).', run: summon('d_drake'), art: { img: 'drakeling' } });
   card('vis_golem', { name: 'Rune Golem', kind: 'summon', text: 'Summon a Rune Golem (3/6).', run: summon('d_golem'), art: { img: 'stonecaller' } });
   card('vis_ward', { name: 'Arcane Ward Core', kind: 'summon', text: 'Summon an Arcane Ward Core (0/9, Guardian).', run: summon('d_ward'), art: Object.assign({ alt: 'd_ward' }, TK.d_ward.art) }); // #97: shares the Arcane Ward Core painting
   card('vis_plating', { name: 'Runic Plating', kind: 'equip', text: 'Equipment: melee attackers take 2 more damage back from the boss.', run: async E => E.equipBoss('Runic Plating', 0, 2), art: { s: 'arcane', L: [glow(150, 120, 80, '#6ab8ff', 0.5), ['obj', { t: 'breastplate', x: 150, y: 116 }], ['fx', { t: 'runes', x: 150, y: 120, r: 70, c: '#9ad8ff' }]] } });
@@ -81,7 +81,7 @@
   card('vis_pulse', { name: 'Arcane Pulse', kind: 'attack', text: 'Deal 1 damage to each hero and ally.', run: async E => { for (const t of E.friendlyChars()) await E.dmg(t, 1, { kind: 'boss' }); }, art: { s: 'arcane', L: [['fx', { t: 'whirl', x: 150, y: 150, c: '#9ad8ff' }], ['fx', { t: 'runes', x: 150, y: 150, r: 110, c: '#6ab8ff' }]] } });
   card('vis_beam', { name: 'Overload Beam', kind: 'attack', text: 'Deal 6 damage to the hero with the most health.', run: async E => { const h = E.mostHealth(); if (h) await E.dmg(E.heroT(h), 6, { kind: 'boss' }); }, art: { s: 'arcane', L: [['fx', { t: 'bolt', x: 150, y: 40 }], ['fx', { t: 'fireball', x: 170, y: 120, c: '#9ad8ff', ang: 30 }]] } });
   card('vis_repair', { name: 'Self-Repair', kind: 'heal', text: 'The boss heals 6.', run: async E => E.bossHeal(6), art: { s: 'forge', L: [['fx', { t: 'heal', x: 150, y: 120, c: '#9ad8ff' }], ['obj', { t: 'hammer', x: 150, y: 120, s: 0.7 }]] } });
-  card('vis_lockdown', { name: 'Lockdown Protocol', kind: 'curse', text: 'Exhaust all allies. (Protectors can\'t step in this round.)', run: async E => E.exhaustAllies(), art: { s: 'arcane', L: [['fx', { t: 'chains' }], glow(150, 130, 90, '#ff5a4a', 0.4)] } });
+  card('vis_lockdown', { name: 'Lockdown Protocol', kind: 'curse', text: 'Exhaust all allies. (Bulwark allies can\'t cover this round.)', run: async E => E.exhaustAllies(), art: { s: 'arcane', L: [['fx', { t: 'chains' }], glow(150, 130, 90, '#ff5a4a', 0.4)] } });
   card('vis_disenchant', { name: 'Disenchant', kind: 'curse', text: 'Destroy a random piece of armor on each hero.', run: async E => { for (const h of E.heroes()) await E.destroyArmor(h); }, art: { s: 'arcane', L: [['obj', { t: 'helm', x: 150, y: 118 }], ['fx', { t: 'sparkle', x: 150, y: 110 }]] } });
   card('vis_reflect', { name: 'Mirror Field', kind: 'event', turns: 2, dmgTakenMod: 1, text: 'Lasts 2 rounds: heroes take 1 extra damage from every source.', art: { s: 'arcane', L: [['fx', { t: 'barrier', x: 150, y: 140 }], glow(150, 130, 90, '#9ad8ff', 0.6)] } });
 
@@ -102,7 +102,7 @@
       ],
     },
     warcamp: {
-      id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 54, hpPer: 62, strike: 3, retaliation: 1,
+      id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 54, hpPer: 72, strike: 3, retaliation: 1,
       flip: [2, 2, 3, 4], maxLevel: 4, music: 'warcamp', theme: '#ff5a3a', art: { img: 'urza' },
       intro: 'An outcast warchief has gathered raiders, warg riders and goblin sappers into a camp that burns everything nearby.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,

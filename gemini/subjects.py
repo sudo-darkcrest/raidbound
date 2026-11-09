@@ -261,3 +261,31 @@ REDO = ['thw_crush', 'bfw_firebombs', 'sentinel', 'vis_plating', 'vis_core', 'vi
 SENTINEL_PROMPT = ('Repaint the attached Iron Sentinel picture exactly: the same stone-and-iron golem, horned helm, glowing blue eyes, pose, vault hall and lighting. '
                    'Only change its chest: remove the glowing letters and put a round glowing pale-blue crystal core, set in a thick iron ring, in the middle of its chest. '
                    'Keep the glowing runes on its arms and legs as simple rune shapes, never letters or words. Keep the same painted fantasy card-art style.')
+
+# #101 Omens (Nov 9, 2026): 21 pictures for the three raids' Omen decks. Until painted they borrow code-drawn art.
+OCR = 'Omen: Crypt of the Hollow King (green soul-fire, undead, bones, old bells)'
+OMO = 'Omen: The Molten Spire (red dragon, fire, lava and smoke)'
+OTI = 'Omen: The Sunken Cathedral (flooded ruins, sea witch, tentacles, deep water)'
+S.update({
+'cr_bell': (OCR, 'a huge cracked bronze bell swinging in a ruined crypt bell tower, ringing, rings of ghostly green soul-fire spreading out in waves across the floor below, a glowing circle of runes on the flagstones'),
+'cr_graves': (OCR, 'inside a dark crypt hall, heavy stone coffin lids sliding open as bony hands claw their way out, green mist pouring over the edges, candles guttering'),
+'cr_drain': (OCR, 'ghostly ribbons of glowing green soul-light being pulled out of a party of adventurers and drawn toward the outstretched skeletal hand of a crowned lich in the shadows'),
+'cr_wail': (OCR, 'a screaming see-through banshee spirit with long flowing white hair rushing down a crypt corridor, papers and playing pieces torn from adventurers\' hands and whirling away in the gust'),
+'cr_bonewall': (OCR, 'a line of skeleton warriors with rusty shields standing firm as a shimmering wall of interlocking bones and green runes rises around them'),
+'cr_eclipse': (OCR, 'a black sun being eclipsed over a ruined crypt, a ring of sickly green fire blazing around it, the long shadow of a crowned lich stretching across the ground'),
+'cr_lull': (OCR, 'a quiet moment in a crypt: the bells hang still, soft pale warm light falls through a broken ceiling onto resting adventurers who bandage their wounds, the green fog pulling back'),
+'mo_fall': (OMO, 'burning meteors of fire raining down from a smoke-black sky onto a volcanic plateau, a glowing ring of fiery runes marking where they will land'),
+'mo_vents': (OMO, 'cracks splitting open in black volcanic rock, jets of lava and hissing steam bursting up under the feet of startled armoured adventurers and their beasts'),
+'mo_stoke': (OMO, 'a great red dragon breathing into a huge glowing forge-pit of lava inside a volcano, embers swirling up, the fire roaring white-hot'),
+'mo_hatch': (OMO, 'a nest of glowing dragon eggs half-sunk in a lava pool, the shells cracking as small fierce baby red dragons burst out spitting sparks'),
+'mo_heat': (OMO, 'waves of shimmering heat rolling across a volcanic cavern, a rack of armour glowing red-hot, the dark silhouette of a red dragon in the haze'),
+'mo_floor': (OMO, 'the stone floor of a dragon\'s lair melting into rivers of orange lava, adventurers leaping between the last few solid rocks'),
+'mo_cool': (OMO, 'a calm moment in a volcanic cave: lava cooling into a black crust with faint orange cracks, soft steam rising, cool blue light falling from a gap above'),
+'ti_wave': (OTI, 'a towering wave curling over the flooded nave of a sunken cathedral, a circle of glowing sea-green runes on the flooded floor beneath it'),
+'ti_spring': (OTI, 'seawater surging up through cracks in the marble floor of a sunken cathedral, rising fast over the stone benches, moonlight through tall broken windows'),
+'ti_lurkers': (OTI, 'glowing yellow eyes and finned shapes of murky fish-men lurking just below the dark water between flooded stone pillars'),
+'ti_pressure': (OTI, 'a cracked glass dome in the ceiling of a sunken hall bowing inward under the weight of the deep sea, water jetting in through the cracks'),
+'ti_bells': (OTI, 'barnacle-covered bells swinging underwater in a sunken bell tower, rings of bubbles and rippling sound spreading out, a sea witch\'s silhouette beyond'),
+'ti_snare': (OTI, 'thick ropes of dark kelp wrapping around an armoured warrior\'s legs and arms and dragging him down into deep green water'),
+'ti_slack': (OTI, 'a calm moment: floodwater drawing back down the steps of a sunken cathedral, the still water reflecting soft dawn light through broken arches'),
+})

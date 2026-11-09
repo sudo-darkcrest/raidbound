@@ -36,7 +36,7 @@
 
   function unitHTML(kind, o) {
     // o: {ref, name, img, atk, hp, max, kws:[], cls:[], buffA, title}
-    const kwI = { protector: 'P', ferocity: 'F', longrange: 'L', elusive: 'E', guardian: 'G', unique: 'U' };
+    const kwI = { protector: 'B', ferocity: 'S', longrange: 'V', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
     return `<div class="unit ${kind === 'minion' ? 'minion' : ''} ${o.cls.join(' ')}" data-ref="${o.ref}" data-kind="${kind}" ${o.p != null ? `data-p="${o.p}"` : ''} style="${o.uc ? '--uc:' + o.uc : ''}" tabindex="0" aria-label="${esc(o.name)}, ${o.atk} attack, ${o.hp} health">
       <img alt="" src="${o.img}"><div class="kws">${o.kws.filter(k => k !== 'unique').map(k => `<i title="${RB.KEYWORDS[k][0]}: ${esc(RB.KEYWORDS[k][1])}">${kwI[k]}</i>`).join('')}</div>
       <div class="un">${esc(o.name)}</div><div class="ua ${o.buffA ? 'buff' : ''}">${o.atk}</div><div class="uh ${o.hp < o.max ? 'hurt' : o.buffH ? 'buff' : ''}">${o.hp}</div></div>`;
@@ -71,12 +71,20 @@
     });
     // #48: minions flank the boss — first one on the right, then left, then right…
     const minR = minions.filter((x, i) => i % 2 === 0), minL = minions.filter((x, i) => i % 2 === 1);
-    const strike = g.raid.strike + B.strikeBonus + g.partyFury;
+    const strike = E.strikeNow ? E.strikeNow() : g.raid.strike + B.strikeBonus + g.partyFury;
+    // #101 Omens: the next three wait face up beside the boss
+    const omenStrip = raid.omens && B.omens && B.omens.length ? (() => {
+      const nx = E.nextOmenRound(), when = nx == null ? '' : nx === g.round ? (g.phase === 'boss' ? 'now' : 'this boss turn') : nx === g.round + 1 ? 'next round' : `in ${nx - g.round} rounds`;
+      const ev = E.omenEvery(), every = ev === 1 ? 'every boss turn' : ev === 2 ? 'every other boss turn' : 'every third boss turn';
+      return `<span class="omens" title="Omens come ${every}. The next three are shown here, the left one first.${when ? ' Next one: ' + when + '.' : ''}"><small>Omens${when ? ` · ${when}` : ''}</small>${B.omens.slice(-3).reverse().map((id, i) => `<span class="om ${i === 0 ? 'next' : ''} ${BC[id].soak ? 'soak' : ''}" data-bc="${id}" title="${esc(BC[id].name + ': ' + BC[id].text)}"><img alt="" src="${U.cardArt(id)}"><b>${esc(BC[id].name)}</b></span>`).join('')}</span>`;
+    })() : '';
+    // #102 Wings of Flame: the boss is in the air — fill the Ground bar to bring it down
+    const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley allies and abilities can reach him. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
     const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? C[p.weapon.c.id].atk : 0);
     const heroCan = canAct && E.canAttackWith(p, 'hero');
-    const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Elusive', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
+    const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Shrouded', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
     const petImg = p.hero.pet && RB.COSMETICS[p.hero.pet] && U.cosImg(p.hero.pet) ? `<div class="petspot"><img class="pet" alt="${esc(RB.COSMETICS[p.hero.pet].name)}" src="${U.cosImg(p.hero.pet)}" title="${esc(RB.COSMETICS[p.hero.pet].name + (RB.PET_PERKS && RB.PET_PERKS[p.hero.pet] && !g.cfg.bossPlayer ? ': ' + RB.PET_PERKS[p.hero.pet].text : ''))}"></div>` : '';
     const pw = HE[p.heroId].power;
     const powerBtn = p.hero.master ? `<button class="btn small ghost powerbtn used" disabled><b>Master Hero</b>Original power set aside</button>` :
@@ -131,7 +139,8 @@
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
-          <div class="bossrow">${raid.dungeon ? `${raid.stages ? (() => { const st = raid.stages[B.stage], nx = raid.stages[B.stage + 1]; return `<span class="chip dstage" title="${esc(nx ? `Next: ${nx.boss}` : 'The master of this dungeon')}">${B.stage < raid.stages.length - 1 ? `Under-boss ${B.stage + 1} of 2` : 'Final boss'}</span>${st.rule ? `<span class="chip drule" title="${esc(st.rule.text)}">✦ ${esc(st.rule.name)}</span>` : ''}`; })() : ''}<span class="chip dlevel" title="${raid.stages ? 'The dungeon levels up each time an under-boss falls' : 'The dungeon levels up at 70% and 40% health'}">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span>${B.enrage ? `<span class="chip guard" title="From round ${RB.ENRAGE_ROUND} the boss strikes 1 harder every round, and Protectors can't intercept its strikes">🔥 Enraged +${B.enrage}</span>` : ''}<span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+          <div class="bossrow">${raid.dungeon ? `${raid.stages ? (() => { const st = raid.stages[B.stage], nx = raid.stages[B.stage + 1]; return `<span class="chip dstage" title="${esc(nx ? `Next: ${nx.boss}` : 'The master of this dungeon')}">${B.stage < raid.stages.length - 1 ? `Under-boss ${B.stage + 1} of 2` : 'Final boss'}</span>${st.rule ? `<span class="chip drule" title="${esc(st.rule.text)}">✦ ${esc(st.rule.name)}</span>` : ''}`; })() : ''}<span class="chip dlevel" title="${raid.stages ? 'The dungeon levels up each time an under-boss falls' : 'The dungeon levels up at 70% and 40% health'}">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip ${B.tempStrike ? 'hot' : ''}" title="The boss strikes the hero with the most threat at the end of its turn${B.tempStrike ? ` (${B.tempStrike} extra from an omen this turn)` : ''}">⚔ Strike ${strike}</span>${flight}${B.enrage ? `<span class="chip guard" title="From round ${RB.ENRAGE_ROUND} the boss strikes 1 harder every round, and Bulwark allies can't intercept its strikes">🔥 Enraged +${B.enrage}</span>` : ''}<span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+          ${omenStrip ? `<div class="omenrow">${omenStrip}</div>` : ''}
         </div>
         <div class="bossstage">
           <div class="minions left" style="--mn:${minL.length}">${minL.join('')}</div>
@@ -145,7 +154,7 @@
         <div class="allies">${allies}</div></div>
       <div class="handbar">${g.cfg.bossPlayer ? `<div class="hand bosshand">${(B.hand || []).map((id, k, arr) => `<div class="hc bosshc" data-bc="${id}" style="transform:rotate(${((k - (arr.length - 1) / 2) * 3).toFixed(1)}deg)">${U.cardHTML(id)}</div>`).join('') || '<div class="handnote">Your boss cards arrive on your turn</div>'}<div class="bhlabel">${esc(raid.short)}\'s hand</div>` : `<div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) && showHand ? '' : 'other'} ${showHand ? '' : 'hidden'}">${hand}${!showHand && view.curtain == null ? `<div class="handnote">${esc(E.pdef(p).name)}'s hand · ${p.hand.length} card${p.hand.length === 1 ? '' : 's'} · hidden</div>` : ''}`}</div>
         ${view.curtain != null && view.curtain === p.idx ? `<div class="curtain"><b>${esc(E.pdef(p).name)}'s turn</b><span>Pass the computer to ${esc(E.pdef(p).name)}'s player. Everyone else, look away!</span><button class="btn primary" data-act="reveal">Show my hand</button></div>` : ''}
-        <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button><div class="hint">${status}</div></div></div>
+        <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button>${raid.bail && !g.cfg.bossPlayer ? `<button class="btn bailbtn" data-act="bail" ${canAct && E.canBail(p) ? '' : 'disabled'} title="Pay ${raid.bail.cost} resource to lower the ${esc(raid.counter.name)} by 1. Once per turn.">🪣 Bail water (${raid.bail.cost}◆)</button>` : ''}<div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
     <div class="side"><div class="roster"><h5>Party<button class="btn small ghost narrow-only drawerx" data-act="drawer">✕ Close</button></h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
@@ -245,6 +254,7 @@
           if (speed() > 0.2 || other) { await reveal(U.cardHTML(d.id, { holo: d.holo }), other ? 1700 : 800, null, who); if (other) flyToRoster(d.id, d.p); }
           break; }
         case 'bossCard': { U.sfx.bossReveal(); if (view.bossRound !== E.g.round) { view.bossRound = E.g.round; view.bossPlayed = []; } view.bossPlayed.push(d.id); await reveal(U.cardHTML(d.id), 2600, null, E.raid.short + ' plays'); break; }
+        case 'omen': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 2400, null, 'Omen'); break; }
         case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
         case 'turn': { const p = E.g.players[d.p];
           if (!p.auto && !net && !E.g.cfg.bossPlayer) { if (localHumans() > 1 && view.lastHuman !== d.p) view.curtain = d.p; view.lastHuman = d.p; }
@@ -281,7 +291,7 @@
     }
     if (kind === 'bossTarget') {
       const opts = d.options.map((t, i) => { const hero = t.t === 'hero'; const art = hero ? U.cardArt(t.p.heroId) : U.cardArt(t.a.id); return `<button class="tpick" data-v="${i}"><img alt="" src="${art}"><b>${esc(E.nameOf(t))}</b><span>${hero ? 'Hero' : 'Ally'} · ${E.hpOf(t)}/${E.maxHpOf(t)} health${E.atkOf(t) ? ` · hits back for ${hero ? E.heroAtk(t.p) : E.atkOf(t)}+` : ''}</span></button>`; }).join('');
-      const v = await U.dialog(`<h3>${esc(d.from)} attacks (${d.atk} damage)</h3><p>${d.strike ? 'Your boss strike' : 'Your minion'} is ready. Choose who to hit. A ready Protector ally may step in front of its hero.</p><div class="tpicks">${opts}</div><div class="acts"><button class="btn ghost" data-v="auto">Let it choose</button></div>`, { dismiss: 'auto' });
+      const v = await U.dialog(`<h3>${esc(d.from)} attacks (${d.atk} damage)</h3><p>${d.strike ? 'Your boss strike' : 'Your minion'} is ready. Choose who to hit. A ready Bulwark ally may step in front of its hero.</p><div class="tpicks">${opts}</div><div class="acts"><button class="btn ghost" data-v="auto">Let it choose</button></div>`, { dismiss: 'auto' });
       return v == null || v === 'auto' ? null : +v;
     }
     if (kind === 'strikeBack') {
@@ -327,7 +337,7 @@
       const tag = (o) => { const t = C[o.c.id].tags || []; if (ai[o.c.uid]) return '<span class="itag good">Good answer</span>'; if (!harmful && (t.includes('shield') || t.includes('elusive'))) return '<span class="itag meh">Not much use here</span>'; return ''; };
       const html = `<h3>Answer the boss's card?</h3>
         <div class="instwhy"><p><b>${esc(E.raid.short)} just revealed ${esc(bc.name)}.</b> ${esc(what)}${who ? ` Likely to hit: <b>${who}</b>.` : ''}</p>
-        <p class="small">It hasn't happened yet. If you play an <b>Instant</b> now, it happens first, then the boss card still takes effect. Wards block damage before it lands, Elusive dodges attacks, and stuns stop minions or the boss's next strike. It costs your ready resources now, so you'll have less to spend on your own turn.</p></div>
+        <p class="small">It hasn't happened yet. If you play an <b>Instant</b> now, it happens first, then the boss card still takes effect. Wards block damage before it lands, Shrouded dodges attacks, and stuns stop minions or the boss's next strike. It uses resources you left ready — they all refresh at the start of your next turn, so a spare one costs you nothing.</p></div>
         <div class="cards"><div style="--cw:170px" class="bosspick">${U.cardHTML(bc.id)}<div class="ilabel">Coming up</div></div>${opts.map((o, i) => `<div class="pick" data-v="${i}" title="${esc(E.pdef(o.p).name)}">${U.cardHTML(o.c.id, { holo: o.c.holo })}<div class="ihint">${tag(o)}<b>${esc(E.pdef(o.p).name.replace(/^(Ser|Sir|Sister|Old|Lady|Lord) /, '').split(/[ ,]/)[0])}</b> · costs ${C[o.c.id].cost} (${E.available(o.p)} ready)<br>${esc(hint(o))}</div></div>`).join('')}</div>
         <p class="small" style="text-align:center;margin:.6rem 0 0">${U.isPhone() ? 'Tap' : 'Click'} an Instant to play it, or let the card happen and keep your cards. You can turn these pauses off in Settings.</p>
         <div class="acts"><button class="btn primary" data-v="pass">Let it happen</button></div>`;
@@ -347,11 +357,55 @@
       }
       return { p: o.p, inst: o.c, target };
     }
+    // #99 React: an attack is about to land — answer it with a React card
+    if (kind === 'react') {
+      const ctx = d.ctx, opts = d.options; if (!opts.length) return null;
+      const dT = ctx.defT, hero = dT.t === 'hero' ? dT.p : null, ward = hero ? hero.hero.shield : 0, inc = ctx.atk + (E.g.partyFury || 0);
+      const good = RB.AI.chooseReact(E, ctx, opts);
+      const hint = o => {
+        const cd = C[o.inst.id], t = cd.tags || [], n = +((cd.text.match(/next (\d+) damage/) || [])[1] || 0);
+        if (t.includes('elusive')) return 'The attack misses: your hero slips into the shadows.';
+        if (cd.react === 'strike') return `Wards every hero: blocks ${n} of this strike and of the next hit on each hero.`;
+        if (t.includes('shield')) return n >= inc ? `Blocks all ${inc} damage.` : `Blocks ${n} of the ${inc} damage.`;
+        if (t.includes('heal')) return `Heals ${E.nameOf(o.target || dT)} first, so the hit is less likely to finish them.`;
+        return 'Happens before the hit lands.';
+      };
+      const who = o => esc(E.pdef(o.p).name.replace(/^(Ser|Sir|Sister|Old|Lady|Lord) /, '').split(/[ ,]/)[0]);
+      const html = `<h3><b class="kw react">React</b> — ${esc(ctx.attacker)} attacks!</h3>
+        <div class="instwhy"><p><b>${esc(ctx.attacker)} is about to hit ${esc(E.nameOf(dT))} for ${inc} damage.</b> ${esc(E.nameOf(dT))} has ${E.hpOf(dT)} health${ward ? ` and a ward of ${ward}` : ''}.</p>
+        <p class="small">A <b>React</b> card can be played right now, before the hit lands. It uses resources you left ready — they refresh at the start of your next turn.</p></div>
+        <div class="cards">${opts.map((o, i) => `<div class="pick" data-v="${i}">${U.cardHTML(o.inst.id, { holo: o.inst.holo })}<div class="ihint">${good === o ? '<span class="itag good">Good answer</span>' : ''}<b>${who(o)}</b> · costs ${C[o.inst.id].cost} (${E.available(o.p)} ready)<br>${esc(hint(o))}</div></div>`).join('')}</div>
+        <p class="small" style="text-align:center;margin:.6rem 0 0">${U.isPhone() ? 'Tap' : 'Click'} a card to play it, or take the hit and keep your cards. You can turn these pauses off in Settings.</p>
+        <div class="acts"><button class="btn primary" data-v="pass">Take the hit</button></div>`;
+      const v = await U.dialog(html);
+      if (v === 'pass' || v == null || !opts[+v]) return null;
+      return opts[+v];
+    }
+    // #101 Soak: step into the circle and share the damage, or stay out
+    if (kind === 'soak') {
+      const n = d.heroes.length, tot = d.total, name = E.pdef(d.p).name;
+      const rows = Array.from({ length: n }, (_, i) => `<span class="srow ${i === 0 ? '' : ''}"><b>${i + 1}</b> hero${i ? 'es' : ''} in: <b>${Math.ceil(tot / (i + 1))}</b> each</span>`).join('');
+      const good = RB.AI.chooseSoak(E, d.p, tot, d.heroes);
+      const html = `<h3>${esc(d.name)} — step into the circle?</h3>
+        <div class="instwhy"><p><b>${tot} damage</b> will be shared by the heroes who step into the circle. If <b>nobody</b> steps in, it hits <b>every hero for ${tot}</b>.</p>
+        <p class="small">${esc(name)} has ${Math.max(0, E.heroHp(d.p))} health${d.p.hero.shield ? ` and a ward of ${d.p.hero.shield}` : ''}. Armor and wards still help.</p>
+        <div class="soakrows">${rows}</div></div>
+        <div class="acts"><button class="btn ghost" data-v="no">Stay out${good ? '' : ' <span class="itag good">Good answer</span>'}</button><button class="btn primary" data-v="yes">Step in${good ? ' <span class="itag good">Good answer</span>' : ''}</button></div>`;
+      const v = await U.dialog(html, { dismiss: good ? 'yes' : 'no' });
+      return v === 'yes';
+    }
+    // #100 Cover: a ready Bulwark ally may take the hit instead
+    if (kind === 'cover') {
+      const good = RB.AI.chooseCover(E, d.target, d.atk, d.options, d.attackerDef, d.isBoss);
+      const opts = d.options.map((t, i) => { const mate = t.p !== d.target.p; return `<button class="tpick" data-v="${i}"><img alt="" src="${U.cardArt(t.a.id)}"><b>${esc(E.nameOf(t))}${good === t ? ' <span class="itag good">Good answer</span>' : ''}</b><span>${E.hpOf(t)}/${E.maxHpOf(t)} health · hits back for ${E.atkOf(t)}${mate ? ` · ${esc(E.pdef(t.p).name.split(/[ ,]/)[0])}'s ally: covering a teammate gives ${esc(E.pdef(t.p).name.split(/[ ,]/)[0])} ${d.atk * 2} threat` : ''}</span></button>`; }).join('');
+      const v = await U.dialog(`<h3>Cover ${esc(E.nameOf(d.target))}?</h3><p>${esc(d.attacker)} attacks ${esc(E.nameOf(d.target))} (${E.hpOf(d.target)} health) for <b>${d.atk}</b> damage. A ready <b>Bulwark</b> ally can step in and take the hit instead. It exhausts until its owner's next turn.</p><div class="tpicks">${opts}</div><div class="acts"><button class="btn ghost" data-v="none">Don't cover${good ? '' : ' <span class="itag good">Good answer</span>'}</button></div>`, { dismiss: 'none' });
+      return v == null || v === 'none' ? null : +v;
+    }
     return null;
   }
 
   /* ---------- player actions (local, or sent through the online relay) ---------- */
-  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation'];
+  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation', 'bail'];
   async function doAction(name, args) {
     const p = args[0];
     if (name === 'end') return E.endHeroTurn();
@@ -419,6 +473,24 @@
         if (v) { const inst = q.hand.find(c => c.uid === v.uid); if (inst) return { p: q, inst, target: v.R ? findRef(v.R) : null }; }
       }
       return null;
+    }
+    if (kind === 'react') {
+      const ids = [...new Set(d.options.map(o => o.p.idx))];
+      for (const idx of ids) {
+        const q = E.g.players[idx]; if (q.auto) continue;
+        const mineOpts = d.options.filter(o => o.p === q);
+        if (net.mine(q.idx) && !net.replaying) { const r = await ask('react', Object.assign({}, d, { options: mineOpts }), true); net.send({ t: 'ans', v: r ? { uid: r.inst.uid } : null }); }
+        else net.wait(`Waiting for ${esc(E.g.cfg.party[q.idx].name)} to react to ${esc(d.ctx.attacker)}…`);
+        const v = await netAnswer(q.idx); net.wait(null);
+        if (v) { const o = mineOpts.find(x => x.inst.uid === v.uid); if (o) return o; }
+      }
+      return null;
+    }
+    if (kind === 'soak') {
+      if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v: !!v }); }
+      else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is deciding whether to step into the circle…`);
+      const v = await netAnswer(d.p.idx); net.wait(null);
+      return v == null ? RB.AI.chooseSoak(E, d.p, d.total, d.heroes) : !!v;
     }
     return null;
   }
@@ -531,7 +603,13 @@
       { label: 'Leave raid', go: () => leave() }
     ]);
   }
-  function showRules() { return U.dialog(`<h3>${esc(E.raid.name)}</h3><ul style="padding-left:1.1rem;color:#d8ccb0;line-height:1.5">${E.raid.rules.map(r => `<li><b style="color:var(--vellum)">${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul><p style="font-size:.92rem">${U.isPhone() ? 'Tap a card in your hand to see it big and play it. Tap an ally or your hero to attack. Glowing cards and units are ready to use. Tap the boss, a minion or any gear to see its card.' : 'Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.'}</p><div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok' }); }
+  // #104: the Rules button opens this raid's rules plus the Field Guide chapters that matter mid-fight
+  function showRules() {
+    const help = U.isPhone() ? 'Tap a card in your hand to see it big and play it. Tap an ally or your hero to attack. Glowing cards and units are ready to use. Tap the boss, a minion or any gear to see its card.' : 'Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.';
+    const here = { id: 'here', icon: '🗺', title: E.raid.dungeon ? 'This dungeon' : 'This raid', html: `<section><h4>${esc(E.raid.name)}</h4><ul>${E.raid.rules.map(r => `<li><b>${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul></section><p class="small">${help}</p>` };
+    const chs = [here].concat(U.guideChapters(['bossturn', 'threat', 'react'].concat(E.raid.dungeon ? [] : ['omens'], ['keywords'])));
+    return U.dialog(`${U.guideHTML(chs, 'here')}<div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok', cls: 'wide guidedlg', onMount: o => U.guideWire(o) });
+  }
   function onClick(e) {
     if (!E) return;
     const t = e.target;
@@ -565,6 +643,7 @@
     if (act) {
       switch (act.dataset.act) {
         case 'end': return doAct('end', p);
+        case 'bail': return doAct('bail', p);
         case 'auto': return doAct('auto', p);
         case 'power': return usePower(p);
         case 'hero': return heroActions(p, act);
@@ -606,7 +685,7 @@
     root = U.show('battle', '');
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0; view.netSpeed = net ? (+cfg.speed || save.settings.speed || 1) : null;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
-    U.currentGame = E;
+    U.currentGame = E; U.battleRefresh = schedule;
     // website build: warm the cache with this fight's pictures so cards don't pop in
     if (RB.WEB_BUILD) { const ids = new Set([...cfg.party.map(s => s.hero), ...cfg.party.flatMap(s => s.deck.map(c => typeof c === 'string' ? c : c.id)), ...E.g.boss.deck, ...Object.keys(RB.TOKENS)]); setTimeout(() => ids.forEach(id => { const u = U.cardArt(id); if (u && !u.startsWith('data:')) { const im = new Image(); im.decoding = 'async'; im.src = u; } }), 50); }
     E.g.onAiStep = () => wait(550);

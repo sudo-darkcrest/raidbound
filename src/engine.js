@@ -58,6 +58,9 @@
       maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: heroic && raid.counter ? 1 : 0,
       cardsPerTurn: 1 + (heroic && !D ? (RB.HEROIC_EXTRA_CARDS || 0) : 0), strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
+      // #101 Omens: each raid's own deck of signature events, one per boss turn, the next three shown to the party
+      omens: raid.omens && !D ? shuffle(raid.omens.slice(), rnd) : [], omenGrave: [], tempStrike: 0,
+      flying: false, ground: 0, groundMax: 0, flyTurns: 0,
     };
     if (D) g.boss.strikeBonus += g.boss.level - 1 + (RB.DUNGEON_PARTY_STRIKE || 0) * (n - 1);
     const stageNow = () => raid.stages ? raid.stages[g.boss.stage] : null;
@@ -85,12 +88,14 @@
     const hasKw = (d, k) => (d.kw || []).includes(k);
     const allyKw = (p, a, k) => hasKw(allyDef(a), k) || (k === 'ferocity' && p.hero.master && C[p.hero.master].allyFerocity);
     const minDef = m => TK[m.id];
-    const minAtk = m => Math.max(0, (minDef(m).atk || 0) + m.atkB);
+    const minAtk = m => Math.max(0, (minDef(m).atk || 0) + m.atkB + (hasKw(minDef(m), 'frenzy') ? m.damage : 0)); // #103 Frenzy
     const minMax = m => minDef(m).hp + m.hpB;
     const bossHp = () => g.boss.maxHp - g.boss.damage;
     const guardians = () => g.boss.minions.filter(m => hasKw(minDef(m), 'guardian'));
     const available = p => p.res.filter(r => !r.ex).length + p.tempRes;
     const isActive = p => g.phase === 'main' && g.players[g.turn] === p;
+    // a Shrouded hero can't be attacked — until the boss is Enraged: then it sees through the shadows (no fight can stall forever)
+    const shrouded = p => p.hero.elusive && !(g.boss && g.boss.enrage);
 
     const T = {
       boss: () => ({ t: 'boss' }), minion: m => ({ t: 'minion', m }), hero: p => ({ t: 'hero', p }), ally: (p, a) => ({ t: 'ally', p, a }),
@@ -122,9 +127,15 @@
         default: return [];
       }
     }
-    function attackTargets() {
+    // #102: while the boss is in the air only Volley attacks reach it (abilities still can)
+    function volleyAttack(p, who) {
+      if (!p || who == null) return false;
+      if (who === 'hero') return !!(p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike && hasKw(C[p.weapon.c.id], 'longrange'));
+      return allyKw(p, who, 'longrange');
+    }
+    function attackTargets(p, who) {
       const ts = g.boss.minions.filter(m => !hasKw(minDef(m), 'elusive')).map(T.minion);
-      if (!guardians().length) ts.unshift(T.boss());
+      if (!guardians().length && (!g.boss.flying || who == null || volleyAttack(p, who))) ts.unshift(T.boss());
       return ts;
     }
 
@@ -147,6 +158,9 @@
         if (n > 0) n = await useArmor(p, n);
       }
       if (target.t === 'ally' && allyDef(target.a).armorAlly) n = Math.max(0, n - allyDef(target.a).armorAlly);
+      // #103 Thick Hide; #102 the Leviathan Maw shields Nethys (half damage while it lives)
+      if (n > 0 && ((target.t === 'minion' && hasKw(minDef(target.m), 'thickhide')) || (target.t === 'ally' && hasKw(allyDef(target.a), 'thickhide')))) n -= 1;
+      if (n > 0 && target.t === 'boss' && raid.halvedBy && g.boss.minions.some(m => m.id === raid.halvedBy)) n = Math.ceil(n / 2);
       if (n <= 0) { H.update(); return 0; }
       // apply
       if (target.t === 'boss') g.boss.damage += n;
@@ -163,6 +177,7 @@
       H.update();
       await checkDeath(target, src);
       if (target.t === 'boss') await checkPhases();
+      if (target.t === 'boss' && g.boss.flying && !g.over) { g.boss.ground += n; H.update(); if (g.boss.ground >= g.boss.groundMax) await crashDown(); }
       if (target.t === 'hero' && !g.over) { const p = target.p, q = perkIs(p, 'halfHeal');
         if (q && !p.hero.petUsed && !p.hero.dead && heroHp(p) <= heroMax(p) / 2) { p.hero.petUsed = true; log(`${petName(p)} shimmers and heals the party.`, 'def'); for (const h of alive()) await heal(T.hero(h), q.n); } }
       return n;
@@ -194,6 +209,13 @@
       if (target.t === 'hero' || target.t === 'ally') g.stats.healed += h;
       await H.anim('heal', { ref: refId(target), amount: h });
       H.update();
+      // #102 the Crypt: healing a friend sears the undead — a random undead minion takes 1
+      if (raid.healSears && (target.t === 'hero' || target.t === 'ally') && !g.over) {
+        const key = g.round + ':' + g.turn + ':' + g.phase; if (g.searKey !== key) { g.searKey = key; g.sears = 0; }
+        const und = g.sears < 3 ? g.boss.minions.filter(m => minDef(m).race === 'Undead') : [];
+        if (und.length) g.sears++;
+        if (und.length) { const m = pick(und); log(`Hallowed light sears the ${minDef(m).name}.`, 'def'); await dmg(T.minion(m), 1, { kind: 'effect' }); }
+      }
       return h;
     }
     async function checkDeath(t, src) {
@@ -229,7 +251,8 @@
         const p = t.p;
         const shard = p.items.find(e => C[e.c.id].cheatDeath);
         if (shard) {
-          p.items.splice(p.items.indexOf(shard), 1); p.grave.push(shard.c);
+          // a saving item burns away for good (it doesn't go back into the deck), so it can only save you once per fight
+          p.items.splice(p.items.indexOf(shard), 1); (p.exile = p.exile || []).push(shard.c);
           p.hero.damage = heroMax(p) - 5;
           log(`${C[shard.c.id].cheatMsg || 'The Phylactery Shard shatters'} — ${pdef(p).name} refuses to die!`, 'def');
           await H.anim('heal', { ref: 'hero' + p.idx, amount: 5 }); H.update();
@@ -281,6 +304,29 @@
       }
     }
 
+    // #102 the Molten Spire: Vorthrax takes to the air; enough damage while he flies grounds him (he crashes, stunned)
+    async function takeOff() {
+      const B = g.boss, f = raid.flight; if (!f || B.flying || g.over) return;
+      B.flying = true; B.ground = 0; B.flyTurns = 0; B.groundMax = f.ground(g.players.length);
+      log(`${raid.short} takes to the air! Only Volley attacks and abilities can reach him. Deal ${B.groundMax} damage to ground him.`, 'boss');
+      await H.anim('phase', { name: `${raid.short} takes flight`, text: `Only Volley attacks and abilities reach him. Deal ${B.groundMax} damage to bring him down.` });
+      H.update();
+    }
+    async function crashDown() {
+      const B = g.boss, f = raid.flight; if (!B.flying) return;
+      B.flying = false; B.ground = 0; B.counter = 0; B.stunned = true;
+      log(`${raid.short} is brought down! He crashes to the ground, stunned${f.crash ? `, and takes ${f.crash} damage` : ' — he will skip his next strike'}.`, 'win');
+      await H.anim('banner', { text: `${raid.short} is grounded!`, kind: 'win' });
+      H.update();
+      if (f.crash) await dmg(T.boss(), f.crash, { kind: 'effect' });
+    }
+    async function land() {
+      const B = g.boss; if (!B.flying) return;
+      B.flying = false; B.ground = 0; B.counter = 0;
+      log(`${raid.short} lands again. Every attack can reach him once more.`, 'boss');
+      H.update();
+    }
+
     /* ---------- resources ---------- */
     function pay(p, nAmt) {
       let k = nAmt;
@@ -318,7 +364,8 @@
       if (d.type === 'quest' || d.type === 'location') return { ok: false, why: 'Play this card as a resource.' };
       const myTurn = isActive(p);
       if (!myTurn) {
-        if (!(g.window && d.type === 'ability' && d.speed === 'instant')) return { ok: false, why: d.speed === 'instant' ? 'Instants can be played on your turn or in response to a boss card.' : 'You can only play this on your turn.' };
+        const inst = d.type === 'ability' && d.speed === 'instant';
+        if (!(inst && (g.window || (g.react && reactMatch(d, p, g.react))))) return { ok: false, why: d.speed === 'instant' ? (d.react ? `Instants can be played on your turn or in response to a boss card. This one can also React ${RB.REACT[d.react]}.` : 'Instants can be played on your turn or in response to a boss card.') : 'You can only play this on your turn.' };
       }
       if (available(p) < d.cost) return { ok: false, why: `Needs ${d.cost} resource${d.cost === 1 ? '' : 's'} (you have ${available(p)}).` };
       if (hasKw(d, 'unique') && d.type === 'ally' && p.allies.some(a => a.id === d.id)) return { ok: false, why: 'Unique: you already have one in play.' };
@@ -420,7 +467,7 @@
     function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? C[p.weapon.c.id].atk : 0); }
     async function attack(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
-      if (!attackTargets().some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : 'Invalid target.' };
+      if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley attacks can reach him.` : 'Invalid target.' };
       let atk, longrange = false, attackerT, onAttack = null, wname = '', ironHide = 0;
       if (who === 'hero') {
         const useW = p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike;
@@ -501,7 +548,7 @@
       p.allies.forEach(a => { if (a.frozen) { a.frozen = false; a.ex = true; } else a.ex = false; a.sick = false; a.tmp = 0; });
       p.hero.ex = false; p.hero.tempAtk = 0; p.hero.elusive = false; p.hero.taunt = false;
       gear(p).forEach(e => e.ex = false);
-      p.tempRes = 0; p.resPlayed = false;
+      p.tempRes = 0; p.resPlayed = false; p.bailed = false;
       if (g.boss.mark && g.boss.mark.by === p.idx) g.boss.mark = null;
       H.update();
       await H.anim('turn', { p: p.idx, name: p.name, hero: pdef(p).name });
@@ -511,6 +558,14 @@
       { const q = perkIs(p, 'trickle'); if (q && p.hero.petN < q.n && p.hero.damage > 0) { p.hero.petN++; await heal(T.hero(p), 1); } }
       if (p.hero.master && C[p.hero.master].mstart) await C[p.hero.master].mstart(api, p);
       for (const a of [...p.allies]) { const d = allyDef(a); if (d.start && p.allies.includes(a)) await d.start(api, p); if (g.over) return; }
+      // #103 Tend: each Tend ally heals 1 from its hero's most wounded friend (hero or ally)
+      for (const a of [...p.allies]) {
+        if (!hasKw(allyDef(a), 'tend') || !p.allies.includes(a) || p.hero.dead) continue;
+        const pool = [T.hero(p), ...p.allies.map(x => T.ally(p, x))].filter(t => maxHpOf(t) - hpOf(t) > 0);
+        if (!pool.length) continue;
+        const t = pool.reduce((x, y) => (maxHpOf(y) - hpOf(y)) * (y.t === 'hero' ? 1.3 : 1) > (maxHpOf(x) - hpOf(x)) * (x.t === 'hero' ? 1.3 : 1) ? y : x);
+        log(`${allyDef(a).name} tends ${nameOf(t)}.`, 'def'); await heal(t, 1); if (g.over) return;
+      }
       for (const e of [...p.items]) { const d = C[e.c.id]; if (d.start) await d.start(api, p); if (g.over) return; }
       for (const ev of [...g.boss.events]) { const d = BC[ev.id]; if (d.heroStart) await d.heroStart(api, p); if (g.over) return; }
       if (p.hero.dead) return endHeroTurn();
@@ -550,6 +605,60 @@
       }
       g.window = false;
     }
+    // #99 React: an Instant with a printed trigger can answer an attack before it lands
+    function reactMatch(d, p, ctx) {
+      if (!d.react || !ctx || !ctx.defT) return false;
+      if (d.react === 'hero') return ctx.defT.t === 'hero' && ctx.defT.p === p;
+      if (d.react === 'friendHero') return ctx.defT.t === 'hero';
+      if (d.react === 'friend') return ctx.defT.t === 'hero' || ctx.defT.t === 'ally';
+      if (d.react === 'strike') return !!ctx.isBoss;
+      return false;
+    }
+    function reactTarget(d, ctx) {
+      if (!d.target || d.target === 'none') return null;
+      if (d.target === 'friendlyHero') return ctx.defT.t === 'hero' ? T.hero(ctx.defT.p) : null;
+      if (d.target === 'friendly') return ctx.defT;
+      return null;
+    }
+    function reactOptions(ctx, who) {
+      const out = [];
+      for (const p of (who || alive())) for (const c of p.hand) {
+        const d = C[c.id];
+        if (d.type !== 'ability' || d.speed !== 'instant' || !reactMatch(d, p, ctx) || available(p) < d.cost) continue;
+        const target = reactTarget(d, ctx);
+        if (d.target && d.target !== 'none' && !target) continue;
+        out.push({ p, inst: c, target });
+      }
+      return out;
+    }
+    async function reactWindow(ctx) {
+      if (g.over || !isAlive(ctx.defT)) return;
+      const opts = reactOptions(ctx);
+      if (!opts.length) return;
+      const bot = o => o.p.auto || cfg.allAuto;
+      let choice = RB.AI.chooseReact(api, ctx, opts.filter(bot));
+      const humans = opts.filter(o => !bot(o));
+      if (!choice && humans.length && H.ask && g.settings.pauseForInstants && RB.AI.chooseReact(api, ctx, humans, true)) choice = await H.ask('react', { ctx, options: humans });
+      if (!choice || g.over) return;
+      g.react = ctx;
+      log(`${pdef(choice.p).name} reacts!`, 'def');
+      await playCard(choice.p, choice.inst, choice.target);
+      g.react = null;
+    }
+    // #101 Omens
+    async function revealOmen() {
+      const B = g.boss;
+      if (!B.omens.length) B.omens = shuffle(B.omenGrave.splice(0), rnd);
+      if (!B.omens.length) return;
+      const id = B.omens.pop(), oc = BC[id]; B.omenRound = g.round;
+      log(`Omen — ${oc.name}: ${oc.text}`, 'boss');
+      await H.anim('omen', { id });
+      await oc.run(api);
+      B.omenGrave.push(id);
+      // keep three omens in view: a fresh shuffle goes underneath what is left
+      if (B.omens.length < 3 && B.omenGrave.length) B.omens = shuffle(B.omenGrave.splice(0), rnd).concat(B.omens);
+      H.update();
+    }
     async function bossTurn() {
       if (g.over) return;
       g.phase = 'boss';
@@ -558,19 +667,27 @@
       await H.anim('bossTurn', { name: raid.short });
       log(`— ${raid.short}'s turn —`, 'turn');
       B.minions.forEach(m => { m.ex = false; m.sick = false; });
+      B.struck = false; // the boss's own strike is still to come (the AI keeps a Bulwark ally back for it)
       // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
       if (g.round >= RB.ENRAGE_ROUND) {
         B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
-        log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round and can no longer be intercepted by Protectors.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
+        log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round and can no longer be intercepted by Bulwark allies.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
         if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
       }
-      if (raid.counter) {
+      if (raid.counter && !B.flying) {
         B.counter += raid.counterPerTurn || 1;
         await H.anim('counter', { value: B.counter, max: raid.counter.max });
         H.update();
         if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); H.update(); if (g.over) return; }
       }
       { const st = stageNow(); if (st && st.rule && st.rule.bossTurn) { await st.rule.bossTurn(api); H.update(); if (g.over) return; } }
+      if (B.flying && raid.flight && raid.flight.strafe) {
+        log(`${raid.short} strafes the party from the air!`, 'boss'); await H.anim('banner', { text: 'Strafing run', kind: 'boss' });
+        for (const h of alive()) await dmg(T.hero(h), raid.flight.strafe, { kind: 'boss' });
+        if (g.over) return;
+      }
+      // #101: omens come every boss turn for 3–4 heroes, every other boss turn for 2, every third for a solo hero
+      if (B.omens.length && api.omenDue(g.round)) { await revealOmen(); if (g.over) return; }
       const k = D ? flipCount() : B.cardsPerTurn + Math.max(0, alive().length - 1);
       if (D) log(`${raid.short} is level ${B.level}: flips ${k} card${k > 1 ? 's' : ''}.`, 'boss');
       const drawBoss = () => { if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); } return B.deck.pop(); };
@@ -617,6 +734,9 @@
       B.turnsTaken++;
       if (g.over) return;
       // end of boss turn
+      B.tempStrike = 0;
+      if (B.flying && raid.flight) { B.flyTurns++; if (B.flyTurns >= raid.flight.turns) await land(); }
+      if (g.over) return;
       B.events.forEach(e => e.turns--);
       B.events.filter(e => e.turns <= 0).forEach(e => B.grave.push(e.id));
       B.events = B.events.filter(e => e.turns > 0);
@@ -626,16 +746,49 @@
       H.update();
       await startHeroTurn();
     }
-    function protectorFor(p) { return p.allies.find(a => allyKw(p, a, 'protector') && !a.ex && !a.frozen); }
-    async function resolveEnemyAttack(attackerName, atkVal, targetT, attackerRef, isBoss) {
+    // #100 Cover: any ready Bulwark ally in the party can take a hit meant for a friendly hero or ally.
+    // Covering a teammate draws the boss's eye: the Bulwark's hero gains threat.
+    function coverOptions(targetT, attackerDef, isBoss) {
+      if (isBoss && g.boss.enrage) return []; // #78: an Enraged boss's strike goes straight past Bulwark allies
+      if (attackerDef && hasKw(attackerDef, 'ambush')) return [];
+      const out = [];
+      // dungeons: the boss's mark means the marked hero faces it with only their own Bulwark allies
+      for (const q of (D ? [targetT.p] : alive())) for (const a of q.allies) {
+        if (!allyKw(q, a, 'protector') || a.ex || a.frozen) continue;
+        if (targetT.t === 'ally' && targetT.a === a) continue;
+        out.push(T.ally(q, a));
+      }
+      return out;
+    }
+    async function chooseCover(targetT, atkVal, attackerName, attackerDef, isBoss) {
+      const opts = coverOptions(targetT, attackerDef, isBoss);
+      if (!opts.length) return null;
+      // a player only decides for their own Bulwark allies; AI teammates decide for theirs
+      const mine = opts.filter(t => !t.p.auto);
+      if (!g.settings.autoDefend && H.ask && !cfg.allAuto && mine.length) {
+        const v = await H.ask('cover', { attacker: attackerName, atk: atkVal, target: targetT, options: mine, attackerDef, isBoss });
+        if (v != null && mine[v]) return mine[v];
+        const rest = opts.filter(t => t.p.auto);
+        return rest.length ? RB.AI.chooseCover(api, targetT, atkVal, rest, attackerDef, isBoss) : null;
+      }
+      return RB.AI.chooseCover(api, targetT, atkVal, opts, attackerDef, isBoss);
+    }
+    async function resolveEnemyAttack(attackerName, atkVal, targetT, attackerRef, isBoss, attackerDef) {
       let defT = targetT;
-      if (targetT.t === 'hero') {
-        // #78: an Enraged boss's strike goes straight past Protectors (a wall of fresh tokens could stall a fight forever)
-        const pr = isBoss && g.boss.enrage ? null : protectorFor(targetT.p);
-        if (pr) { pr.ex = true; defT = T.ally(targetT.p, pr); log(`${allyDef(pr).name} steps in to protect ${pdef(targetT.p).name}!`, 'def'); }
+      if (targetT.t === 'hero' || targetT.t === 'ally') {
+        const cv = await chooseCover(targetT, atkVal, attackerName, attackerDef, isBoss);
+        if (cv) {
+          cv.a.ex = true; defT = cv;
+          if (cv.p !== targetT.p) { cv.p.threat += atkVal * 2; log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}! The boss marks ${pdef(cv.p).name} as a threat.`, 'def'); }
+          else log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}!`, 'def');
+        }
       }
       log(`${attackerName} attacks ${nameOf(defT)}.`, 'boss');
-      await H.anim('attack', { from: attackerRef, to: refId(defT), enemy: true });
+      await H.anim('attack', { from: attackerRef === 'boss' ? 'boss' : attackerRef.uid || attackerRef, to: refId(defT), enemy: true });
+      // #99 React: answer the attack before it lands
+      await reactWindow({ attacker: attackerName, atk: atkVal, defT, isBoss: !!isBoss, attackerDef });
+      if (g.over || !isAlive(defT)) return;
+      if (defT.t === 'hero' && shrouded(defT.p)) { log(`${pdef(defT.p).name} slips into the shadows — the attack misses!`, 'def'); await H.anim('banner', { text: 'Missed!', kind: 'def' }); return; }
       // defender's counter-damage
       let back = 0;
       if (defT.t === 'ally') back = allyAtk(defT.p, defT.a);
@@ -649,21 +802,27 @@
         } else if (heroAtk(p) > 0) back = heroAtk(p);
       }
       const attackerT = isBoss ? T.boss() : T.minion(attackerRef);
-      await dmg(defT, atkVal, { kind: isBoss ? 'boss' : 'minion', strike: isBoss });
+      const before = defT.t === 'ally' ? hpOf(defT) : 0;
+      const dealt = await dmg(defT, atkVal, { kind: isBoss ? 'boss' : 'minion', strike: isBoss });
+      // #103 Crushing: damage beyond a defending ally's health carries on to that ally's hero
+      if (defT.t === 'ally' && attackerDef && hasKw(attackerDef, 'crushing') && dealt > before && !defT.p.hero.dead && !g.over) {
+        const over = dealt - before;
+        log(`${attackerName} crushes through: ${over} damage carries on to ${pdef(defT.p).name}.`, 'boss');
+        await dmg(T.hero(defT.p), over, { kind: 'effect' });
+      }
       if (back > 0 && !g.over && isAlive(attackerT)) {
-        const srcP = defT.t === 'hero' ? defT.p : defT.p;
-        await dmg(attackerT, back, { p: srcP, kind: defT.t === 'hero' ? 'hero' : 'ally' });
+        await dmg(attackerT, back, { p: defT.p, kind: defT.t === 'hero' ? 'hero' : 'ally' });
       }
     }
-    function markedHero() { const m = g.boss.marked != null ? g.players[g.boss.marked] : null; return m && !m.hero.dead && !m.hero.elusive ? m : null; }
+    function markedHero() { const m = g.boss.marked != null ? g.players[g.boss.marked] : null; return m && !m.hero.dead && !shrouded(m) ? m : null; }
     function markHero() {
-      const cands = alive().filter(p => !p.hero.elusive); if (!cands.length) { g.boss.marked = null; return; }
+      const cands = alive().filter(p => !shrouded(p)); if (!cands.length) { g.boss.marked = null; return; }
       const p = pick(cands); g.boss.marked = p.idx;
       log(`${raid.short} rolls the die and MARKS ${pdef(p).name}! Every dungeon attack this turn goes at them.`, 'boss');
       H.anim('banner', { text: `${pdef(p).name} is marked!`, kind: 'boss' }); H.update();
     }
     function threatTarget() {
-      const cands = alive().filter(p => !p.hero.elusive);
+      const cands = alive().filter(p => !shrouded(p));
       if (!cands.length) return null;
       const taunt = cands.filter(p => p.hero.taunt);
       if (taunt.length) return taunt[0];
@@ -674,7 +833,7 @@
     }
     async function minionAttack(m) {
       const d = minDef(m);
-      const heroes = alive().filter(p => !p.hero.elusive);
+      const heroes = alive().filter(p => !shrouded(p));
       const allies = allAllies().filter(t => !allyKw(t.p, t.a, 'elusive'));
       let target = null;
       const taunt = heroes.find(p => p.hero.taunt);
@@ -691,20 +850,21 @@
       else { const pool = [...heroes.map(T.hero), ...allies]; target = pick(pool); }
       if (!target) return;
       m.ex = true;
-      await resolveEnemyAttack(d.name, minAtk(m), target, m, false);
+      await resolveEnemyAttack(d.name, minAtk(m), target, m, false, d);
       H.update();
     }
     async function bossStrike() {
       const B = g.boss;
+      B.struck = true;
       if (B.stunned) { B.stunned = false; log(`${raid.short} is stunned and can't strike!`, 'def'); await H.anim('banner', { text: `${raid.short} is stunned`, kind: 'def' }); return; }
       let target = threatTarget();
       if (!target) { log(`${raid.short} finds no one to strike.`, 'def'); return; }
       if (cfg.bossPlayer && H.ask && !target.hero.taunt) {
-        const pool = alive().filter(p => !p.hero.elusive);
-        const v = await H.ask('bossTarget', { from: raid.short, ref: 'boss', atk: raid.strike + B.strikeBonus, options: pool.map(T.hero), strike: true });
+        const pool = alive().filter(p => !shrouded(p));
+        const v = await H.ask('bossTarget', { from: raid.short, ref: 'boss', atk: raid.strike + B.strikeBonus + (B.tempStrike || 0), options: pool.map(T.hero), strike: true });
         if (v != null && pool[v]) target = pool[v];
       }
-      await resolveEnemyAttack(raid.short, raid.strike + B.strikeBonus, T.hero(target), 'boss', true);
+      await resolveEnemyAttack(raid.short, raid.strike + B.strikeBonus + (B.tempStrike || 0), T.hero(target), 'boss', true, null);
     }
 
     /* ---------- helpers exposed to card effects ---------- */
@@ -722,7 +882,36 @@
           else if (q.k === 'bossDmg') await dmg(T.boss(), q.n, { p, kind: 'effect' });
         }
         if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
-      flipCount, markedHero, stageNow,
+      flipCount, markedHero, stageNow, attackTargets, volleyAttack, coverOptions, reactOptions, reactMatch,
+      omenEvery: () => { const k = g.players.length; return k >= 3 ? 1 : k === 2 ? 2 : 3; },
+      omenDue: r => r > 1 && (r - 1) % api.omenEvery() === 0,
+      // the round whose boss turn brings the next omen (for the battle screen)
+      nextOmenRound: () => { if (!g.boss.omens || !g.boss.omens.length) return null; let r = g.round; while (!api.omenDue(r) || g.boss.omenRound === r) r++; return r; },
+      strikeNow: () => raid.strike + g.boss.strikeBonus + (g.boss.tempStrike || 0) + g.partyFury,
+      takeOff, canBail: p => !!(raid.bail && isActive(p) && g.boss.counter > 0 && !p.bailed && available(p) >= raid.bail.cost),
+      bail: async p => {
+        if (!api.canBail(p)) return { ok: false, why: raid.bail ? (p.bailed ? 'You have already bailed water this turn.' : g.boss.counter <= 0 ? 'The water is already low.' : `Bailing costs ${raid.bail.cost} resource.`) : 'Nothing to bail here.' };
+        pay(p, raid.bail.cost); p.bailed = true; g.boss.counter--;
+        log(`${pdef(p).name} bails water: the ${raid.counter.name} falls to ${g.boss.counter}.`, 'def');
+        await H.anim('counter', { value: g.boss.counter, max: raid.counter.max }); H.update(); return { ok: true };
+      },
+      // #101 Soak: a fixed total split between the heroes who step into the circle; if no one does, it hits everyone in full
+      soak: async (total, name) => {
+        const hs = alive(); if (!hs.length) return;
+        const vol = [];
+        for (const p of hs) {
+          let yes;
+          if (hs.length === 1 || p.auto || cfg.allAuto || !H.ask) yes = RB.AI.chooseSoak(api, p, total, hs);
+          else yes = await H.ask('soak', { p, total, name, heroes: hs });
+          if (yes) vol.push(p);
+        }
+        if (!vol.length) { log(`No one steps into the circle — ${name} crashes over the whole party!`, 'boss'); await H.anim('banner', { text: name, kind: 'boss' }); for (const p of hs) await dmg(T.hero(p), total, { kind: 'boss' }); return; }
+        const share = Math.ceil(total / vol.length);
+        log(`${vol.map(p => pdef(p).name).join(', ')} ${vol.length === 1 ? 'stands' : 'stand'} in the circle: ${share} damage each.`, 'boss');
+        await H.anim('banner', { text: `${name}: ${share} each`, kind: 'boss' });
+        for (const p of vol) await dmg(T.hero(p), share, { kind: 'boss' });
+      },
+      strikeUp: k => { g.boss.tempStrike = (g.boss.tempStrike || 0) + k; log(`${raid.short}'s strike this turn is ${k} stronger.`, 'boss'); H.update(); },
       levelUp: async (k) => { const B = g.boss, top = raid.maxLevel || 4; if (B.level >= top) return; B.level = Math.min(top, B.level + (k || 1)); B.strikeBonus += (k || 1); log(`${raid.short} levels up to level ${B.level}! Strikes harder and flips more cards.`, 'boss'); H.update(); },
       equipBoss: (name, strike, retal) => { const B = g.boss; B.strikeBonus += strike || 0; B.retalBonus = (B.retalBonus || 0) + (retal || 0); B.equip.push(name); if (B.equipStats) B.equipStats.push({ strike: strike || 0, retal: retal || 0 }); log(`${raid.short} equips ${name}.`, 'boss'); H.update(); },
       // effect helpers

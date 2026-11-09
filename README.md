@@ -26,6 +26,10 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
   - The Sunken Cathedral
 
   Each boss plays its own deck, has custom rules and changes phase as it weakens. Heroic difficulty raises the stakes. Each raid has its own treasure pack.
+  - Each raid also has a small **Omen** deck. Omens come every boss turn with 3 or 4 heroes, every other turn with 2 and every third alone, and the next three wait face up beside the boss. **Soak** omens share their damage between the heroes who step into the circle.
+  - Each raid has its own gauge: the Crypt's light sears the undead when you heal, Vorthrax takes to the air when his Embers fill (only Volley can reach him until you shoot him down), and you can bail water to hold back Nethys's Tide.
+- **Defending together:** Bulwark allies can **cover** any friendly hero or ally (covering a teammate draws the boss's eye), and **React** cards answer an attack the moment it comes. Keywords: Bulwark, Swift, Volley, Shrouded, Guardian, Ambush, Crushing, Frenzy, Thick Hide and Tend.
+- **The Raider's Field Guide:** the How to play screen is a small illustrated book, and the Rules button in battle opens the chapters you need mid-fight.
 - **3 dungeons:**
   - Thornwood Hollow
   - Bloodfang Warcamp

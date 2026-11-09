@@ -16,14 +16,14 @@ hero_th['ref_sentinel'] = thumb(refs / 'ref_sentinel.png', 120)
 REDO_SEC = 'Redo (do these first, top to bottom)'
 PREFIX = 'Painted digital fantasy card art for a high-fantasy collectible card game, matching the style of the attached reference images: rich painterly colour, dark ink outlines, dramatic lighting, lots of detail. '
 SUFFIX = ' Wide 16:9 landscape image, full-bleed to every edge. No text, no letters, no logo, no border, no frame, no card layout, no watermark. Do not include any real-world logos, emblems, crests or symbols from existing games, films or brands; invent original designs.'
-ORDER = [REDO_SEC, 'Legendaries', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
+ORDER = [REDO_SEC, 'Omen: Crypt of the Hollow King', 'Omen: The Molten Spire', 'Omen: The Sunken Cathedral', 'Legendaries', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
          'Raid treasure: Crypt of the Hollow King', 'Raid treasure: The Molten Spire', 'Raid treasure: The Sunken Cathedral', 'Loot card (rare prize)', 'Dungeon under-boss', 'Dungeon boss card: Thornwood Hollow', 'Dungeon boss card: Bloodfang Warcamp', 'Dungeon boss card: Vault of the Iron Sentinel', 'Summoned creatures & minions', 'Boss cards']
 items = []
 for k, (grp, subj) in S.items():
     if grp == 'Legendary': sec = ORDER[1]
     elif grp.startswith('Boss card'): sec = 'Boss cards'
     elif grp in ('Summoned creature', 'Boss minion'): sec = 'Summoned creatures & minions'
-    elif grp.startswith('Raid treasure') or grp.startswith('Dungeon boss card'): sec = grp.split(' (')[0]
+    elif grp.startswith('Raid treasure') or grp.startswith('Dungeon boss card') or grp.startswith('Omen'): sec = grp.split(' (')[0]
     else: sec = grp
     theme = '' if grp in ('Legendary', 'Summoned creature', 'Boss minion') else ' Theme: ' + grp + '.'
     it = dict(sec=sec, file=k + '.png', refs='style', have=k in in_game, prompt=PREFIX + 'Subject: ' + subj + '.' + theme + SUFFIX)

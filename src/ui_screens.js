@@ -258,8 +258,8 @@
         <label class="toggle" style="margin-bottom:.4rem"><input type="checkbox" data-k="muted" ${s.muted ? 'checked' : ''}> Mute everything (press M any time, or use the 🔊 button during a raid)</label>
         <div class="vrow"><label class="toggle"><input type="checkbox" data-k="sound" ${s.sound !== false ? 'checked' : ''}> Sound effects</label><input type="range" min="0" max="1" step="0.05" value="${s.sfxVol ?? 0.8}" data-vol="sfxVol" aria-label="Sound effects volume"><button class="btn small ghost" data-act="testfx">Test</button></div>
         <div class="vrow"><label class="toggle"><input type="checkbox" data-k="music" ${s.music !== false ? 'checked' : ''}> Music</label><input type="range" min="0" max="1" step="0.05" value="${s.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"><span></span></div></div>
-      <label class="toggle"><input type="checkbox" data-k="autoDefend" ${s.autoDefend ? 'checked' : ''}> Defend automatically (use armor and strike back with your weapon without asking)</label>
-      <label class="toggle"><input type="checkbox" data-k="pauseForInstants" ${s.pauseForInstants ? 'checked' : ''}> Pause when a boss card is revealed so I can respond with an Instant</label>
+      <label class="toggle"><input type="checkbox" data-k="autoDefend" ${s.autoDefend ? 'checked' : ''}> Defend automatically (use armor, strike back with your weapon and cover with Bulwark allies without asking)</label>
+      <label class="toggle"><input type="checkbox" data-k="pauseForInstants" ${s.pauseForInstants ? 'checked' : ''}> Pause so I can answer the boss: play an Instant when a boss card is revealed, or a React card when an attack is coming</label>
       <div style="margin-top:1.4rem"><button class="btn ghost small" data-act="reset">Reset all progress</button></div></div></div>`);
     el.oninput = e => { const r = e.target.closest('[data-vol]'); if (r) { s[r.dataset.vol] = +r.value; U.persist(); RB.AUDIO.setVolumes(); } };
     el.onchange = e => { if (e.target.closest('[data-vol=sfxVol]')) U.sfx.hit(3); };
@@ -272,24 +272,96 @@
     };
   };
 
-  /* ---------------- how to play ---------------- */
+  /* ---------------- #104 The Raider's Field Guide (How to play) ---------------- */
+  // One set of chapters, used by the title screen's How to play and by the Rules button in battle.
+  const KWI = { protector: 'B', ferocity: 'S', longrange: 'V', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
+  const fgU = (img, name, sub, cls) => `<span class="fg-u ${cls || ''}"><span class="fg-i">${img ? `<img alt="" src="${img}">` : ''}</span><b>${name}</b>${sub ? `<small>${sub}</small>` : ''}</span>`;
+  const fgA = (t, cls) => `<span class="fg-a ${cls || ''}">${t ? `<small>${t}</small>` : ''}<i>➜</i></span>`;
+  const fgEx = (row, cap) => `<figure class="fg-ex"><div class="fg-row">${row}</div><figcaption>${cap}</figcaption></figure>`;
+  const raidArt = id => { const r = RB.RAIDS[id]; return r ? U.art(r.art, 'raid:' + id) : ''; };
+  U.guideChapters = function (only) {
+    const ca = id => U.cardArt(id) || '';
+    const kwRow = k => { const [n, t] = RB.KEYWORDS[k]; return `<li><span class="fg-kw">${KWI[k] || '•'}</span><b>${esc(n)}</b> — ${esc(t)}</li>`; };
+    const soakRows = [1, 2, 3, 4].map(n => { const tot = 2 + 3 * n; return `<tr><td>${n} hero${n > 1 ? 'es' : ''}</td><td>${tot}</td>${[1, 2, 3, 4].map(k => `<td>${k <= n ? Math.ceil(tot / k) : '—'}</td>`).join('')}<td>${tot} each</td></tr>`; }).join('');
+    const raids = Object.entries(RB.RAIDS).filter(([, r]) => !r.dungeon);
+    const ch = [
+      { id: 'basics', icon: '📜', title: 'First steps', html: `
+        <p class="fg-lead">Well met, raider. This little book was stitched together by the guild's survivors. Read it before you go below, and keep it close once you're there.</p>
+        <section><h4>The goal</h4><p>Your party of heroes fights a raid boss. Bring the boss to 0 health to win and earn a treasure pack. If every hero falls, the raid wipes.</p></section>
+        <section><h4>Your hero</h4><p>Each hero has health, a faction (Silver Concord or Ember Clans), a race, a class, a specialization and two professions. These traits decide which cards can go in the deck. Every hero also has a unique power you can use once per game.</p></section>
+        <section><h4>Resources</h4><p>Once per turn you may place any card from your hand face-down as a resource. You begin with two. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, and they keep their special abilities.</p>
+        ${fgEx(fgU('', '◆ ◆ ◆ ◆', '4 ready') + fgA('spend 2 on your turn') + fgU('', '◆ ◆ ◇ ◇', '2 still ready') + fgA('the boss attacks') + fgU(ca('laststand'), 'Last Stand', 'costs 2 · played as a React', 'ok'), 'End your turn with 2 resources ready and Last Stand is waiting for the boss. Next turn, all 4 ready again.')}</section>
+        <section><h4>Your turn</h4><p>Ready everything, draw two cards, then act in any order: play one resource, play cards, attack, use items, complete quests, use your location and use your hero power. Press <b>End turn</b> when you're done, or <b>Auto-play turn</b> to let the AI finish it for you.</p></section>
+        <section><h4>Card types</h4><ul><li><b>Allies</b> fight beside you. They can attack the turn after they arrive, unless they have Swift.</li><li><b>Abilities</b> take effect at once. Basic abilities are played on your turn. <b>Instants</b> can also be played when a boss card is revealed, and <b>React</b> cards when their trigger happens.</li><li><b>Weapons</b> add attack. Pay the strike cost each time you use one.</li><li><b>Armor</b> goes in a slot (head, chest, hands, legs, feet or off-hand). When your hero would take damage, exhaust it and pay its cost to block.</li><li><b>Items</b> are rings, potions and trinkets with lasting or one-shot effects.</li><li><b>Quests</b> are resources you can complete for a reward; they then turn face down.</li><li><b>Locations</b> are resources with an ability you can use once per turn. You control one at a time.</li><li><b>Master Heroes</b> replace your hero. Damage and gear carry over, but your original power does not.</li><li><b>Loot cards</b> play like normal cards and hide a scratch-off code for the Vault.</li></ul></section>` },
+      { id: 'combat', icon: '⚔', title: 'Steel and blood', html: `
+        <section><h4>Attacking</h4><p>Attacks always target one enemy: the boss or one of its minions. The defender strikes back, so both sides take damage. <b>Damage stays between turns</b>, so every fight costs you something. While a minion with <b>Guardian</b> stands, the boss can't be attacked.</p>
+        ${fgEx(fgU(ca('treant'), 'Ironbark Treant', '3 ATK · 7 health') + fgA('attacks') + fgU(ca('thrall'), 'Risen Thrall', '2 ATK · 2 health') + fgA('result') + fgU('', 'Thrall falls', 'Treant keeps 2 damage', 'ok'), 'Both sides hit at once. The Treant wins, but carries 2 damage into the next turn.')}</section>
+        <section><h4>Volley and melee</h4><p><b>Volley</b> attackers take nothing back. Melee attackers that hit the boss also take its <b>retaliation</b> (Cold Hands, Molten Scales, Coral Hide). Volley is the only way to reach a boss in the air.</p></section>
+        <section><h4>Your hero's weapon</h4><p>Heroes attack with an equipped weapon by paying its strike cost. When your hero is attacked, a ready weapon can also <b>strike back</b> if you can pay for it.</p></section>
+        <section><h4>Armor, wards and healing</h4><p><b>Armor</b> can block when your hero is hit, if you have enough ready resources to pay its cost; it then exhausts until your turn. A <b>ward</b> (◈) is a shield from a card: it prevents the next damage and then fades. <b>Healing</b> removes damage but never raises health above the maximum.</p>
+        ${fgEx(fgU('', '6 damage', 'boss strike', 'bad') + fgA('ward 4') + fgU('', '2 left') + fgA('armor blocks 2') + fgU(ca('aldric'), 'Ser Aldric', 'takes 0', 'ok'), 'Wards go first, then armor. Stack them and a big hit can vanish completely.')}</section>` },
+      { id: 'bossturn', icon: '💀', title: "The boss's turn", html: `
+        <p>After every hero has acted, the boss takes its turn. It always happens in this order:</p>
+        <ol class="fg-steps">
+          <li><b>Rage.</b> From round ${RB.ENRAGE_ROUND} the boss is <b>Enraged</b>: its strike grows 1 stronger every round, goes straight past Bulwark allies, and sees through Shrouded heroes. No fight can stall forever.</li>
+          <li><b>The raid's gauge rises.</b> Embers, the Tide and other counters tick up. When one fills, something terrible happens. A boss in the air strafes the party instead.</li>
+          <li><b>Omens.</b> If an omen is due, the next one is revealed and happens at once (see <i>Omens and Soak</i>).</li>
+          <li><b>Boss cards.</b> The boss reveals cards from its deck: one (two in its later phases), plus one for each extra hero. Before each one lands, you may answer with an <b>Instant</b>.</li>
+          <li><b>Minions attack.</b> Each ready minion attacks a hero or an ally.</li>
+          <li><b>The strike.</b> The boss strikes the hero with the most <b>threat</b>.</li>
+        </ol>
+        <p>Every time a minion or the boss attacks, the same small steps play out:</p>
+        ${fgEx(fgU('', '1 · Cover', 'a Bulwark may step in') + fgA() + fgU('', '2 · React', 'answer the attack') + fgA() + fgU('', '3 · Strike back', 'weapon or ally') + fgA() + fgU('', '4 · Damage', 'wards, then armor'), 'Cover, React, strike back, damage. Learn this rhythm and you will lose far fewer heroes.')}
+        <section><h4>The boss deck</h4><p>When the boss deck runs out, its discard pile is shuffled into a new deck. Long fights see the same nasty cards again, so remember what you have seen.</p></section>` },
+      { id: 'threat', icon: '🛡', title: 'Threat and Cover', html: `
+        <section><h4>Threat</h4><p>Every hero has a <b>threat</b> score, shown in the party list. Damage you deal adds to it, and everyone's threat resets after the boss's turn. The boss's strike goes to the hero with the most threat. <b>Taunt</b> forces the boss to strike you instead.</p></section>
+        <section><h4>Cover</h4><p>When an enemy attacks any friendly hero or ally, a ready <b>Bulwark</b> ally anywhere in the party can <b>cover</b> them: it takes the hit instead and exhausts until its owner's next turn. Your Bulwark's own strike-back still happens.</p>
+        ${fgEx(fgU(raidArt('crypt'), 'Malgareth', 'strikes for 7', 'bad') + fgA('aimed at') + fgU(ca('lyssara'), 'Lyssara', '9 health') + fgA('covered by') + fgU(ca('treant'), 'Ironbark Treant', 'takes the 7', 'ok'), 'The Treant steps in front of the mage. She takes nothing; the Treant is exhausted until its owner\'s turn.')}
+        <p><b>Covering a teammate draws the boss's eye.</b> If your Bulwark covers someone else's hero or ally, your hero gains threat equal to twice the damage. Guard your friends and the boss comes looking for you next.</p></section>
+        <section><h4>When Cover fails</h4><ul><li>Minions with <b>Ambush</b> strike before a Bulwark can move.</li><li>An <b>Enraged</b> boss's strike goes straight past every Bulwark.</li><li>In dungeons, the marked hero faces the dungeon alone: only their own Bulwark allies can cover them.</li></ul></section>
+        <p class="small">Turn on <i>Defend automatically</i> in Settings and the game decides covers, armor and strike-backs for you.</p>` },
+      { id: 'react', icon: '⚡', title: 'Instants and React', html: `
+        <section><h4>Instants</h4><p>An <b>Instant</b> can be played on your turn, or the moment the boss reveals a card. It happens first; then the boss card still takes effect. Wards block damage before it lands, Shrouded heroes dodge attacks, and stuns stop minions or the boss's next strike.</p></section>
+        <section><h4>React</h4><p>Some Instants carry a <b class="kw react">React</b> trigger printed in their text. Besides being played as an Instant, a React card can be played <b>during the boss's turn, the moment its trigger happens</b>, after Cover and before the hit lands.</p>
+        <ul>${Object.values(RB.REACT).map(t => `<li><b class="kw react">React</b> — ${esc(t)}</li>`).join('')}</ul>
+        ${fgEx(fgU('', 'Grave minion', 'attacks for 5', 'bad') + fgA('React') + fgU(ca('laststand'), 'Last Stand', 'prevent the next 6') + fgA() + fgU(ca('grukka'), 'Grukka', 'takes 0', 'ok'), 'The hit is coming at your hero, so Last Stand can answer it right then — not before, not after.')}
+        <p>React and Instant cards pay with resources you left ready. Keep one or two back when you end your turn and you'll have an answer waiting. The game pauses to offer a React only when one would really help; you can turn these pauses off in Settings.</p></section>` },
+      { id: 'omens', icon: '◎', title: 'Omens and Soak', html: `
+        <section><h4>Omens</h4><p>Each raid has its own small <b>Omen</b> deck. Omens are revealed during the boss's turn: <b>every boss turn</b> with 3 or 4 heroes, <b>every other</b> boss turn with 2, and <b>every third</b> for a hero raiding alone. The next three omens always wait face up beside the boss, so you can see trouble coming and plan around it.</p>
+        ${fgEx(fgU(ca('cr_bell'), 'The Soul Bell Tolls ◎', 'next', 'omen') + fgU(ca('cr_graves'), 'Graves Stir', 'then', 'omen dim') + fgU(ca('cr_lull'), 'Silent Bells', 'then', 'omen dim'), 'The left omen is next. ◎ marks a Soak: be ready to step in.')}</section>
+        <section><h4>Soak</h4><p>A <b>Soak</b> omen drops a fixed amount of damage into a circle. Each hero chooses to <b>step in</b> or stay out. The damage is shared evenly between everyone who steps in. If <b>nobody</b> steps in, it hits <b>every hero in full</b>. Wards and armor still help.</p>
+        <div class="fg-tablewrap"><table class="fg-table"><thead><tr><th>Party</th><th>Total</th><th>1 in</th><th>2 in</th><th>3 in</th><th>4 in</th><th>Nobody</th></tr></thead><tbody>${soakRows}</tbody></table></div>
+        <p class="small">Raiding alone, you always take the whole Soak: there is no one to share it with.</p></section>` },
+      { id: 'raids', icon: '🔥', title: 'Raid by raid', html: `
+        <p>Every raid has its own rules and <b>phases</b>. Phases begin when the boss's health drops past the marks on its health bar.</p>
+        ${raids.map(([id, r]) => `<section class="fg-raid"><div class="fg-raidhead"><img alt="" src="${raidArt(id)}"><div><h4>${esc(r.name)}</h4><small>${esc(r.boss || r.short)}</small></div></div><ul>${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul></section>`).join('')}
+        <section><h4>Dungeons</h4><p>Dungeons are run by a dungeon hero instead of a raid boss. It flips cards each turn, marks one hero at random to attack, and levels up as you beat its under-bosses. Your heroes keep their health, cards and allies from one boss to the next.</p></section>` },
+      { id: 'keywords', icon: '✦', title: 'Keywords', html: `<p>Keywords are printed in bold on cards. The small letter shows on allies and minions on the table.</p><ul class="fg-kws">${Object.keys(RB.KEYWORDS).map(kwRow).join('')}</ul>` },
+      { id: 'more', icon: '🎒', title: 'Collecting', html: `
+        <section><h4>Party play</h4><p>Up to four heroes can join a raid. You take each hero's turn in order, so friends can pass the device around, or play online. The boss grows tougher with each hero: it has more health, reveals an extra card per hero, sees more omens, and its strikes and minions hit harder.</p></section>
+        <section><h4>Treasure</h4><p>Victory opens a treasure pack of five cards: one epic from the boss's treasure, holofoil cards, and sometimes a loot card. New cards join your collection and are added to your starter decks automatically.</p></section>
+        <section><h4>Your cards</h4><p>You start with the cards for each starting hero's starter deck, and each hero you unlock brings the cards for theirs. Every hero can always use their <b>Starter deck</b>, even with cards you haven't collected. Build your own deck from the cards you own. Get more from <b>Raidbound Core</b> packs (${RB.CORE_PACK_PRICE} gold), the themed booster packs (${RB.PACK_PRICE} gold), the daily card shop, crafting in the Workshop, and raid treasure. New players get two free Core packs.</p></section>
+        <section><h4>Companions</h4><p>Pick a companion in the Vault and it floats beside your hero. Each one gives your hero a single tiny bonus in raids and dungeons, such as Ward 3 at the start, +2 max health, or an extra card in your opening hand. The raid log says when it helps. Some come from loot codes or Heroic wins; others come free when you get a certain card (for example, owning Beezer brings the Ember Wolf Pup).</p></section>
+        <section class="credits"><h4>Art credits</h4><p>Every card, hero, raid and boss illustration was generated with <a href="https://spritecook.ai" target="_blank" rel="noopener">SpriteCook</a> and art-directed for Raidbound. Card frames, icons and interface are hand-built for the game.</p></section>` },
+    ];
+    return only ? ch.filter(c => only.includes(c.id)) : ch;
+  };
+  // tabbed book: chapter buttons on the left (top on phones), one chapter showing at a time
+  U.guideHTML = function (chapters, first) {
+    const cur = first || chapters[0].id;
+    return `<div class="fieldguide"><nav class="fg-nav">${chapters.map(c => `<button class="fg-tab ${c.id === cur ? 'on' : ''}" data-ch="${c.id}"><span>${c.icon}</span>${esc(c.title)}</button>`).join('')}</nav><div class="fg-pages">${chapters.map(c => `<article class="fg-page ${c.id === cur ? 'on' : ''}" data-page="${c.id}"><h3 class="fg-title"><span>${c.icon}</span>${esc(c.title)}</h3>${c.html}</article>`).join('')}</div></div>`;
+  };
+  U.guideWire = function (el) {
+    el.addEventListener('click', e => {
+      const b = e.target.closest('[data-ch]'); if (!b || !el.contains(b)) return;
+      el.querySelectorAll('.fg-tab').forEach(x => x.classList.toggle('on', x === b));
+      el.querySelectorAll('.fg-page').forEach(x => x.classList.toggle('on', x.dataset.page === b.dataset.ch));
+      const pg = el.querySelector('.fg-pages'); if (pg) pg.scrollTop = 0;
+    });
+  };
   U.rules = function () {
-    const kw = Object.values(RB.KEYWORDS).map(([n, t]) => `<li><b>${n}:</b> ${esc(t)}</li>`).join('');
-    const el = U.show('rules', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>How to play</h2></div><div class="rules">
-      <section><h4>The goal</h4><p>Your party of heroes fights a raid boss. Reduce the boss to 0 health to win and earn a treasure pack. If every hero falls, the raid wipes.</p></section>
-      <section><h4>Your hero</h4><p>Each hero has health, a faction (Silver Concord or Ember Clans), a race, a class, a specialization and two professions. These traits decide which cards can go in the deck. Every hero also has a unique power you can use once per game.</p></section>
-      <section><h4>Resources</h4><p>Once per turn you may place any card from your hand face-down as a resource. You begin with two. To play a card, exhaust resources equal to its cost. Resources ready again at the start of your turn. Quests and locations are always played as resources, and they keep their special abilities.</p></section>
-      <section><h4>Your turn</h4><p>Ready everything, draw two cards, then act in any order: play one resource, play cards, attack, use items, complete quests, use your location and use your hero power. Press <b>End turn</b> when you're done, or <b>Auto-play turn</b> to let the AI finish it for you.</p></section>
-      <section><h4>Combat</h4><p>Attacks always target one enemy: the boss or one of its minions. The defender strikes back, so both sides take damage. Long-Range attackers take nothing back. Damage stays between turns, so every fight costs you something. Heroes attack with an equipped weapon by paying its strike cost; a weapon can also strike back when your hero is attacked.</p></section>
-      <section><h4>Card types</h4><ul><li><b>Allies</b> fight beside you. They can attack the turn after they arrive, unless they have Ferocity.</li><li><b>Abilities</b> take effect at once. Basic abilities are played on your turn; Instants can also be played when a boss card is revealed.</li><li><b>Weapons</b> add attack. Pay the strike cost each time you use one.</li><li><b>Armor</b> goes in a slot (head, chest, hands, legs, feet or off-hand). When your hero would take damage, exhaust it and pay its cost to block.</li><li><b>Items</b> are rings, potions and trinkets with lasting or one-shot effects.</li><li><b>Quests</b> are resources you can complete for a reward; they then turn face down.</li><li><b>Locations</b> are resources with an ability you can use once per turn. You control one at a time.</li><li><b>Master Heroes</b> replace your hero. Damage and gear carry over, but your original power does not.</li><li><b>Loot cards</b> play like normal cards and hide a scratch-off code for the Vault.</li></ul></section>
-      <section><h4>The boss turn</h4><p>After every hero has acted, the boss takes its turn. It reveals cards from its own deck: attacks, minions, curses and lingering events. Its minions attack, then the boss strikes the hero with the most threat. Threat comes from damage you dealt this round, and Taunt effects force the boss to strike you. Each raid has custom rules and phases that change the fight as the boss weakens. If a fight drags on to round 25, the boss becomes <b>Enraged</b>: its strikes grow 1 stronger every round and go straight past Protectors, until someone falls.</p></section>
-      <section><h4>Keywords</h4><ul>${kw}</ul></section>
-      <section><h4>Party play</h4><p>Up to four heroes can join a raid. You take each hero's turn in order, so friends can pass the device around. The boss grows tougher with each hero: it has more health, reveals an extra card per hero, and its strikes and minions hit harder.</p></section>
-      <section><h4>Treasure</h4><p>Victory opens a treasure pack of five cards: one epic from the boss's treasure, holofoil cards, and sometimes a loot card. New cards join your collection and are added to your starter decks automatically.</p></section>
-      <section><h4>Your cards</h4><p>You start with the cards for each starting hero's starter deck, and each hero you unlock brings the cards for theirs. Every hero can always use their <b>Starter deck</b>, even with cards you haven't collected. Build your own deck from the cards you own. Get more from <b>Raidbound Core</b> packs (${RB.CORE_PACK_PRICE} gold), the themed booster packs (${RB.PACK_PRICE} gold), the daily card shop, crafting in the Workshop, and raid treasure. New players get two free Core packs.</p></section>
-      <section><h4>Companions</h4><p>Pick a companion in the Vault and it floats beside your hero. Each one gives your hero a single tiny bonus in raids and dungeons, such as Ward 3 at the start, +2 max health, or an extra card in your opening hand. The raid log says when it helps. Some come from loot codes or Heroic wins; others come free when you get a certain card (for example, owning Beezer brings the Ember Wolf Pup).</p></section>
-      <section class="credits"><h4>Art credits</h4><p>Every card, hero, raid and boss illustration was generated with <a href="https://spritecook.ai" target="_blank" rel="noopener">SpriteCook</a> and art-directed for Raidbound. Card frames, icons and interface are hand-built for the game.</p></section>
-      </div></div>`);
+    const el = U.show('rules', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Raider's Field Guide</h2></div>${U.guideHTML(U.guideChapters())}</div>`);
+    U.guideWire(el);
     el.onclick = e => { if (e.target.closest('[data-act=back]')) U.title(); };
   };
 })(globalThis.RB);
