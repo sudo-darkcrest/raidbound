@@ -29,7 +29,7 @@ for k, (grp, subj) in S.items():
     it = dict(sec=sec, file=k + '.png', refs='style', have=k in in_game, prompt=PREFIX + 'Subject: ' + subj + '.' + theme + SUFFIX)
     if k in REDO:  # #97: stays in the game until the new picture replaces it
         it.update(sec=REDO_SEC, have=False, redo=True)
-        if k.startswith('vis_'): it['refnote'] = 'the new <b>sentinel.png</b> you just made, plus the 4 style pictures'
+        if k.startswith('vis_'): it['refnote'] = 'your new <b>sentinel.png</b> (in the refs folder), plus the 4 style pictures'
     items.append(it)
 if 'sentinel' in REDO: items.append(dict(sec=REDO_SEC, file='sentinel.png', refs='style', refimg='ref_sentinel', title='The Iron Sentinel (Vault boss)', have=False, redo=True,
                   refnote='<b>ref_sentinel.png</b> (in your refs folder, shown here), plus the 4 style pictures', prompt=SENTINEL_PROMPT + SUFFIX))
