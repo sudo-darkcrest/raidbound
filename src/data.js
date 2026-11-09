@@ -394,6 +394,10 @@
     board_emberfall: { kind: 'board', name: 'Emberfall Mosaic', get: 'packs:ember:5', desc: 'A blazing sunburst of fire-coloured mosaic tiles.' },
     board_frostwing: { kind: 'board', name: 'Frostwing Crystal', get: 'packs:frost:5', desc: 'A great six-armed snowflake on faceted blue ice.' },
     board_voidshade: { kind: 'board', name: 'Voidshade Starfield', get: 'packs:void:5', desc: 'Constellations and a crescent moon drifting through a violet nebula.' },
+    // #86: the booster pack paintings as table themes, earned by opening 10 packs of that set
+    board_packember: { kind: 'board', name: 'Emberfall Inferno', get: 'packs:ember:10', desc: 'The Emberfall pack art: a horned fire demon with a blazing axe towers over burning ruins.' },
+    board_packfrost: { kind: 'board', name: 'Frostwing Tempest', get: 'packs:frost:10', desc: 'The Frostwing pack art: a crystal ice dragon roars frost through a lightning storm.' },
+    board_packvoid: { kind: 'board', name: 'Voidshade Eclipse', get: 'packs:void:10', desc: 'The Voidshade pack art: a shadow dragon spreads its wings beneath a black eclipse.' },
     // #54
     board_tapestry: { kind: 'board', name: 'Royal Tapestry', get: 'default', desc: 'Crimson damask woven with gold, under a crowned royal crest.' },
     back_sigil: { kind: 'back', name: 'Runic Sigil', get: 'default', desc: 'A gold summoning sigil of rings and runes on deep crimson.' },
