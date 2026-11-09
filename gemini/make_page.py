@@ -15,7 +15,7 @@ hero_th = {h: thumb(refs / f'hero_{h}.png', 120) for h in HEROES}
 PREFIX = 'Painted digital fantasy card art for a high-fantasy collectible card game, matching the style of the attached reference images: rich painterly colour, dark ink outlines, dramatic lighting, lots of detail. '
 SUFFIX = ' Wide 16:9 landscape image, full-bleed to every edge. No text, no letters, no logo, no border, no frame, no card layout, no watermark. Do not include any real-world logos, emblems, crests or symbols from existing games, films or brands; invent original designs.'
 ORDER = ['Legendaries (do these first)', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
-         'Raid treasure: Crypt of the Hollow King', 'Raid treasure: The Molten Spire', 'Raid treasure: The Sunken Cathedral', 'Loot card (rare prize)', 'Summoned creatures & minions', 'Boss cards']
+         'Raid treasure: Crypt of the Hollow King', 'Raid treasure: The Molten Spire', 'Raid treasure: The Sunken Cathedral', 'Loot card (rare prize)', 'Dungeon under-boss', 'Summoned creatures & minions', 'Boss cards']
 items = []
 for k, (grp, subj) in S.items():
     if grp == 'Legendary': sec = ORDER[0]

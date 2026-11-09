@@ -69,6 +69,7 @@ S = {
 'rifleman': (CORE, 'a stout dwarf marksman in a horned iron helm and fur cloak, kneeling to aim a long black-powder rifle with a brass-banded wooden stock, a puff of smoke at the muzzle, on a snowy mountain ridge'),
 'ogre': (CORE, 'a huge dim-witted ogre swinging a giant wooden club, a war camp behind him'),
 'ram': (CORE, 'a big highland mountain ram with curled horns charging down a rocky slope'),
+'squire': (CORE, 'an eager young human squire in a simple blue-and-gold tabard raising a round shield in front of a wounded knight, a golden glow of protection around them, castle courtyard'),
 'bard': (CORE, 'an elf bard in a purple cape playing a lute in a tavern, swirls of golden light rising from the strings'),
 'divineshield': (CORE, 'a paladin kneeling inside a glowing golden dome of holy light, radiant beams, a dark battlefield around him'),
 'justice': (CORE, 'a glowing golden war hammer descending from the heavens with a crack of holy lightning'),
@@ -116,6 +117,7 @@ SKINS_PROMPT = {
  'frost': 'Repaint the attached character exactly (same pose, face, composition and background), but change their clothing and metal to pale ice-blue and frosted silver, with a few frost crystals.',
  'crimson': 'Repaint the attached character exactly (same pose, face, composition and background), but change their robes or hood to rich crimson red embroidered with gold.',
  'arcane': 'Repaint the attached character exactly (same pose, face, composition and background), but change their robe to royal blue embroidered with silver stars.',
+ 'eclipse': 'Repaint the attached character exactly (same pose, face, composition and background), but as if lit by a solar eclipse: armour and wings turned to jet-black obsidian with a violet sheen, a dark sun with a glowing ring behind the head, the flaming sword burning violet.',
 }
 # ---- added: 2 more per booster set and 11 more treasure per raid ----
 CRYPT_T = 'Raid treasure: Crypt of the Hollow King (green soul-fire, undead, bones)'
@@ -167,9 +169,23 @@ S.update({
 'loot_owl': ('Loot card (rare prize)', 'a round fluffy snowy owlet with huge golden eyes perched on a frosty branch, sparkling snowflakes around it, very cute'),
 'loot_starfall': ('Loot card (rare prize)', 'a golden eight-pointed star sigil floating in a violet night sky with shooting stars falling around it'),
 'loot_aurora': ('Loot card (rare prize)', 'a brass lantern glowing with green and violet aurora light, held up under the northern lights above snowy peaks'),
+# #92: dungeon under-bosses (Nov 8, 2026). Painted files replace the borrowed pictures automatically.
+'ub_fenna': ('Dungeon under-boss', 'Fenna the Bramble Witch, a gaunt forest witch in a cloak of thorns and nettles, eyes glowing green, brambles curling from her hands, in a dark tangled forest path'),
+'ub_grizzlemaw': ('Dungeon under-boss', 'Grizzlemaw the Elder Bear, an enormous ancient brown bear with moss and ferns growing on its scarred back, roaring at the mouth of a forest cave'),
+'ub_skrit': ('Dungeon under-boss', 'Skrit the Sapper Boss, a wiry grinning goblin in goggles and a leather apron stuffed with lit bombs, standing on a pile of powder kegs in a burning war camp'),
+'ub_ulva': ('Dungeon under-boss', 'Ulva Wargmother, a fierce orc beast-mistress in fur and bone armour, flanked by snarling wargs, holding a whip, in a war camp at dusk'),
+'ub_bolts': ('Dungeon under-boss', 'Chief Tinker Bolts, a goblin foreman in a welding mask with a giant wrench and a backpack of whirring gears, in a vault workshop full of sparks and rune machines'),
+'ub_vex': ('Dungeon under-boss', 'Archivist Vex, a translucent pale-blue wraith librarian in tattered scholar robes, floating among towering bookshelves with glowing runic tomes circling it'),
+# #94: six more loot cards (Nov 8, 2026)
+'loot_phoenix': ('Loot card (rare prize)', 'a single glowing golden-red phoenix feather floating upright and wreathed in gentle flame, embers drifting up, a faint phoenix shape in the fire behind it'),
+'loot_wyrmeye': ('Loot card (rare prize)', 'a great emerald gem with a slit golden dragon pupil, set in an ornate gold amulet, glowing on a dark velvet cloth in a dragon hoard'),
+'loot_unicorn': ('Loot card (rare prize)', 'a graceful silver-white unicorn with a golden spiral horn and a pastel mane standing in a moonlit forest glade, soft silver light, fireflies'),
+'loot_orrery': ('Loot card (rare prize)', 'an ornate brass celestial orrery with turning rings and little glowing planets around a bright star, on a scholar\'s desk under a starry window'),
+'loot_kingscrown': ('Loot card (rare prize)', 'an ancient jewelled gold crown with rubies and sapphires on a purple velvet cushion in a throne room, old banners and golden light behind'),
+'loot_stormwing': ('Loot card (rare prize)', 'a slate-blue wyvern with wide leathery wings diving out of a thunderstorm, lightning crackling along its wings, glowing pale-blue eyes'),
 })
 
-# Vault items that are still drawn by code (Nov 8, 2026): 9 card backs, 9 table themes, 7 companions.
+# Vault items that are still drawn by code (Nov 8, 2026): 15 card backs, 9 table themes, 7 companions.
 # file name on the prompt page: cos_<id>.png   (kind: back = tall card back, board = wide play-area background, pet = cut-out companion)
 COS = {
     'back_sigil':       ('back',  'Runic Sigil',        'a glowing gold summoning sigil of concentric rings, star points and fantasy runes on deep crimson velvet'),
@@ -192,6 +208,13 @@ COS = {
     'board_aurora':     ('board', 'Northern Lights',    'green and violet aurora over snowy mountain peaks and a dark pine forest beneath a starry night sky'),
     'pet_owl':          ('pet',   'Snowfeather Owlet',  'a round, fluffy snowy-white owlet with big golden eyes and tiny feet, cute and friendly'),
     'pet_ram':          ('pet',   'Little Ram',         'a fluffy little cream-white ram with curly golden-brown horns and a big friendly smile'),
+    # #94: special card backs from loot cards (Nov 8, 2026)
+    'back_phoenix':     ('back',  'Phoenix Ascendant',  'a golden phoenix rising with wide wings of flame feathers from a sunburst of embers on deep crimson'),
+    'back_wyrmeye':     ('back',  "Wyrm's Eye",         'a huge emerald-and-gold dragon eye with a slit black pupil inside a gold filigree ring, on dark green dragon scales'),
+    'back_unicorn':     ('back',  'Moonlit Unicorn',    'a silver unicorn head in profile with a golden spiral horn and a flowing pastel mane, beneath a crescent moon on a starry midnight-blue sky, silver border'),
+    'back_orrery':      ('back',  'Celestial Orrery',   'an ornate brass orrery of crossing rings and small glowing planets around a bright star, faint constellations on deep navy'),
+    'back_kingscrown':  ('back',  "First King's Crown", 'a jewelled gold crown with rubies and sapphires inside a golden laurel wreath, on royal purple damask'),
+    'back_stormwing':   ('back',  'Stormwing',          'a dark wyvern with wings spread wide flying through storm clouds and crackling white lightning, silver border'),
     # #91: companions that come with a card (Nov 8, 2026)
     'pet_emberpup':     ('pet',   'Ember Wolf Pup',     'a chubby charcoal-black wolf pup with glowing orange ember cracks in its fur, big amber eyes, orange inner ears and a small flame on the tip of its tail'),
     'pet_prismling':    ('pet',   'Prism Dragonling',   'a tiny chubby pearl-white baby dragon with big cyan eyes, little crystal horns and small wings of faceted rainbow crystal'),

@@ -31,12 +31,12 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
   - Bloodfang Warcamp
   - Vault of the Iron Sentinel
 
-  Dungeons run themselves. Each turn the dungeon flips cards, marks a hero at random and attacks them, and levels up as you hurt it. There are four difficulties, from Novice to Legendary. Winning earns Dungeon XP, and each dungeon level lets more of your own cards into your starter deck.
+  Dungeons run themselves. Each one is a gauntlet: two under-bosses, then the master of the dungeon, in one fight. Each turn the dungeon flips cards, marks a hero at random and attacks them, and it levels up each time an under-boss falls. There are four difficulties, from Novice to Legendary. Winning earns Dungeon XP, and each dungeon level lets more of your own cards into your starter deck.
 - **Your collection:** you start with the cards for each starting hero's starter deck, plus two free Raidbound Core booster packs. Each hero you unlock brings the cards for their starter deck. Every hero can always play their Starter deck.
 - **Market:**
-  - Spend the gold you earn on Raidbound Core packs (75 gold, core cards for every class), three themed booster sets (Emberfall, Frostwing and Voidshade, 35 cards each, 100 gold), single cards, extra raid treasure and hero skins.
+  - Spend the gold you earn on Raidbound Core packs (5 cards for 75 gold, 10 for 150 or 20 for 275; core cards for every class), three themed booster sets (Emberfall, Frostwing and Voidshade, 35 cards each, 100 gold), single cards from a daily shop of eight, extra raid treasure and hero skins.
   - The Workshop turns spare cards into dust for crafting core and booster cards.
-- **The Vault:** 43 cosmetics (15 card backs, 16 table themes and 12 companions; each companion gives its hero one tiny bonus) and 18 hero skins. You earn them from raids, dungeons, packs and loot codes.
+- **The Vault:** 49 cosmetics (21 card backs, six of them shimmering foil backs from loot cards; 16 table themes; 12 companions, each giving its hero one tiny bonus) and 20 hero skins. You earn them from raids, dungeons, packs and loot codes.
 - **Party play:** up to four heroes share one device. The AI can run any seat, and bosses scale with party size. You can also play as the raid boss against AI heroes.
 - **Online:** one player creates a party and shares a 5-letter code, and friends join from their own computer or phone.
   - Raids take up to 4 heroes and dungeons up to 3.

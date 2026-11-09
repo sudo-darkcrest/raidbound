@@ -131,11 +131,11 @@
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
-          <div class="bossrow">${raid.dungeon ? `<span class="chip dlevel" title="The dungeon levels up at 70% and 40% health">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span>${B.enrage ? `<span class="chip guard" title="From round ${RB.ENRAGE_ROUND} the boss strikes 1 harder every round, and Protectors can't intercept its strikes">🔥 Enraged +${B.enrage}</span>` : ''}<span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
+          <div class="bossrow">${raid.dungeon ? `${raid.stages ? (() => { const st = raid.stages[B.stage], nx = raid.stages[B.stage + 1]; return `<span class="chip dstage" title="${esc(nx ? `Next: ${nx.boss}` : 'The master of this dungeon')}">${B.stage < raid.stages.length - 1 ? `Under-boss ${B.stage + 1} of 2` : 'Final boss'}</span>${st.rule ? `<span class="chip drule" title="${esc(st.rule.text)}">✦ ${esc(st.rule.name)}</span>` : ''}`; })() : ''}<span class="chip dlevel" title="${raid.stages ? 'The dungeon levels up each time an under-boss falls' : 'The dungeon levels up at 70% and 40% health'}">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip" title="The boss strikes the hero with the most threat at the end of its turn">⚔ Strike ${strike}</span>${B.enrage ? `<span class="chip guard" title="From round ${RB.ENRAGE_ROUND} the boss strikes 1 harder every round, and Protectors can't intercept its strikes">🔥 Enraged +${B.enrage}</span>` : ''}<span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
         </div>
         <div class="bossstage">
           <div class="minions left" style="--mn:${minL.length}">${minL.join('')}</div>
-          <div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, 'raid:' + raid.id)}"><div class="bframe"></div><div class="bn"><b>${esc(raid.short)}</b><span>${B.minions.length ? `${B.minions.length} minion${B.minions.length > 1 ? 's' : ''} at its side` : 'Stands alone'}</span></div></div>
+          <div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, raid.stages ? 'stage:' + raid.id + '-' + B.stage : 'raid:' + raid.id)}"><div class="bframe"></div><div class="bn"><b>${esc(raid.short)}</b><span>${B.minions.length ? `${B.minions.length} minion${B.minions.length > 1 ? 's' : ''} at its side` : 'Stands alone'}</span></div></div>
           <div class="minions right" style="--mn:${minR.length}">${minR.join('')}</div>
         </div>
         ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
@@ -273,11 +273,6 @@
       const v = await U.dialog(`<h3>Scouting report</h3><p>The next card in ${esc(E.raid.short)}'s deck is revealed.</p><div class="cards">${U.cardHTML(d.id)}</div><div class="acts"><button class="btn ghost" data-v="top">Leave it on top</button><button class="btn primary" data-v="bottom">Send it to the bottom</button></div>`);
       return v;
     }
-    if (kind === 'mulligan') {
-      const p = d.p, h = p.hand.map(c => `<div class="pick">${U.cardHTML(c.id, { holo: c.holo })}</div>`).join('');
-      const v = await U.dialog(`<h3>${esc(E.pdef(p).name)}: keep this hand?</h3><p>You may take <b>one mulligan</b>: shuffle these 7 cards back into your deck and draw 7 new ones.</p><div class="cards">${h}</div><div class="acts"><button class="btn ghost" data-v="redo">Mulligan (draw 7 new)</button><button class="btn primary" data-v="keep">Keep this hand</button></div>`, { dismiss: 'keep', cls: 'wide' });
-      return v === 'redo';
-    }
     if (kind === 'bossPick') {
       const v = await U.dialog(`<h3>${esc(E.raid.short)}: play a card</h3><p>You are the raid boss. Choose a card from your hand to play — <b>${d.left} more</b> this turn. Cards you don't play stay in your hand for next turn.</p>
         <div class="cards">${d.hand.map((id, i) => `<div class="pick" data-v="${i}">${U.cardHTML(id)}</div>`).join('')}</div>
@@ -307,9 +302,35 @@
       const opts = [];
       d.players.forEach(p => p.hand.forEach(c => { const cd = C[c.id]; if (cd.type === 'ability' && cd.speed === 'instant' && E.available(p) >= cd.cost) opts.push({ p, c }); }));
       if (!opts.length) return null;
-      const html = `<h3>Respond?</h3><p>${esc(E.raid.short)} reveals <b>${esc(d.card.name)}</b>: ${esc(d.card.text)} You can answer with an Instant before it resolves.</p>
-        <div class="cards"><div style="--cw:170px">${U.cardHTML(d.card.id)}</div>${opts.map((o, i) => `<div class="pick" data-v="${i}" title="${esc(E.pdef(o.p).name)}">${U.cardHTML(o.c.id, { holo: o.c.holo })}<div style="text-align:center;font-size:.8rem;color:var(--muted);margin-top:.3rem">${esc(E.pdef(o.p).name.split(' ')[0])} · ${E.available(o.p)} ready</div></div>`).join('')}</div>
-        <div class="acts"><button class="btn primary" data-v="pass">Let it resolve</button></div>`;
+      // #88: say what is coming, who it is likely to hit, how an Instant works, and what each one would do right now
+      const bc = d.card, txt = (bc.text || '').toLowerCase(), harmful = bc.kind === 'attack' || bc.kind === 'curse';
+      const what = { attack: 'This card will hurt your party.', curse: 'This card hits your heroes with a nasty effect.', summon: 'This card brings new enemy minions onto the table. It doesn\'t hurt you by itself.', event: 'This card stays in play for a few rounds.', heal: 'The boss heals. It doesn\'t hurt you directly.', buff: 'This card makes the boss or its minions stronger. It doesn\'t hurt you directly.', equip: 'The boss equips gear and gets stronger. It doesn\'t hurt you directly.' }[bc.kind] || 'Read the card to see what it does.';
+      const hp = h => `${esc(E.pdef(h).name)} (${Math.max(0, E.heroHp(h))} health)`;
+      let who = '';
+      if (/each hero|every hero|all heroes/.test(txt)) who = 'every hero';
+      else if (/hero with the most health/.test(txt)) { const h = E.mostHealth && E.mostHealth(); if (h) who = hp(h); }
+      else if (/most threat/.test(txt)) { const h = E.threatTarget && E.threatTarget(); if (h) who = hp(h); }
+      else if (/most wounded|least health|lowest health/.test(txt)) { const h = E.mostWounded && E.mostWounded(); if (h) who = hp(h); }
+      if (/each ally|every ally|ally with/.test(txt)) who = who ? who + ' and allies' : 'your allies';
+      const hint = (o) => {
+        const cd = C[o.c.id], t = cd.tags || [], forOne = cd.target === 'friendlyHero' ? ' on a hero you choose' : cd.target === 'none' && /each friendly hero/i.test(cd.text) ? ' for every hero' : ' for your hero';
+        const n = (cd.text.match(/next (\d+) damage/) || [])[1];
+        if (t.includes('shield')) return n ? `Blocks the next ${n} damage${forOne}.` : `Blocks damage${forOne}.`;
+        if (t.includes('elusive')) return 'Your hero dodges the boss\'s attacks until your next turn.';
+        if (t.includes('heal')) return 'Heals now, before this card lands.';
+        if (t.includes('stunAll')) return 'Freezes the minions already on the table for the next boss turn.';
+        if (t.includes('stun')) return 'Stuns a minion already on the table, or the boss so it skips its next strike.';
+        if (t.includes('dmg')) return 'Hits a minion that is already on the table.';
+        return 'Happens right now, before the boss card.';
+      };
+      const ai = {}; for (const p of d.players) { const r = RB.AI && RB.AI.chooseInstant ? RB.AI.chooseInstant(E, p, bc) : null; if (r) ai[r.inst.uid] = true; }
+      const tag = (o) => { const t = C[o.c.id].tags || []; if (ai[o.c.uid]) return '<span class="itag good">Good answer</span>'; if (!harmful && (t.includes('shield') || t.includes('elusive'))) return '<span class="itag meh">Not much use here</span>'; return ''; };
+      const html = `<h3>Answer the boss's card?</h3>
+        <div class="instwhy"><p><b>${esc(E.raid.short)} just revealed ${esc(bc.name)}.</b> ${esc(what)}${who ? ` Likely to hit: <b>${who}</b>.` : ''}</p>
+        <p class="small">It hasn't happened yet. If you play an <b>Instant</b> now, it happens first, then the boss card still takes effect. Wards block damage before it lands, Elusive dodges attacks, and stuns stop minions or the boss's next strike. It costs your ready resources now, so you'll have less to spend on your own turn.</p></div>
+        <div class="cards"><div style="--cw:170px" class="bosspick">${U.cardHTML(bc.id)}<div class="ilabel">Coming up</div></div>${opts.map((o, i) => `<div class="pick" data-v="${i}" title="${esc(E.pdef(o.p).name)}">${U.cardHTML(o.c.id, { holo: o.c.holo })}<div class="ihint">${tag(o)}<b>${esc(E.pdef(o.p).name.replace(/^(Ser|Sir|Sister|Old|Lady|Lord) /, '').split(/[ ,]/)[0])}</b> · costs ${C[o.c.id].cost} (${E.available(o.p)} ready)<br>${esc(hint(o))}</div></div>`).join('')}</div>
+        <p class="small" style="text-align:center;margin:.6rem 0 0">${U.isPhone() ? 'Tap' : 'Click'} an Instant to play it, or let the card happen and keep your cards. You can turn these pauses off in Settings.</p>
+        <div class="acts"><button class="btn primary" data-v="pass">Let it happen</button></div>`;
       const v = await U.dialog(html);
       if (v === 'pass' || v == null) return null;
       const o = opts[+v]; const cd = C[o.c.id];
@@ -384,12 +405,6 @@
     }
   }
   async function netAsk(kind, d) {
-    // #65 online dungeons: each player decides their own opening mulligan; everyone else waits
-    if (kind === 'mulligan') {
-      if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v: !!v }); }
-      else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is looking at their opening hand…`);
-      const v = await netAnswer(d.p.idx); net.wait(null); return v === true;
-    }
     if (kind === 'scout') {
       if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v }); }
       else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is scouting…`);

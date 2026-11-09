@@ -161,12 +161,13 @@
   RB.GOLD_TIER = { Veteran: 0.25, Legendary: 0.5 };
   RB.DUNGEON_GOLD_BONUS = { experienced: 0.1, heroic: 0.25, legendary: 0.5 };
   RB.goldFor = (g, win) => {
-    const bossDmg = Math.max(g.players.reduce((s, p) => s + (p.stats.bossDmg || 0), 0), Math.min(g.boss.damage, g.boss.maxHp));
+    const cap = g.boss.baseMax || g.boss.maxHp; // #92: a dungeon gauntlet pays against the whole dungeon's health, as before
+    const bossDmg = Math.max(g.players.reduce((s, p) => s + (p.stats.bossDmg || 0), 0), Math.min(g.boss.damage, cap));
     // #43/#46: about 150-250 gold per raid
     const parts = [
       ['Victory', win ? 100 : 30],
       // the party splits the spoils, so bigger groups don't earn more each
-      ['Damage to the boss', Math.round(Math.min(bossDmg, g.boss.maxHp) * 0.42 / g.players.length)], // fix-sim: 0.6 -> 0.42 because bosses got 50% more health
+      ['Damage to the boss', Math.round(Math.min(bossDmg, cap) * 0.42 / g.players.length)], // fix-sim: 0.6 -> 0.42 because bosses got 50% more health
       ['Minions destroyed', Math.round(g.minionsKilled * 3 / g.players.length)],
       ['Healing done', Math.round((g.stats.healed || 0) * 0.4 / g.players.length)],
     ];

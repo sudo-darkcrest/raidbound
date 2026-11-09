@@ -554,7 +554,8 @@
     const seed = spec.seed != null ? spec.seed : hash(key || JSON.stringify(spec).slice(0, 200));
     const r = mulberry(seed);
     const P = A.pal(spec.s || 'void', spec.pal);
-    const gk = spec.img || (key && key.indexOf(':') > 0 ? key.split(':')[1] : null);
+    let gk = spec.img || (key && key.indexOf(':') > 0 ? key.split(':')[1] : null);
+    if (spec.alt && !(gk && A.GEN && A.GEN[gk])) gk = spec.alt; // #92: borrow another painting until this one is painted
     if (gk && A.GEN && A.GEN[gk] && spec.img !== false) {
       // a painted (generated) illustration replaces the scene and layers; the house vignette and grain still apply
       const body = `<image href="${A.GEN[gk]}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"/><rect width="${W}" height="${H}" fill="url(#vig)"/><rect width="${W}" height="${H}" filter="url(#grain)" opacity=".3"/>`;
@@ -577,7 +578,7 @@
     const k = key || JSON.stringify(spec);
     if (cache[k]) return cache[k];
     // painted art already has the vignette baked in: hand back the picture itself (a URL on the website, data URI offline)
-    if (A.BAKED && spec.img !== false) { const gk = spec.img || (key && key.indexOf(':') > 0 ? key.split(':')[1] : null); if (gk && A.GEN && A.GEN[gk]) return (cache[k] = A.GEN[gk]); }
+    if (A.BAKED && spec.img !== false) { let gk = spec.img || (key && key.indexOf(':') > 0 ? key.split(':')[1] : null); if (spec.alt && !(gk && A.GEN && A.GEN[gk])) gk = spec.alt; if (gk && A.GEN && A.GEN[gk]) return (cache[k] = A.GEN[gk]); }
     const svg = A.svg(spec, key);
     // blob URLs keep the (photo-carrying) SVGs out of the DOM strings; data URIs are the fallback
     if (A.useBlobs === true) {

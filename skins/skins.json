@@ -88,5 +88,15 @@
   "hero": "seraphine",
   "name": "Seraphine of the Veil",
   "desc": "Black robes of a priestess who walks among the dead."
+ },
+ "dawnarchon_eclipse": {
+  "hero": "dawnarchon",
+  "name": "Eclipse Archon",
+  "desc": "Radiant plate and wings dimmed to obsidian and violet, like the sun in eclipse."
+ },
+ "redwarlord_gilded": {
+  "hero": "redwarlord",
+  "name": "Warlord of the Gilded Moon",
+  "desc": "Black plate gilded in plundered gold."
  }
 }

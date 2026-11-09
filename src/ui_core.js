@@ -80,6 +80,7 @@
     if (back) st.setProperty('--back', `url(${back}) center/cover`); else st.removeProperty('--back');
     if (board) st.setProperty('--felt', `linear-gradient(rgba(8,11,26,.62), rgba(8,11,26,.78)), url(${board}) center/cover`); else st.removeProperty('--felt');
     document.body.classList.toggle('painted-back', !!back);
+    const bc = RB.COSMETICS[pick('back') || 'back_classic']; document.body.classList.toggle('special-back', !!(bc && bc.special));
   };
 
 
@@ -259,22 +260,28 @@
 
   /* ---------- loot codes ---------- */
   const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const REWARD_KEYS = ['pet_gryphon', 'back_lynx', 'board_banners', 'pet_kite', 'pet_owl', 'back_starfall', 'board_aurora', 'pet_ram']; // append only: a code's first letter picks the reward
+  // a code's first letter picks the reward. The first 8 rewards use 4 letters each (salt 'raidbound'); #94 added a second
+  // series (salt 'raidbound-v2', 2 letters each, room for 16 more). Append only: never reorder either list.
+  const REWARD_KEYS = ['pet_gryphon', 'back_lynx', 'board_banners', 'pet_kite', 'pet_owl', 'back_starfall', 'board_aurora', 'pet_ram'];
+  const REWARD_KEYS2 = ['back_phoenix', 'back_wyrmeye', 'back_unicorn', 'back_orrery', 'back_kingscrown', 'back_stormwing'];
+  const tail = (salt, body) => { const sum = A.hash(salt + body) % (ALPH.length * ALPH.length); return ALPH[Math.floor(sum / ALPH.length)] + ALPH[sum % ALPH.length]; };
+  const valid = (salt, c) => c.length === 10 && c.slice(8) === tail(salt, c.slice(0, 8));
   U.makeCode = function (reward) {
-    const ri = REWARD_KEYS.indexOf(reward);
-    let body = ALPH[ri * 4 + Math.floor(Math.random() * 4)];
-    for (let i = 0; i < 7; i++) body += ALPH[Math.floor(Math.random() * ALPH.length)];
-    const sum = A.hash('raidbound' + body) % (ALPH.length * ALPH.length);
-    const code = body + ALPH[Math.floor(sum / ALPH.length)] + ALPH[sum % ALPH.length];
-    return 'RB-' + code.slice(0, 5) + '-' + code.slice(5);
+    const r1 = REWARD_KEYS.indexOf(reward), r2 = REWARD_KEYS2.indexOf(reward);
+    for (;;) {
+      let body = r1 >= 0 ? ALPH[r1 * 4 + Math.floor(Math.random() * 4)] : ALPH[Math.max(0, r2) * 2 + Math.floor(Math.random() * 2)];
+      for (let i = 0; i < 7; i++) body += ALPH[Math.floor(Math.random() * ALPH.length)];
+      const code = body + tail(r1 >= 0 ? 'raidbound' : 'raidbound-v2', body);
+      if (r1 < 0 && valid('raidbound', code)) continue; // a new-series code must never also read as an old one
+      return 'RB-' + code.slice(0, 5) + '-' + code.slice(5);
+    }
   };
   U.checkCode = function (raw) {
     const c = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^RB/, '');
     if (c.length !== 10) return null;
-    const body = c.slice(0, 8), sum = A.hash('raidbound' + body) % (ALPH.length * ALPH.length);
-    if (c.slice(8) !== ALPH[Math.floor(sum / ALPH.length)] + ALPH[sum % ALPH.length]) return null;
-    const ri = Math.floor(ALPH.indexOf(body[0]) / 4);
-    return REWARD_KEYS[ri] || null;
+    if (valid('raidbound', c)) return REWARD_KEYS[Math.floor(ALPH.indexOf(c[0]) / 4)] || null;
+    if (valid('raidbound-v2', c)) return REWARD_KEYS2[Math.floor(ALPH.indexOf(c[0]) / 2)] || null;
+    return null;
   };
   // #41: gold codes (for testing / gifts). Format RBG-XXXXX-XXXXX; the first letter sets the amount.
   const GOLD_TIERS = [100, 250, 500, 1000, 2500, 5000, 10000, 50000];

@@ -39,6 +39,9 @@ def metal_recolor(h, s, v, kind):
     if kind == 'shadow':
         nv = 0.07 + v ** 1.6 * 0.6; nh = np.full_like(h, 0.74); ns = np.full_like(s, 0.30)
         hi = np.clip((v - 0.82) / 0.18, 0, 1); ns = ns * (1 - hi) + 0.18 * hi; nv = nv + hi * 0.25
+    elif kind == 'eclipse':  # #89: much darker than shadow, for very bright metal (the Archon's white-gold plate and wings)
+        nv = 0.06 + v ** 2.4 * 0.42; nh = np.full_like(h, 0.76); ns = np.full_like(s, 0.42)
+        hi = np.clip((v - 0.9) / 0.1, 0, 1); ns = ns * (1 - hi) + 0.25 * hi; nv = nv + hi * 0.12
     elif kind == 'gilded':
         nv = np.clip(0.12 + v * 1.02, 0, 1); nh = np.full_like(h, 0.115); ns = 0.72 - np.clip((v - 0.85) / 0.15, 0, 1) * 0.45
     else:  # frost
@@ -81,17 +84,19 @@ SKINS = {
     'korga_frost': dict(hero='korga', name='Frostfang Korga', desc='Ice-blue steel and a frost-touched bow.', metal='frost', metalV=0.25, cloth=[(0.02, 0.13, 0.58, 0.5, 1.3)], clothSat=0.3, clothVmax=0.5, fig=(0.47, 0.47, 0.12, 0.5)),
     'zizzik_arcane': dict(hero='zizzik', name='Starweave Zizzik', desc='His singed orange robe swapped for royal blue.', cloth=[(0.03, 0.12, 0.62, 1.0, 0.8)], fig=(0.5, 0.6, 0.3, 0.6)),
     'seraphine_shadow': dict(hero='seraphine', name='Seraphine of the Veil', desc='Black robes of a priestess who walks among the dead.', metal='shadow', metalSat=0.5, metalV=0.3, fig=(0.47, 0.58, 0.17, 0.52)),
+    # #89: the two gold-bought heroes (their paintings are gen/archon.webp and gen/warlord.webp)
+    'dawnarchon_eclipse': dict(hero='dawnarchon', src='archon', name='Eclipse Archon', desc='Radiant plate and wings dimmed to obsidian and violet, like the sun in eclipse.', metal='eclipse', metalSat=0.42, fig=(0.48, 0.45, 0.46, 0.7)),
+    'redwarlord_gilded': dict(hero='redwarlord', src='warlord', name='Warlord of the Gilded Moon', desc='Black plate gilded in plundered gold.', metal='gilded', fig=(0.58, 0.5, 0.3, 0.66)),
 }
 
 if __name__ == '__main__':
     import json
     painted = here / 'painted'
-    for f in gen.glob('skin_*.webp'): f.unlink()
+    # painted skins (skins/painted, brought in by import_painted.py) are left exactly as they are in gen/;
+    # only the recoloured placeholders are (re)made, so the paintings are never re-compressed
     for sid, cfg in SKINS.items():
-        # a SpriteCook-painted skin (skins/import_painted.py) always wins over the recolour
-        if (painted / f'{sid}.webp').exists():
-            from PIL import Image as _I; im = _I.open(painted / f'{sid}.webp').convert('RGB')
-        else:
-            im = skin(gen / f"{cfg['hero']}.webp", cfg)
-        p = gen / f'skin_{sid}.webp'; im.save(p, 'WEBP', quality=80, method=6); print(p.name, p.stat().st_size // 1024, 'KB')
+        p = gen / f'skin_{sid}.webp'
+        if (painted / f'{sid}.webp').exists() and p.exists(): continue
+        im = skin(gen / f"{cfg.get('src', cfg['hero'])}.webp", cfg)
+        im.save(p, 'WEBP', quality=80, method=6); print(p.name, p.stat().st_size // 1024, 'KB')
     (here / 'skins.json').write_text(json.dumps({k: {'hero': v['hero'], 'name': v['name'], 'desc': v['desc']} for k, v in SKINS.items()}, indent=1))

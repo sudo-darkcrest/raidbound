@@ -23,21 +23,24 @@
     return out;
   };
   // pay for a booster: a free Core pack if one is waiting, otherwise gold. Returns false (with a message) if you can't.
-  U.payForPack = style => {
-    if (style === 'core' && save.freeCore > 0) { save.freeCore--; U._paidFree = true; return true; }
-    const pr = RB.packPrice(style);
-    if (save.gold < pr) { U.toast(`A ${(RB.PACK_SETS[style] || {}).name || ''} pack costs ${pr} gold. You have ${save.gold}.`); return false; }
+  // #95: size is 5 (default), 10 or 20 for Core packs; free packs are always the 5-card Core pack
+  U.payForPack = (style, size) => {
+    size = size || 5;
+    if (style === 'core' && size === 5 && save.freeCore > 0) { save.freeCore--; U._paidFree = true; return true; }
+    const pr = RB.packPrice(style, size);
+    if (save.gold < pr) { U.toast(`A ${(RB.PACK_SETS[style] || {}).name || ''} pack${size > 5 ? ` of ${size} cards` : ''} costs ${pr} gold. You have ${save.gold}.`); return false; }
     save.gold -= pr; U._paidFree = false; return true;
   };
-  U.refundPack = style => { if (U._paidFree) save.freeCore = (save.freeCore || 0) + 1; else save.gold += RB.packPrice(style); };
+  U.refundPack = (style, size) => { if (U._paidFree) save.freeCore = (save.freeCore || 0) + 1; else save.gold += RB.packPrice(style, size || 5); };
   let packBusy = false; // #53: one purchase at a time; cleared when the cards are shown
   U.packLock = () => { if (packBusy) return false; packBusy = true; return true; };
   U.openPack = function (raidId, heroic, packEl, given, opts) {
     const fromMarket = !!(opts && opts.market);
     const cards = given || U.rollPack(raidId, heroic);
     const booster = !!given;
-    const style = booster ? (given.style || 'ember') : null, PS = booster ? RB.PACK_SETS[style] : null;
-    if (booster) { save.packs = save.packs || {}; save.packs[style] = (save.packs[style] || 0) + 1; }
+    const style = booster ? (given.style || 'ember') : null, PS = booster ? RB.PACK_SETS[style] : null, size = booster ? (given.size || 5) : 0;
+    // a 10 or 20-card Core pack counts as 2 or 4 packs toward pack rewards
+    if (booster) { save.packs = save.packs || {}; save.packs[style] = (save.packs[style] || 0) + Math.max(1, size / 5); }
     // add to collection right away so nothing is lost if the page closes
     for (const c of cards) {
       save.owned[c.id] = (save.owned[c.id] || 0) + 1;
@@ -49,13 +52,13 @@
     U.sfx.treasure();
     packEl.classList.add('tear');
     setTimeout(() => {
-      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)${PS ? `;color:${PS.col}` : ''}">${booster ? `${PS.name} booster` : 'Treasure'}</h2><p class="tagline">${PS ? `${esc(PS.theme)} · ` : ''}${U.isPhone() ? 'Tap' : 'Click'} each card to reveal it.</p>
-        <div class="packcards">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${i * 0.12}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
+      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)${PS ? `;color:${PS.col}` : ''}">${booster ? `${PS.name} ${size > 5 ? `${size}-card pack` : 'booster'}` : 'Treasure'}</h2><p class="tagline">${PS ? `${esc(PS.theme)} · ` : ''}${U.isPhone() ? 'Tap' : 'Click'} each card to reveal it.</p>
+        <div class="packcards${cards.length > 5 ? ' many' : ''}${cards.length > 10 ? ' lots' : ''}">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${Math.min(i, 12) * 0.08}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
         <div id="lootnote"></div>
-        ${booster ? (() => { const pr = RB.packPrice(style), free = style === 'core' && save.freeCore > 0;
-          return `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">Core ${RB.CORE_PACK_PRICE} gold · others ${RB.PACK_PRICE} gold</span></div>
+        ${booster ? (() => { const pr = RB.packPrice(style, size), free = style === 'core' && size === 5 && save.freeCore > 0, sz = size > 5 ? ` ${size}-card` : '';
+          return `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">Core ${RB.CORE_SIZES.map(s => `${s[0]} cards ${s[1]}`).join(' · ')} gold · others ${RB.PACK_PRICE} gold</span></div>
           <div class="packrow mini">${Object.entries(RB.PACK_STYLES).map(([k, v]) => { const p = RB.packPrice(k), fr = k === 'core' && save.freeCore > 0; return `<div class="packpick">${U.packHTML({ theme: k, art: v.art, act: 'buyagain', set: (RB.PACK_SETS[k].short || RB.PACK_SETS[k].name) + ' Set', cls: fr || save.gold >= p ? '' : 'broke', data: `data-style="${k}"`, label: fr ? `Open a free ${v.name} pack` : `Buy another ${v.name} booster pack for ${p} gold` })}<div class="pname">${v.name}${k === style ? ' <small>(again)</small>' : ''}${fr ? ' <small class="okmsg">free</small>' : ''}</div></div>`; }).join('')}</div>
-          ${free ? `<button class="btn primary" data-act="buyagain">Open your free ${PS.name} pack (${save.freeCore} left)</button>` : save.gold >= pr ? `<button class="btn primary" data-act="buyagain">Another ${PS.name} pack — ${pr} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${pr - save.gold} more gold for another ${PS.name} pack. Go raid!</p>`}</div>`; })() : ''}
+          ${free ? `<button class="btn primary" data-act="buyagain">Open your free ${PS.name} pack (${save.freeCore} left)</button>` : save.gold >= pr ? `<button class="btn primary" data-act="buyagain" data-size="${size}">Another ${PS.name}${sz} pack — ${pr} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${pr - save.gold} more gold for another ${PS.name}${sz} pack. Go raid!</p>`}</div>`; })() : ''}
         <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster || fromMarket ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">${opts && opts.online ? 'Back to the party lobby' : 'Raid again'}</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
       packBusy = false;
       if (newBoards && newBoards.length) setTimeout(() => U.toast(`Unlocked: ${newBoards.map(id => RB.COSMETICS[id].name).join(', ')}! Pick it in the Vault.`), 1200);
@@ -71,12 +74,12 @@
         if (a.dataset.act === 'market') return U.market(fromMarket ? { tab: 'treasure' } : null);
         if (a.dataset.act === 'buyagain') {
           // #74 (user): keep the wrapper the player picked; the big button repeats this pack's set
-          const st = RB.PACK_SETS[a.dataset.style] ? a.dataset.style : style;
-          if (!U.payForPack(st)) return;
-          if (packBusy) { U.refundPack(st); return; } packBusy = true;
+          const st = RB.PACK_SETS[a.dataset.style] ? a.dataset.style : style, sz = st === 'core' ? (+a.dataset.size || 5) : 5;
+          if (!U.payForPack(st, sz)) return;
+          if (packBusy) { U.refundPack(st, sz); return; } packBusy = true;
           U.persist(); U.hidePreview();
           const packEl = a.classList.contains('tcgpack') ? a : ($(`.againbox .tcgpack[data-style="${st}"]`, el) || $('.againbox .tcgpack', el));
-          return U.openPack(null, false, packEl, RB.rollBooster(null, st));
+          return U.openPack(null, false, packEl, RB.rollBooster(null, st, sz));
         }
         if (a.dataset.act === 'col') return U.collection();
         if (a.dataset.act === 'title') return U.title();

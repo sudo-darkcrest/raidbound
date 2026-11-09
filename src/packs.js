@@ -97,28 +97,32 @@
   // never in packs: each hero brings their own when you can play them (see U.syncStarters).
   RB.PACK_SETS.core = { name: 'Raidbound Core', short: 'Core', theme: 'The heart of every deck', blurb: 'Soldiers, spells, gear and quests for every class. The cards your starter decks are built from, and more of them.', col: '#f0d48a' };
   RB.CORE_PACK_PRICE = 75;
-  RB.packPrice = style => style === 'core' ? RB.CORE_PACK_PRICE : RB.PACK_PRICE;
+  // #95: Core packs come in 5, 10 and 20 cards (the 20 is a small bulk discount). Themed boosters are always 5.
+  RB.CORE_SIZES = [[5, 75], [10, 150], [20, 275]];
+  RB.packPrice = (style, size) => style === 'core' ? ((RB.CORE_SIZES.find(s => s[0] === (size || 5)) || RB.CORE_SIZES[0])[1]) : RB.PACK_PRICE;
   RB.CORE_POOL = () => Object.values(C).filter(d => d.set === 'core' && d.type !== 'master');
   RB.packPool = style => style === 'core' ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'frontier' && d.pack === style);
   RB.BOOSTER_SETS = ['ember', 'frost', 'void'];
 
-  // five core cards: one uncommon or better, then mostly commons
-  RB.rollCore = rand => {
-    rand = rand || Math.random;
+  // five core cards: one uncommon or better, then mostly commons (a 10 or 20-card pack is that roll 2 or 4 times)
+  RB.rollCore = (rand, size) => {
+    rand = rand || Math.random; size = [5, 10, 20].includes(size) ? size : 5;
     const pool = RB.CORE_POOL(), pk = a => a[Math.floor(rand() * a.length)];
     const of = r => pk(pool.filter(d => d.rarity === r)).id;
     const out = [];
-    out.push({ id: of(rand() < 0.3 ? 'r' : 'u'), holo: rand() < 0.15 });
-    out.push({ id: of((x => x < 0.04 ? 'r' : x < 0.38 ? 'u' : 'c')(rand())), holo: rand() < 0.08 });
-    for (let i = 0; i < 3; i++) out.push({ id: of((x => x < 0.03 ? 'r' : x < 0.22 ? 'u' : 'c')(rand())), holo: rand() < 0.06 });
-    out.style = 'core';
+    for (let k = 0; k < size / 5; k++) {
+      out.push({ id: of(rand() < 0.3 ? 'r' : 'u'), holo: rand() < 0.15 });
+      out.push({ id: of((x => x < 0.04 ? 'r' : x < 0.38 ? 'u' : 'c')(rand())), holo: rand() < 0.08 });
+      for (let i = 0; i < 3; i++) out.push({ id: of((x => x < 0.03 ? 'r' : x < 0.22 ? 'u' : 'c')(rand())), holo: rand() < 0.06 });
+    }
+    out.style = 'core'; out.size = size;
     return out;
   };
 
   /* ---------- booster roll: five cards, mostly from the wrapper's own set ---------- */
-  RB.rollBooster = (rand, style) => {
+  RB.rollBooster = (rand, style, size) => {
     rand = rand || Math.random;
-    if (style === 'core') return RB.rollCore(rand);
+    if (style === 'core') return RB.rollCore(rand, size);
     if (!RB.BOOSTER_SETS.includes(style)) style = RB.BOOSTER_SETS[Math.floor(rand() * 3)];
     const pk = a => a[Math.floor(rand() * a.length)];
     const own = RB.packPool(style), core = RB.CORE_POOL();

@@ -18,7 +18,8 @@
     const r = A.rng(A.hash('raidbound-shop-' + (key || dayKey())));
     const pool = k => RB.packPool(k).filter(d => d.rarity !== 'l');
     const out = [];
-    for (const k of RB.BOOSTER_SETS) { const p = pool(k).filter(d => !out.includes(d.id)); out.push(p[Math.floor(r() * p.length)].id); }
+    // #93: eight cards a day (two rows of four): two from each themed set, a rare find and a core card
+    for (const k of RB.BOOSTER_SETS) for (let n = 0; n < 2; n++) { const p = pool(k).filter(d => !out.includes(d.id)); out.push(p[Math.floor(r() * p.length)].id); }
     const all = RB.FRONTIER.map(id => C[id]).filter(d => d.rarity !== 'l' && !out.includes(d.id) && (d.rarity === 'r' || d.rarity === 'e'));
     out.push(all[Math.floor(r() * all.length)].id);
     const core = RB.CORE_POOL().filter(d => d.rarity === 'u' || d.rarity === 'r');
@@ -48,10 +49,10 @@
     if (tab === 'packs') {
       const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
       const cheapest = RB.CORE_PACK_PRICE;
-      body = `<p class="lede">Every raid pays you gold, win or lose. A pack holds <b>5 cards</b>, and some come as holofoils. The <b>Raidbound Core</b> pack (${RB.CORE_PACK_PRICE} gold) has the core cards every class uses: one uncommon or better, the rest mostly commons. Each themed wrapper (${price} gold) is its own set: at least three cards from that set (one uncommon or better), the rest usually from the set too, with the odd core card. Each themed set hides one very rare <b class="legend">Legendary</b>, and opening 5 of one kind unlocks its table theme.</p>
+      body = `<p class="lede">Every raid pays you gold, win or lose. A pack holds <b>5 cards</b>, and some come as holofoils. The <b>Raidbound Core</b> pack (${RB.CORE_PACK_PRICE} gold) has the core cards every class uses: one uncommon or better, the rest mostly commons. It also comes in bulk: <b>10 cards for ${RB.packPrice('core', 10)}</b> or <b>20 cards for ${RB.packPrice('core', 20)}</b> gold, with one uncommon or better in every 5. Each themed wrapper (${price} gold) is its own set: at least three cards from that set (one uncommon or better), the rest usually from the set too, with the odd core card. Each themed set hides one very rare <b class="legend">Legendary</b>, and opening 5 of one kind unlocks its table theme.</p>
       ${save.freeCore > 0 ? `<div class="giftnote"><b>Welcome gift:</b> you have <b>${save.freeCore} free Raidbound Core pack${save.freeCore > 1 ? 's' : ''}</b>. ${U.isPhone() ? 'Tap' : 'Click'} the Core pack to open ${save.freeCore > 1 ? 'one' : 'it'}.</div>` : ''}
       <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => { const PS = RB.PACK_SETS[k], pool = RB.packPool(k), got = pool.filter(d => (save.owned[d.id] || 0) > 0).length, opened = (save.packs || {})[k] || 0, pr = RB.packPrice(k), free = k === 'core' && save.freeCore > 0, can = free || save.gold >= pr;
-        return `<div class="packpick setpick" style="--sc:${PS.col}">${U.packHTML({ theme: k, art: v.art, act: 'buy', set: (PS.short || PS.name) + ' Set', data: `data-style="${k}"`, label: free ? `Open a free ${v.name} pack` : `Buy a ${v.name} booster pack for ${pr} gold` })}<div class="pname">${v.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(PS.blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${can ? 'primary' : ''}" data-act="buy" data-style="${k}" ${can ? '' : 'disabled'}>${free ? `Open free pack (${save.freeCore} left)` : `Buy — ${pr} gold`}</button></div>`; }).join('')}</div>
+        return `<div class="packpick setpick" style="--sc:${PS.col}">${U.packHTML({ theme: k, art: v.art, act: 'buy', set: (PS.short || PS.name) + ' Set', data: `data-style="${k}"`, label: free ? `Open a free ${v.name} pack` : `Buy a ${v.name} booster pack for ${pr} gold` })}<div class="pname">${v.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(PS.blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${can ? 'primary' : ''}" data-act="buy" data-style="${k}" ${can ? '' : 'disabled'}>${free ? `Open free pack (${save.freeCore} left)` : `${k === 'core' ? '5 cards' : 'Buy'} — ${pr} gold`}</button>${k === 'core' ? `<div class="bulkbuy">${RB.CORE_SIZES.slice(1).map(([n, p]) => `<button class="btn small ${save.gold >= p ? 'primary' : ''}" data-act="buy" data-style="core" data-size="${n}" ${save.gold >= p ? '' : 'disabled'}>${n} cards — ${p} gold</button>`).join('')}</div>` : ''}</div>`; }).join('')}</div>
       ${save.gold < cheapest && !(save.freeCore > 0) ? `<p class="lede" style="text-align:center">You need ${cheapest - save.gold} more gold for a Core pack. Go raid!</p>` : ''}
       <p class="lede" style="text-align:center">You have found <b>${have} of ${fr.length}</b> booster cards.</p>
       <div class="codebox goldcode"><span>Have a gold code?</span><input id="goldcode" placeholder="RBG-XXXXX-XXXXX" aria-label="Gold code" maxlength="17"><button class="btn" data-act="goldcode">Redeem</button>${opts.msg ? `<span class="${opts.msg.ok ? 'okmsg' : 'errmsg'}">${esc(opts.msg.text)}</span>` : ''}</div>`;
@@ -59,7 +60,7 @@
 
     if (tab === 'shop') {
       const st = shopState(), stock = RB.shopStock();
-      body = `<p class="lede">Five cards for sale today: one from each themed set, a rare find, and a core card. Buy the exact card you want instead of hoping for it in a pack. Each one can be bought once a day. <b>New stock in ${untilMidnight()}.</b></p>
+      body = `<p class="lede">Eight cards for sale today: two from each themed set, a rare find, and a core card. Buy the exact card you want instead of hoping for it in a pack. Each one can be bought once a day. <b>New stock in ${untilMidnight()}.</b></p>
       <div class="shopgrid">${stock.map(id => { const d = C[id], cost = SHOP_PRICE[d.rarity] || 80, bought = st.bought.includes(id), own = save.owned[id] || 0, PS = setOf(d);
         return `<div class="shopitem" style="--sc:${PS ? PS.col : '#d8a84a'}"><div class="shopcard" data-card="${id}">${U.cardHTML(id, {})}</div><div class="sinfo"><span class="rar-${d.rarity}">${RAR[d.rarity]}</span> · ${PS ? PS.name : ''}<br><small>You own ${own}</small></div>
           ${bought ? '<button class="btn small" disabled>Bought today</button>' : `<button class="btn small ${save.gold >= cost ? 'primary' : ''}" data-shop="${id}" ${save.gold >= cost ? '' : 'disabled'}>Buy — ${cost} gold</button>`}</div>`; }).join('')}</div>`;
@@ -103,7 +104,7 @@
       }).join('');
       body = `<h3 class="sec" style="margin-top:.4rem">Hero skins</h3><p class="lede">A new look for a hero you already play: black obsidian plate, polished gold, winter silver or new robes. Your skin shows on the hero card, in raid setup and in the party list. Just for looks: skins never change the rules.</p>
         <div class="skingrid">${skins}</div>
-        <h3 class="sec">Heroes for hire</h3><p class="lede">Six more heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p><div class="mheroes">${heroes}</div>`;
+        <h3 class="sec">Heroes for hire</h3><p class="lede">${RB.UNLOCK_HEROES.length} more heroes join the fight once you earn them. Some are unlocked by beating raids, some are bought here.</p><div class="mheroes">${heroes}</div>`;
     }
 
     const el = U.show('market', `<div class="page">${head}${body}</div>`, !!opts.keep);
@@ -131,12 +132,12 @@
         save.dust += gained; U.persist(); U.sfx.heal && U.sfx.heal(); U.toast(`${n} spare card${n === 1 ? '' : 's'} turned into ${gained} dust.`); return U.market({ keep: true });
       }
       if (act === 'buy') {
-        const st = RB.PACK_STYLES[a.dataset.style] ? a.dataset.style : 'core';
-        if (!U.payForPack(st)) return;
-        if (!U.packLock()) { U.refundPack(st); return; }
+        const st = RB.PACK_STYLES[a.dataset.style] ? a.dataset.style : 'core', sz = st === 'core' ? (+a.dataset.size || 5) : 5;
+        if (!U.payForPack(st, sz)) return;
+        if (!U.packLock()) { U.refundPack(st, sz); return; }
         U.persist();
         const packEl = a.classList.contains('tcgpack') ? a : $(`.tcgpack[data-style="${st}"]`, el);
-        return U.openPack(null, false, packEl, RB.rollBooster(null, st));
+        return U.openPack(null, false, packEl, RB.rollBooster(null, st, sz));
       }
       if (act === 'tbuy') {
         const raidId = a.dataset.raid, heroic = a.dataset.h === '1', cost = heroic ? RB.TREASURE_PRICE.heroic : RB.TREASURE_PRICE.normal;

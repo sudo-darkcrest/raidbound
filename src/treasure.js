@@ -106,6 +106,10 @@
   C.fieldmedic = { id: 'fieldmedic', name: 'Field Medic', type: 'ally', cost: 2, atk: 1, hp: 3, race: 'Human', fac: 'neutral', rarity: 'c', set: 'core', target: 'friendlyHero', tags: ['heal'], text: 'When this enters play, heal 3 damage from a friendly hero.', onEnter: async (E, c) => { if (c.target) await E.heal(c.target, 3); }, flavor: 'Bandages, splints and a very firm voice.',
     art: { s: 'castle', L: [glow(150, 130, 70, '#9aff8a', 0.4), fig({ pose: 'stand', w: 'mace', helm: 'hood', x: 130, y: 214, s: 0.86, cloth: '#e8e0c8' }), ['fx', { t: 'heal', x: 210, y: 120, c: '#9aff8a' }], ['obj', { t: 'potion', x: 230, y: 190, col: '#ff5a4a' }]] } };
 
+  // #93: one more Concord common ally (the Concord had 4 common allies to the Clans' 7), so the Core set is 154 = 22 x 7
+  C.squire = { id: 'squire', name: 'Concord Squire', type: 'ally', cost: 2, atk: 2, hp: 2, race: 'Human', fac: 'concord', rarity: 'c', set: 'core', target: 'friendlyHero', tags: ['shield'], text: 'When this enters play, give a friendly hero Ward 2.', onEnter: async (E, c) => { if (c.target) E.shield(c.target.p, 2); }, flavor: 'He polishes everyone\'s armour but his own.',
+    art: { s: 'castle', L: [glow(150, 120, 70, '#ffe08a', 0.4), fig({ pose: 'stand', w: 'sword', off: 'round', helm: 'hair', x: 140, y: 214, s: 0.86 }), ['fx', { t: 'barrier', x: 200, y: 150 }]] } };
+
   /* ======================= +3 loot cards (each with a scratch-off code reward) ======================= */
   const loot = (id, o) => { o.id = id; o.fac = 'neutral'; o.rarity = 'e'; o.set = 'loot'; C[id] = o; };
   loot('loot_owl', { name: 'Snowfeather Owlet', type: 'ally', cost: 2, atk: 2, hp: 2, kw: ['elusive', 'longrange'], race: 'Beast', tags: ['draw'], text: 'When this enters play, draw a card.', onEnter: async (E, c) => E.draw(c.p, 1), loot: { reward: 'pet_owl', label: 'Snowfeather Owlet companion' },
@@ -114,6 +118,27 @@
     art: { s: 'void', L: [glow(150, 120, 90, '#c87aff', 0.6), ['fx', { t: 'meteors', n: 5, c: '#e0c8ff' }], ['fx', { t: 'runes', x: 150, y: 130, r: 80, c: '#e8c060' }]] } });
   loot('loot_aurora', { name: 'Lantern of the Northern Lights', type: 'item', cost: 3, tags: ['heal'], text: 'At the start of your turn, heal 1 damage from each friendly hero and ally.', start: async (E, p) => { for (const t of E.friendlyChars()) await E.heal(t, 1); }, loot: { reward: 'board_aurora', label: 'Northern Lights table theme' },
     art: { s: 'frost', pal: { light: '#b8ffe0' }, L: [['wisps', { x: 150, y: 70, w: 300, h: 70, n: 12, c: '#9affd0' }], glow(150, 120, 80, '#9affd0', 0.5), ['obj', { t: 'lantern', x: 150, y: 130, s: 1.1 }]] } });
+  /* #94: six more loot cards, each unlocking a special (shimmering foil) card back */
+  loot('loot_phoenix', { name: 'Phoenix Feather', type: 'item', cost: 2, cheatDeath: true, cheatMsg: 'The Phoenix Feather bursts into flame', tags: ['defense'], text: 'The first time your hero would be defeated, destroy this instead: your hero survives with 5 health.', flavor: 'It is warm to the touch, and it remembers every fire.', loot: { reward: 'back_phoenix', label: 'Phoenix Ascendant card back' },
+    art: { s: 'volcano', L: [glow(150, 110, 100, '#ffb040', 0.7), ['beast', { t: 'bird', x: 150, y: 130, s: 0.9, eye: '#fff0a0' }], ['fx', { t: 'fireball', x: 150, y: 110 }], ['fx', { t: 'sparkle', x: 150, y: 90, n: 12 }]] } });
+  loot('loot_wyrmeye', { name: 'Eye of the Wyrm', type: 'item', cost: 2, heroAtk: 1, tags: ['draw', 'buff'], text: 'Your hero has +1 ATK. When this enters play, draw a card.', onEnter: async (E, c) => E.draw(c.p, 1), flavor: 'Cut from a dragon that was not entirely finished with it.', loot: { reward: 'back_wyrmeye', label: 'Wyrm\'s Eye card back' },
+    art: { s: 'crypt', L: [glow(150, 120, 90, '#60ff90', 0.6), ['obj', { t: 'amulet', x: 150, y: 120, s: 1.4, gem: '#40e070' }], ['fx', { t: 'runes', x: 150, y: 120, r: 85, c: '#e8c060' }]] } });
+  loot('loot_unicorn', { name: 'Moonlit Unicorn', type: 'ally', cost: 3, atk: 2, hp: 4, kw: ['protector'], race: 'Beast', tags: ['healAll', 'heal'], text: 'Protector. When this enters play, heal 3 damage from each friendly hero.', onEnter: async (E, c) => { for (const h of E.heroes()) await E.heal(E.heroT(h), 3); }, flavor: 'It only comes when the moon is full and someone is brave.', loot: { reward: 'back_unicorn', label: 'Moonlit Unicorn card back' },
+    art: { s: 'grove', pal: { light: '#e8f0ff' }, L: [glow(150, 70, 60, '#f4f8ff', 0.8), ['fx', { t: 'holy', x: 150, y: 120 }], ['fx', { t: 'sparkle', x: 150, y: 120, n: 14 }]] } });
+  loot('loot_orrery', { name: 'Celestial Orrery', type: 'item', cost: 3, tags: ['draw'], text: 'At the start of your turn, if you have 3 or fewer cards in hand, draw a card.', start: async (E, p) => { if (p.hand.length <= 3) await E.draw(p, 1); }, flavor: 'Wind it once and the stars will tell you what comes next.', loot: { reward: 'back_orrery', label: 'Celestial Orrery card back' },
+    art: { s: 'arcane', L: [glow(150, 120, 90, '#a0c0ff', 0.6), ['fx', { t: 'runes', x: 150, y: 120, r: 90, c: '#e8c060' }], ['obj', { t: 'hourglass', x: 150, y: 125, s: 1.1 }], ['fx', { t: 'meteors', n: 4, c: '#e0e8ff' }]] } });
+  loot('loot_kingscrown', { name: 'Crown of the First King', type: 'item', cost: 3, allyHp: 2, tags: ['buff'], text: 'Your allies have +2 health.', flavor: 'Whoever wears it, the old banners still kneel.', loot: { reward: 'back_kingscrown', label: 'First King\'s Crown card back' },
+    art: { s: 'castle', L: [glow(150, 110, 90, '#ffe08a', 0.7), ['obj', { t: 'crown', x: 150, y: 115, s: 1.4 }], ['fx', { t: 'holy', x: 150, y: 100 }]] } });
+  loot('loot_stormwing', { name: 'Stormwing Wyvern', type: 'ally', cost: 4, atk: 4, hp: 3, kw: ['ferocity', 'longrange'], race: 'Beast', tags: ['aoe'], text: 'Ferocity. Long-Range. When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => { for (const t of E.minions()) await E.dmg(t, 2, { p: c.p, kind: 'effect' }); }, flavor: 'Thunder is just the sound of it arriving.', loot: { reward: 'back_stormwing', label: 'Stormwing card back' },
+    art: { s: 'storm', L: [glow(150, 90, 90, '#a0d8ff', 0.6), ['beast', { t: 'gryphon', x: 150, y: 150, s: 0.8, eye: '#a0e8ff' }], ['fx', { t: 'bolt', x: 150, y: 60 }]] } });
+  Object.assign(RB.COSMETICS, {
+    back_phoenix: { kind: 'back', name: 'Phoenix Ascendant', get: 'loot', special: true, desc: 'A phoenix rising on wings of gold flame from a burst of embers.' },
+    back_wyrmeye: { kind: 'back', name: 'Wyrm\'s Eye', get: 'loot', special: true, desc: 'A great emerald dragon eye with a slit gold pupil, ringed in filigree.' },
+    back_unicorn: { kind: 'back', name: 'Moonlit Unicorn', get: 'loot', special: true, desc: 'A silver unicorn beneath a crescent moon and a sky full of stars.' },
+    back_orrery: { kind: 'back', name: 'Celestial Orrery', get: 'loot', special: true, desc: 'Brass rings of a turning orrery around a bright star, with constellations.' },
+    back_kingscrown: { kind: 'back', name: 'First King\'s Crown', get: 'loot', special: true, desc: 'A jewelled gold crown in a laurel wreath on royal purple.' },
+    back_stormwing: { kind: 'back', name: 'Stormwing', get: 'loot', special: true, desc: 'A wyvern spreading its wings through crackling storm lightning.' },
+  });
   Object.assign(RB.COSMETICS, {
     pet_owl: { kind: 'pet', name: 'Snowfeather Owlet', get: 'loot', desc: 'A round, fluffy snowy owlet with big golden eyes.' },
     back_starfall: { kind: 'back', name: 'Starfall', get: 'loot', desc: 'Falling stars around a gold eight-point star on a violet night sky.' },

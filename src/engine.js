@@ -12,7 +12,13 @@
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
-    const raid = RB.RAIDS[cfg.raid] || (RB.DUNGEONS || {})[cfg.raid];
+    const baseRaid = RB.RAIDS[cfg.raid] || (RB.DUNGEONS || {})[cfg.raid];
+    // #92: a dungeon with stages is a gauntlet (two under-bosses, then the main boss, in one fight). The game keeps its own
+    // copy of the dungeon so the current boss's name, art, strike and retaliation can change mid-fight.
+    const raid = baseRaid && baseRaid.stages ? Object.assign({}, baseRaid, {
+      phases: [],
+      stages: baseRaid.stages.map(st => st.main ? Object.assign({ boss: baseRaid.boss, short: baseRaid.short, art: baseRaid.art, strike: baseRaid.strike, retaliation: baseRaid.retaliation, intro: baseRaid.intro }, st) : st),
+    }) : baseRaid;
     const D = !!raid.dungeon; // #63 Dungeon mode: the boss runs itself, flips cards by level, marks a random hero
     let uidN = 1;
     const uid = () => 'x' + (uidN++);
@@ -53,7 +59,14 @@
       cardsPerTurn: 1 + (heroic && !D ? (RB.HEROIC_EXTRA_CARDS || 0) : 0), strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
     };
-    if (D) g.boss.strikeBonus += g.boss.level - 1 + (RB.DUNGEON_PARTY_STRIKE || 0) * (n - 1); // fix-sim: dungeon attacks were spread over the party but barely grew with it
+    if (D) g.boss.strikeBonus += g.boss.level - 1 + (RB.DUNGEON_PARTY_STRIKE || 0) * (n - 1);
+    const stageNow = () => raid.stages ? raid.stages[g.boss.stage] : null;
+    const enterStage = i => {
+      const st = raid.stages[i], B = g.boss;
+      B.stage = i; Object.assign(raid, { boss: st.boss, short: st.short, art: st.art, strike: st.strike, retaliation: st.retaliation });
+      B.maxHp = Math.max(1, Math.round(B.baseMax * st.frac)); B.damage = 0;
+    };
+    if (raid.stages) { g.boss.baseMax = maxHp; g.boss.equipStats = []; enterStage(0); } // fix-sim: dungeon attacks were spread over the party but barely grew with it
     // #fix-sim: two heroes flip one card fewer like a solo hero (they were facing a three-hero dungeon)
     const flipCount = () => { const f = raid.flip[Math.min(g.boss.level, raid.flip.length) - 1]; const cut = n === 1 ? 1 : n === 2 ? (RB.DUNGEON_TWO_CUT != null ? RB.DUNGEON_TWO_CUT : 1) : 0; return Math.max(1, f - cut); };
 
@@ -122,6 +135,7 @@
       let n = amount;
       if ((src.kind === 'spell' || src.kind === 'power') && src.p) n += spellPower(src.p);
       if (target.t === 'boss' && g.boss.mark) n += g.boss.mark.amount;
+      if (target.t === 'boss' && (src.kind === 'hero' || src.kind === 'ally')) { const st = stageNow(); if (st && st.rule && st.rule.armor && n > 0) n = Math.max(1, n - st.rule.armor); }
       if (src.kind === 'minion' || src.strike) n += g.partyFury;
       if (target.t === 'hero') {
         n += g.boss.events.reduce((s, e) => s + (BC[e.id].dmgTakenMod || 0), 0);
@@ -185,7 +199,10 @@
     async function checkDeath(t, src) {
       if (!isAlive(t)) return;
       if (hpOf(t) > 0) return;
-      if (t.t === 'boss') { g.over = 'win'; log(`${raid.boss} has fallen!`, 'win'); await H.anim('bossDeath', {}); H.update(); return; }
+      if (t.t === 'boss') {
+        if (raid.stages && g.boss.stage < raid.stages.length - 1) { await nextStage(); return; }
+        g.over = 'win'; log(`${raid.boss} has fallen!`, 'win'); await H.anim('bossDeath', {}); H.update(); return;
+      }
       if (t.t === 'minion') {
         const d = minDef(t.m);
         g.boss.minions.splice(g.boss.minions.indexOf(t.m), 1);
@@ -214,7 +231,7 @@
         if (shard) {
           p.items.splice(p.items.indexOf(shard), 1); p.grave.push(shard.c);
           p.hero.damage = heroMax(p) - 5;
-          log(`The Phylactery Shard shatters — ${pdef(p).name} refuses to die!`, 'def');
+          log(`${C[shard.c.id].cheatMsg || 'The Phylactery Shard shatters'} — ${pdef(p).name} refuses to die!`, 'def');
           await H.anim('heal', { ref: 'hero' + p.idx, amount: 5 }); H.update();
           return;
         }
@@ -226,6 +243,28 @@
         H.update();
         if (!alive().length) { g.over = 'lose'; log('The raid has wiped.', 'loss'); H.update(); }
       }
+    }
+    // #92: an under-boss falls; its equipment goes with it, the dungeon levels up and the next boss steps in
+    async function nextStage() {
+      const B = g.boss, old = raid.stages[B.stage];
+      if (B.advancing || B.stage >= raid.stages.length - 1) return;
+      // the next boss takes over at once, so a death effect set off below can't skip a boss
+      B.advancing = true;
+      for (const e of B.equipStats || []) { B.strikeBonus -= e.strike; B.retalBonus = (B.retalBonus || 0) - e.retal; }
+      B.equip = []; B.equipStats = []; B.stunned = false;
+      enterStage(B.stage + 1);
+      log(`${old.short} is defeated!`, 'win');
+      await H.anim('banner', { text: `${old.short} is defeated!`, kind: 'win' });
+      if (old.rule && old.rule.onDefeat) await old.rule.onDefeat(api);
+      B.advancing = false;
+      if (g.over) return;
+      const st = raid.stages[B.stage], last = B.stage === raid.stages.length - 1;
+      log(`${st.boss} steps forward${last ? ' — the master of this dungeon!' : '.'}${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss');
+      H.update();
+      await H.anim('phase', { name: `${st.short} arrives`, text: st.rule ? `${st.rule.name}: ${st.rule.text}` : (st.intro || '') });
+      await api.levelUp(1);
+      if (st.rule && st.rule.onEnter) await st.rule.onEnter(api);
+      H.update();
     }
     async function checkPhases() {
       if (g.over) return;
@@ -531,6 +570,7 @@
         H.update();
         if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); H.update(); if (g.over) return; }
       }
+      { const st = stageNow(); if (st && st.rule && st.rule.bossTurn) { await st.rule.bossTurn(api); H.update(); if (g.over) return; } }
       const k = D ? flipCount() : B.cardsPerTurn + Math.max(0, alive().length - 1);
       if (D) log(`${raid.short} is level ${B.level}: flips ${k} card${k > 1 ? 's' : ''}.`, 'boss');
       const drawBoss = () => { if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); } return B.deck.pop(); };
@@ -673,13 +713,8 @@
       canPlay, canEquip, needsTarget, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
-        if (D) for (const p of g.players) { // one mulligan each: shuffle the hand back and draw 7 new cards
-          let redo = false;
-          if (p.auto || cfg.allAuto || !H.ask) redo = !p.hand.some(c => C[c.id].type === 'ally' && C[c.id].cost <= 3);
-          else redo = await H.ask('mulligan', { p });
-          if (redo) { p.deck.push(...p.hand.splice(0)); shuffle(p.deck, rnd); await draw(p, openHand(p)); log(`${pdef(p).name} takes a mulligan and draws a new hand of ${openHand(p)}.`, ''); }
-        }
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
+        { const st = stageNow(); if (st) { log(`${st.boss} blocks the way.${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss'); if (st.rule && st.rule.onEnter) await st.rule.onEnter(api); H.update(); } }
         for (const p of g.players) { const q = perk(p); if (!q) continue;
           log(`${pdef(p).name}'s companion, ${petName(p)}: ${q.text}`, 'def');
           if (q.k === 'ward') { p.hero.shield += q.n; H.update(); }
@@ -687,9 +722,9 @@
           else if (q.k === 'bossDmg') await dmg(T.boss(), q.n, { p, kind: 'effect' });
         }
         if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
-      flipCount, markedHero,
+      flipCount, markedHero, stageNow,
       levelUp: async (k) => { const B = g.boss, top = raid.maxLevel || 4; if (B.level >= top) return; B.level = Math.min(top, B.level + (k || 1)); B.strikeBonus += (k || 1); log(`${raid.short} levels up to level ${B.level}! Strikes harder and flips more cards.`, 'boss'); H.update(); },
-      equipBoss: (name, strike, retal) => { const B = g.boss; B.strikeBonus += strike || 0; B.retalBonus = (B.retalBonus || 0) + (retal || 0); B.equip.push(name); log(`${raid.short} equips ${name}.`, 'boss'); H.update(); },
+      equipBoss: (name, strike, retal) => { const B = g.boss; B.strikeBonus += strike || 0; B.retalBonus = (B.retalBonus || 0) + (retal || 0); B.equip.push(name); if (B.equipStats) B.equipStats.push({ strike: strike || 0, retal: retal || 0 }); log(`${raid.short} equips ${name}.`, 'boss'); H.update(); },
       // effect helpers
       dmg, heal, draw,
       enemies, minions, allAllies, friendlyChars, heroes: alive,

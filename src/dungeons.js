@@ -23,7 +23,8 @@
   const commonRules = flip => [
     { name: 'Flip', text: `At the start of its turn the dungeon flips cards from its deck: ${flip.map((f, i) => `level ${i + 1}: ${f}`).join(', ')}. Allies and equipment stay in play; abilities resolve. Dungeon cards cost nothing.` },
     { name: 'Marked', text: 'After flipping, the dungeon rolls a die and MARKS one hero at random. The dungeon hero and all its allies attack the marked hero (a ready Protector can still step in).' },
-    { name: 'Levels', text: 'The dungeon levels up at 70% and 40% health: it flips more cards and strikes 1 harder per level.' },
+    { name: 'Gauntlet', text: 'Fight through two under-bosses, then the master of the dungeon, all in one fight. Your heroes keep their health, cards and allies from one boss to the next. A boss\'s equipment leaves with it; its minions stay.' },
+    { name: 'Levels', text: 'The dungeon levels up each time an under-boss falls: it flips more cards and strikes 1 harder per level.' },
   ];
 
   /* =================== 1. Thornwood Hollow =================== */
@@ -35,14 +36,14 @@
   card('thw_wolves', { name: 'Call the Pack', kind: 'summon', text: 'Summon two Thornwood Dire Wolves (2/2, Ferocity).', run: summon('d_wolf', 2), art: { img: 'packleader' } });
   card('thw_bear', { name: 'Mossback Bear', kind: 'summon', text: 'Summon a Mossback Bear (3/5).', run: summon('d_bear'), art: { img: 'cavebear' } });
   card('thw_stalker', { name: 'Mistwood Stalker', kind: 'summon', text: 'Summon a Mistwood Stalker (3/2, Elusive).', run: summon('d_stalker'), art: { img: 'mistranger' } });
-  card('thw_hag', { name: 'Bramble Hag', kind: 'summon', text: 'Summon a Bramble Hag (1/3). Gnarlroot heals 4.', run: async E => { await E.summonMinion('d_hag', 1); await E.bossHeal(4); }, art: { img: 'hedgewitch' } });
+  card('thw_hag', { name: 'Bramble Hag', kind: 'summon', text: 'Summon a Bramble Hag (1/3). The boss heals 4.', run: async E => { await E.summonMinion('d_hag', 1); await E.bossHeal(4); }, art: { img: 'hedgewitch' } });
   card('thw_guardian', { name: 'Heartwood Guardian', kind: 'summon', text: 'Summon a Heartwood Guardian (2/7, Guardian).', run: summon('d_heartwood'), art: { img: 'grovebinder' } });
-  card('thw_bark', { name: 'Ironbark Hide', kind: 'equip', text: 'Equipment: Gnarlroot strikes for 1 more and melee attackers take 1 more damage back.', run: async E => E.equipBoss('Ironbark Hide', 1, 1), art: { s: 'forest', L: [glow(150, 120, 80, '#9a7a4a', 0.5), ['obj', { t: 'shieldItem', x: 150, y: 118, s: 0.9 }]] } });
-  card('thw_vines', { name: 'Thornwhip Vines', kind: 'equip', text: 'Equipment: Gnarlroot strikes for 2 more.', run: async E => E.equipBoss('Thornwhip Vines', 2, 0), art: { s: 'grove', L: [['fx', { t: 'chains' }], glow(150, 140, 80, '#7ad04a', 0.4)] } });
+  card('thw_bark', { name: 'Ironbark Hide', kind: 'equip', text: 'Equipment: the boss strikes for 1 more and melee attackers take 1 more damage back.', run: async E => E.equipBoss('Ironbark Hide', 1, 1), art: { s: 'forest', L: [glow(150, 120, 80, '#9a7a4a', 0.5), ['obj', { t: 'shieldItem', x: 150, y: 118, s: 0.9 }]] } });
+  card('thw_vines', { name: 'Thornwhip Vines', kind: 'equip', text: 'Equipment: the boss strikes for 2 more.', run: async E => E.equipBoss('Thornwhip Vines', 2, 0), art: { s: 'grove', L: [['fx', { t: 'chains' }], glow(150, 140, 80, '#7ad04a', 0.4)] } });
   card('thw_entangle', { name: 'Entangling Roots', kind: 'curse', text: 'The ally with the highest ATK is frozen: it won\'t ready on its owner\'s next turn.', run: async E => { const t = E.allyBy('atk', 'max'); if (t) E.freeze(t); }, art: { s: 'forest', L: [['fx', { t: 'chains' }], ['beast', { t: 'treant', x: 150, y: 220, s: 0.6 }]] } });
   card('thw_spores', { name: 'Choking Spores', kind: 'attack', text: 'Deal 2 damage to each hero.', run: async E => { for (const h of E.heroes()) await E.dmg(E.heroT(h), 2, { kind: 'boss' }); }, art: { s: 'grove', p: 'embers', pn: 30, pal: { glow: '#c8ff6a' }, L: [['wisps', { x: 150, y: 140, w: 280, h: 140, n: 18, c: '#d8ff8a' }]] } });
   card('thw_crush', { name: 'Root Crush', kind: 'attack', text: 'Deal 4 damage to the hero with the most health.', run: async E => { const h = E.mostHealth(); if (h) await E.dmg(E.heroT(h), 4, { kind: 'boss' }); }, art: { s: 'forest', L: [['beast', { t: 'treant', x: 150, y: 220, s: 0.9 }], ['fx', { t: 'slash', x: 150, y: 140 }]] } });
-  card('thw_overgrowth', { name: 'Overgrowth', kind: 'heal', text: 'Gnarlroot heals 5. Each dungeon ally gets +1 ATK and +1 health.', run: async E => { await E.bossHeal(5); E.buffMinions(1, 1); }, art: { s: 'grove', L: [['fx', { t: 'heal', x: 150, y: 120, c: '#9aff6a' }], ['fx', { t: 'buff', x: 150, y: 170, c: '#9aff6a' }]] } });
+  card('thw_overgrowth', { name: 'Overgrowth', kind: 'heal', text: 'The boss heals 5. Each dungeon ally gets +1 ATK and +1 health.', run: async E => { await E.bossHeal(5); E.buffMinions(1, 1); }, art: { s: 'grove', L: [['fx', { t: 'heal', x: 150, y: 120, c: '#9aff6a' }], ['fx', { t: 'buff', x: 150, y: 170, c: '#9aff6a' }]] } });
   card('thw_thorns', { name: 'Bramble Burst', kind: 'attack', text: 'Deal 2 damage to each ally.', run: async E => { for (const t of E.allAllies()) await E.dmg(t, 2, { kind: 'boss' }); }, art: { s: 'forest', L: [['fx', { t: 'whirl', x: 150, y: 160, c: '#7ad04a' }], ['fx', { t: 'slash', x: 120, y: 120 }], ['fx', { t: 'slash', x: 190, y: 140 }]] } });
 
   /* =================== 2. Bloodfang Warcamp =================== */
@@ -54,10 +55,10 @@
   card('bfw_raiders', { name: 'Raiding Party', kind: 'summon', text: 'Summon two Bloodfang Raiders (2/2, Ferocity).', run: summon('d_raider', 2), art: { img: 'raider' } });
   card('bfw_rider', { name: 'Warg Rider', kind: 'summon', text: 'Summon a Warg Rider (3/3, Ferocity).', run: summon('d_rider'), art: { img: 'wolfrider' } });
   card('bfw_sappers', { name: 'Goblin Sappers', kind: 'summon', text: 'Summon two Goblin Sappers (1/1). When one is destroyed it deals 1 damage to each hero.', run: summon('d_sapper', 2), art: { img: 'blastmonger' } });
-  card('bfw_shaman', { name: 'Bloodfang Shaman', kind: 'summon', text: 'Summon a Bloodfang Shaman (1/4). Gorrash heals 4.', run: async E => { await E.summonMinion('d_shaman', 1); await E.bossHeal(4); }, art: { img: 'witchdoctor' } });
+  card('bfw_shaman', { name: 'Bloodfang Shaman', kind: 'summon', text: 'Summon a Bloodfang Shaman (1/4). The boss heals 4.', run: async E => { await E.summonMinion('d_shaman', 1); await E.bossHeal(4); }, art: { img: 'witchdoctor' } });
   card('bfw_ravager', { name: 'Gore Ravager', kind: 'summon', text: 'Summon a Gore Ravager (4/5).', run: summon('d_ravager'), art: { img: 'ravager' } });
-  card('bfw_pauldrons', { name: 'Spiked Pauldrons', kind: 'equip', text: 'Equipment: Gorrash strikes for 1 more and melee attackers take 1 more damage back.', run: async E => E.equipBoss('Spiked Pauldrons', 1, 1), art: { s: 'steppe', L: [glow(150, 120, 80, '#ff6a3a', 0.4), ['obj', { t: 'vest', x: 150, y: 116 }]] } });
-  card('bfw_banner', { name: 'Bloodfang War Banner', kind: 'equip', text: 'Equipment: Gorrash strikes for 1 more. Each dungeon ally gets +1 ATK.', run: async E => { E.equipBoss('Bloodfang War Banner', 1, 0); E.buffMinions(1, 0); }, art: { s: 'steppe', L: [['obj', { t: 'banner', x: 150, y: 120, col: '#7a1010', em: '#ffb070', glyph: 'axes' }]] } });
+  card('bfw_pauldrons', { name: 'Spiked Pauldrons', kind: 'equip', text: 'Equipment: the boss strikes for 1 more and melee attackers take 1 more damage back.', run: async E => E.equipBoss('Spiked Pauldrons', 1, 1), art: { s: 'steppe', L: [glow(150, 120, 80, '#ff6a3a', 0.4), ['obj', { t: 'vest', x: 150, y: 116 }]] } });
+  card('bfw_banner', { name: 'Bloodfang War Banner', kind: 'equip', text: 'Equipment: the boss strikes for 1 more. Each dungeon ally gets +1 ATK.', run: async E => { E.equipBoss('Bloodfang War Banner', 1, 0); E.buffMinions(1, 0); }, art: { s: 'steppe', L: [['obj', { t: 'banner', x: 150, y: 120, col: '#7a1010', em: '#ffb070', glyph: 'axes' }]] } });
   card('bfw_cry', { name: 'Battle Cry', kind: 'buff', text: 'Each dungeon ally gets +1 ATK and +1 health.', run: async E => E.buffMinions(1, 1), art: { s: 'steppe', L: [['fx', { t: 'shout', x: 150, y: 100, c: '#ffb070' }], fig({ race: 'orc', pose: 'heroic', w: 'axe', helm: 'mohawk', x: 150, y: 214, s: 0.9 })] } });
   card('bfw_firebombs', { name: 'Firebomb Barrage', kind: 'attack', text: 'Deal 2 damage to a random hero three times.', run: async E => { for (let i = 0; i < 3; i++) { const h = E.randomHero(); if (h) await E.dmg(E.heroT(h), 2, { kind: 'boss' }); } }, art: { s: 'steppe', p: 'embers', pn: 40, L: [['obj', { t: 'bomb', x: 110, y: 140, s: 0.6 }], ['fx', { t: 'meteors', n: 4, c: '#ff8a3a' }]] } });
   card('bfw_charge', { name: 'Brutal Charge', kind: 'attack', text: 'Deal 5 damage to the hero with the most health.', run: async E => { const h = E.mostHealth(); if (h) await E.dmg(E.heroT(h), 5, { kind: 'boss' }); }, art: { img: 'urza' } });
@@ -75,11 +76,11 @@
   card('vis_drake', { name: 'Arcane Drakeling', kind: 'summon', text: 'Summon an Arcane Drakeling (3/3, Ferocity).', run: summon('d_drake'), art: { img: 'drakeling' } });
   card('vis_golem', { name: 'Rune Golem', kind: 'summon', text: 'Summon a Rune Golem (3/6).', run: summon('d_golem'), art: { img: 'stonecaller' } });
   card('vis_ward', { name: 'Arcane Ward Core', kind: 'summon', text: 'Summon an Arcane Ward Core (0/9, Guardian).', run: summon('d_ward'), art: TK.d_ward.art });
-  card('vis_plating', { name: 'Runic Plating', kind: 'equip', text: 'Equipment: melee attackers take 2 more damage back from the Sentinel.', run: async E => E.equipBoss('Runic Plating', 0, 2), art: { s: 'arcane', L: [glow(150, 120, 80, '#6ab8ff', 0.5), ['obj', { t: 'breastplate', x: 150, y: 116 }], ['fx', { t: 'runes', x: 150, y: 120, r: 70, c: '#9ad8ff' }]] } });
-  card('vis_core', { name: 'Overcharged Core', kind: 'equip', text: 'Equipment: the Sentinel strikes for 2 more.', run: async E => E.equipBoss('Overcharged Core', 2, 0), art: { s: 'arcane', L: [['fx', { t: 'bolt', x: 150, y: 50 }], glow(150, 130, 80, '#9ad8ff', 0.8), ['obj', { t: 'shard', x: 150, y: 120, s: 1, col: '#6ab8ff' }]] } });
+  card('vis_plating', { name: 'Runic Plating', kind: 'equip', text: 'Equipment: melee attackers take 2 more damage back from the boss.', run: async E => E.equipBoss('Runic Plating', 0, 2), art: { s: 'arcane', L: [glow(150, 120, 80, '#6ab8ff', 0.5), ['obj', { t: 'breastplate', x: 150, y: 116 }], ['fx', { t: 'runes', x: 150, y: 120, r: 70, c: '#9ad8ff' }]] } });
+  card('vis_core', { name: 'Overcharged Core', kind: 'equip', text: 'Equipment: the boss strikes for 2 more.', run: async E => E.equipBoss('Overcharged Core', 2, 0), art: { s: 'arcane', L: [['fx', { t: 'bolt', x: 150, y: 50 }], glow(150, 130, 80, '#9ad8ff', 0.8), ['obj', { t: 'shard', x: 150, y: 120, s: 1, col: '#6ab8ff' }]] } });
   card('vis_pulse', { name: 'Arcane Pulse', kind: 'attack', text: 'Deal 1 damage to each hero and ally.', run: async E => { for (const t of E.friendlyChars()) await E.dmg(t, 1, { kind: 'boss' }); }, art: { s: 'arcane', L: [['fx', { t: 'whirl', x: 150, y: 150, c: '#9ad8ff' }], ['fx', { t: 'runes', x: 150, y: 150, r: 110, c: '#6ab8ff' }]] } });
   card('vis_beam', { name: 'Overload Beam', kind: 'attack', text: 'Deal 6 damage to the hero with the most health.', run: async E => { const h = E.mostHealth(); if (h) await E.dmg(E.heroT(h), 6, { kind: 'boss' }); }, art: { s: 'arcane', L: [['fx', { t: 'bolt', x: 150, y: 40 }], ['fx', { t: 'fireball', x: 170, y: 120, c: '#9ad8ff', ang: 30 }]] } });
-  card('vis_repair', { name: 'Self-Repair', kind: 'heal', text: 'The Sentinel heals 6.', run: async E => E.bossHeal(6), art: { s: 'forge', L: [['fx', { t: 'heal', x: 150, y: 120, c: '#9ad8ff' }], ['obj', { t: 'hammer', x: 150, y: 120, s: 0.7 }]] } });
+  card('vis_repair', { name: 'Self-Repair', kind: 'heal', text: 'The boss heals 6.', run: async E => E.bossHeal(6), art: { s: 'forge', L: [['fx', { t: 'heal', x: 150, y: 120, c: '#9ad8ff' }], ['obj', { t: 'hammer', x: 150, y: 120, s: 0.7 }]] } });
   card('vis_lockdown', { name: 'Lockdown Protocol', kind: 'curse', text: 'Exhaust all allies. (Protectors can\'t step in this round.)', run: async E => E.exhaustAllies(), art: { s: 'arcane', L: [['fx', { t: 'chains' }], glow(150, 130, 90, '#ff5a4a', 0.4)] } });
   card('vis_disenchant', { name: 'Disenchant', kind: 'curse', text: 'Destroy a random piece of armor on each hero.', run: async E => { for (const h of E.heroes()) await E.destroyArmor(h); }, art: { s: 'arcane', L: [['obj', { t: 'helm', x: 150, y: 118 }], ['fx', { t: 'sparkle', x: 150, y: 110 }]] } });
   card('vis_reflect', { name: 'Mirror Field', kind: 'event', turns: 2, dmgTakenMod: 1, text: 'Lasts 2 rounds: heroes take 1 extra damage from every source.', art: { s: 'arcane', L: [['fx', { t: 'barrier', x: 150, y: 140 }], glow(150, 130, 90, '#9ad8ff', 0.6)] } });
@@ -92,6 +93,13 @@
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
       deck: [['thw_wolves', 3], ['thw_bear', 2], ['thw_stalker', 2], ['thw_hag', 2], ['thw_guardian', 1], ['thw_bark', 2], ['thw_vines', 1], ['thw_entangle', 2], ['thw_spores', 2], ['thw_crush', 2], ['thw_overgrowth', 2], ['thw_thorns', 2]],
       reward: 'back_thornwood',
+      stages: [
+        { boss: 'Fenna, the Bramble Witch', short: 'Fenna', art: { img: 'ub_fenna', alt: 'hedgewitch' }, frac: 0.24, strike: 3, retaliation: 1, intro: 'A witch of thorns and nettles guards the forest path.',
+          rule: { name: 'Bramble Hex', text: 'At the start of each of her turns, Fenna heals 2.', bossTurn: async E => E.bossHeal(2) } },
+        { boss: 'Grizzlemaw, the Elder Bear', short: 'Grizzlemaw', art: { img: 'ub_grizzlemaw', alt: 'cavebear' }, frac: 0.28, strike: 4, retaliation: 1, intro: 'The oldest bear in the Thornwood, scarred and moss-backed.',
+          rule: { name: 'Thick Hide', text: 'Takes 1 less damage from each attack by a hero or ally (never less than 1).', armor: 1 } },
+        { main: true, frac: 0.7 },
+      ],
     },
     warcamp: {
       id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 54, hpPer: 62, strike: 3, retaliation: 1,
@@ -100,6 +108,13 @@
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
       deck: [['bfw_raiders', 3], ['bfw_rider', 2], ['bfw_sappers', 2], ['bfw_shaman', 2], ['bfw_ravager', 1], ['bfw_pauldrons', 2], ['bfw_banner', 1], ['bfw_cry', 2], ['bfw_firebombs', 2], ['bfw_charge', 2], ['bfw_cleave', 2], ['bfw_pillage', 1]],
       reward: 'back_warcamp',
+      stages: [
+        { boss: 'Skrit, the Sapper Boss', short: 'Skrit', art: { img: 'ub_skrit', alt: 'bombardier' }, frac: 0.22, strike: 3, retaliation: 1, intro: 'A goblin with too many bombs and not enough fear.',
+          rule: { name: 'Short Fuse', text: 'When Skrit falls, his bomb pouch goes off: 1 damage to each hero and 2 to each dungeon minion.', onDefeat: async E => { for (const h of E.heroes()) await E.dmg(E.heroT(h), 1, { kind: 'boss' }); for (const m of E.minions()) await E.dmg(m, 2, { kind: 'effect' }); } } },
+        { boss: 'Ulva Wargmother', short: 'Ulva', art: { img: 'ub_ulva', alt: 'gorza' }, frac: 0.27, strike: 3, retaliation: 1, intro: 'The warchief\'s beast-mistress, who raised every warg in the camp.',
+          rule: { name: 'Pack Fury', text: 'When Ulva arrives, every dungeon minion on the table gets +1 ATK and +1 health.', onEnter: async E => E.buffMinions(1, 1) } },
+        { main: true, frac: 0.6 },
+      ],
     },
     vault: {
       id: 'vault', dungeon: true, name: 'Vault of the Iron Sentinel', boss: 'The Iron Sentinel, Keeper of the Vault', short: 'Iron Sentinel', difficulty: 'Dungeon III', hp: 68, hpPer: 78, strike: 5, retaliation: 2,
@@ -108,6 +123,13 @@
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
       deck: [['vis_tinkers', 3], ['vis_wraith', 2], ['vis_drake', 2], ['vis_golem', 2], ['vis_ward', 1], ['vis_plating', 2], ['vis_core', 1], ['vis_pulse', 2], ['vis_beam', 2], ['vis_repair', 2], ['vis_lockdown', 1], ['vis_disenchant', 1], ['vis_reflect', 1]],
       reward: 'back_vault',
+      stages: [
+        { boss: 'Chief Tinker Bolts', short: 'Bolts', art: { img: 'ub_bolts', alt: 'sapper' }, frac: 0.24, strike: 4, retaliation: 2, intro: 'The goblin foreman who keeps the Sentinel oiled and angry.',
+          rule: { name: 'Tinker Crew', text: 'When Bolts arrives, he brings Goblin Tinkers (2/2) with him.', onEnter: async E => E.summonMinion('d_tinker', 2) } },
+        { boss: 'Archivist Vex, the Bound Wraith', short: 'Vex', art: { img: 'ub_vex', alt: 'revenant' }, frac: 0.28, strike: 5, retaliation: 3, intro: 'A librarian bound to the vault long after death, still guarding the shelves.',
+          rule: { name: 'Mirror Wards', text: 'Melee attackers take 3 damage back from Vex.' } },
+        { main: true, frac: 0.7 },
+      ],
     },
   };
 
