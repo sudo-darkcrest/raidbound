@@ -189,7 +189,7 @@ S.update({
 # #97: dungeon boss ability cards and the last three minions (Nov 8, 2026). These were the last pictures drawn by code.
 THW = 'Dungeon boss card: Thornwood Hollow (dark ancient forest, gnarled roots, thorns, moss, green light)'
 BFW = 'Dungeon boss card: Bloodfang Warcamp (orc war camp, red war banners, campfires, smoke, dusk sky)'
-VIS = 'Dungeon boss card: Vault of the Iron Sentinel (stone vault, iron rune machines, gears, blue arcane light)'
+VIS = 'Dungeon boss card: The Runebound Vault (stone vault, iron rune machines, gears, blue arcane light)'
 S.update({
 'thw_bark': (THW, "an ancient tree giant's arm and shoulder covered in thick plates of iron-grey bark like armour, sharp splinters jutting out, a dark mossy forest behind"),
 'thw_vines': (THW, 'long whipping vines covered in cruel thorns lashing out of a dark forest, glowing green sap dripping from the barbs'),
@@ -290,3 +290,15 @@ S.update({
 'ti_snare': (OTI, 'thick ropes of dark kelp wrapping around an armoured warrior\'s legs and arms and dragging him down into deep green water'),
 'ti_slack': (OTI, 'a calm moment: floodwater drawing back down the steps of a sunken cathedral, the still water reflecting soft dawn light through broken arches'),
 })
+
+# Nov 9, 2026: each dungeon's main boss gets its own picture (they used to borrow a player card: Ironbark Treant, Chieftain Urza Redmane,
+# Runeforged Sentinel). Thuldrak (the Runebound Vault) already has one: the new Sentinel painting. Until painted, the other two borrow through `alt`.
+DBOSS = 'Dungeon boss'
+DBOSS_PROMPT = {
+'boss_gnarlroot': "Elder Gnarlroot, Heart of the Hollow: the same colossal tree giant as in the attached Root Crush picture (a craggy bark face with deep-set glowing green eyes, a long mossy beard of hanging roots, glowing green runes in its bark), "
+                  "standing tall in the middle of a dark forest hollow and facing the viewer, its arms of knotted roots spread wide, thorny vines coiling around its legs, glowing green sap and fireflies around it. "
+                  "Seen from a low angle so it towers over the picture, its whole body in view from its leafy crown down to its roots, with some empty forest at the left and right edges",
+'boss_gorrash': "Gorrash Bloodfang, the Warchief: a huge battle-scarred orc warchief standing in the middle of his war camp and facing the viewer, a massive two-handed axe resting on one shoulder, "
+                "heavy spiked iron shoulder pauldrons, a necklace of big wolf fangs, red war paint across his face, braided black hair, a torn red cloak. Red war banners, tents and campfires behind him under a smoky dusk sky. "
+                "Seen from a low angle so he towers over the picture, his whole body in view from head to boots, with some empty ground at the left and right edges",
+}

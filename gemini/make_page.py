@@ -2,7 +2,7 @@
 import sys, json, base64, io, pathlib
 here = pathlib.Path(__file__).parent; root = here.parent
 sys.path.insert(0, str(here))
-from subjects import S, SKINS_PROMPT, REDO, SENTINEL_PROMPT
+from subjects import S, SKINS_PROMPT, REDO, SENTINEL_PROMPT, DBOSS_PROMPT
 from PIL import Image
 skins = json.load(open(root / 'skins/skins.json'))
 in_game = set(json.load(open(here / 'in_game.json')))
@@ -13,11 +13,14 @@ style_th = [thumb(refs / f'style_{i+1}.png') for i in range(4)]
 HEROES = ['aldric','thorgrim','lyssara','grukka','hruna','snix','vaelith','brannoc','tavra','zizzik','seraphine','korga','dawnarchon','redwarlord','tempestavatar']
 hero_th = {h: thumb(refs / f'hero_{h}.png', 120) for h in HEROES}
 hero_th['ref_sentinel'] = thumb(refs / 'ref_sentinel.png', 120)
+hero_th['ref_gnarlroot'] = thumb(root / 'gen/raw/thw_crush.jpg', 120)
+hero_th['ref_gorrash'] = thumb(root / 'gen/raw/bfw_cleave.jpg', 120)
 REDO_SEC = 'Redo (do these first, top to bottom)'
 PREFIX = 'Painted digital fantasy card art for a high-fantasy collectible card game, matching the style of the attached reference images: rich painterly colour, dark ink outlines, dramatic lighting, lots of detail. '
 SUFFIX = ' Wide 16:9 landscape image, full-bleed to every edge. No text, no letters, no logo, no border, no frame, no card layout, no watermark. Do not include any real-world logos, emblems, crests or symbols from existing games, films or brands; invent original designs.'
-ORDER = [REDO_SEC, 'Omen: Crypt of the Hollow King', 'Omen: The Molten Spire', 'Omen: The Sunken Cathedral', 'Legendaries', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
-         'Raid treasure: Crypt of the Hollow King', 'Raid treasure: The Molten Spire', 'Raid treasure: The Sunken Cathedral', 'Loot card (rare prize)', 'Dungeon under-boss', 'Dungeon boss card: Thornwood Hollow', 'Dungeon boss card: Bloodfang Warcamp', 'Dungeon boss card: Vault of the Iron Sentinel', 'Summoned creatures & minions', 'Boss cards']
+DBOSS_SEC = 'Dungeon bosses (new: each gets its own picture)'
+ORDER = [REDO_SEC, DBOSS_SEC, 'Omen: Crypt of the Hollow King', 'Omen: The Molten Spire', 'Omen: The Sunken Cathedral', 'Legendaries', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
+         'Raid treasure: Crypt of the Hollow King', 'Raid treasure: The Molten Spire', 'Raid treasure: The Sunken Cathedral', 'Loot card (rare prize)', 'Dungeon under-boss', 'Dungeon boss card: Thornwood Hollow', 'Dungeon boss card: Bloodfang Warcamp', 'Dungeon boss card: The Runebound Vault', 'Summoned creatures & minions', 'Boss cards']
 items = []
 for k, (grp, subj) in S.items():
     if grp == 'Legendary': sec = ORDER[1]
@@ -33,6 +36,10 @@ for k, (grp, subj) in S.items():
     items.append(it)
 if 'sentinel' in REDO: items.append(dict(sec=REDO_SEC, file='sentinel.png', refs='style', refimg='ref_sentinel', title='The Iron Sentinel (Vault boss)', have=False, redo=True,
                   refnote='<b>ref_sentinel.png</b> (in your refs folder, shown here), plus the 4 style pictures', prompt=SENTINEL_PROMPT + SUFFIX))
+items.append(dict(sec=DBOSS_SEC, file='boss_gnarlroot.png', refs='style', refimg='ref_gnarlroot', title='Elder Gnarlroot (Thornwood Hollow boss)', have='boss_gnarlroot' in in_game,
+                  refnote='<b>thw_crush.png</b> (Root Crush, in your refs folder) so it is the same tree giant, plus the 4 style pictures', prompt=PREFIX + 'Subject: ' + DBOSS_PROMPT['boss_gnarlroot'] + '.' + SUFFIX))
+items.append(dict(sec=DBOSS_SEC, file='boss_gorrash.png', refs='style', refimg='ref_gorrash', title='Gorrash Bloodfang (Bloodfang Warcamp boss)', have='boss_gorrash' in in_game,
+                  refnote='<b>bfw_cleave.png</b> (Savage Cleave, in your refs folder) so he looks like the same orc, plus the 4 style pictures', prompt=PREFIX + 'Subject: ' + DBOSS_PROMPT['boss_gorrash'] + '.' + SUFFIX))
 items.sort(key=lambda it: (ORDER.index(it['sec']) if it['sec'] in ORDER else 99, REDO.index(it['file'][:-4]) if it.get('redo') else 0))
 names = {'aldric':'Aldric','thorgrim':'Thorgrim','lyssara':'Lyssara','grukka':'Grukka','hruna':'Hruna','snix':'Snix','vaelith':'Vaelith','brannoc':'Brannoc','tavra':'Tavra','zizzik':'Zizzik','seraphine':'Seraphine','korga':'Korga','dawnarchon':'Archon of the Dawn','redwarlord':'Warlord of the Red Moon','tempestavatar':'Avatar of the Tempest'}
 for sid, sk in skins.items():

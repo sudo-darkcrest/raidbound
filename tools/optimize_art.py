@@ -15,7 +15,7 @@ cache = json.loads(cache_f.read_text()) if cache_f.exists() else {}
 ALIASES = {'wolfcomp': 'packleader', 'footman_t': 'footman', 'grunt_t': 'grunt', 'tentaclecard': 'tentacle', 'magmaguard': 'magma', 'whelps': 'whelp', 'sheep': 'polymorph',
            'spiritbeast': 'spiritlynx', 'harbormarket': 'booster', 'dawnarchon': 'archon', 'redwarlord': 'warlord', 'tempestavatar': 'tempest'}
 BIG = {'aldric', 'thorgrim', 'lyssara', 'grukka', 'hruna', 'snix', 'vaelith', 'brannoc', 'tavra', 'zizzik', 'seraphine', 'korga', 'archon', 'warlord', 'tempest',
-       'crypt', 'molten', 'tide', 'vorthrax', 'treant', 'urza', 'sentinel'}
+       'crypt', 'molten', 'tide', 'vorthrax', 'treant', 'urza', 'sentinel', 'boss_thuldrak', 'boss_gnarlroot', 'boss_gorrash'}
 VERSION = 'v4'  # bump to force a full re-encode
 
 def vignette(im):

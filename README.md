@@ -33,9 +33,9 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
 - **3 dungeons:**
   - Thornwood Hollow
   - Bloodfang Warcamp
-  - Vault of the Iron Sentinel
+  - The Runebound Vault
 
-  Dungeons run themselves. Each one is a gauntlet: two under-bosses, then the master of the dungeon, in one fight. Each turn the dungeon flips cards, marks a hero at random and attacks them, and it levels up each time an under-boss falls. There are four difficulties, from Novice to Legendary. Winning earns Dungeon XP, and each dungeon level lets more of your own cards into your starter deck.
+  Dungeons run themselves. Each one is a gauntlet: two under-bosses, then the master of the dungeon (Elder Gnarlroot, Gorrash Bloodfang or Thuldrak, the Runebound Warden), in one fight. Each turn the dungeon flips cards, marks a hero at random and attacks them, and it levels up each time an under-boss falls. There are four difficulties, from Novice to Legendary. Winning earns Dungeon XP, and each dungeon level lets more of your own cards into your starter deck.
 - **Your collection:** you start with the cards for each starting hero's starter deck, plus two free Raidbound Core booster packs. Each hero you unlock brings the cards for their starter deck. Every hero can always play their Starter deck.
 - **Market:**
   - Spend the gold you earn on Raidbound Core packs (three separate packs, each with its own wrapper: 5 cards for 75 gold, 10 for 150 or 20 for 275; core cards for every class), three themed booster sets (Emberfall, Frostwing and Voidshade, 35 cards each, 100 gold), single cards from a daily shop of eight, extra raid treasure and hero skins.

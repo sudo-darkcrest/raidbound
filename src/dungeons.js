@@ -65,7 +65,7 @@
   card('bfw_cleave', { name: 'Savage Cleave', kind: 'attack', text: 'Deal 3 damage to each ally.', run: async E => { for (const t of E.allAllies()) await E.dmg(t, 3, { kind: 'boss' }); }, art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 170, c: '#ffb070' }], ['fx', { t: 'slash', x: 150, y: 130 }]] } });
   card('bfw_pillage', { name: 'Pillage', kind: 'curse', text: 'Each hero discards a random card.', run: async E => { for (const h of E.heroes()) E.discardRandom(h); }, art: { s: 'steppe', L: [['obj', { t: 'chest', x: 150, y: 170, s: 0.9 }], fig({ race: 'goblin', pose: 'crouch', w: 'dagger', x: 230, y: 214, s: 0.8 })] } });
 
-  /* =================== 3. Vault of the Iron Sentinel =================== */
+  /* =================== 3. The Runebound Vault =================== */
   tok('d_tinker', { name: 'Goblin Tinker', atk: 2, hp: 2, ai: 'random', art: { img: 'tinkerer' } });
   tok('d_wraith', { name: 'Vault Wraith', atk: 3, hp: 2, kw: ['elusive'], ai: 'random', art: { img: 'barrowspirit' } });
   tok('d_drake', { name: 'Arcane Drakeling', atk: 3, hp: 3, kw: ['ferocity'], ai: 'allies', art: { img: 'drakeling' } });
@@ -88,7 +88,7 @@
   RB.DUNGEONS = {
     thornwood: {
       id: 'thornwood', dungeon: true, name: 'Thornwood Hollow', boss: 'Elder Gnarlroot, Heart of the Hollow', short: 'Gnarlroot', difficulty: 'Dungeon I', hp: 56, hpPer: 64, strike: 3, retaliation: 1,
-      flip: [2, 2, 3, 4], maxLevel: 4, music: 'thornwood', theme: '#8ad04a', art: { img: 'treant' },
+      flip: [2, 2, 3, 4], maxLevel: 4, music: 'thornwood', theme: '#8ad04a', art: { img: 'boss_gnarlroot', alt: 'treant' },
       intro: 'A corrupted ancient tree has woken in the deep forest, and every wolf and bear for miles answers its call.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
       deck: [['thw_wolves', 3], ['thw_bear', 2], ['thw_stalker', 2], ['thw_hag', 2], ['thw_guardian', 1], ['thw_bark', 2], ['thw_vines', 1], ['thw_entangle', 2], ['thw_spores', 2], ['thw_crush', 2], ['thw_overgrowth', 2], ['thw_thorns', 2]],
@@ -103,7 +103,7 @@
     },
     warcamp: {
       id: 'warcamp', dungeon: true, name: 'Bloodfang Warcamp', boss: 'Gorrash Bloodfang, the Warchief', short: 'Gorrash', difficulty: 'Dungeon II', hp: 54, hpPer: 72, strike: 3, retaliation: 1,
-      flip: [2, 2, 3, 4], maxLevel: 4, music: 'warcamp', theme: '#ff5a3a', art: { img: 'urza' },
+      flip: [2, 2, 3, 4], maxLevel: 4, music: 'warcamp', theme: '#ff5a3a', art: { img: 'boss_gorrash', alt: 'urza' },
       intro: 'An outcast warchief has gathered raiders, warg riders and goblin sappers into a camp that burns everything nearby.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
       deck: [['bfw_raiders', 3], ['bfw_rider', 2], ['bfw_sappers', 2], ['bfw_shaman', 2], ['bfw_ravager', 1], ['bfw_pauldrons', 2], ['bfw_banner', 1], ['bfw_cry', 2], ['bfw_firebombs', 2], ['bfw_charge', 2], ['bfw_cleave', 2], ['bfw_pillage', 1]],
@@ -117,14 +117,14 @@
       ],
     },
     vault: {
-      id: 'vault', dungeon: true, name: 'Vault of the Iron Sentinel', boss: 'The Iron Sentinel, Keeper of the Vault', short: 'Iron Sentinel', difficulty: 'Dungeon III', hp: 68, hpPer: 78, strike: 5, retaliation: 2,
-      flip: [2, 2, 3, 4], maxLevel: 4, music: 'vault', theme: '#6ab8ff', art: { img: 'sentinel' },
-      intro: 'Below the old mage-library a rune-powered guardian still protects its vault, with a crew of goblin tinkers keeping it running.',
+      id: 'vault', dungeon: true, name: 'The Runebound Vault', boss: 'Thuldrak, the Runebound Warden', short: 'Thuldrak', difficulty: 'Dungeon III', hp: 68, hpPer: 78, strike: 5, retaliation: 2,
+      flip: [2, 2, 3, 4], maxLevel: 4, music: 'vault', theme: '#6ab8ff', art: { img: 'boss_thuldrak', alt: 'sentinel' },
+      intro: 'Below the old mage-library, Thuldrak, a rune-forged warden, still guards its vault, with a crew of goblin tinkers keeping it running.',
       rules: commonRules([2, 2, 3, 4]), phases: levelPhases,
       deck: [['vis_tinkers', 3], ['vis_wraith', 2], ['vis_drake', 2], ['vis_golem', 2], ['vis_ward', 1], ['vis_plating', 2], ['vis_core', 1], ['vis_pulse', 2], ['vis_beam', 2], ['vis_repair', 2], ['vis_lockdown', 1], ['vis_disenchant', 1], ['vis_reflect', 1]],
       reward: 'back_vault',
       stages: [
-        { boss: 'Chief Tinker Bolts', short: 'Bolts', art: { img: 'ub_bolts', alt: 'sapper' }, frac: 0.24, strike: 4, retaliation: 2, intro: 'The goblin foreman who keeps the Sentinel oiled and angry.',
+        { boss: 'Chief Tinker Bolts', short: 'Bolts', art: { img: 'ub_bolts', alt: 'sapper' }, frac: 0.24, strike: 4, retaliation: 2, intro: 'The goblin foreman who keeps Thuldrak oiled and angry.',
           rule: { name: 'Tinker Crew', text: 'When Bolts arrives, he brings Goblin Tinkers (2/2) with him.', onEnter: async E => E.summonMinion('d_tinker', 2) } },
         { boss: 'Archivist Vex, the Bound Wraith', short: 'Vex', art: { img: 'ub_vex', alt: 'revenant' }, frac: 0.28, strike: 5, retaliation: 3, intro: 'A librarian bound to the vault long after death, still guarding the shelves.',
           rule: { name: 'Mirror Wards', text: 'Melee attackers take 3 damage back from Vex.' } },
