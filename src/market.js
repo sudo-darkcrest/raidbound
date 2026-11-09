@@ -46,15 +46,21 @@
       <div class="mtabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>`;
     let body = '';
 
+    // #96: one tile per pack; the three Core sizes are separate packs with their own art
+    const packTile = o => {
+      const k = o.style, PS = RB.PACK_SETS[k], pool = RB.packPool(k), got = pool.filter(d => (save.owned[d.id] || 0) > 0).length, opened = (save.packs || {})[k] || 0, pr = RB.packPrice(k, o.size), free = k === 'core' && o.size === 5 && save.freeCore > 0, can = free || save.gold >= pr;
+      const blurb = o.size === 10 ? 'Ten core cards in one pack, with one uncommon or better in every 5. Counts as 2 packs.' : o.size === 20 ? `Twenty core cards in one pack, ${RB.CORE_PACK_PRICE * 4 - pr} gold cheaper than four packs. One uncommon or better in every 5. Counts as 4 packs.` : PS.blurb;
+      return `<div class="packpick setpick" style="--sc:${o.col || PS.col}">${U.packHTML({ theme: k, art: o.art, cls: o.size > 5 ? 'sz' + o.size : '', act: 'buy', set: (PS.short || PS.name) + ' Set', count: `${o.size} random cards`, data: `data-style="${k}" data-size="${o.size}"`, label: free ? `Open a free ${o.name} pack` : `Buy a ${o.name} for ${pr} gold` })}<div class="pname">${o.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${can ? 'primary' : ''}" data-act="buy" data-style="${k}" data-size="${o.size}" ${can ? '' : 'disabled'}>${free ? `Open free pack (${save.freeCore} left)` : `Buy — ${pr} gold`}</button></div>`;
+    };
     if (tab === 'packs') {
       const fr = RB.FRONTIER, have = fr.filter(id => (save.owned[id] || 0) > 0).length;
       const cheapest = RB.CORE_PACK_PRICE;
-      body = `<p class="lede">Every raid pays you gold, win or lose. A pack holds <b>5 cards</b>, and some come as holofoils. The <b>Raidbound Core</b> pack (${RB.CORE_PACK_PRICE} gold) has the core cards every class uses: one uncommon or better, the rest mostly commons. It also comes in bulk: <b>10 cards for ${RB.packPrice('core', 10)}</b> or <b>20 cards for ${RB.packPrice('core', 20)}</b> gold, with one uncommon or better in every 5. Each themed wrapper (${price} gold) is its own set: at least three cards from that set (one uncommon or better), the rest usually from the set too, with the odd core card. Each themed set hides one very rare <b class="legend">Legendary</b>, and opening 5 of one kind unlocks its table theme.</p>
-      ${save.freeCore > 0 ? `<div class="giftnote"><b>Welcome gift:</b> you have <b>${save.freeCore} free Raidbound Core pack${save.freeCore > 1 ? 's' : ''}</b>. ${U.isPhone() ? 'Tap' : 'Click'} the Core pack to open ${save.freeCore > 1 ? 'one' : 'it'}.</div>` : ''}
-      <div class="packrow">${Object.entries(RB.PACK_STYLES).map(([k, v]) => { const PS = RB.PACK_SETS[k], pool = RB.packPool(k), got = pool.filter(d => (save.owned[d.id] || 0) > 0).length, opened = (save.packs || {})[k] || 0, pr = RB.packPrice(k), free = k === 'core' && save.freeCore > 0, can = free || save.gold >= pr;
-        return `<div class="packpick setpick" style="--sc:${PS.col}">${U.packHTML({ theme: k, art: v.art, act: 'buy', set: (PS.short || PS.name) + ' Set', data: `data-style="${k}"`, label: free ? `Open a free ${v.name} pack` : `Buy a ${v.name} booster pack for ${pr} gold` })}<div class="pname">${v.name}</div><div class="ptheme">${esc(PS.theme)}</div><p class="pblurb">${esc(PS.blurb)}</p><div class="pgot"><b>${got}</b> of ${pool.length} found · ${opened} opened</div><button class="btn small ${can ? 'primary' : ''}" data-act="buy" data-style="${k}" ${can ? '' : 'disabled'}>${free ? `Open free pack (${save.freeCore} left)` : `${k === 'core' ? '5 cards' : 'Buy'} — ${pr} gold`}</button>${k === 'core' ? `<div class="bulkbuy">${RB.CORE_SIZES.slice(1).map(([n, p]) => `<button class="btn small ${save.gold >= p ? 'primary' : ''}" data-act="buy" data-style="core" data-size="${n}" ${save.gold >= p ? '' : 'disabled'}>${n} cards — ${p} gold</button>`).join('')}</div>` : ''}</div>`; }).join('')}</div>
-      ${save.gold < cheapest && !(save.freeCore > 0) ? `<p class="lede" style="text-align:center">You need ${cheapest - save.gold} more gold for a Core pack. Go raid!</p>` : ''}
-      <p class="lede" style="text-align:center">You have found <b>${have} of ${fr.length}</b> booster cards.</p>
+      body = `<p class="lede">Every raid pays you gold, win or lose. A pack holds <b>5 cards</b>, and some come as holofoils. The <b>Raidbound Core</b> pack (${RB.CORE_PACK_PRICE} gold) has the core cards every class uses: one uncommon or better, the rest mostly commons. There are also bigger Core packs, each with its own wrapper: <b>10 cards for ${RB.packPrice('core', 10)}</b> and <b>20 cards for ${RB.packPrice('core', 20)}</b> gold, with one uncommon or better in every 5. Each themed wrapper (${price} gold) is its own set: at least three cards from that set (one uncommon or better), the rest usually from the set too, with the odd core card. Each themed set hides one very rare <b class="legend">Legendary</b>, and opening 5 of one kind unlocks its table theme.</p>
+      ${save.freeCore > 0 ? `<div class="giftnote"><b>Welcome gift:</b> you have <b>${save.freeCore} free Raidbound Core pack${save.freeCore > 1 ? 's' : ''}</b>. ${U.isPhone() ? 'Tap' : 'Click'} the 5-card Raidbound Core pack to open ${save.freeCore > 1 ? 'one' : 'it'}.</div>` : ''}
+      <h3 class="packhead">Raidbound Core</h3><div class="packrow">${RB.packOffers().filter(o => o.style === 'core').map(packTile).join('')}</div>
+      <h3 class="packhead">Themed sets</h3><div class="packrow">${RB.packOffers().filter(o => o.style !== 'core').map(packTile).join('')}</div>
+      ${save.gold < cheapest && !(save.freeCore > 0) ? `<p class="lede" style="text-align:center;margin-inline:auto">You need ${cheapest - save.gold} more gold for a Core pack. Go raid!</p>` : ''}
+      <p class="lede" style="text-align:center;margin-inline:auto">You have found <b>${have} of ${fr.length}</b> booster cards.</p>
       <div class="codebox goldcode"><span>Have a gold code?</span><input id="goldcode" placeholder="RBG-XXXXX-XXXXX" aria-label="Gold code" maxlength="17"><button class="btn" data-act="goldcode">Redeem</button>${opts.msg ? `<span class="${opts.msg.ok ? 'okmsg' : 'errmsg'}">${esc(opts.msg.text)}</span>` : ''}</div>`;
     }
 
@@ -136,7 +142,7 @@
         if (!U.payForPack(st, sz)) return;
         if (!U.packLock()) { U.refundPack(st, sz); return; }
         U.persist();
-        const packEl = a.classList.contains('tcgpack') ? a : $(`.tcgpack[data-style="${st}"]`, el);
+        const packEl = a.classList.contains('tcgpack') ? a : ($(`.tcgpack[data-style="${st}"][data-size="${sz}"]`, el) || $(`.tcgpack[data-style="${st}"]`, el));
         return U.openPack(null, false, packEl, RB.rollBooster(null, st, sz));
       }
       if (act === 'tbuy') {
