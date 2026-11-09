@@ -36,7 +36,7 @@
 
   function unitHTML(kind, o) {
     // o: {ref, name, img, atk, hp, max, kws:[], cls:[], buffA, title}
-    const kwI = { protector: 'B', ferocity: 'S', longrange: 'V', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
+    const kwI = { protector: 'B', ferocity: 'S', longrange: 'V', skyward: '⇡', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
     return `<div class="unit ${kind === 'minion' ? 'minion' : ''} ${o.cls.join(' ')}" data-ref="${o.ref}" data-kind="${kind}" ${o.p != null ? `data-p="${o.p}"` : ''} style="${o.uc ? '--uc:' + o.uc : ''}" tabindex="0" aria-label="${esc(o.name)}, ${o.atk} attack, ${o.hp} health">
       <img alt="" src="${o.img}"><div class="kws">${o.kws.filter(k => k !== 'unique').map(k => `<i title="${RB.KEYWORDS[k][0]}: ${esc(RB.KEYWORDS[k][1])}">${kwI[k]}</i>`).join('')}</div>
       <div class="un">${esc(o.name)}</div><div class="ua ${o.buffA ? 'buff' : ''}">${o.atk}</div><div class="uh ${o.hp < o.max ? 'hurt' : o.buffH ? 'buff' : ''}">${o.hp}</div></div>`;
@@ -79,17 +79,21 @@
       return `<span class="omens" title="Omens come ${every}. The next three are shown here, the left one first.${when ? ' Next one: ' + when + '.' : ''}"><small>Omens${when ? ` · ${when}` : ''}</small>${B.omens.slice(-3).reverse().map((id, i) => `<span class="om ${i === 0 ? 'next' : ''} ${BC[id].soak ? 'soak' : ''}" data-bc="${id}" title="${esc(BC[id].name + ': ' + BC[id].text)}"><img alt="" src="${U.cardArt(id)}"><b>${esc(BC[id].name)}</b></span>`).join('')}</span>`;
     })() : '';
     // #102 Wings of Flame: the boss is in the air — fill the Ground bar to bring it down
-    const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley allies and abilities can reach him. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
+    const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley and Skyward attackers, and abilities, can reach him. The ones that can are glowing. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
     const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? C[p.weapon.c.id].atk : 0);
     const heroCan = canAct && E.canAttackWith(p, 'hero');
+    // #112: while the boss is in the air, light up whatever can reach him and dim the rest
+    const airborne = !!(B.flying && raid.flight && !g.over);
+    const reachCls = can => airborne ? (can ? ' reach' : ' noreach') : '';
+    const heroReach = !!(p.weapon && (C[p.weapon.c.id].kw || []).includes('longrange'));
     const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Shrouded', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
     const petImg = p.hero.pet && RB.COSMETICS[p.hero.pet] && U.cosImg(p.hero.pet) ? `<div class="petspot"><img class="pet" alt="${esc(RB.COSMETICS[p.hero.pet].name)}" src="${U.cosImg(p.hero.pet)}" title="${esc(RB.COSMETICS[p.hero.pet].name + (RB.PET_PERKS && RB.PET_PERKS[p.hero.pet] && !g.cfg.bossPlayer ? ': ' + RB.PET_PERKS[p.hero.pet].text : ''))}"></div>` : '';
     const pw = HE[p.heroId].power;
     const powerBtn = p.hero.master ? `<button class="btn small ghost powerbtn used" disabled><b>Master Hero</b>Original power set aside</button>` :
       `<button class="btn small powerbtn ${p.hero.powerUsed ? 'used' : ''}" data-act="power" ${p.hero.powerUsed || !canAct ? 'disabled' : ''} title="${esc(pw.text)}"><b>${esc(pw.name)}</b>${p.hero.powerUsed ? 'Used' : 'Once per game'}</button>`;
-    const heroCard = `<div class="herocard ${p.hero.ex ? 'ex' : ''} ${dead ? 'dead' : ''} ${heroCan && !view.mode ? 'can' : ''}${tcls('hero' + p.idx)}" data-ref="hero${p.idx}" data-act="hero" tabindex="0" aria-label="${esc(hd.name)}, ${E.heroHp(p)} health">
+    const heroCard = `<div class="herocard ${p.hero.ex ? 'ex' : ''} ${dead ? 'dead' : ''} ${heroCan && !view.mode ? 'can' : ''}${tcls('hero' + p.idx)}${dead ? '' : reachCls(heroReach)}" data-ref="hero${p.idx}" data-act="hero" tabindex="0" aria-label="${esc(hd.name)}, ${E.heroHp(p)} health">
       <img alt="" src="${U.cardArt(p.hero.master || p.heroId)}"><div class="tags">${tags}</div>
       ${heroAtk > 0 ? `<div class="hatk" title="Attack with weapon">${heroAtk}</div>` : ''}<div class="hhp ${E.heroHp(p) <= 8 ? 'low' : ''}">${Math.max(0, E.heroHp(p))}</div>${p.hero.shield ? `<div class="shield" title="Ward: prevents the next ${p.hero.shield} damage">◈ ${p.hero.shield}</div>` : ''}
       <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max HP</small></div></div>${powerBtn}${petImg}`;
@@ -106,12 +110,13 @@
     }).join('') + (p.tempRes ? `<div class="rcard"><div class="temp" title="Extra resources this turn">+${p.tempRes}</div></div>` : '');
     const allies = p.allies.map(a => {
       const d = E.allyDef(a), can = canAct && E.canAttackWith(p, a);
-      return unitHTML('ally', { ref: a.uid, p: p.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, max: E.allyMax(p, a), kws: (d.kw || []).concat(E.allyKw(p, a, 'ferocity') && !(d.kw || []).includes('ferocity') ? ['ferocity'] : []), buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: [a.ex ? 'ex' : '', a.sick ? 'sick' : '', a.frozen ? 'frozen' : '', can && !view.mode ? 'can' : '', tcls(a.uid)] });
+      return unitHTML('ally', { ref: a.uid, p: p.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, max: E.allyMax(p, a), kws: (d.kw || []).concat(E.allyKw(p, a, 'ferocity') && !(d.kw || []).includes('ferocity') ? ['ferocity'] : []), buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: [a.ex ? 'ex' : '', a.sick ? 'sick' : '', a.frozen ? 'frozen' : '', can && !view.mode ? 'can' : '', tcls(a.uid), reachCls(E.volleyAttack(p, a)).trim()] });
     }).join('') || `<span class="empty">${dead ? 'Fallen.' : 'No allies yet. Play ally cards to build your party.'}</span>`;
     // hand
     const n = p.hand.length, mid = (n - 1) / 2;
     const showHand = seesHand(p);
-    const hand = !showHand ? p.hand.map((c, i) => `<div class="hc back" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)"><div class="cardback"></div></div>`).join('') : p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; return `<div class="hc ${playable ? 'play' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
+    const hand = !showHand ? p.hand.map((c, i) => `<div class="hc back" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)"><div class="cardback"></div></div>`).join('') : p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; const hd2 = C[c.id] || {}, hk = hd2.kw || [], handReach = airborne && (hd2.type === 'ally' || hd2.type === 'weapon') && (hk.includes('longrange') || hk.includes('skyward'));
+      return `<div class="hc ${playable ? 'play' : ''}${handReach ? ' reach' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
     const status = g.over ? '' : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
     // roster
     const vIdx = viewerIdx();

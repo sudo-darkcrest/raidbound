@@ -81,7 +81,7 @@
   const tide = (id, o) => addT('tide', id, o);
   tide('coralplate', { name: 'Coralplate Hauberk', type: 'armor', slot: 'chest', atype: 'mail', cost: 3, def: 2, use: 0,
     art: { s: 'sunken', L: [glow(150, 120, 80, '#ff9aa0', 0.4), ['obj', { t: 'vest', x: 150, y: 116 }]] } });
-  tide('harpoon', { name: 'Stormcaller Harpoon', type: 'weapon', wtype: 'polearm', cost: 3, atk: 4, strike: 1, rarity: 'e', tags: ['stun'], text: 'When your hero attacks a minion with this and it survives, stun it.', onAttack: async (E, c) => { if (c.defender && c.defender.t === 'minion' && E.isAlive(c.defender)) E.stun(c.defender); },
+  tide('harpoon', { name: 'Stormcaller Harpoon', type: 'weapon', wtype: 'polearm', cost: 3, atk: 4, strike: 1, kw: ['longrange'], rarity: 'e', tags: ['stun'], text: 'When your hero attacks a minion with this and it survives, stun it.', onAttack: async (E, c) => { if (c.defender && c.defender.t === 'minion' && E.isAlive(c.defender)) E.stun(c.defender); },
     art: { s: 'sea', L: [['fx', { t: 'bolt', x: 150, y: 50 }], ['obj', { t: 'polearmItem', kind: 'trident', x: 150, y: 120, glow: '#9ae8ff', tilt: -15 }]] } });
   tide('sirenconch', { name: 'Siren\'s Conch', type: 'item', cost: 2, rarity: 'e', tags: ['stun'], text: 'At the start of your turn, stun a random enemy minion.', start: async (E, p) => { const m = pick(E, E.minions()); if (m) E.stun(m); },
     art: { s: 'sea', L: [glow(150, 120, 80, '#ffd0e0', 0.5), ['obj', { t: 'horn', x: 150, y: 124, s: 1 }], ['fx', { t: 'shout', x: 210, y: 110, c: '#9ae8ff' }]] } });

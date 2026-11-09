@@ -1207,6 +1207,20 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 .fg-page .fg-lore { font-style: italic; color: #e2d4b4; margin: .35rem 0; }
 @media (max-width: 760px) { .lore { padding: .8rem .9rem; } .lore p { font-size: .94rem; } }
 
+/* #112 Volley / Skyward badge on the card picture */
+.card .rbadge { position: relative; z-index: 2; align-self: flex-start; display: inline-flex; align-items: center; gap: .8cqw; height: 7.4cqw; margin: -9.2cqw 0 1.8cqw 1.8cqw; padding: 0 2.4cqw 0 1.6cqw; border-radius: 99px; font-family: var(--f-sc); font-weight: 700; font-size: 4.4cqw; letter-spacing: .02em; line-height: 1; white-space: nowrap; box-shadow: 0 .6cqw 1.6cqw rgba(0, 0, 0, .6); }
+.card .rbadge svg { width: 5cqw; height: 5cqw; flex: none; }
+.card .rbadge.volley { color: #2a1604; background: linear-gradient(#ffe6a6, #e0a43a); border: .5cqw solid #fff1c8; }
+.card .rbadge.skyward { color: #062236; background: linear-gradient(#cdefff, #5ab4e6); border: .5cqw solid #eaf8ff; }
+/* #112 while the boss flies: who can reach him glows, everyone else dims */
+.unit.reach:not(.targetable):not(.friendly-t), .herocard.reach:not(.targetable):not(.friendly-t) { box-shadow: 0 0 0 3px #8fdcff, 0 0 26px 4px rgba(120, 210, 255, .85); animation: reachglow 1.6s ease-in-out infinite; }
+.unit.noreach:not(.targetable):not(.friendly-t), .herocard.noreach:not(.targetable):not(.friendly-t) { filter: saturate(.3) brightness(.55); }
+.unit.noreach.ex { filter: saturate(.2) brightness(.45); }
+.unit.reach.can:not(.targetable):not(.friendly-t), .herocard.reach.can:not(.targetable):not(.friendly-t) { box-shadow: 0 0 0 3px #d4f2ff, 0 0 30px 6px rgba(140, 220, 255, .95); }
+.hc.reach .card { box-shadow: 0 0 0 3px #8fdcff, 0 0 22px 4px rgba(120, 210, 255, .8); }
+@keyframes reachglow { 50% { box-shadow: 0 0 0 3px #d4f2ff, 0 0 36px 8px rgba(140, 220, 255, 1); } }
+@media (prefers-reduced-motion: reduce) { .unit.reach, .herocard.reach { animation: none; } }
+
 </style>
 </head>
 <body>
@@ -4111,6 +4125,8 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     protector: ['Bulwark', 'When an enemy attacks any friendly hero or ally, a ready Bulwark ally can cover them: it takes the hit instead and exhausts. Covering a teammate draws the boss\'s eye (its hero gains threat).'],
     ferocity: ['Swift', 'Can attack the turn it enters play.'],
     longrange: ['Volley', 'Takes no damage back when it attacks, and can reach a boss in the air.'],
+    // #112 lighter than Volley: only lets it reach a flying boss (it still takes damage back)
+    skyward: ['Skyward', 'Can attack a boss in the air. It still takes damage back as normal.'],
     elusive: ['Shrouded', 'Can\'t be attacked. Spells and area damage still hit it. An Enraged boss sees through a Shrouded hero.'],
     guardian: ['Guardian', 'While this minion is in play, the boss can\'t be attacked.'],
     unique: ['Unique', 'Only one copy can be in play for each hero.'],
@@ -4192,7 +4208,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   // ---------- Concord allies ----------
   add('footman', { name: 'Silverguard Footman', type: 'ally', cost: 1, atk: 1, hp: 3, fac: 'concord', kw: ['protector'], race: 'Human', flavor: 'First to the wall. Last to leave it.', art: { s: 'castle', L: [fig({ pose: 'stand', w: 'polearm', off: 'tower', wA: 0, helm: 'great', plume: false, pauld: 'plate', emblem: GOLD, x: 150, y: 210, s: 0.9 })] } });
   add('lionknight', { name: 'Lionheart Knight', type: 'ally', cost: 4, atk: 3, hp: 5, fac: 'concord', kw: ['protector'], race: 'Human', rarity: 'u', text: 'When this enters play, prevent the next 3 damage to your hero.', onEnter: async (E, c) => E.shield(c.p, 3), flavor: '"For the Concord, and the people behind it."', art: { s: 'castle', L: [fig({ pose: 'heroic', w: 'sword', off: 'shield', helm: 'great', cape: 1, capeCol: '#1a2a5a', pauld: 'plate', emblem: GOLD, x: 150, y: 210, s: 0.9 })] } });
-  add('battlemage', { name: 'Concord Battlemage', type: 'ally', cost: 2, atk: 3, hp: 4, kw: ['protector'], fac: 'concord', race: 'Human', target: 'enemy', text: 'When this enters play, deal 2 damage to an enemy.', onEnter: async (E, c) => { if (c.target) await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); }, flavor: 'Trained to fight in formation. Prefers to fight in fire.', art: { s: 'arcane', L: [fig({ pose: 'castF', w: 'wand', robe: 1, helm: 'hood', glowR: '#ffb060', x: 130, y: 210, s: 0.92, capeCol: '#1a2a5a', cape: 1 })] } });
+  add('battlemage', { name: 'Concord Battlemage', type: 'ally', cost: 2, atk: 3, hp: 4, kw: ['protector', 'skyward'], fac: 'concord', race: 'Human', target: 'enemy', text: 'When this enters play, deal 2 damage to an enemy.', onEnter: async (E, c) => { if (c.target) await E.dmg(c.target, 2, { p: c.p, kind: 'spell' }); }, flavor: 'Trained to fight in formation. Prefers to fight in fire.', art: { s: 'arcane', L: [fig({ pose: 'castF', w: 'wand', robe: 1, helm: 'hood', glowR: '#ffb060', x: 130, y: 210, s: 0.92, capeCol: '#1a2a5a', cape: 1 })] } });
   add('elowen', { name: 'Sister Elowen', type: 'ally', cost: 3, atk: 1, hp: 4, fac: 'concord', race: 'Human', kw: ['unique'], rarity: 'u', text: 'At the start of your turn, heal 2 damage from your hero.', start: async (E, p) => E.heal(E.heroT(p), 2), flavor: '"Hold still. This will only hurt the darkness."', art: { s: 'temple', L: [['fx', { t: 'holy', x: 150, y2: 200 }], fig({ pose: 'pray', robe: 1, helm: 'hood', glowL: '#fff2b0', x: 150, y: 206, s: 0.9 })] } });
   add('crossbowman', { name: 'Ironhold Crossbowman', type: 'ally', cost: 2, atk: 3, hp: 4, fac: 'concord', kw: ['longrange'], race: 'Dwarf', flavor: 'Reload. Grumble. Repeat.', art: { s: 'peaks', L: [fig({ race: 'dwarf', pose: 'aim', w: 'crossbow', helm: 'great', plume: false, x: 140, y: 210, s: 1.0 })] } });
   add('thalen', { name: 'Highwarden Thalen', type: 'ally', cost: 5, atk: 4, hp: 4, fac: 'concord', kw: ['unique', 'ferocity', 'longrange'], race: 'Elf', rarity: 'r', flavor: 'He counts arrows the way misers count gold.', art: { s: 'forest', L: [fig({ race: 'elf', pose: 'aim', w: 'bow', helm: 'hair', cape: 1, capeCol: '#1a3a2a', wGlow: '#bfffe0', x: 128, y: 210, s: 0.95 })], pal: { glow: '#9affd0' } } });
@@ -4202,7 +4218,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   add('earthwarden', { name: 'Stonehoof Earthwarden', type: 'ally', cost: 5, atk: 3, hp: 7, fac: 'clans', kw: ['protector'], race: 'Minotaur', rarity: 'u', flavor: 'The ground does not move. Neither does he.', art: { s: 'storm', L: [fig({ race: 'minotaur', pose: 'stand', w: 'hammer', off: 'round', wA: 160, pauld: 'fur', x: 150, y: 210, s: 0.86 })] } });
   add('tinkerer', { name: 'Ashborn Tinkerer', type: 'ally', cost: 2, atk: 1, hp: 3, fac: 'clans', race: 'Goblin', text: 'When this enters play, draw a card, then deal 1 damage to a random enemy.', onEnter: async (E, c) => { await E.draw(c.p, 1); const t = E.randomEnemy(); if (t) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, flavor: 'Most of her inventions explode. On purpose, she insists.', art: { s: 'forge', L: [fig({ race: 'goblin', pose: 'castF', w: 'wand', helm: 'great', plume: false, glowR: '#ffb040', x: 140, y: 210, s: 1.1, eye: '#ffd060' })] } });
   add('raider', { name: 'Skullsplitter Raider', type: 'ally', cost: 2, atk: 5, hp: 3, fac: 'clans', kw: ['ferocity', 'protector'], race: 'Orc', flavor: 'Fast, loud, and briefly alive.', art: { s: 'steppe', L: [fig({ race: 'orc', pose: 'heroic', w: 'battleaxe', helm: 'horned', pauld: 'spiked', x: 150, y: 214, s: 0.85 })] } });
-  add('windcaller', { name: 'Windcaller Shaman', type: 'ally', cost: 2, atk: 3, hp: 5, fac: 'clans', race: 'Minotaur', text: 'At the start of your turn, deal 1 damage to a random enemy.', start: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 1, { p, kind: 'effect' }); }, flavor: 'She speaks, and the sky answers in thunder.', art: { s: 'storm', L: [['fx', { t: 'bolt', x1: 200, y1: 0, x2: 168, y2: 70 }], fig({ race: 'minotaur', pose: 'cast', robe: 1, glowL: '#bfe0ff', glowR: '#bfe0ff', x: 150, y: 212, s: 0.8 })] } });
+  add('windcaller', { name: 'Windcaller Shaman', type: 'ally', cost: 2, atk: 3, hp: 5, kw: ['skyward'], fac: 'clans', race: 'Minotaur', text: 'At the start of your turn, deal 1 damage to a random enemy.', start: async (E, p) => { const t = E.randomEnemy(); if (t) await E.dmg(t, 1, { p, kind: 'effect' }); }, flavor: 'She speaks, and the sky answers in thunder.', art: { s: 'storm', L: [['fx', { t: 'bolt', x1: 200, y1: 0, x2: 168, y2: 70 }], fig({ race: 'minotaur', pose: 'cast', robe: 1, glowL: '#bfe0ff', glowR: '#bfe0ff', x: 150, y: 212, s: 0.8 })] } });
   add('wolfrider', { name: 'Bloodmoon Wolfrider', type: 'ally', cost: 3, atk: 4, hp: 6, fac: 'clans', kw: ['ferocity'], race: 'Orc', flavor: 'The wolf picks the target. The orc just agrees.', art: { s: 'steppe', L: [fig({ race: 'orc', pose: 'heroic', w: 'axe', x: 132, y: 176, s: 0.62, shadow: false, skirt: false, aura: false }), ['beast', { t: 'wolf', x: 150, y: 208, s: 1.1, eye: '#ff6a3a', tone: '#6e6466' }], ['obj', { t: 'saddle', x: 128, y: 130 }]] } });
   add('gorza', { name: 'Gorza the Unbowed', type: 'ally', cost: 6, atk: 5, hp: 6, fac: 'clans', kw: ['unique', 'protector', 'ferocity'], race: 'Orc', rarity: 'r', flavor: 'Seven sieges. Seven victories. One very large axe.', art: { s: 'steppe', L: [fig({ race: 'orc', pose: 'heroic', w: 'battleaxe', off: 'round', helm: 'horned', pauld: 'spiked', cape: 1, capeCol: '#4a0a08', wGlow: '#ff6a3a', x: 150, y: 214, s: 0.85 })] } });
   add('witchdoctor', { name: 'Clan Witchdoctor', type: 'ally', cost: 2, atk: 1, hp: 3, fac: 'clans', race: 'Orc', text: 'When this enters play, heal 3 damage from your most wounded hero.', onEnter: async (E, c) => { const h = E.mostWounded(); if (h) await E.heal(E.heroT(h), 3); }, flavor: 'Bones, herbs, and a very confident tone of voice.', art: { s: 'steppe', L: [fig({ race: 'orc', pose: 'staff', w: 'totem', skirt: true, glowL: '#9aff6a', x: 150, y: 212, s: 0.86 })] } });
@@ -4470,7 +4486,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       intro: 'At the summit of the Molten Spire, the last of the great fire wyrms has woken hungry.',
       rules: [
         { name: 'Embers', text: 'Each boss turn adds an Ember. At 5 Embers, Vorthrax breathes Cinderstorm (4 damage to each hero) and takes to the air.' },
-        { name: 'Wings of Flame', text: 'While he flies, he strafes the party each boss turn (2 damage to each hero), and only Volley attacks and abilities can reach him. Deal 10 damage (+8 for each extra hero) to ground him: he crashes, stunned, and skips his next strike. Otherwise he lands after 3 boss turns.' },
+        { name: 'Wings of Flame', text: 'While he flies, he strafes the party each boss turn (2 damage to each hero), and only Volley and Skyward attacks, and abilities, can reach him. Deal 10 damage (+8 for each extra hero) to ground him: he crashes, stunned, and skips his next strike. Otherwise he lands after 3 boss turns.' },
         { name: 'Molten Scales', text: 'Melee attackers take 2 damage back when they strike Vorthrax.' },
         { name: 'Omens: Ashen Portents', text: 'An omen every boss turn with 3 or 4 heroes, every other boss turn with 2, every third with 1. The next three are shown above Vorthrax.' },
         { name: 'Searing Fury (60%)', text: 'Vorthrax reveals 2 boss cards each turn.' },
@@ -4743,7 +4759,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     function volleyAttack(p, who) {
       if (!p || who == null) return false;
       if (who === 'hero') return !!(p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike && hasKw(C[p.weapon.c.id], 'longrange'));
-      return allyKw(p, who, 'longrange');
+      return allyKw(p, who, 'longrange') || allyKw(p, who, 'skyward'); // #112 Skyward reaches a flier too
     }
     function attackTargets(p, who) {
       const ts = g.boss.minions.filter(m => !hasKw(minDef(m), 'elusive')).map(T.minion);
@@ -4920,8 +4936,8 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     async function takeOff() {
       const B = g.boss, f = raid.flight; if (!f || B.flying || g.over) return;
       B.flying = true; B.ground = 0; B.flyTurns = 0; B.groundMax = f.ground(g.players.length);
-      log(`${raid.short} takes to the air! Only Volley attacks and abilities can reach him. Deal ${B.groundMax} damage to ground him.`, 'boss');
-      await H.anim('phase', { name: `${raid.short} takes flight`, text: `Only Volley attacks and abilities reach him. Deal ${B.groundMax} damage to bring him down.` });
+      log(`${raid.short} takes to the air! Only Volley and Skyward attacks, and abilities, can reach him. Deal ${B.groundMax} damage to ground him.`, 'boss');
+      await H.anim('phase', { name: `${raid.short} takes flight`, text: `Only Volley and Skyward attacks, and abilities, reach him. Deal ${B.groundMax} damage to bring him down.` });
       H.update();
     }
     async function crashDown() {
@@ -5079,7 +5095,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? C[p.weapon.c.id].atk : 0); }
     async function attack(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
-      if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley attacks can reach him.` : 'Invalid target.' };
+      if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley and Skyward attacks can reach him.` : 'Invalid target.' };
       let atk, longrange = false, attackerT, onAttack = null, wname = '', ironHide = 0;
       if (who === 'hero') {
         const useW = p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike;
@@ -6067,7 +6083,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     const rar = { c: 0, u: 0.6, r: 1.3, e: 2.2 }[d.rarity] || 0, tags = d.tags || [], kw = d.kw || [], has = t => tags.includes(t);
     let s;
     switch (d.type) {
-      case 'ally': s = (d.atk ? 0 : -3) + (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
+      case 'ally': s = (d.atk ? 0 : -3) + (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('skyward') ? 0.3 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
       case 'ability': s = 3 + ((d.dmg || (has('dmg') ? 3 : 0)) + (d.heal || (has('heal') ? 4 : 0)) * 0.6 + (has('draw') ? 3 : 0) + (has('aoe') || has('aoeMinion') ? 3 : 0) + (has('shield') ? 2 : 0) + (has('stun') || has('stunAll') ? 2 : 0) + (has('revive') ? 4 : 0) + (has('summon') ? 3 : 0) + (has('buff') ? 1.5 : 0)) / (d.cost + 1.2) * 4; break;
       case 'weapon': s = 2 + d.atk * 2.2 - (d.strike || 0) * 1.3; break;
       case 'armor': s = 2 + d.def * 1.6 - (d.use || 0) + (d.spell || 0) * 2; break;
@@ -6171,7 +6187,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     art: { s: 'sea', L: [glow(70, 90, 50, '#ffe2a0', 0.35), fig({ pose: 'aim', w: 'bow', helm: 'hood', cape: 1, capeCol: '#2a4a4a', x: 140, y: 214, s: 0.9, cloth: '#3e6a5e', hoodCol: '#2e4e46' }), ['beast', { t: 'bird', x: 236, y: 92, s: 0.32 }]] } });
   add('cinderhound', { name: 'Cinderhound', type: 'ally', cost: 1, atk: 4, hp: 2, kw: ['ferocity', 'protector'], race: 'Beast', flavor: 'Its paw prints smoulder for an hour.',
     art: { s: 'volcano', p: 'embers', pn: 40, L: [glow(150, 196, 70, '#ff6a1a', 0.6), ['beast', { t: 'wolf', x: 150, y: 208, s: 1, eye: '#ffcf4a', fur: '#3a1e14' }], ['fx', { t: 'meteors', n: 3, c: '#ff8a3a' }]] } });
-  add('stonecaller', { name: 'Hill Giant Stonecaller', type: 'ally', cost: 6, atk: 5, hp: 7, kw: ['protector'], race: 'Giant', rarity: 'r', text: 'When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => minionsDmg(E, c, 2), flavor: 'It throws the mountain, then apologises to it.',
+  add('stonecaller', { name: 'Hill Giant Stonecaller', type: 'ally', cost: 6, atk: 5, hp: 7, kw: ['protector', 'skyward'], race: 'Giant', rarity: 'r', text: 'When this enters play, deal 2 damage to each enemy minion.', onEnter: async (E, c) => minionsDmg(E, c, 2), flavor: 'It throws the mountain, then apologises to it.',
     art: { s: 'peaks', L: [glow(150, 120, 100, '#c8b090', 0.35), fig({ race: 'giant', pose: 'heroic', w: 'hammer', x: 150, y: 222, s: 0.95, cloth: '#5a4a3a' }), ['beast', { t: 'golem', kind: 'rock', x: 252, y: 226, s: 0.35 }], ['beast', { t: 'golem', kind: 'rock', x: 48, y: 230, s: 0.3 }]] } });
   add('grovebinder', { name: 'Grovebinder Druid', type: 'ally', cost: 3, atk: 2, hp: 4, race: 'Elf', rarity: 'u', text: 'At the start of your turn, heal 2 damage from each of your allies.', start: async (E, p) => { for (const a of [...p.allies]) await E.heal(E.T.ally(p, a), 2); }, flavor: 'Roots knit flesh as easily as soil.',
     art: { s: 'grove', L: [glow(150, 120, 80, '#9aff8a', 0.45), ['fx', { t: 'heal', x: 150, y: 110, c: '#9aff8a' }], fig({ race: 'elf', pose: 'staff', w: 'staff', robe: 1, helm: 'hair', glowL: '#9aff8a', x: 150, y: 214, s: 0.86, cloth: '#3a6a2e', hairCol: '#e8d8a0' })] } });
@@ -6219,7 +6235,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     art: { s: 'storm', L: [['fx', { t: 'bolt', x: 150, y: 60 }], glow(150, 150, 70, '#9ac8ff', 0.6), ['obj', { t: 'horn', x: 150, y: 140, s: 1 }], ['fx', { t: 'runes', x: 150, y: 200, r: 80, flat: 1, c: '#9ac8ff' }]] } });
   add('ravager', { name: 'Steppe Ravager', type: 'ally', cost: 5, atk: 5, hp: 4, fac: 'clans', kw: ['ferocity'], race: 'Minotaur', rarity: 'u', text: 'When this enters play, deal 1 damage to each enemy.', onEnter: async (E, c) => { for (const t of E.aoe(E.enemies(), 1)) await E.dmg(t, 1, { p: c.p, kind: 'effect' }); }, flavor: 'The ground shakes first. Then it really shakes.',
     art: { s: 'steppe', L: [['fx', { t: 'whirl', x: 150, y: 190, c: '#e8b070' }], fig({ race: 'minotaur', pose: 'charge', w: 'battleaxe', pauld: 'spiked', x: 150, y: 212, s: 0.9 })] } });
-  add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 3, kw: ['protector'], fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.aoe(E.minions(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
+  add('blastmonger', { name: 'Goblin Blastmonger', type: 'ally', cost: 3, atk: 2, hp: 3, kw: ['protector', 'skyward'], fac: 'clans', race: 'Goblin', rarity: 'u', text: 'When this ally is destroyed, deal 3 damage to each enemy minion.', onDeath: async (E, c) => { for (const t of E.aoe(E.minions(), 3)) await E.dmg(t, 3, { p: c.p, kind: 'effect' }); }, flavor: '"Stand back. Further. No — further."',
     art: { s: 'forge', p: 'embers', pn: 30, L: [glow(200, 140, 70, '#ffb040', 0.6), fig({ race: 'goblin', pose: 'crouch', w: 'dagger', helm: 'hood', x: 120, y: 212, s: 1.05, eye: '#ffd060' }), ['obj', { t: 'bomb', x: 210, y: 176, s: 0.7 }], ['obj', { t: 'bomb', x: 246, y: 200, s: 0.5 }]] } });
   add('supplyraid', { name: 'Raid the Supply Lines', type: 'quest', cost: 0, qcost: 1, fac: 'clans', text: 'Play as a resource. Complete (pay 1): summon a 2/2 Grunt with Swift and Bulwark and draw a card.', reward: async (E, c) => { await E.summonAlly(c.p, 'grunt_t', 1); await E.draw(c.p, 1); },
     art: { s: 'steppe', L: [['obj', { t: 'chest', x: 190, y: 184, s: 0.7 }], fig({ race: 'orc', pose: 'charge', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.72 }), ['obj', { t: 'scroll', x: 240, y: 90, s: 0.45 }]] } });
@@ -6505,7 +6521,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     art: { s: 'volcano', p: 'embers', pn: 70, L: [glow(150, 100, 140, '#ff5a1a', 0.55), ['fx', { t: 'runes', x: 150, y: 200, r: 120, flat: 1, c: '#ffb040' }], ['beast', { t: 'wolf', x: 62, y: 220, s: 0.62, fur: '#3a1a10', eye: '#ffcf4a' }], ['beast', { t: 'wolf', x: 240, y: 222, s: 0.62, fur: '#2a120a', eye: '#ffcf4a', flip: 1 }], fig({ race: 'orc', pose: 'staff', w: 'totem', helm: 'horned', pauld: 'fur', cape: 1, capeCol: '#4a1a08', glowL: '#ffb040', wGlow: '#ffb040', eye: '#ffd060', x: 150, y: 214, s: 0.95, cloth: '#6a2a10' }), ['fx', { t: 'shout', x: 150, y: 70, c: '#ffcf8a' }]] } });
   addP('ember', 'forgegolem', { name: 'Forge-Sworn Golem', type: 'ally', cost: 5, atk: 4, hp: 6, kw: ['protector'], race: 'Construct', rarity: 'u', tags: ['aoeMinion'], text: 'When this ally is destroyed, deal 2 damage to each enemy minion.', onDeath: async (E, c) => minionsDmg(E, c, 2),
     art: { s: 'forge', p: 'embers', pn: 40, L: [glow(150, 140, 100, '#ff8a2a', 0.5), ['beast', { t: 'golem', kind: 'magma', x: 150, y: 226, s: 0.9 }]] } });
-  addP('ember', 'pyromancer', { name: 'Clan Pyromancer', type: 'ally', cost: 2, atk: 2, hp: 3, kw: ['protector'], fac: 'clans', race: 'Orc', target: 'enemy', tags: ['dmg'], text: 'When this enters play, deal 1 damage to an enemy.', onEnter: async (E, c) => { if (c.target) await E.dmg(c.target, 1, { p: c.p, kind: 'effect' }); },
+  addP('ember', 'pyromancer', { name: 'Clan Pyromancer', type: 'ally', cost: 2, atk: 2, hp: 3, kw: ['protector', 'skyward'], fac: 'clans', race: 'Orc', target: 'enemy', tags: ['dmg'], text: 'When this enters play, deal 1 damage to an enemy.', onEnter: async (E, c) => { if (c.target) await E.dmg(c.target, 1, { p: c.p, kind: 'effect' }); },
     art: { s: 'steppe', L: [glow(200, 110, 70, '#ff8a2a', 0.6), ['fx', { t: 'fireball', x: 220, y: 100, c: '#ffb040', ang: -20 }], fig({ race: 'orc', pose: 'cast', robe: 1, helm: 'mohawk', glowR: '#ff8a2a', x: 130, y: 214, s: 0.88, cloth: '#5a1a10' })] } });
   addP('ember', 'smeltbrew', { name: 'Smelter\'s Brew', type: 'ability', speed: 'basic', cost: 1, target: 'none', tags: ['buff', 'ready'], text: 'Ready your hero. Your hero gets +2 ATK this turn.', run: async (E, c) => { E.readyHero(c.p); E.tempAtk(c.p, 2); }, flavor: 'Tastes like a forge. Works like one too.',
     art: { s: 'tavern', L: [glow(150, 130, 70, '#ff8a2a', 0.6), ['obj', { t: 'potion', x: 150, y: 130, col: '#ff6a1a', shape: 'flask' }], ['fx', { t: 'buff', x: 150, y: 150, c: '#ffb040' }]] } });
@@ -6714,7 +6730,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   const tide = (id, o) => addT('tide', id, o);
   tide('coralplate', { name: 'Coralplate Hauberk', type: 'armor', slot: 'chest', atype: 'mail', cost: 3, def: 2, use: 0,
     art: { s: 'sunken', L: [glow(150, 120, 80, '#ff9aa0', 0.4), ['obj', { t: 'vest', x: 150, y: 116 }]] } });
-  tide('harpoon', { name: 'Stormcaller Harpoon', type: 'weapon', wtype: 'polearm', cost: 3, atk: 4, strike: 1, rarity: 'e', tags: ['stun'], text: 'When your hero attacks a minion with this and it survives, stun it.', onAttack: async (E, c) => { if (c.defender && c.defender.t === 'minion' && E.isAlive(c.defender)) E.stun(c.defender); },
+  tide('harpoon', { name: 'Stormcaller Harpoon', type: 'weapon', wtype: 'polearm', cost: 3, atk: 4, strike: 1, kw: ['longrange'], rarity: 'e', tags: ['stun'], text: 'When your hero attacks a minion with this and it survives, stun it.', onAttack: async (E, c) => { if (c.defender && c.defender.t === 'minion' && E.isAlive(c.defender)) E.stun(c.defender); },
     art: { s: 'sea', L: [['fx', { t: 'bolt', x: 150, y: 50 }], ['obj', { t: 'polearmItem', kind: 'trident', x: 150, y: 120, glow: '#9ae8ff', tilt: -15 }]] } });
   tide('sirenconch', { name: 'Siren\'s Conch', type: 'item', cost: 2, rarity: 'e', tags: ['stun'], text: 'At the start of your turn, stun a random enemy minion.', start: async (E, p) => { const m = pick(E, E.minions()); if (m) E.stun(m); },
     art: { s: 'sea', L: [glow(150, 120, 80, '#ffd0e0', 0.5), ['obj', { t: 'horn', x: 150, y: 124, s: 1 }], ['fx', { t: 'shout', x: 210, y: 110, c: '#9ae8ff' }]] } });
@@ -7313,7 +7329,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     const kws = (d.type === 'weapon' ? (d.kw || []).filter(k => k !== 'longrange') : (d.kw || [])).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ');
     if (kws) h += kws + ' ';
     if (d.react && RB.REACT[d.react]) h += `<b class="kw react">React</b> — ${RB.REACT[d.react]}. `; // #99
-    if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete)\b(?=[: .,])/g, '<b class="kw">$1</b>');
+    if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Skyward|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete)\b(?=[: .,])/g, '<b class="kw">$1</b>');
     if (d.loot) h += ` <span class="fl" style="font-style:normal;color:#6a3a08">Scratch-off code inside: ${esc(d.loot.label)}.</span>`;
     if (d.flavor) h += `<span class="fl">${esc(d.flavor)}</span>`;
     return h;
@@ -7328,6 +7344,16 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     return s;
   }
   // full card face
+  // #112: a clear badge on every card that can reach a boss in the air
+  const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21 L17 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12 5 L20 4 L19 12 Z" fill="currentColor"/><path d="M3 21 l1-5 M3 21 l5-1 M6 18 l1-4 M6 18 l4-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  const UPWARD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 V6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M5 11 L12 3 L19 11 Z" fill="currentColor"/></svg>';
+  function reachBadge(d) {
+    const kw = d.kw || [];
+    if (kw.includes('longrange')) return `<span class="rbadge volley" title="Volley: ${esc(RB.KEYWORDS.longrange[1])}">${ARROW}Volley</span>`;
+    if (kw.includes('skyward')) return `<span class="rbadge skyward" title="Skyward: ${esc(RB.KEYWORDS.skyward[1])}">${UPWARD}Skyward</span>`;
+    return '';
+  }
+  U.reachBadge = reachBadge;
   U.cardHTML = function (id, opts) {
     opts = opts || {};
     const d = C[id] || RB.TOKENS[id] || RB.BOSSCARDS[id];
@@ -7347,7 +7373,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' ? '' : `<div class="cost">${d.cost}</div>`;
     const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
-    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}"><div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
+    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
   };
   U.heroCardHTML = function (hid) {
     const h = RB.HEROES[hid];
@@ -8116,7 +8142,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 
   /* ---------------- #104 The Raider's Field Guide (How to play) ---------------- */
   // One set of chapters, used by the title screen's How to play and by the Rules button in battle.
-  const KWI = { protector: 'B', ferocity: 'S', longrange: 'V', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
+  const KWI = { protector: 'B', ferocity: 'S', longrange: 'V', skyward: '⇡', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
   const fgU = (img, name, sub, cls) => `<span class="fg-u ${cls || ''}"><span class="fg-i">${img ? `<img alt="" src="${img}">` : ''}</span><b>${name}</b>${sub ? `<small>${sub}</small>` : ''}</span>`;
   const fgA = (t, cls) => `<span class="fg-a ${cls || ''}">${t ? `<small>${t}</small>` : ''}<i>➜</i></span>`;
   const fgEx = (row, cap) => `<figure class="fg-ex"><div class="fg-row">${row}</div><figcaption>${cap}</figcaption></figure>`;
@@ -8139,7 +8165,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
         <section><h4>Attacking</h4><p>Attacks always target one enemy: the boss or one of its minions. The defender strikes back, so both sides take damage. <b>Damage stays between turns</b>, so every fight costs you something. While a minion with <b>Guardian</b> stands, the boss can't be attacked.</p>
         ${fgEx(fgU(ca('treant'), 'Ironbark Treant', '3 ATK · 7 health') + fgA('attacks') + fgU(ca('thrall'), 'Risen Thrall', '2 ATK · 2 health') + fgA('result') + fgU('', 'Thrall falls', 'Treant keeps 2 damage', 'ok'), 'Both sides hit at once. The Treant wins, but carries 2 damage into the next turn.')}</section>
         <section><h4>Hitting everything at once</h4><p>A card or power that hits <b>each enemy</b> reaches at most <b>5 targets</b>. If there are more, it always hits the boss, then the minions it hurts most: Guardians first, then the ones it can finish off, then the hardest hitters. If the same card also hits the boss or a target you chose, it reaches 4 others. Party-wide heals and wards still reach everyone, and the boss's own hit-all cards have no limit. To keep that fair, a boss can have at most <b>7 minions</b> on the table at once.</p></section>
-        <section><h4>Volley and melee</h4><p><b>Volley</b> attackers take nothing back. Melee attackers that hit the boss also take its <b>retaliation</b> (Cold Hands, Molten Scales, Coral Hide). Volley is the only way to reach a boss in the air.</p></section>
+        <section><h4>Volley and melee</h4><p><b>Volley</b> attackers take nothing back. Melee attackers that hit the boss also take its <b>retaliation</b> (Cold Hands, Molten Scales, Coral Hide). Only Volley and <b>Skyward</b> attackers can reach a boss in the air (abilities always can). Skyward is just that: a Skyward ally still takes the hit back.</p></section>
         <section><h4>Your hero's weapon</h4><p>Heroes attack with an equipped weapon by paying its strike cost. When your hero is attacked, a ready weapon can also <b>strike back</b> if you can pay for it.</p></section>
         <section><h4>Armor, wards and healing</h4><p><b>Armor</b> can block when your hero is hit, if you have enough ready resources to pay its cost; it then exhausts until your turn. A <b>ward</b> (◈) is a shield from a card: it prevents the next damage and then fades. <b>Healing</b> removes damage but never raises health above the maximum.</p>
         ${fgEx(fgU('', '6 damage', 'boss strike', 'bad') + fgA('ward 4') + fgU('', '2 left') + fgA('armor blocks 2') + fgU(ca('aldric'), 'Ser Aldric', 'takes 0', 'ok'), 'Wards go first, then armor. Stack them and a big hit can vanish completely.')}</section>` },
@@ -8248,7 +8274,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 
   function unitHTML(kind, o) {
     // o: {ref, name, img, atk, hp, max, kws:[], cls:[], buffA, title}
-    const kwI = { protector: 'B', ferocity: 'S', longrange: 'V', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
+    const kwI = { protector: 'B', ferocity: 'S', longrange: 'V', skyward: '⇡', elusive: '◐', guardian: 'G', unique: 'U', ambush: 'A', crushing: 'C', frenzy: 'F', thickhide: 'T', tend: '+' };
     return `<div class="unit ${kind === 'minion' ? 'minion' : ''} ${o.cls.join(' ')}" data-ref="${o.ref}" data-kind="${kind}" ${o.p != null ? `data-p="${o.p}"` : ''} style="${o.uc ? '--uc:' + o.uc : ''}" tabindex="0" aria-label="${esc(o.name)}, ${o.atk} attack, ${o.hp} health">
       <img alt="" src="${o.img}"><div class="kws">${o.kws.filter(k => k !== 'unique').map(k => `<i title="${RB.KEYWORDS[k][0]}: ${esc(RB.KEYWORDS[k][1])}">${kwI[k]}</i>`).join('')}</div>
       <div class="un">${esc(o.name)}</div><div class="ua ${o.buffA ? 'buff' : ''}">${o.atk}</div><div class="uh ${o.hp < o.max ? 'hurt' : o.buffH ? 'buff' : ''}">${o.hp}</div></div>`;
@@ -8291,17 +8317,21 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       return `<span class="omens" title="Omens come ${every}. The next three are shown here, the left one first.${when ? ' Next one: ' + when + '.' : ''}"><small>Omens${when ? ` · ${when}` : ''}</small>${B.omens.slice(-3).reverse().map((id, i) => `<span class="om ${i === 0 ? 'next' : ''} ${BC[id].soak ? 'soak' : ''}" data-bc="${id}" title="${esc(BC[id].name + ': ' + BC[id].text)}"><img alt="" src="${U.cardArt(id)}"><b>${esc(BC[id].name)}</b></span>`).join('')}</span>`;
     })() : '';
     // #102 Wings of Flame: the boss is in the air — fill the Ground bar to bring it down
-    const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley allies and abilities can reach him. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
+    const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley and Skyward attackers, and abilities, can reach him. The ones that can are glowing. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
     const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? C[p.weapon.c.id].atk : 0);
     const heroCan = canAct && E.canAttackWith(p, 'hero');
+    // #112: while the boss is in the air, light up whatever can reach him and dim the rest
+    const airborne = !!(B.flying && raid.flight && !g.over);
+    const reachCls = can => airborne ? (can ? ' reach' : ' noreach') : '';
+    const heroReach = !!(p.weapon && (C[p.weapon.c.id].kw || []).includes('longrange'));
     const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Shrouded', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
     const petImg = p.hero.pet && RB.COSMETICS[p.hero.pet] && U.cosImg(p.hero.pet) ? `<div class="petspot"><img class="pet" alt="${esc(RB.COSMETICS[p.hero.pet].name)}" src="${U.cosImg(p.hero.pet)}" title="${esc(RB.COSMETICS[p.hero.pet].name + (RB.PET_PERKS && RB.PET_PERKS[p.hero.pet] && !g.cfg.bossPlayer ? ': ' + RB.PET_PERKS[p.hero.pet].text : ''))}"></div>` : '';
     const pw = HE[p.heroId].power;
     const powerBtn = p.hero.master ? `<button class="btn small ghost powerbtn used" disabled><b>Master Hero</b>Original power set aside</button>` :
       `<button class="btn small powerbtn ${p.hero.powerUsed ? 'used' : ''}" data-act="power" ${p.hero.powerUsed || !canAct ? 'disabled' : ''} title="${esc(pw.text)}"><b>${esc(pw.name)}</b>${p.hero.powerUsed ? 'Used' : 'Once per game'}</button>`;
-    const heroCard = `<div class="herocard ${p.hero.ex ? 'ex' : ''} ${dead ? 'dead' : ''} ${heroCan && !view.mode ? 'can' : ''}${tcls('hero' + p.idx)}" data-ref="hero${p.idx}" data-act="hero" tabindex="0" aria-label="${esc(hd.name)}, ${E.heroHp(p)} health">
+    const heroCard = `<div class="herocard ${p.hero.ex ? 'ex' : ''} ${dead ? 'dead' : ''} ${heroCan && !view.mode ? 'can' : ''}${tcls('hero' + p.idx)}${dead ? '' : reachCls(heroReach)}" data-ref="hero${p.idx}" data-act="hero" tabindex="0" aria-label="${esc(hd.name)}, ${E.heroHp(p)} health">
       <img alt="" src="${U.cardArt(p.hero.master || p.heroId)}"><div class="tags">${tags}</div>
       ${heroAtk > 0 ? `<div class="hatk" title="Attack with weapon">${heroAtk}</div>` : ''}<div class="hhp ${E.heroHp(p) <= 8 ? 'low' : ''}">${Math.max(0, E.heroHp(p))}</div>${p.hero.shield ? `<div class="shield" title="Ward: prevents the next ${p.hero.shield} damage">◈ ${p.hero.shield}</div>` : ''}
       <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max HP</small></div></div>${powerBtn}${petImg}`;
@@ -8318,12 +8348,13 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     }).join('') + (p.tempRes ? `<div class="rcard"><div class="temp" title="Extra resources this turn">+${p.tempRes}</div></div>` : '');
     const allies = p.allies.map(a => {
       const d = E.allyDef(a), can = canAct && E.canAttackWith(p, a);
-      return unitHTML('ally', { ref: a.uid, p: p.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, max: E.allyMax(p, a), kws: (d.kw || []).concat(E.allyKw(p, a, 'ferocity') && !(d.kw || []).includes('ferocity') ? ['ferocity'] : []), buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: [a.ex ? 'ex' : '', a.sick ? 'sick' : '', a.frozen ? 'frozen' : '', can && !view.mode ? 'can' : '', tcls(a.uid)] });
+      return unitHTML('ally', { ref: a.uid, p: p.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, max: E.allyMax(p, a), kws: (d.kw || []).concat(E.allyKw(p, a, 'ferocity') && !(d.kw || []).includes('ferocity') ? ['ferocity'] : []), buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: [a.ex ? 'ex' : '', a.sick ? 'sick' : '', a.frozen ? 'frozen' : '', can && !view.mode ? 'can' : '', tcls(a.uid), reachCls(E.volleyAttack(p, a)).trim()] });
     }).join('') || `<span class="empty">${dead ? 'Fallen.' : 'No allies yet. Play ally cards to build your party.'}</span>`;
     // hand
     const n = p.hand.length, mid = (n - 1) / 2;
     const showHand = seesHand(p);
-    const hand = !showHand ? p.hand.map((c, i) => `<div class="hc back" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)"><div class="cardback"></div></div>`).join('') : p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; return `<div class="hc ${playable ? 'play' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
+    const hand = !showHand ? p.hand.map((c, i) => `<div class="hc back" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)"><div class="cardback"></div></div>`).join('') : p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; const hd2 = C[c.id] || {}, hk = hd2.kw || [], handReach = airborne && (hd2.type === 'ally' || hd2.type === 'weapon') && (hk.includes('longrange') || hk.includes('skyward'));
+      return `<div class="hc ${playable ? 'play' : ''}${handReach ? ' reach' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
     const status = g.over ? '' : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
     // roster
     const vIdx = viewerIdx();

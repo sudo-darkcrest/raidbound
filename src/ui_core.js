@@ -137,7 +137,7 @@
     const kws = (d.type === 'weapon' ? (d.kw || []).filter(k => k !== 'longrange') : (d.kw || [])).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ');
     if (kws) h += kws + ' ';
     if (d.react && RB.REACT[d.react]) h += `<b class="kw react">React</b> — ${RB.REACT[d.react]}. `; // #99
-    if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete)\b(?=[: .,])/g, '<b class="kw">$1</b>');
+    if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Skyward|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete)\b(?=[: .,])/g, '<b class="kw">$1</b>');
     if (d.loot) h += ` <span class="fl" style="font-style:normal;color:#6a3a08">Scratch-off code inside: ${esc(d.loot.label)}.</span>`;
     if (d.flavor) h += `<span class="fl">${esc(d.flavor)}</span>`;
     return h;
@@ -152,6 +152,16 @@
     return s;
   }
   // full card face
+  // #112: a clear badge on every card that can reach a boss in the air
+  const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21 L17 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12 5 L20 4 L19 12 Z" fill="currentColor"/><path d="M3 21 l1-5 M3 21 l5-1 M6 18 l1-4 M6 18 l4-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  const UPWARD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 V6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M5 11 L12 3 L19 11 Z" fill="currentColor"/></svg>';
+  function reachBadge(d) {
+    const kw = d.kw || [];
+    if (kw.includes('longrange')) return `<span class="rbadge volley" title="Volley: ${esc(RB.KEYWORDS.longrange[1])}">${ARROW}Volley</span>`;
+    if (kw.includes('skyward')) return `<span class="rbadge skyward" title="Skyward: ${esc(RB.KEYWORDS.skyward[1])}">${UPWARD}Skyward</span>`;
+    return '';
+  }
+  U.reachBadge = reachBadge;
   U.cardHTML = function (id, opts) {
     opts = opts || {};
     const d = C[id] || RB.TOKENS[id] || RB.BOSSCARDS[id];
@@ -171,7 +181,7 @@
     const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' ? '' : `<div class="cost">${d.cost}</div>`;
     const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
-    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}"><div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
+    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
   };
   U.heroCardHTML = function (hid) {
     const h = RB.HEROES[hid];

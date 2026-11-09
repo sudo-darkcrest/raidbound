@@ -1185,3 +1185,17 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 .lore.inline p { font-size: .95rem; }
 .fg-page .fg-lore { font-style: italic; color: #e2d4b4; margin: .35rem 0; }
 @media (max-width: 760px) { .lore { padding: .8rem .9rem; } .lore p { font-size: .94rem; } }
+
+/* #112 Volley / Skyward badge on the card picture */
+.card .rbadge { position: relative; z-index: 2; align-self: flex-start; display: inline-flex; align-items: center; gap: .8cqw; height: 7.4cqw; margin: -9.2cqw 0 1.8cqw 1.8cqw; padding: 0 2.4cqw 0 1.6cqw; border-radius: 99px; font-family: var(--f-sc); font-weight: 700; font-size: 4.4cqw; letter-spacing: .02em; line-height: 1; white-space: nowrap; box-shadow: 0 .6cqw 1.6cqw rgba(0, 0, 0, .6); }
+.card .rbadge svg { width: 5cqw; height: 5cqw; flex: none; }
+.card .rbadge.volley { color: #2a1604; background: linear-gradient(#ffe6a6, #e0a43a); border: .5cqw solid #fff1c8; }
+.card .rbadge.skyward { color: #062236; background: linear-gradient(#cdefff, #5ab4e6); border: .5cqw solid #eaf8ff; }
+/* #112 while the boss flies: who can reach him glows, everyone else dims */
+.unit.reach:not(.targetable):not(.friendly-t), .herocard.reach:not(.targetable):not(.friendly-t) { box-shadow: 0 0 0 3px #8fdcff, 0 0 26px 4px rgba(120, 210, 255, .85); animation: reachglow 1.6s ease-in-out infinite; }
+.unit.noreach:not(.targetable):not(.friendly-t), .herocard.noreach:not(.targetable):not(.friendly-t) { filter: saturate(.3) brightness(.55); }
+.unit.noreach.ex { filter: saturate(.2) brightness(.45); }
+.unit.reach.can:not(.targetable):not(.friendly-t), .herocard.reach.can:not(.targetable):not(.friendly-t) { box-shadow: 0 0 0 3px #d4f2ff, 0 0 30px 6px rgba(140, 220, 255, .95); }
+.hc.reach .card { box-shadow: 0 0 0 3px #8fdcff, 0 0 22px 4px rgba(120, 210, 255, .8); }
+@keyframes reachglow { 50% { box-shadow: 0 0 0 3px #d4f2ff, 0 0 36px 8px rgba(140, 220, 255, 1); } }
+@media (prefers-reduced-motion: reduce) { .unit.reach, .herocard.reach { animation: none; } }

@@ -133,7 +133,7 @@
     function volleyAttack(p, who) {
       if (!p || who == null) return false;
       if (who === 'hero') return !!(p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike && hasKw(C[p.weapon.c.id], 'longrange'));
-      return allyKw(p, who, 'longrange');
+      return allyKw(p, who, 'longrange') || allyKw(p, who, 'skyward'); // #112 Skyward reaches a flier too
     }
     function attackTargets(p, who) {
       const ts = g.boss.minions.filter(m => !hasKw(minDef(m), 'elusive')).map(T.minion);
@@ -310,8 +310,8 @@
     async function takeOff() {
       const B = g.boss, f = raid.flight; if (!f || B.flying || g.over) return;
       B.flying = true; B.ground = 0; B.flyTurns = 0; B.groundMax = f.ground(g.players.length);
-      log(`${raid.short} takes to the air! Only Volley attacks and abilities can reach him. Deal ${B.groundMax} damage to ground him.`, 'boss');
-      await H.anim('phase', { name: `${raid.short} takes flight`, text: `Only Volley attacks and abilities reach him. Deal ${B.groundMax} damage to bring him down.` });
+      log(`${raid.short} takes to the air! Only Volley and Skyward attacks, and abilities, can reach him. Deal ${B.groundMax} damage to ground him.`, 'boss');
+      await H.anim('phase', { name: `${raid.short} takes flight`, text: `Only Volley and Skyward attacks, and abilities, reach him. Deal ${B.groundMax} damage to bring him down.` });
       H.update();
     }
     async function crashDown() {
@@ -469,7 +469,7 @@
     function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? C[p.weapon.c.id].atk : 0); }
     async function attack(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
-      if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley attacks can reach him.` : 'Invalid target.' };
+      if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley and Skyward attacks can reach him.` : 'Invalid target.' };
       let atk, longrange = false, attackerT, onAttack = null, wname = '', ironHide = 0;
       if (who === 'hero') {
         const useW = p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike;

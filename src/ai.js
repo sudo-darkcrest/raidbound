@@ -460,7 +460,7 @@
     const rar = { c: 0, u: 0.6, r: 1.3, e: 2.2 }[d.rarity] || 0, tags = d.tags || [], kw = d.kw || [], has = t => tags.includes(t);
     let s;
     switch (d.type) {
-      case 'ally': s = (d.atk ? 0 : -3) + (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
+      case 'ally': s = (d.atk ? 0 : -3) + (d.atk * 1.1 + d.hp * 0.75 + (kw.includes('protector') ? 1.5 : 0) + (kw.includes('ferocity') ? 1.2 : 0) + (kw.includes('longrange') ? 1.2 : 0) + (kw.includes('skyward') ? 0.3 : 0) + (kw.includes('elusive') ? 1 : 0) + (d.onEnter ? 1.5 : 0) + (d.start ? 1.5 : 0)) / (d.cost + 1.5) * 5; break;
       case 'ability': s = 3 + ((d.dmg || (has('dmg') ? 3 : 0)) + (d.heal || (has('heal') ? 4 : 0)) * 0.6 + (has('draw') ? 3 : 0) + (has('aoe') || has('aoeMinion') ? 3 : 0) + (has('shield') ? 2 : 0) + (has('stun') || has('stunAll') ? 2 : 0) + (has('revive') ? 4 : 0) + (has('summon') ? 3 : 0) + (has('buff') ? 1.5 : 0)) / (d.cost + 1.2) * 4; break;
       case 'weapon': s = 2 + d.atk * 2.2 - (d.strike || 0) * 1.3; break;
       case 'armor': s = 2 + d.def * 1.6 - (d.use || 0) + (d.spell || 0) * 2; break;
