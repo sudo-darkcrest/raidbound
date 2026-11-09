@@ -186,6 +186,36 @@ S.update({
 'loot_kingscrown': ('Loot card (rare prize)', 'an ancient jewelled gold crown with rubies and sapphires on a purple velvet cushion in a throne room, old banners and golden light behind'),
 'loot_stormwing': ('Loot card (rare prize)', 'a slate-blue wyvern with wide leathery wings diving out of a thunderstorm, lightning crackling along its wings, glowing pale-blue eyes'),
 })
+# #97: dungeon boss ability cards and the last three minions (Nov 8, 2026). These were the last pictures drawn by code.
+THW = 'Dungeon boss card: Thornwood Hollow (dark ancient forest, gnarled roots, thorns, moss, green light)'
+BFW = 'Dungeon boss card: Bloodfang Warcamp (orc war camp, red war banners, campfires, smoke, dusk sky)'
+VIS = 'Dungeon boss card: Vault of the Iron Sentinel (stone vault, iron rune machines, gears, blue arcane light)'
+S.update({
+'thw_bark': (THW, "an ancient tree giant's arm and shoulder covered in thick plates of iron-grey bark like armour, sharp splinters jutting out, a dark mossy forest behind"),
+'thw_vines': (THW, 'long whipping vines covered in cruel thorns lashing out of a dark forest, glowing green sap dripping from the barbs'),
+'thw_entangle': (THW, 'thick gnarled tree roots bursting from the ground and wrapping tightly around a struggling armoured warrior, holding him fast, an ancient tree giant looming in the shadows'),
+'thw_spores': (THW, 'huge glowing mushrooms bursting and releasing thick clouds of yellow-green spores across a forest clearing, adventurers coughing and covering their faces'),
+'thw_crush': (THW, 'a giant living tree slamming a massive fist of roots down on a warrior who raises his shield, the ground cracking and splinters flying'),
+'thw_overgrowth': (THW, "a forest clearing bursting with new life, vines, flowers and saplings sprouting in seconds, forest beasts glowing with green healing light, an ancient tree giant's wounds closing with fresh bark"),
+'thw_thorns': (THW, 'a ring of razor-sharp brambles erupting out of the ground in every direction, thorns flying like darts through a dark forest'),
+'bfw_pauldrons': (BFW, 'a pair of heavy iron shoulder pauldrons covered in long cruel spikes, resting on a weapon rack inside an orc war tent, torchlight'),
+'bfw_banner': (BFW, 'a tattered red war banner on a spear pole topped with bones, painted with an original black fang-and-crossed-axes emblem, planted in the ground of an orc war camp, smoke and campfires behind'),
+'bfw_cry': (BFW, 'a huge orc warrior roaring a battle cry with his axe raised high, a shockwave of sound rippling out from him, a crowd of orc raiders cheering behind him'),
+'bfw_firebombs': (BFW, 'lit clay firebombs with sputtering fuses raining down from the sky and bursting into fireballs across a battlefield, goblins hurling more from a rickety catapult'),
+'bfw_cleave': (BFW, 'an orc warlord swinging a huge two-handed axe in a wide arc, a blazing sweeping slash cutting through a line of raised shields, sparks and dust flying'),
+'bfw_pillage': (BFW, "sneaky goblins raiding an adventurers' camp at night, stuffing scrolls, potions and coins into sacks and running off, an opened chest spilling loot"),
+'vis_plating': (VIS, 'a heavy steel breastplate covered in glowing blue runes, sparks of arcane energy crackling across its surface, on a stand in a stone vault workshop'),
+'vis_core': (VIS, 'a glowing blue crystal power core inside a brass and iron cage, crackling with arcane lightning and overheating, set in the chest of a huge iron rune construct'),
+'vis_pulse': (VIS, 'a ring-shaped shockwave of blue arcane energy and runes bursting outward from a giant stone and iron construct, knocking adventurers off their feet'),
+'vis_beam': (VIS, 'a huge iron rune construct firing a blinding blue-white energy beam from the glowing core in its chest across a dark stone vault'),
+'vis_repair': (VIS, 'a damaged iron rune construct mending itself, glowing blue threads of magic pulling broken plates and gears back into place, sparks flying'),
+'vis_lockdown': (VIS, 'heavy iron vault doors slamming shut while glowing red runic chains and bars lock across a stone corridor, red warning light'),
+'vis_disenchant': (VIS, "a knight's helmet and armour pieces cracking apart as their magic is torn away into wisps of blue light by a floating rune circle"),
+'vis_reflect': (VIS, 'a shimmering dome of mirror-like blue arcane glass surrounding a group of heroes in a stone vault, beams of light reflecting off its surface'),
+'d_ward': ('Summoned creature', 'a large floating orb of glowing blue arcane energy held in a ring of iron and brass, a shimmering protective barrier around it, small runes orbiting it, in a stone vault'),
+'boneservant': ('Summoned creature', 'a loyal skeleton warrior with a rusty sword and a round wooden shield, faint green light in its eye sockets, standing ready in a dark crypt'),
+'whelpling': ('Summoned creature', 'a small fierce baby red dragon with glowing ember scales, wings spread, breathing a little puff of flame, on volcanic rock'),
+})
 
 # Vault items that are still drawn by code (Nov 8, 2026): 15 card backs, 9 table themes, 7 companions.
 # file name on the prompt page: cos_<id>.png   (kind: back = tall card back, board = wide play-area background, pet = cut-out companion)
