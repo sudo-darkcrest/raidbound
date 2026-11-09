@@ -33,6 +33,18 @@ for sid, sk in skins.items():
 for h in HEROES:
     items.append(dict(sec="Ascended heroes (attach that hero's picture)", file='asc_' + h + '.png', refs='hero_' + h, title=names[h] + ' (Ascended)', have=('asc_' + h) in in_game,
                       prompt='Repaint the attached character as an ascended, empowered version of themselves: the same character, face and pose, now wearing grander ornate armour or robes with gold filigree, surrounded by a radiant glowing aura and light rays, floating sparkles, epic and heroic. Keep the same painted fantasy card-art style.' + SUFFIX))
+# Vault items still drawn by code: card backs (tall), table themes (wide) and companions (cut out from a green background)
+from subjects import COS
+COS_SEC = {'back': 'Vault: card backs (tall 5:7)', 'board': 'Vault: table themes (wide 16:9)', 'pet': 'Vault: companions (on a plain green background)'}
+COS_NO = ' No text, no letters, no numbers, no logo, no watermark. Do not include any real-world logos, emblems, crests or symbols from existing games, films or brands; invent original designs.'
+COS_PROMPT = {
+    'back': 'Painted ornate back of a fantasy trading card for a high-fantasy collectible card game, matching the style of the attached reference images: rich painterly colour, dark ink outlines, lots of fine detail. A perfectly symmetrical design with one large central emblem framed by an ornate decorative border with filigree. Design: {s}. Tall portrait image in a 5:7 ratio (like a playing card), full-bleed to every edge.',
+    'board': 'Painted background for the play area of a fantasy card game table, matching the style of the attached reference images: rich painterly colour, dark ink outlines, lots of detail. Cards will be laid on top of it, so keep the middle calm, even and fairly dark, with the richest detail toward the edges and corners. Scene: {s}. Wide 16:9 landscape image, full-bleed to every edge.',
+    'pet': 'A cute small companion creature for a fantasy card game, painted in the same style as the attached reference images: rich painterly colour, dark ink outlines. Creature: {s}. Full body, centred, filling most of the picture, on a plain flat solid bright green background (pure #00FF00) with nothing else: no ground, no shadow, no scenery, no green on the creature itself. Square 1:1 image.',
+}
+for cid, (kind, name, subj) in COS.items():
+    items.append(dict(sec=COS_SEC[kind], file='cos_' + cid + '.png', refs='style', title=name, have=('cos_' + cid) in in_game,
+                      prompt=COS_PROMPT[kind].format(s=subj) + COS_NO))
 tpl = (here / 'page_tpl.html').read_text()
 html = tpl.replace('__COUNT__', str(len(items))).replace('__HAVE__', str(sum(1 for i in items if i['have']))).replace('__ITEMS__', json.dumps(items)).replace('__VER__', __import__('hashlib').sha1(json.dumps(sorted(in_game)).encode()).hexdigest()[:10]).replace('__HERO__', json.dumps(hero_th)).replace('__STYLE__', json.dumps(style_th)) \
           .replace('__STYLEFIG__', ''.join(f'<figure><img src="{t}" alt="style reference {i+1}">style_{i+1}.png</figure>' for i, t in enumerate(style_th)))

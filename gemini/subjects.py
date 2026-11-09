@@ -168,3 +168,28 @@ S.update({
 'loot_starfall': ('Loot card (rare prize)', 'a golden eight-pointed star sigil floating in a violet night sky with shooting stars falling around it'),
 'loot_aurora': ('Loot card (rare prize)', 'a brass lantern glowing with green and violet aurora light, held up under the northern lights above snowy peaks'),
 })
+
+# Vault items that are still drawn by code (Nov 8, 2026): 9 card backs, 9 table themes, 2 companions.
+# file name on the prompt page: cos_<id>.png   (kind: back = tall card back, board = wide play-area background, pet = cut-out companion)
+COS = {
+    'back_sigil':       ('back',  'Runic Sigil',        'a glowing gold summoning sigil of concentric rings, star points and fantasy runes on deep crimson velvet'),
+    'back_dragonscale': ('back',  'Dragonscale',        'rows of overlapping emerald-green dragon scales spiralling out from a large gold-set ruby in the centre, small gold claws in the corners'),
+    'back_starfall':    ('back',  'Starfall',           'a violet night sky with falling stars streaking toward a radiant gold eight-pointed star in the centre'),
+    'back_compass':     ('back',  'Brass Compass',      'an ornate gold and brass compass rose (no letters marking the directions) on an old navy-blue sea chart with faint map lines, brass corner pieces'),
+    'back_thornwood':   ('back',  'Thornwood',          'a golden tree with spreading branches and roots inside a ring of leaves and thorny vines, on deep forest green'),
+    'back_warcamp':     ('back',  'Bloodfang',          'two crossed gold battle-axes over a burning red-orange sunburst, with wolf fangs worked into a dark iron border'),
+    'back_vault':       ('back',  'Rune Vault',         'a glowing blue rune circle at the centre of interlocking bronze gears and clockwork, dark steel border'),
+    'back_delver':      ('back',  "Delver's Key",       'a large ornate gold key resting on old mossy dungeon stone blocks, lit by a warm torch glow, iron border'),
+    'back_legend':      ('back',  'Legend',             'a radiant gold star at the centre of a burst of rainbow prismatic light, white-gold iridescent border'),
+    'board_lattice':    ('board', 'Midnight Lattice',   'deep navy cloth with a fine gold art-deco lattice pattern and a gold starburst medallion in the centre, gold border'),
+    'board_arcane':     ('board', 'Arcane Circle',      'a glowing violet and gold summoning circle of rings, fantasy runes and star polygons drawn across a dark stone floor at night, faint magical mist'),
+    'board_hexstone':   ('board', 'Hexstone Floor',     'bevelled dark slate hexagon floor tiles around an inlaid brass compass rose (no letters) in the centre, torchlight glinting on the tile edges'),
+    'board_felt':       ('board', 'Verdant Felt',       'a green baize card-table surface framed by a woven gold border with knotwork corners, soft warm lamplight'),
+    'board_emberfall':  ('board', 'Emberfall Mosaic',   'a blazing sunburst mosaic of fire-coloured tiles (red, orange and gold) set in a dark stone floor, glowing embers between the tiles'),
+    'board_frostwing':  ('board', 'Frostwing Crystal',  'a great six-armed snowflake etched into faceted pale-blue ice, frost crystals growing around the edges'),
+    'board_voidshade':  ('board', 'Voidshade Starfield', 'a violet nebula starfield with faint constellations and a silver crescent moon, drifting stardust'),
+    'board_tapestry':   ('board', 'Royal Tapestry',     'a crimson and gold damask tapestry with an original crowned royal crest at the top and gold tassels along the edges'),
+    'board_aurora':     ('board', 'Northern Lights',    'green and violet aurora over snowy mountain peaks and a dark pine forest beneath a starry night sky'),
+    'pet_owl':          ('pet',   'Snowfeather Owlet',  'a round, fluffy snowy-white owlet with big golden eyes and tiny feet, cute and friendly'),
+    'pet_ram':          ('pet',   'Little Ram',         'a fluffy little cream-white ram with curly golden-brown horns and a big friendly smile'),
+}

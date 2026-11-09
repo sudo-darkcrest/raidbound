@@ -254,7 +254,11 @@ if __name__ == '__main__':
     with sync_playwright() as p:
         br = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
         pg = br.new_page(viewport={'width': W, 'height': H})
+        import json
+        painted = set(json.load(open(here.parent / 'gemini' / 'in_game.json')))
         for k, fn in BOARDS.items():
+            if f'cos_board_{k}' in painted:  # a real painting has replaced this drawn table; leave it alone
+                print(k, 'is painted, skipped'); continue
             s = fn()
             (here / f'{k}.svg').write_text(s)
             pg.set_content(f'<html><body style="margin:0">{s}</body></html>')
