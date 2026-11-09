@@ -31,7 +31,7 @@ for k, (grp, subj) in S.items():
         it.update(sec=REDO_SEC, have=False, redo=True)
         if k.startswith('vis_'): it['refnote'] = 'the new <b>sentinel.png</b> you just made, plus the 4 style pictures'
     items.append(it)
-items.append(dict(sec=REDO_SEC, file='sentinel.png', refs='style', refimg='ref_sentinel', title='The Iron Sentinel (Vault boss)', have=False, redo=True,
+if 'sentinel' in REDO: items.append(dict(sec=REDO_SEC, file='sentinel.png', refs='style', refimg='ref_sentinel', title='The Iron Sentinel (Vault boss)', have=False, redo=True,
                   refnote='<b>ref_sentinel.png</b> (in your refs folder, shown here), plus the 4 style pictures', prompt=SENTINEL_PROMPT + SUFFIX))
 items.sort(key=lambda it: (ORDER.index(it['sec']) if it['sec'] in ORDER else 99, REDO.index(it['file'][:-4]) if it.get('redo') else 0))
 names = {'aldric':'Aldric','thorgrim':'Thorgrim','lyssara':'Lyssara','grukka':'Grukka','hruna':'Hruna','snix':'Snix','vaelith':'Vaelith','brannoc':'Brannoc','tavra':'Tavra','zizzik':'Zizzik','seraphine':'Seraphine','korga':'Korga','dawnarchon':'Archon of the Dawn','redwarlord':'Warlord of the Red Moon','tempestavatar':'Avatar of the Tempest'}

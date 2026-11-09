@@ -257,7 +257,8 @@ COS = {
 
 # #97 redo (Nov 8, 2026): the user asked to redo Root Crush, Firebomb Barrage and the Vault cards so they fit together.
 # The Vault set is anchored on a repainted Iron Sentinel (the old painting has the real word "AEGIS" on its chest).
-REDO = ['thw_crush', 'bfw_firebombs', 'sentinel', 'vis_plating', 'vis_core', 'vis_pulse', 'vis_beam', 'vis_repair', 'vis_lockdown', 'vis_disenchant', 'vis_reflect']
+# #98 done Nov 9, 2026: all 11 repainted (thw_crush, bfw_firebombs, sentinel and the 8 vis_ cards). Put ids back here to ask for another redo.
+REDO = []
 SENTINEL_PROMPT = ('Repaint the attached Iron Sentinel picture exactly: the same stone-and-iron golem, horned helm, glowing blue eyes, pose, vault hall and lighting. '
                    'Only change its chest: remove the glowing letters and put a round glowing pale-blue crystal core, set in a thick iron ring, in the middle of its chest. '
                    'Keep the glowing runes on its arms and legs as simple rune shapes, never letters or words. Keep the same painted fantasy card-art style.')
