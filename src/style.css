@@ -1111,6 +1111,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 /* #104 The Raider's Field Guide: a small tabbed book */
 .fieldguide { display: grid; grid-template-columns: minmax(11rem, 14rem) 1fr; gap: 1.2rem; align-items: start; max-width: 1180px; margin: 0 auto; }
 .fg-nav { display: flex; flex-direction: column; gap: .3rem; position: sticky; top: .5rem; }
+.topnav ~ .page .fg-nav { top: calc(var(--navh, 3.4rem) + .6rem); }
 .fg-tab { display: flex; align-items: center; gap: .55rem; text-align: left; padding: .5rem .7rem; border-radius: 6px; border: 1px solid rgba(201, 162, 90, .25); background: linear-gradient(90deg, rgba(40, 28, 14, .55), rgba(16, 12, 8, .35)); color: #e8dcc0; font-family: var(--f-sc); font-size: .98rem; cursor: pointer; }
 .fg-tab span { width: 1.4rem; text-align: center; font-size: 1.05rem; }
 .fg-tab:hover { border-color: var(--gilt-hi); }
@@ -1199,3 +1200,36 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 .hc.reach .card { box-shadow: 0 0 0 3px #8fdcff, 0 0 22px 4px rgba(120, 210, 255, .8); }
 @keyframes reachglow { 50% { box-shadow: 0 0 0 3px #d4f2ff, 0 0 36px 8px rgba(140, 220, 255, 1); } }
 @media (prefers-reduced-motion: reduce) { .unit.reach, .herocard.reach { animation: none; } }
+
+/* Top menu bar on every menu page (stays at the top while you scroll) */
+.topnav { position: sticky; top: 0; z-index: 40; padding-top: env(safe-area-inset-top); background: linear-gradient(#1b1408f2, #120d06ee); border-bottom: 2px solid var(--gilt-lo); box-shadow: 0 4px 14px rgba(0, 0, 0, .55), inset 0 -1px 0 rgba(246, 220, 149, .18); backdrop-filter: blur(6px); }
+.topnav .navin { max-width: 1280px; margin: 0 auto; display: flex; gap: .2rem; padding: .35rem 1rem; overflow-x: auto; scrollbar-width: none; }
+.topnav .navin::-webkit-scrollbar { display: none; }
+.topnav button { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; position: relative; padding: .5rem .8rem; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--vellum-2); font-size: .98rem; white-space: nowrap; transition: background .15s, color .15s; }
+.topnav button svg { width: 1.25rem; height: 1.25rem; fill: currentColor; flex: none; }
+.topnav button:hover { background: rgba(246, 220, 149, .09); color: var(--gilt-hi); }
+.topnav button:focus-visible { outline: 2px solid var(--gilt-hi); outline-offset: 1px; }
+.topnav button.on { color: #2a1806; background: linear-gradient(#f6dc95, #c9973c); border-color: #fff1c8; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+.topnav button .goldchip { font-size: .8rem; }
+.topnav button.on .goldchip { background: rgba(60, 36, 4, .85); }
+.topnav .navdot { position: absolute; top: .1rem; right: .1rem; min-width: 1.05rem; height: 1.05rem; padding: 0 .25rem; border-radius: 99px; background: var(--ember); color: #fff; font: 700 .7rem/1.05rem var(--f-body); font-style: normal; box-shadow: 0 0 0 2px #120d06; }
+.topnav .nshort { display: none; }
+.topnav + .page { padding-top: 1rem; }
+@media (max-width: 1180px) { .topnav button { padding: .5rem .55rem; font-size: .9rem; } .topnav button .goldchip { display: none; } }
+@media (max-width: 900px) {
+  .topnav .navin { padding: .25rem .4rem; gap: 0; }
+  .topnav button { flex: 1 0 auto; flex-direction: column; gap: .12rem; padding: .3rem .45rem; font-size: .7rem; min-width: 3.6rem; }
+  .topnav button svg { width: 1.35rem; height: 1.35rem; }
+  .topnav .nfull { display: none; } .topnav .nshort { display: inline; }
+  .topnav + .page { padding-top: .8rem; }
+}
+@media (max-width: 560px) {
+  .topnav .navin { padding: .2rem .15rem; overflow-x: auto; }
+  .topnav .nshort { overflow: hidden; text-overflow: clip; max-width: 100%; }
+  .topnav button { flex: 1 1 auto; min-width: 0; padding: .3rem 1px .25rem; font-size: .6rem; letter-spacing: -.02em; border-radius: 6px; }
+  .topnav button svg { width: 1.3rem; height: 1.3rem; }
+  .topnav .navdot { top: 0; right: 0; min-width: .95rem; height: .95rem; font-size: .62rem; line-height: .95rem; }
+}
+@media (max-width: 350px) { .topnav button { font-size: .54rem; } .topnav button svg { width: 1.15rem; height: 1.15rem; } }
+:root { --navh: 3.3rem; }
+@media (max-width: 900px) { :root { --navh: 3.8rem; } }

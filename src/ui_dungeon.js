@@ -24,7 +24,7 @@
     const seats = st.seats.map((s, i) => `<div class="dseat"><img alt="" src="${U.cardArt(s.hero)}"><div><label>Hero ${i + 1}<select data-seat="${i}" aria-label="Hero ${i + 1}">${heroes.map(h => `<option value="${h}" ${h === s.hero ? 'selected' : ''}>${esc(RB.HEROES[h].name)}</option>`).join('')}</select></label>
       <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</div>`).join('');
     const n = st.seats.length, hp = d.hp + d.hpPer * (n - 1), mode = M[st.mode];
-    const el = U.show('dungeons', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Dungeons</h2><span class="sp"></span></div>
+    const el = U.show('dungeons', `<div class="page"><div class="pagehead"><h2>Dungeons</h2><span class="sp"></span></div>
       <p class="lede">A dungeon runs itself: no boss player needed. Up to three heroes go in with their <b>starter decks</b>. Each turn the dungeon <b>flips</b> cards from its deck (allies, equipment and attacks), then <b>marks</b> one hero at random — and everything it has attacks that hero. Fight through <b>two under-bosses</b>, then the master of the dungeon, in one fight. The dungeon levels up each time an under-boss falls. Win to earn Dungeon XP: every level lets more of your own cards into your deck.</p>
       ${xpBar()}
       <div class="dcards">${cards}</div>

@@ -1132,6 +1132,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 /* #104 The Raider's Field Guide: a small tabbed book */
 .fieldguide { display: grid; grid-template-columns: minmax(11rem, 14rem) 1fr; gap: 1.2rem; align-items: start; max-width: 1180px; margin: 0 auto; }
 .fg-nav { display: flex; flex-direction: column; gap: .3rem; position: sticky; top: .5rem; }
+.topnav ~ .page .fg-nav { top: calc(var(--navh, 3.4rem) + .6rem); }
 .fg-tab { display: flex; align-items: center; gap: .55rem; text-align: left; padding: .5rem .7rem; border-radius: 6px; border: 1px solid rgba(201, 162, 90, .25); background: linear-gradient(90deg, rgba(40, 28, 14, .55), rgba(16, 12, 8, .35)); color: #e8dcc0; font-family: var(--f-sc); font-size: .98rem; cursor: pointer; }
 .fg-tab span { width: 1.4rem; text-align: center; font-size: 1.05rem; }
 .fg-tab:hover { border-color: var(--gilt-hi); }
@@ -1220,6 +1221,39 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 .hc.reach .card { box-shadow: 0 0 0 3px #8fdcff, 0 0 22px 4px rgba(120, 210, 255, .8); }
 @keyframes reachglow { 50% { box-shadow: 0 0 0 3px #d4f2ff, 0 0 36px 8px rgba(140, 220, 255, 1); } }
 @media (prefers-reduced-motion: reduce) { .unit.reach, .herocard.reach { animation: none; } }
+
+/* Top menu bar on every menu page (stays at the top while you scroll) */
+.topnav { position: sticky; top: 0; z-index: 40; padding-top: env(safe-area-inset-top); background: linear-gradient(#1b1408f2, #120d06ee); border-bottom: 2px solid var(--gilt-lo); box-shadow: 0 4px 14px rgba(0, 0, 0, .55), inset 0 -1px 0 rgba(246, 220, 149, .18); backdrop-filter: blur(6px); }
+.topnav .navin { max-width: 1280px; margin: 0 auto; display: flex; gap: .2rem; padding: .35rem 1rem; overflow-x: auto; scrollbar-width: none; }
+.topnav .navin::-webkit-scrollbar { display: none; }
+.topnav button { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; position: relative; padding: .5rem .8rem; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--vellum-2); font-size: .98rem; white-space: nowrap; transition: background .15s, color .15s; }
+.topnav button svg { width: 1.25rem; height: 1.25rem; fill: currentColor; flex: none; }
+.topnav button:hover { background: rgba(246, 220, 149, .09); color: var(--gilt-hi); }
+.topnav button:focus-visible { outline: 2px solid var(--gilt-hi); outline-offset: 1px; }
+.topnav button.on { color: #2a1806; background: linear-gradient(#f6dc95, #c9973c); border-color: #fff1c8; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
+.topnav button .goldchip { font-size: .8rem; }
+.topnav button.on .goldchip { background: rgba(60, 36, 4, .85); }
+.topnav .navdot { position: absolute; top: .1rem; right: .1rem; min-width: 1.05rem; height: 1.05rem; padding: 0 .25rem; border-radius: 99px; background: var(--ember); color: #fff; font: 700 .7rem/1.05rem var(--f-body); font-style: normal; box-shadow: 0 0 0 2px #120d06; }
+.topnav .nshort { display: none; }
+.topnav + .page { padding-top: 1rem; }
+@media (max-width: 1180px) { .topnav button { padding: .5rem .55rem; font-size: .9rem; } .topnav button .goldchip { display: none; } }
+@media (max-width: 900px) {
+  .topnav .navin { padding: .25rem .4rem; gap: 0; }
+  .topnav button { flex: 1 0 auto; flex-direction: column; gap: .12rem; padding: .3rem .45rem; font-size: .7rem; min-width: 3.6rem; }
+  .topnav button svg { width: 1.35rem; height: 1.35rem; }
+  .topnav .nfull { display: none; } .topnav .nshort { display: inline; }
+  .topnav + .page { padding-top: .8rem; }
+}
+@media (max-width: 560px) {
+  .topnav .navin { padding: .2rem .15rem; overflow-x: auto; }
+  .topnav .nshort { overflow: hidden; text-overflow: clip; max-width: 100%; }
+  .topnav button { flex: 1 1 auto; min-width: 0; padding: .3rem 1px .25rem; font-size: .6rem; letter-spacing: -.02em; border-radius: 6px; }
+  .topnav button svg { width: 1.3rem; height: 1.3rem; }
+  .topnav .navdot { top: 0; right: 0; min-width: .95rem; height: .95rem; font-size: .62rem; line-height: .95rem; }
+}
+@media (max-width: 350px) { .topnav button { font-size: .54rem; } .topnav button svg { width: 1.15rem; height: 1.15rem; } }
+:root { --navh: 3.3rem; }
+@media (max-width: 900px) { :root { --navh: 3.8rem; } }
 
 </style>
 </head>
@@ -7872,6 +7906,33 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   const save = U.save;
   const app = () => $('#app');
 
+  /* ---------------- top menu bar on every menu page ---------------- */
+  // the user asked for the other pages to stay at the top of every menu screen, so nobody has to go back to the title
+  const NI = {
+    title: '<path d="M4 20V10l3-2v-3h3v1l2-1 2 1V5h3v3l3 2v10h-6v-5h-4v5z"/>',
+    setup: '<path d="M5 3l7 8-2 2-7-8zM19 3l-7 8 2 2 7-8zM3 19l4-4 2 2-4 4zM21 19l-4-4-2 2 4 4z"/>',
+    dungeons: '<path d="M4 21V11a8 8 0 0116 0v10h-4v-9a4 4 0 00-8 0v9z"/><path d="M10 21v-6h4v6z" opacity=".55"/>',
+    online: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-4 3-6 6-6s6 2 6 6zM12 20c0-3 1.5-5 4-6 3 0 6 2 6 6z"/>',
+    market: '<path d="M9 3h6l-1.5 3h-3z"/><path d="M12 6c-5 0-8 4-8 9 0 4 3 6 8 6s8-2 8-6c0-5-3-9-8-9zm0 4.2l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z"/>',
+    collection: '<path d="M3 7l9-3 2 6-9 3z" opacity=".55"/><path d="M8 6h11v15H8z"/>',
+    vault: '<path d="M3 10a9 5 0 0118 0v2H3z"/><path d="M3 13h18v8H3zm7 2v3h4v-3z"/>',
+    rules: '<path d="M3 5c3-1 6-1 8.5 1v14C9 18 6 18 3 19zM21 5c-3-1-6-1-8.5 1v14c2.5-2 5.5-2 8.5-1z"/>',
+    settings: '<path d="M10.3 2h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9-2.6-.5v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8zM12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"/>',
+  };
+  const NAV = [['title', 'Home', 'Home'], ['setup', 'Raids', 'Raids'], ['dungeons', 'Dungeons', 'Dungeons'], ['online', 'Play online', 'Online'], ['market', 'Market', 'Market'],
+    ['collection', 'Collection', 'Cards'], ['vault', 'The Vault', 'Vault'], ['rules', 'How to play', 'Guide'], ['settings', 'Settings', 'Settings']];
+  const NAV_ON = new Set(['setup', 'dungeons', 'online', 'market', 'collection', 'vault', 'rules', 'settings']);
+  U.navHTML = function (cur) {
+    const free = save.freeCore > 0 ? `<i class="navdot" title="${save.freeCore} free pack${save.freeCore > 1 ? 's' : ''}">${save.freeCore}</i>` : '';
+    return `<nav class="topnav" aria-label="Menu"><div class="navin">${NAV.map(([id, full, short]) => `<button class="${id === cur ? 'on' : ''}" data-nav="${id}"${id === cur ? ' aria-current="page"' : ''} title="${full}"><svg viewBox="0 0 24 24" aria-hidden="true">${NI[id]}</svg><span class="nfull">${full}</span><span class="nshort">${short}</span>${id === 'market' ? `<span class="goldchip">${save.gold}</span>${free}` : ''}</button>`).join('')}</div></nav>`;
+  };
+  // one listener for every page: runs before each page's own click handler
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.topnav [data-nav]'); if (!b) return;
+    e.stopPropagation(); e.preventDefault();
+    const go = b.dataset.nav; if (typeof U[go] === 'function') U[go]();
+  }, true);
+
   U.show = function (name, html, keepScroll) {
     U.closePop(); U.hidePreview();
     // a hero unlocked since the last screen (raid win, purchase) brings their starter deck's cards into the collection
@@ -7881,8 +7942,9 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     $$('.screen').forEach(s => s.classList.add('hidden'));
     let el = $('#' + name);
     if (!el) { el = document.createElement('div'); el.id = name; el.className = 'screen'; app().appendChild(el); }
-    if (html != null) el.innerHTML = html;
+    if (html != null) el.innerHTML = (NAV_ON.has(name) ? U.navHTML(name) : '') + html;
     el.classList.remove('hidden');
+    if (html != null && NAV_ON.has(name)) { const on = $('.topnav .on', el); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }
     el.scrollTop = prev;
     return el;
   };
@@ -7924,7 +7986,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
         <div class="opts"><span class="seg"><button class="${!s.custom && !s.autoD ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.autoD ? 'on' : ''}" data-act="autodeck" title="Builds the strongest deck for this hero against this raid from the cards you own">Auto deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>${s.autoD ? `<div class="opts" style="color:var(--muted);font-size:.85rem">Auto deck: tuned for ${esc(R[setup.raid].short)} with ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''}. It's rebuilt when you change the raid or party.</div>` : ''}
         <div class="opts">${setup.asBoss ? '<span style="color:var(--muted);font-size:.85rem">The AI plays this hero against you.</span>' : `<label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>`}${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
-    const el = U.show('setup', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Choose your raid</h2><span class="sp"></span></div>
+    const el = U.show('setup', `<div class="page"><div class="pagehead"><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
       ${R[setup.raid].lore ? `<div class="lore" style="--lc:${R[setup.raid].theme || '#c9a25a'}"><h3>The tale of ${esc(R[setup.raid].name)}</h3>${R[setup.raid].lore.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
       <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
@@ -8046,7 +8108,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
       const open = save.loot.map((l, i) => [l, i]).filter(([l]) => !l.redeemed), used = save.loot.map((l, i) => [l, i]).filter(([l]) => l.redeemed);
       const lootRows = (open.length ? `<div class="cosgrid lootgrid">${open.map(([l, i]) => lootTile(l, i)).join('')}</div>` : '') + (set === 'loot' && used.length ? `<details class="usedloot"><summary>${used.length} redeemed code${used.length > 1 ? 's' : ''}</summary><ul>${used.map(([l]) => `<li><b>${esc(C[l.id].name)}</b> · ${esc(C[l.id].loot.label)} · <code>${l.code}</code> <span class="okmsg">Redeemed ✓</span></li>`).join('')}</ul></details>` : '');
       const showLoot = (set === 'all' && open.length) || (set === 'loot' && save.loot.length);
-      const el = U.show('collection', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
+      const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters">${Object.entries(sets).map(([k, v]) => `<button class="btn small ${set === k ? '' : 'ghost'}" data-set="${k}">${v}</button>`).join('')}</div>
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
         <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
@@ -8090,7 +8152,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     };
     const total = Object.keys(RB.COSMETICS).length, have = Object.keys(RB.COSMETICS).filter(U.ownsCos).length;
     const sections = KINDS.map(([k, label, what]) => `<h3 class="sec">${label}</h3><p class="kwhat">${what}</p><div class="cosgrid g-${k}">${Object.keys(RB.COSMETICS).filter(id => RB.COSMETICS[id].kind === k).map(tile).join('')}</div>`).join('');
-    const el = U.show('vault', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Vault</h2><span class="vcount">${have} of ${total} unlocked</span></div>
+    const el = U.show('vault', `<div class="page"><div class="pagehead"><h2>The Vault</h2><span class="vcount">${have} of ${total} unlocked</span></div>
       <p class="lede">Card backs and table themes change how the game looks. Companions also give your hero one tiny bonus. Earn them by beating raids, or redeem the scratch-off code from a loot card (find loot cards in treasure packs, then scratch the code in your Collection).</p>
       <div class="codebox"><input id="code" placeholder="RB-XXXXX-XXXXX" aria-label="Loot or gold code" maxlength="17"><button class="btn primary" data-act="redeem">Redeem</button></div>
       ${msg ? `<p style="text-align:center;color:${msg.ok ? 'var(--verd-hi)' : '#ffb49a'}">${esc(msg.text)}</p>` : ''}
@@ -8119,7 +8181,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   /* ---------------- settings ---------------- */
   U.settings = function () {
     const s = save.settings;
-    const el = U.show('settings', `<div class="page" style="max-width:720px"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Settings</h2></div>
+    const el = U.show('settings', `<div class="page" style="max-width:720px"><div class="pagehead"><h2>Settings</h2></div>
       <div class="settingsgrid">
       <div><h3 class="sec" style="margin-top:0">Game speed</h3><span class="seg">${[[1, 'Normal'], [0.55, 'Fast'], [0.15, 'Very fast']].map(([v, l]) => `<button class="${s.speed === v ? 'on' : ''}" data-speed="${v}">${l}</button>`).join('')}</span></div>
       <div class="audioset"><h3 class="sec" style="margin-top:0">Sound</h3>
@@ -8230,7 +8292,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     });
   };
   U.rules = function () {
-    const el = U.show('rules', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Raider's Field Guide</h2></div>${U.guideHTML(U.guideChapters())}</div>`);
+    const el = U.show('rules', `<div class="page"><div class="pagehead"><h2>The Raider's Field Guide</h2></div>${U.guideHTML(U.guideChapters())}</div>`);
     U.guideWire(el);
     el.onclick = e => { if (e.target.closest('[data-act=back]')) U.title(); };
   };
@@ -9177,7 +9239,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
           ${D ? `<p class="sub" style="margin-top:.6rem">Dungeon deck: the starter deck plus <b>${RB.dungeonSwaps(myDungeonLevel())}</b> of your own best cards (your dungeon level is ${myDungeonLevel()}).</p>` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
           <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
     }
-    const el = U.show('online', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Play online</h2><span class="sp"></span></div>
+    const el = U.show('online', `<div class="page"><div class="pagehead"><h2>Play online</h2><span class="sp"></span></div>
       ${body}<p class="netstatus">${esc(S.status)}</p>${S.err ? `<p class="neterr">${esc(S.err)}</p>` : ''}
       <p class="sub" style="margin-top:2rem">Good to know: the online server runs on a free plan, so the first connection of the day can take up to a minute. If a friend drops out mid-raid, the AI plays their hero until they come back with the same code.</p></div>`, true);
     el.onclick = onClick;
@@ -9404,7 +9466,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     const tab = opts.tab || U._mtab || 'packs'; U._mtab = tab;
     save.dust = save.dust || 0;
     const price = RB.PACK_PRICE;
-    const head = `<div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Market</h2><span class="sp"></span><span class="dustchip" title="Dust: made from spare cards in the Workshop">✦ ${save.dust} dust</span><span class="goldchip big">${save.gold} gold</span></div>
+    const head = `<div class="pagehead"><h2>The Market</h2><span class="sp"></span><span class="dustchip" title="Dust: made from spare cards in the Workshop">✦ ${save.dust} dust</span><span class="goldchip big">${save.gold} gold</span></div>
       <div class="mtabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>`;
     let body = '';
 
@@ -9550,7 +9612,7 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
     const seats = st.seats.map((s, i) => `<div class="dseat"><img alt="" src="${U.cardArt(s.hero)}"><div><label>Hero ${i + 1}<select data-seat="${i}" aria-label="Hero ${i + 1}">${heroes.map(h => `<option value="${h}" ${h === s.hero ? 'selected' : ''}>${esc(RB.HEROES[h].name)}</option>`).join('')}</select></label>
       <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</div>`).join('');
     const n = st.seats.length, hp = d.hp + d.hpPer * (n - 1), mode = M[st.mode];
-    const el = U.show('dungeons', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Dungeons</h2><span class="sp"></span></div>
+    const el = U.show('dungeons', `<div class="page"><div class="pagehead"><h2>Dungeons</h2><span class="sp"></span></div>
       <p class="lede">A dungeon runs itself: no boss player needed. Up to three heroes go in with their <b>starter decks</b>. Each turn the dungeon <b>flips</b> cards from its deck (allies, equipment and attacks), then <b>marks</b> one hero at random — and everything it has attacks that hero. Fight through <b>two under-bosses</b>, then the master of the dungeon, in one fight. The dungeon levels up each time an under-boss falls. Win to earn Dungeon XP: every level lets more of your own cards into your deck.</p>
       ${xpBar()}
       <div class="dcards">${cards}</div>

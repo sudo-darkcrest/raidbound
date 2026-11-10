@@ -63,7 +63,7 @@ async def main():
         code = await pg.evaluate("RB.UI.save.loot.length ? RB.UI.save.loot[0].code : ''")
         print('loot code', code, await pg.evaluate("RB.UI.save.loot.map(l=>l.scratched)"))
         await pg.screenshot(path='test/f_scratched.png')
-        await pg.click('#collection [data-act=back]'); await pg.wait_for_timeout(300)
+        await pg.click('#collection .topnav [data-nav=title]'); await pg.wait_for_timeout(300)
         await pg.click('#title >> text=The Vault'); await pg.wait_for_timeout(300)
         if code:
             await pg.fill('#code', code); await pg.click('[data-act=redeem]'); await pg.wait_for_timeout(500)
@@ -72,7 +72,7 @@ async def main():
         await pg.screenshot(path='test/f_vault.png')
         print('cos', await pg.evaluate("JSON.stringify(RB.UI.save.cos)+' sel '+JSON.stringify(RB.UI.save.sel)"))
         # deck builder
-        await pg.click('#vault [data-act=back]'); await pg.wait_for_timeout(300)
+        await pg.click('#vault .topnav [data-nav=title]'); await pg.wait_for_timeout(300)
         await pg.click('#title >> text=Begin a raid'); await pg.wait_for_timeout(300)
         await pg.click('#setup .seat >> nth=0 >> [data-act=edit]'); await pg.wait_for_timeout(800)
         await pg.screenshot(path='test/f_deck.png')
@@ -80,7 +80,7 @@ async def main():
         await pg.screenshot(path='test/f_deck_weap.png')
         await pg.click('#deck [data-act=done]'); await pg.wait_for_timeout(300)
         # rules & settings
-        await pg.click('#setup [data-act=back]'); await pg.wait_for_timeout(300)
+        await pg.click('#setup .topnav [data-nav=title]'); await pg.wait_for_timeout(300)
         await pg.click('#title >> text=How to play'); await pg.wait_for_timeout(300)
         await pg.screenshot(path='test/f_rules.png')
         print('\n'.join(errs) or 'no errors')

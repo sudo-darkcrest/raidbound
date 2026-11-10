@@ -42,7 +42,7 @@
     const tab = opts.tab || U._mtab || 'packs'; U._mtab = tab;
     save.dust = save.dust || 0;
     const price = RB.PACK_PRICE;
-    const head = `<div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>The Market</h2><span class="sp"></span><span class="dustchip" title="Dust: made from spare cards in the Workshop">✦ ${save.dust} dust</span><span class="goldchip big">${save.gold} gold</span></div>
+    const head = `<div class="pagehead"><h2>The Market</h2><span class="sp"></span><span class="dustchip" title="Dust: made from spare cards in the Workshop">✦ ${save.dust} dust</span><span class="goldchip big">${save.gold} gold</span></div>
       <div class="mtabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>`;
     let body = '';
 

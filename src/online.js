@@ -168,7 +168,7 @@
           ${D ? `<p class="sub" style="margin-top:.6rem">Dungeon deck: the starter deck plus <b>${RB.dungeonSwaps(myDungeonLevel())}</b> of your own best cards (your dungeon level is ${myDungeonLevel()}).</p>` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
           <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
     }
-    const el = U.show('online', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="back">← Title</button><h2>Play online</h2><span class="sp"></span></div>
+    const el = U.show('online', `<div class="page"><div class="pagehead"><h2>Play online</h2><span class="sp"></span></div>
       ${body}<p class="netstatus">${esc(S.status)}</p>${S.err ? `<p class="neterr">${esc(S.err)}</p>` : ''}
       <p class="sub" style="margin-top:2rem">Good to know: the online server runs on a free plan, so the first connection of the day can take up to a minute. If a friend drops out mid-raid, the AI plays their hero until they come back with the same code.</p></div>`, true);
     el.onclick = onClick;
