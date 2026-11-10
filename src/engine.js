@@ -116,6 +116,11 @@
     const pick = arr => arr.length ? arr[Math.floor(rnd() * arr.length)] : null;
 
     const log = (msg, cls) => { const e = { msg, cls: cls || '', round: g.round }; g.log.push(e); if (g.log.length > 300) g.log.shift(); H.log(e); };
+    // #114: every change to a raid gauge gets a log line, so the player can see what moved it
+    const counterLog = d => { const C0 = raid.counter; if (!C0 || !d) return; const v = g.boss.counter, max = C0.max;
+      const t = d > 0 ? (C0.riseText || 'The {name} rises to {v} of {max}.') : (C0.fallText || 'The {name} falls to {v} of {max}.');
+      log(t.replace(/\{name\}/g, C0.name).replace(/\{v\}/g, v).replace(/\{max\}/g, max).replace(/\{d\}/g, Math.abs(d)), d > 0 ? 'boss' : 'def'); };
+    const counterReset = () => { const C0 = raid.counter; if (C0 && C0.resetText) log(C0.resetText, 'def'); };
 
     /* ---------- target validation ---------- */
     function targetsFor(kind, p) {
@@ -676,11 +681,13 @@
         log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round and can no longer be intercepted by Bulwark allies.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
         if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
       }
+      B.risen = 0; // #114: how much the gauge has risen this boss turn (raid.riseCap limits it)
       if (raid.counter && !B.flying) {
-        B.counter += raid.counterPerTurn || 1;
-        await H.anim('counter', { value: B.counter, max: raid.counter.max });
-        H.update();
-        if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); H.update(); if (g.over) return; }
+        const k = raid.counterPerTurn || 1;
+        B.counter += k; B.risen += k;
+        counterLog(k);
+        H.update(); await H.anim('counter', { value: B.counter, max: raid.counter.max, delta: k });
+        if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); counterReset(); H.update(); if (g.over) return; }
       }
       { const st = stageNow(); if (st && st.rule && st.rule.bossTurn) { await st.rule.bossTurn(api); H.update(); if (g.over) return; } }
       if (B.flying && raid.flight && raid.flight.strafe) {
@@ -912,7 +919,7 @@
         if (!api.canBail(p)) return { ok: false, why: raid.bail ? (p.bailed ? 'You have already bailed water this turn.' : g.boss.counter <= 0 ? 'The water is already low.' : `Bailing costs ${raid.bail.cost} resource.`) : 'Nothing to bail here.' };
         pay(p, raid.bail.cost); p.bailed = true; g.boss.counter--;
         log(`${pdef(p).name} bails water: the ${raid.counter.name} falls to ${g.boss.counter}.`, 'def');
-        await H.anim('counter', { value: g.boss.counter, max: raid.counter.max }); H.update(); return { ok: true };
+        H.update(); await H.anim('counter', { value: g.boss.counter, max: raid.counter.max, delta: -1 }); return { ok: true };
       },
       // #101 Soak: a fixed total split between the heroes who step into the circle; if no one does, it hits everyone in full
       soak: async (total, name) => {
@@ -971,7 +978,14 @@
         for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); for (const p of g.players) { const q = perkIs(p, 'firstMinion'); if (q && !p.hero.petUsed && !p.hero.dead && g.boss.minions.includes(m)) { p.hero.petUsed = true; log(`${petName(p)} dives at the ${TK[id].name}.`, 'def'); await dmg(T.minion(m), q.n, { p, kind: 'effect' }); } } } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
       buffMinions: (a, h) => { g.boss.minions.forEach(m => { m.atkB += a; m.hpB += h; }); H.update(); },
       bossHeal: async k => heal(T.boss(), k),
-      addCounter: async k => { if (!raid.counter) return; g.boss.counter += k; H.update(); if (g.boss.counter >= raid.counter.max) { g.boss.counter = 0; await raid.counter.onMax(api); } },
+      addCounter: async k => {
+        if (!raid.counter) return; const B = g.boss;
+        // #114 (user's choice): the Tide can rise at most raid.riseCap per boss turn (the +1 tick included), so it never floods from empty in one turn
+        if (raid.riseCap && g.phase === 'boss') { const room = Math.max(0, raid.riseCap - (B.risen || 0)); if (k > room) { if (!room) { log(raid.counter.capText || `The ${raid.counter.name} can't rise any more this turn.`, 'def'); return; } k = room; } }
+        B.counter += k; if (g.phase === 'boss') B.risen = (B.risen || 0) + k;
+        counterLog(k); H.update(); await H.anim('counter', { value: B.counter, max: raid.counter.max, delta: k });
+        if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); counterReset(); H.update(); } },
+      lowerCounter: async k => { if (!raid.counter) return; const B = g.boss, was = B.counter; B.counter = Math.max(0, B.counter - k); if (B.counter === was) return; counterLog(B.counter - was); H.update(); await H.anim('counter', { value: B.counter, max: raid.counter.max, delta: B.counter - was }); },
       discardRandom: p => { if (!p.hand.length) return; const c = p.hand.splice(Math.floor(rnd() * p.hand.length), 1)[0]; p.grave.push(c); log(`${pdef(p).name} discards ${C[c.id].name}.`, 'loss'); H.update(); },
       bounce: async t => { if (t.t !== 'ally') return; const p = t.p, a = t.a; p.allies.splice(p.allies.indexOf(a), 1); if (!a.token) { if (p.hand.length < 10) p.hand.push(a.c); else p.grave.push(a.c); } log(`${allyDef(a).name} is swept back to ${pdef(p).name}'s hand.`, 'loss'); await H.anim('death', { ref: a.uid }); H.update(); },
       destroyAlly: async t => { if (t.t !== 'ally') return; t.a.damage = allyMax(t.p, t.a) + 99; await checkDeath(t, {}); },

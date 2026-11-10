@@ -342,7 +342,7 @@
   omen('mo_hatch', { name: 'Hatching Season', text: 'Summon an Emberwhelp (2/2, Swift), or two if there are 3 or more heroes.', run: async E => E.summonMinion('whelp', nH(E) >= 3 ? 2 : 1), art: RB.TOKENS.whelp.art });
   omen('mo_heat', { name: 'Searing Heat', text: 'Vorthrax\'s strike this turn deals 2 more damage.', run: async E => E.strikeUp(2), art: { s: 'volcano', L: [['glow', { x: 150, y: 120, r: 110, c: '#ff5a1a', op: 0.7 }]] } });
   omen('mo_floor', { name: 'Molten Floor', text: 'Each hero takes 1 damage for each Ember (up to 3).', run: async E => { const k = Math.min(3, E.g.boss.counter); if (k) for (const h of E.heroes()) await E.dmg(E.heroT(h), k, { kind: 'boss' }); }, art: { s: 'volcano', L: [['fx', { t: 'runes', x: 150, y: 210, r: 130, flat: 1, c: '#ff8a3a' }]] } });
-  omen('mo_cool', { name: 'Cooling Crust', text: 'A lull: Vorthrax loses 1 Ember and each hero heals 1.', run: async E => { E.g.boss.counter = Math.max(0, E.g.boss.counter - 1); for (const h of E.heroes()) await E.heal(E.heroT(h), 1); }, art: { s: 'volcano', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#ffd0a0' }]] } });
+  omen('mo_cool', { name: 'Cooling Crust', text: 'A lull: Vorthrax loses 1 Ember and each hero heals 1.', run: async E => { await E.lowerCounter(1); for (const h of E.heroes()) await E.heal(E.heroT(h), 1); }, art: { s: 'volcano', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#ffd0a0' }]] } });
   // Sunken Cathedral — the Tide clock
   omen('ti_wave', { name: 'Breaking Wave', soak: true, text: soakText, run: async E => E.soak(2 + 3 * nH(E), 'Breaking Wave'), art: { s: 'sea', L: [['fx', { t: 'wave', y: 150 }], ['fx', { t: 'runes', x: 150, y: 210, r: 110, flat: 1, c: '#5ad8ff' }]] } });
   omen('ti_spring', { name: 'Spring Tide', text: 'The Tide rises by 1.', run: async E => E.addCounter(1), art: { s: 'sea', L: [['fx', { t: 'wave', y: 120 }], ['fx', { t: 'wave', y: 180 }]] } });
@@ -350,7 +350,7 @@
   omen('ti_pressure', { name: 'Crushing Pressure', text: 'Each hero takes damage equal to half the Tide, rounded up.', run: async E => { const k = Math.ceil(E.g.boss.counter / 2); if (k) for (const h of E.heroes()) await E.dmg(E.heroT(h), k, { kind: 'boss' }); }, art: { s: 'sunken', L: [['beast', { t: 'tentacle', x: 150, y: 230, s: 1.2 }], ['fx', { t: 'ink' }]] } });
   omen('ti_bells', { name: 'Drowned Bells', text: 'Nethys\'s strike this turn deals 2 more damage.', run: async E => E.strikeUp(2), art: { s: 'sunken', L: [['obj', { t: 'horn', x: 150, y: 110, s: 0.9 }], ['fx', { t: 'wave', y: 200 }]] } });
   omen('ti_snare', { name: 'Kelp Snare', text: 'The ally with the highest ATK is caught: it won\'t ready on its owner\'s next turn.', run: async E => { const t = E.allyBy('atk', 'max'); if (t) E.freeze(t); }, art: { s: 'sunken', L: [['fx', { t: 'chains' }], ['beast', { t: 'tentacle', x: 150, y: 230, s: 0.9 }]] } });
-  omen('ti_slack', { name: 'Slack Water', text: 'A lull: the Tide falls by 2.', run: async E => { E.g.boss.counter = Math.max(0, E.g.boss.counter - 2); }, art: { s: 'sea', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#bff4ff' }]] } });
+  omen('ti_slack', { name: 'Slack Water', text: 'A lull: the Tide falls by 2.', run: async E => { await E.lowerCounter(2); }, art: { s: 'sea', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#bff4ff' }]] } });
   RB.BOSSCARDS = B;
 
   RB.RAIDS = {
@@ -388,7 +388,7 @@
         { name: 'Searing Fury (60%)', text: 'Vorthrax reveals 2 boss cards each turn.' },
         { name: 'Desperation (25%)', text: 'Two Emberwhelps hatch at once, and Vorthrax\'s strike deals +2 damage.' },
       ],
-      counter: { name: 'Embers', max: 5, onMax: async E => { if (E.g.boss.flying) return; E.log('Vorthrax breathes Cinderstorm!', 'boss'); E.banner('Cinderstorm', 'boss'); for (const h of E.heroes()) await E.dmg(E.heroT(h), 4, { kind: 'boss' }); if (!E.g.over) await E.takeOff(); } },
+      counter: { name: 'Embers', max: 5, riseText: 'Vorthrax gains an Ember: {v} of {max}.', fallText: 'Vorthrax loses Embers: {v} of {max}.', onMax: async E => { if (E.g.boss.flying) return; E.log('Vorthrax breathes Cinderstorm!', 'boss'); E.banner('Cinderstorm', 'boss'); for (const h of E.heroes()) await E.dmg(E.heroT(h), 4, { kind: 'boss' }); if (!E.g.over) await E.takeOff(); } },
       flight: { ground: n => 10 + 8 * (n - 1), turns: 3, crash: 0, strafe: 2 },
       omens: ['mo_fall', 'mo_fall', 'mo_vents', 'mo_stoke', 'mo_hatch', 'mo_heat', 'mo_floor', 'mo_cool'],
       counterPerTurn: 1,
@@ -405,15 +405,15 @@
       id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 98, hpPer: 158, strike: 6, retaliation: 2,
       intro: 'The cathedral bells still ring under the sea. Something down there is ringing them.',
       rules: [
-        { name: 'Rising Tide', text: 'Each boss turn raises the Tide. At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes. On your turn you can bail water: pay 1 resource to lower the Tide by 1 (once per turn).' },
+        { name: 'Rising Tide', text: 'Each boss turn raises the Tide by 1, and Nethys\'s cards can raise it 1 more (never more than 2 in one boss turn). At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes. On your turn you can bail water: pay 1 resource to lower the Tide by 1 (once per turn).' },
         { name: 'Grasp of the Deep', text: 'Nethys begins the fight with two Grasping Tentacles (3/4).' },
         { name: 'Coral Hide', text: 'Melee attackers take 2 damage back when they strike Nethys.' },
         { name: 'The Deep Awakens (50%)', text: 'The Leviathan Maw (5/8, Crushing) rises: while it lives, Nethys takes half damage. Nethys now reveals 2 boss cards each turn.' },
         { name: 'Omens: Drowned Portents', text: 'An omen every boss turn with 3 or 4 heroes, every other boss turn with 2, every third with 1. The next three are shown above Nethys.' },
       ],
       setup: async E => E.summonMinion('tentacle', E.g.players.length >= 3 ? E.g.players.length : 2),
-      counter: { name: 'Tide', max: 4, onMax: async E => { E.log('A Tidal Surge crashes over the party!', 'boss'); E.banner('Tidal Surge', 'boss'); for (const t of E.friendlyChars()) await E.dmg(t, 3, { kind: 'boss' }); } },
-      counterPerTurn: 1,
+      counter: { name: 'Tide', max: 4, riseText: 'The Tide rises to {v} of {max}.', fallText: 'The Tide falls to {v} of {max}.', resetText: 'The water drains away: the Tide is back to 0.', capText: 'The water churns, but the Tide has already risen twice this turn.', onMax: async E => { E.log('A Tidal Surge crashes over the party!', 'boss'); E.banner('Tidal Surge', 'boss'); for (const t of E.friendlyChars()) await E.dmg(t, 3, { kind: 'boss' }); } },
+      counterPerTurn: 1, riseCap: 2,
       bail: { cost: 1 }, halvedBy: 'maw',
       omens: ['ti_wave', 'ti_wave', 'ti_spring', 'ti_lurkers', 'ti_pressure', 'ti_bells', 'ti_snare', 'ti_slack'],
       phases: [

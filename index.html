@@ -1255,6 +1255,18 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 :root { --navh: 3.3rem; }
 @media (max-width: 900px) { :root { --navh: 3.8rem; } }
 
+/* #114 raid gauge pulse + floating +1/−1 */
+.counter.bump { animation: cbump .9s ease-out; border-radius: 99px; }
+.counter.bump.up { --cb: rgba(255, 140, 70, .9); }
+.tide .counter.bump.up { --cb: rgba(90, 200, 255, .95); }
+.counter.bump.down { --cb: rgba(160, 255, 200, .9); }
+@keyframes cbump { 0% { transform: scale(1); box-shadow: 0 0 0 0 var(--cb); } 30% { transform: scale(1.18); box-shadow: 0 0 18px 6px var(--cb); } 100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; } }
+.cfloat { position: fixed; z-index: 60; transform: translate(0, -50%); padding: .1rem .5rem; border-radius: 99px; background: rgba(6, 10, 24, .85); border: 1px solid currentColor; pointer-events: none; font: 800 1.05rem var(--f-sc); text-shadow: 0 2px 4px #000, 0 0 10px rgba(0, 0, 0, .8); white-space: nowrap; animation: cfloat 1.8s ease-out forwards; }
+.cfloat.up { color: #9fe4ff; } .cfloat.down { color: #b8ffcf; }
+@keyframes cfloat { 0% { opacity: 0; margin-top: 6px; } 10% { opacity: 1; margin-top: 0; } 70% { opacity: 1; margin-top: -12px; } 100% { opacity: 0; margin-top: -26px; } }
+body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
+@media (prefers-reduced-motion: reduce) { .counter.bump { animation: none; } .cfloat { animation-duration: .01s; } }
+
 </style>
 </head>
 <body>
@@ -4481,7 +4493,7 @@ globalThis.RB.WEB_BUILD = true;
   omen('mo_hatch', { name: 'Hatching Season', text: 'Summon an Emberwhelp (2/2, Swift), or two if there are 3 or more heroes.', run: async E => E.summonMinion('whelp', nH(E) >= 3 ? 2 : 1), art: RB.TOKENS.whelp.art });
   omen('mo_heat', { name: 'Searing Heat', text: 'Vorthrax\'s strike this turn deals 2 more damage.', run: async E => E.strikeUp(2), art: { s: 'volcano', L: [['glow', { x: 150, y: 120, r: 110, c: '#ff5a1a', op: 0.7 }]] } });
   omen('mo_floor', { name: 'Molten Floor', text: 'Each hero takes 1 damage for each Ember (up to 3).', run: async E => { const k = Math.min(3, E.g.boss.counter); if (k) for (const h of E.heroes()) await E.dmg(E.heroT(h), k, { kind: 'boss' }); }, art: { s: 'volcano', L: [['fx', { t: 'runes', x: 150, y: 210, r: 130, flat: 1, c: '#ff8a3a' }]] } });
-  omen('mo_cool', { name: 'Cooling Crust', text: 'A lull: Vorthrax loses 1 Ember and each hero heals 1.', run: async E => { E.g.boss.counter = Math.max(0, E.g.boss.counter - 1); for (const h of E.heroes()) await E.heal(E.heroT(h), 1); }, art: { s: 'volcano', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#ffd0a0' }]] } });
+  omen('mo_cool', { name: 'Cooling Crust', text: 'A lull: Vorthrax loses 1 Ember and each hero heals 1.', run: async E => { await E.lowerCounter(1); for (const h of E.heroes()) await E.heal(E.heroT(h), 1); }, art: { s: 'volcano', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#ffd0a0' }]] } });
   // Sunken Cathedral — the Tide clock
   omen('ti_wave', { name: 'Breaking Wave', soak: true, text: soakText, run: async E => E.soak(2 + 3 * nH(E), 'Breaking Wave'), art: { s: 'sea', L: [['fx', { t: 'wave', y: 150 }], ['fx', { t: 'runes', x: 150, y: 210, r: 110, flat: 1, c: '#5ad8ff' }]] } });
   omen('ti_spring', { name: 'Spring Tide', text: 'The Tide rises by 1.', run: async E => E.addCounter(1), art: { s: 'sea', L: [['fx', { t: 'wave', y: 120 }], ['fx', { t: 'wave', y: 180 }]] } });
@@ -4489,7 +4501,7 @@ globalThis.RB.WEB_BUILD = true;
   omen('ti_pressure', { name: 'Crushing Pressure', text: 'Each hero takes damage equal to half the Tide, rounded up.', run: async E => { const k = Math.ceil(E.g.boss.counter / 2); if (k) for (const h of E.heroes()) await E.dmg(E.heroT(h), k, { kind: 'boss' }); }, art: { s: 'sunken', L: [['beast', { t: 'tentacle', x: 150, y: 230, s: 1.2 }], ['fx', { t: 'ink' }]] } });
   omen('ti_bells', { name: 'Drowned Bells', text: 'Nethys\'s strike this turn deals 2 more damage.', run: async E => E.strikeUp(2), art: { s: 'sunken', L: [['obj', { t: 'horn', x: 150, y: 110, s: 0.9 }], ['fx', { t: 'wave', y: 200 }]] } });
   omen('ti_snare', { name: 'Kelp Snare', text: 'The ally with the highest ATK is caught: it won\'t ready on its owner\'s next turn.', run: async E => { const t = E.allyBy('atk', 'max'); if (t) E.freeze(t); }, art: { s: 'sunken', L: [['fx', { t: 'chains' }], ['beast', { t: 'tentacle', x: 150, y: 230, s: 0.9 }]] } });
-  omen('ti_slack', { name: 'Slack Water', text: 'A lull: the Tide falls by 2.', run: async E => { E.g.boss.counter = Math.max(0, E.g.boss.counter - 2); }, art: { s: 'sea', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#bff4ff' }]] } });
+  omen('ti_slack', { name: 'Slack Water', text: 'A lull: the Tide falls by 2.', run: async E => { await E.lowerCounter(2); }, art: { s: 'sea', L: [['fx', { t: 'heal', x: 150, y: 130, c: '#bff4ff' }]] } });
   RB.BOSSCARDS = B;
 
   RB.RAIDS = {
@@ -4527,7 +4539,7 @@ globalThis.RB.WEB_BUILD = true;
         { name: 'Searing Fury (60%)', text: 'Vorthrax reveals 2 boss cards each turn.' },
         { name: 'Desperation (25%)', text: 'Two Emberwhelps hatch at once, and Vorthrax\'s strike deals +2 damage.' },
       ],
-      counter: { name: 'Embers', max: 5, onMax: async E => { if (E.g.boss.flying) return; E.log('Vorthrax breathes Cinderstorm!', 'boss'); E.banner('Cinderstorm', 'boss'); for (const h of E.heroes()) await E.dmg(E.heroT(h), 4, { kind: 'boss' }); if (!E.g.over) await E.takeOff(); } },
+      counter: { name: 'Embers', max: 5, riseText: 'Vorthrax gains an Ember: {v} of {max}.', fallText: 'Vorthrax loses Embers: {v} of {max}.', onMax: async E => { if (E.g.boss.flying) return; E.log('Vorthrax breathes Cinderstorm!', 'boss'); E.banner('Cinderstorm', 'boss'); for (const h of E.heroes()) await E.dmg(E.heroT(h), 4, { kind: 'boss' }); if (!E.g.over) await E.takeOff(); } },
       flight: { ground: n => 10 + 8 * (n - 1), turns: 3, crash: 0, strafe: 2 },
       omens: ['mo_fall', 'mo_fall', 'mo_vents', 'mo_stoke', 'mo_hatch', 'mo_heat', 'mo_floor', 'mo_cool'],
       counterPerTurn: 1,
@@ -4544,15 +4556,15 @@ globalThis.RB.WEB_BUILD = true;
       id: 'tide', name: 'The Sunken Cathedral', boss: 'Nethys, Mother of Tides', short: 'Nethys', difficulty: 'Legendary', hp: 98, hpPer: 158, strike: 6, retaliation: 2,
       intro: 'The cathedral bells still ring under the sea. Something down there is ringing them.',
       rules: [
-        { name: 'Rising Tide', text: 'Each boss turn raises the Tide. At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes. On your turn you can bail water: pay 1 resource to lower the Tide by 1 (once per turn).' },
+        { name: 'Rising Tide', text: 'Each boss turn raises the Tide by 1, and Nethys\'s cards can raise it 1 more (never more than 2 in one boss turn). At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes. On your turn you can bail water: pay 1 resource to lower the Tide by 1 (once per turn).' },
         { name: 'Grasp of the Deep', text: 'Nethys begins the fight with two Grasping Tentacles (3/4).' },
         { name: 'Coral Hide', text: 'Melee attackers take 2 damage back when they strike Nethys.' },
         { name: 'The Deep Awakens (50%)', text: 'The Leviathan Maw (5/8, Crushing) rises: while it lives, Nethys takes half damage. Nethys now reveals 2 boss cards each turn.' },
         { name: 'Omens: Drowned Portents', text: 'An omen every boss turn with 3 or 4 heroes, every other boss turn with 2, every third with 1. The next three are shown above Nethys.' },
       ],
       setup: async E => E.summonMinion('tentacle', E.g.players.length >= 3 ? E.g.players.length : 2),
-      counter: { name: 'Tide', max: 4, onMax: async E => { E.log('A Tidal Surge crashes over the party!', 'boss'); E.banner('Tidal Surge', 'boss'); for (const t of E.friendlyChars()) await E.dmg(t, 3, { kind: 'boss' }); } },
-      counterPerTurn: 1,
+      counter: { name: 'Tide', max: 4, riseText: 'The Tide rises to {v} of {max}.', fallText: 'The Tide falls to {v} of {max}.', resetText: 'The water drains away: the Tide is back to 0.', capText: 'The water churns, but the Tide has already risen twice this turn.', onMax: async E => { E.log('A Tidal Surge crashes over the party!', 'boss'); E.banner('Tidal Surge', 'boss'); for (const t of E.friendlyChars()) await E.dmg(t, 3, { kind: 'boss' }); } },
+      counterPerTurn: 1, riseCap: 2,
       bail: { cost: 1 }, halvedBy: 'maw',
       omens: ['ti_wave', 'ti_wave', 'ti_spring', 'ti_lurkers', 'ti_pressure', 'ti_bells', 'ti_snare', 'ti_slack'],
       phases: [
@@ -4777,6 +4789,11 @@ globalThis.RB.WEB_BUILD = true;
     const pick = arr => arr.length ? arr[Math.floor(rnd() * arr.length)] : null;
 
     const log = (msg, cls) => { const e = { msg, cls: cls || '', round: g.round }; g.log.push(e); if (g.log.length > 300) g.log.shift(); H.log(e); };
+    // #114: every change to a raid gauge gets a log line, so the player can see what moved it
+    const counterLog = d => { const C0 = raid.counter; if (!C0 || !d) return; const v = g.boss.counter, max = C0.max;
+      const t = d > 0 ? (C0.riseText || 'The {name} rises to {v} of {max}.') : (C0.fallText || 'The {name} falls to {v} of {max}.');
+      log(t.replace(/\{name\}/g, C0.name).replace(/\{v\}/g, v).replace(/\{max\}/g, max).replace(/\{d\}/g, Math.abs(d)), d > 0 ? 'boss' : 'def'); };
+    const counterReset = () => { const C0 = raid.counter; if (C0 && C0.resetText) log(C0.resetText, 'def'); };
 
     /* ---------- target validation ---------- */
     function targetsFor(kind, p) {
@@ -5337,11 +5354,13 @@ globalThis.RB.WEB_BUILD = true;
         log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round and can no longer be intercepted by Bulwark allies.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
         if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
       }
+      B.risen = 0; // #114: how much the gauge has risen this boss turn (raid.riseCap limits it)
       if (raid.counter && !B.flying) {
-        B.counter += raid.counterPerTurn || 1;
-        await H.anim('counter', { value: B.counter, max: raid.counter.max });
-        H.update();
-        if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); H.update(); if (g.over) return; }
+        const k = raid.counterPerTurn || 1;
+        B.counter += k; B.risen += k;
+        counterLog(k);
+        H.update(); await H.anim('counter', { value: B.counter, max: raid.counter.max, delta: k });
+        if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); counterReset(); H.update(); if (g.over) return; }
       }
       { const st = stageNow(); if (st && st.rule && st.rule.bossTurn) { await st.rule.bossTurn(api); H.update(); if (g.over) return; } }
       if (B.flying && raid.flight && raid.flight.strafe) {
@@ -5573,7 +5592,7 @@ globalThis.RB.WEB_BUILD = true;
         if (!api.canBail(p)) return { ok: false, why: raid.bail ? (p.bailed ? 'You have already bailed water this turn.' : g.boss.counter <= 0 ? 'The water is already low.' : `Bailing costs ${raid.bail.cost} resource.`) : 'Nothing to bail here.' };
         pay(p, raid.bail.cost); p.bailed = true; g.boss.counter--;
         log(`${pdef(p).name} bails water: the ${raid.counter.name} falls to ${g.boss.counter}.`, 'def');
-        await H.anim('counter', { value: g.boss.counter, max: raid.counter.max }); H.update(); return { ok: true };
+        H.update(); await H.anim('counter', { value: g.boss.counter, max: raid.counter.max, delta: -1 }); return { ok: true };
       },
       // #101 Soak: a fixed total split between the heroes who step into the circle; if no one does, it hits everyone in full
       soak: async (total, name) => {
@@ -5632,7 +5651,14 @@ globalThis.RB.WEB_BUILD = true;
         for (let i = 0; i < k; i++) { const m = { uid: uid(), id, damage: 0, ex: false, sick: g.phase === 'boss' && !hasKw(TK[id], 'ferocity'), stunned: false, atkB: 0, hpB: 0 }; g.boss.minions.push(m); H.update(); await H.anim('summon', { ref: m.uid }); for (const p of g.players) { const q = perkIs(p, 'firstMinion'); if (q && !p.hero.petUsed && !p.hero.dead && g.boss.minions.includes(m)) { p.hero.petUsed = true; log(`${petName(p)} dives at the ${TK[id].name}.`, 'def'); await dmg(T.minion(m), q.n, { p, kind: 'effect' }); } } } log(`${raid.short} summons ${k > 1 ? k + ' ' : 'a '}${TK[id].name}${k > 1 ? 's' : ''}.`, 'boss'); },
       buffMinions: (a, h) => { g.boss.minions.forEach(m => { m.atkB += a; m.hpB += h; }); H.update(); },
       bossHeal: async k => heal(T.boss(), k),
-      addCounter: async k => { if (!raid.counter) return; g.boss.counter += k; H.update(); if (g.boss.counter >= raid.counter.max) { g.boss.counter = 0; await raid.counter.onMax(api); } },
+      addCounter: async k => {
+        if (!raid.counter) return; const B = g.boss;
+        // #114 (user's choice): the Tide can rise at most raid.riseCap per boss turn (the +1 tick included), so it never floods from empty in one turn
+        if (raid.riseCap && g.phase === 'boss') { const room = Math.max(0, raid.riseCap - (B.risen || 0)); if (k > room) { if (!room) { log(raid.counter.capText || `The ${raid.counter.name} can't rise any more this turn.`, 'def'); return; } k = room; } }
+        B.counter += k; if (g.phase === 'boss') B.risen = (B.risen || 0) + k;
+        counterLog(k); H.update(); await H.anim('counter', { value: B.counter, max: raid.counter.max, delta: k });
+        if (B.counter >= raid.counter.max) { B.counter = 0; await raid.counter.onMax(api); counterReset(); H.update(); } },
+      lowerCounter: async k => { if (!raid.counter) return; const B = g.boss, was = B.counter; B.counter = Math.max(0, B.counter - k); if (B.counter === was) return; counterLog(B.counter - was); H.update(); await H.anim('counter', { value: B.counter, max: raid.counter.max, delta: B.counter - was }); },
       discardRandom: p => { if (!p.hand.length) return; const c = p.hand.splice(Math.floor(rnd() * p.hand.length), 1)[0]; p.grave.push(c); log(`${pdef(p).name} discards ${C[c.id].name}.`, 'loss'); H.update(); },
       bounce: async t => { if (t.t !== 'ally') return; const p = t.p, a = t.a; p.allies.splice(p.allies.indexOf(a), 1); if (!a.token) { if (p.hand.length < 10) p.hand.push(a.c); else p.grave.push(a.c); } log(`${allyDef(a).name} is swept back to ${pdef(p).name}'s hand.`, 'loss'); await H.anim('death', { ref: a.uid }); H.update(); },
       destroyAlly: async t => { if (t.t !== 'ally') return; t.a.damage = allyMax(t.p, t.a) + 99; await checkDeath(t, {}); },
@@ -8566,7 +8592,16 @@ globalThis.RB.WEB_BUILD = true;
           if (!p.auto && !net && !E.g.cfg.bossPlayer) { if (localHumans() > 1 && view.lastHuman !== d.p) view.curtain = d.p; view.lastHuman = d.p; }
           view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
         case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
-        case 'counter': await wait(250); break;
+        case 'counter': { // #114: the gauge pulses and shows +1 / -1, so a change never goes unnoticed
+          const el = document.querySelector('#battle .bossrow .counter');
+          if (el) {
+            el.classList.remove('bump', 'up', 'down'); void el.offsetWidth; el.classList.add('bump', (d.delta || 0) < 0 ? 'down' : 'up');
+            const r = el.getBoundingClientRect(), f = document.createElement('div');
+            f.className = 'cfloat ' + ((d.delta || 0) < 0 ? 'down' : 'up'); f.textContent = ((d.delta || 0) < 0 ? '−' : '+') + Math.abs(d.delta || 1) + ' ' + E.raid.counter.name;
+            f.style.left = (r.right + 10) + 'px'; f.style.top = (r.top + r.height / 2) + 'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1900);
+            if ((d.delta || 0) > 0) U.sfx.hit(); else U.sfx.heal();
+          }
+          await wait(700); break; }
         case 'banner': banner(d.text, d.kind, null, 1300); await wait(1000); break;
         case 'power': U.sfx.power(); banner(d.name, '', 'Hero power', 1200); await wait(900); break;
         case 'quest': U.sfx.quest(); banner('Quest complete', '', C[d.id].name, 1200); await wait(800); break;

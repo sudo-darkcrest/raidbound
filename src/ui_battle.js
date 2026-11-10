@@ -265,7 +265,16 @@
           if (!p.auto && !net && !E.g.cfg.bossPlayer) { if (localHumans() > 1 && view.lastHuman !== d.p) view.curtain = d.p; view.lastHuman = d.p; }
           view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
         case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
-        case 'counter': await wait(250); break;
+        case 'counter': { // #114: the gauge pulses and shows +1 / -1, so a change never goes unnoticed
+          const el = document.querySelector('#battle .bossrow .counter');
+          if (el) {
+            el.classList.remove('bump', 'up', 'down'); void el.offsetWidth; el.classList.add('bump', (d.delta || 0) < 0 ? 'down' : 'up');
+            const r = el.getBoundingClientRect(), f = document.createElement('div');
+            f.className = 'cfloat ' + ((d.delta || 0) < 0 ? 'down' : 'up'); f.textContent = ((d.delta || 0) < 0 ? '−' : '+') + Math.abs(d.delta || 1) + ' ' + E.raid.counter.name;
+            f.style.left = (r.right + 10) + 'px'; f.style.top = (r.top + r.height / 2) + 'px'; document.body.appendChild(f); setTimeout(() => f.remove(), 1900);
+            if ((d.delta || 0) > 0) U.sfx.hit(); else U.sfx.heal();
+          }
+          await wait(700); break; }
         case 'banner': banner(d.text, d.kind, null, 1300); await wait(1000); break;
         case 'power': U.sfx.power(); banner(d.name, '', 'Hero power', 1200); await wait(900); break;
         case 'quest': U.sfx.quest(); banner('Quest complete', '', C[d.id].name, 1200); await wait(800); break;

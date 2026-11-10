@@ -1233,3 +1233,15 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 @media (max-width: 350px) { .topnav button { font-size: .54rem; } .topnav button svg { width: 1.15rem; height: 1.15rem; } }
 :root { --navh: 3.3rem; }
 @media (max-width: 900px) { :root { --navh: 3.8rem; } }
+
+/* #114 raid gauge pulse + floating +1/−1 */
+.counter.bump { animation: cbump .9s ease-out; border-radius: 99px; }
+.counter.bump.up { --cb: rgba(255, 140, 70, .9); }
+.tide .counter.bump.up { --cb: rgba(90, 200, 255, .95); }
+.counter.bump.down { --cb: rgba(160, 255, 200, .9); }
+@keyframes cbump { 0% { transform: scale(1); box-shadow: 0 0 0 0 var(--cb); } 30% { transform: scale(1.18); box-shadow: 0 0 18px 6px var(--cb); } 100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; } }
+.cfloat { position: fixed; z-index: 60; transform: translate(0, -50%); padding: .1rem .5rem; border-radius: 99px; background: rgba(6, 10, 24, .85); border: 1px solid currentColor; pointer-events: none; font: 800 1.05rem var(--f-sc); text-shadow: 0 2px 4px #000, 0 0 10px rgba(0, 0, 0, .8); white-space: nowrap; animation: cfloat 1.8s ease-out forwards; }
+.cfloat.up { color: #9fe4ff; } .cfloat.down { color: #b8ffcf; }
+@keyframes cfloat { 0% { opacity: 0; margin-top: 6px; } 10% { opacity: 1; margin-top: 0; } 70% { opacity: 1; margin-top: -12px; } 100% { opacity: 0; margin-top: -26px; } }
+body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
+@media (prefers-reduced-motion: reduce) { .counter.bump { animation: none; } .cfloat { animation-duration: .01s; } }
