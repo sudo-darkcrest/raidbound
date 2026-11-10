@@ -25,7 +25,7 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
   - The Molten Spire
   - The Sunken Cathedral
 
-  Each boss plays its own deck, has custom rules and changes phase as it weakens. Heroic difficulty raises the stakes. Each raid has its own treasure pack.
+  Each boss plays its own deck, has custom rules and changes phase as it weakens. Three difficulties: **Normal** to learn, **Heroic** for a real fight (against 2 or more heroes the boss strikes extra times), and **Mythic**, unlocked for each raid by beating it on Heroic: more boss health, an earlier Enrage at round 20, and a treasure pack where every card is a holofoil and two are raid treasures, plus 50% more gold. Each raid has its own treasure pack.
   - Each raid also has a small **Omen** deck. Omens come every boss turn with 3 or 4 heroes, every other turn with 2 and every third alone, and the next three wait face up beside the boss. **Soak** omens share their damage between the heroes who step into the circle.
   - Each raid has its own gauge: the Crypt's light sears the undead when you heal, Vorthrax takes to the air when his Embers fill (only Volley and Skyward cards can reach him until you shoot him down, and the ones that can glow), and you can bail water to hold back Nethys's Tide (it rises at most 2 in one boss turn, and every change shows in the log).
 - **Defending together:** Bulwark allies can **cover** any friendly hero or ally (covering a teammate draws the boss's eye), and **React** cards answer an attack the moment it comes. Keywords: Bulwark, Swift, Volley, Skyward, Shrouded, Guardian, Ambush, Crushing, Frenzy, Thick Hide and Tend.
@@ -38,7 +38,7 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
   - The Runebound Vault
 
   Dungeons run themselves. Each one is a gauntlet: two under-bosses, then the master of the dungeon (Elder Gnarlroot, Gorrash Bloodfang or Thuldrak, the Runebound Warden), in one fight. Each turn the dungeon flips cards, marks a hero at random and attacks them, and it levels up each time an under-boss falls. There are four difficulties, from Novice to Legendary. Winning earns Dungeon XP, and each dungeon level lets more of your own cards into your starter deck.
-- **Your collection:** you start with the cards for each starting hero's starter deck, plus two free Raidbound Core booster packs. Each hero you unlock brings the cards for their starter deck. Every hero can always play their Starter deck.
+- **Your collection:** you start with the cards for each starting hero's starter deck, plus two free Raidbound Core booster packs. Each hero you unlock brings the cards for their starter deck. Every hero can always play their Starter deck. The set buttons show how many cards of each set you have found (for example 41 / 60) with a progress bar, and a tick when the set is complete.
 - **Market:**
   - Spend the gold you earn on Raidbound Core packs (three separate packs, each with its own wrapper: 5 cards for 75 gold, 10 for 150 or 20 for 275; core cards for every class), three themed booster sets (Emberfall, Frostwing and Voidshade, 35 cards each, 100 gold), single cards from a daily shop of eight, extra raid treasure and hero skins.
   - The Workshop turns spare cards into dust for crafting core and booster cards.

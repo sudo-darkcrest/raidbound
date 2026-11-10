@@ -11,6 +11,13 @@
   RB.BOSS_MINION_CAP = 7; // #109: the most minions a boss can have on the table at once
   RB.DUNGEON_PARTY_STRIKE = 1; // fix-sim: each extra hero adds 1 more to dungeon strikes (on top of the usual +1)
   RB.HEROIC_EXTRA_CARDS = 1; // fix-sim: Heroic raids reveal one more boss card each turn (smarter decks made Heroic too easy)
+  // #117: raid difficulty table (hp multiplier, extra strike, extra boss cards per turn, gauge head start, Enrage round)
+  RB.RAID_DIFFS = {
+    normal: { name: 'Normal', hp: 1, strike: 0, cards: 0, counter: 0 },
+    // partyStrikes: extra boss strikes each boss turn by heroes still standing (0.5 = one every other boss turn)
+    heroic: { name: 'Heroic', hp: 1.3, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, partyStrikes: [0, 0.5, 0.5, 1] },
+    mythic: { name: 'Mythic', hp: 1.5, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, enrage: 20, partyHp: 1.2, partyStrikes: [0, 0.5, 1, 1] },
+  };
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
@@ -53,12 +60,14 @@
     const n = g.players.length;
     g.partyFury = n >= 2 ? 1 : 0;
     const heroic = cfg.difficulty === 'heroic';
-    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1)) * (heroic ? 1.3 : 1) * (cfg.bossPlayer ? 1.15 : 1));
+    // dungeons keep their old rule (their 'heroic' mode adds 30% health and +1 strike); raids read RB.RAID_DIFFS
+    const DF = D ? { hp: heroic ? 1.3 : 1, strike: heroic ? 1 : 0, cards: 0, counter: heroic ? 1 : 0 } : (RB.RAID_DIFFS[cfg.difficulty] || RB.RAID_DIFFS.normal);
+    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1) * (DF.partyHp || 1)) * DF.hp * (cfg.bossPlayer ? 1.15 : 1));
     const bdeck = [];
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
-      maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: heroic && raid.counter ? 1 : 0,
-      cardsPerTurn: 1 + (heroic && !D ? (RB.HEROIC_EXTRA_CARDS || 0) : 0), strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
+      maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: raid.counter ? (DF.counter || 0) : 0,
+      cardsPerTurn: 1 + (DF.cards || 0), strikeBonus: (DF.strike || 0) + (n - 1), enrageAt: DF.enrage || RB.ENRAGE_ROUND, partyStrikes: DF.partyStrikes || null, stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
       // #101 Omens: each raid's own deck of signature events, one per boss turn, the next three shown to the party
       omens: raid.omens && !D ? shuffle(raid.omens.slice(), rnd) : [], omenGrave: [], tempStrike: 0,
@@ -676,7 +685,7 @@
       B.minions.forEach(m => { m.ex = false; m.sick = false; });
       B.struck = false; // the boss's own strike is still to come (the AI keeps a Bulwark ally back for it)
       // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
-      if (g.round >= RB.ENRAGE_ROUND) {
+      if (g.round >= (B.enrageAt || RB.ENRAGE_ROUND)) {
         B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
         log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round and can no longer be intercepted by Bulwark allies.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
         if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
@@ -739,7 +748,13 @@
         await minionAttack(m);
       }
       if (g.over) return;
-      if (D ? B.turnsTaken > 0 : g.round > 1) await bossStrike();
+      if (D ? B.turnsTaken > 0 : g.round > 1) {
+        await bossStrike();
+        // #117: on harder raids a big party draws extra strikes (see RB.RAID_DIFFS partyStrikes)
+        const pv = B.partyStrikes ? (B.partyStrikes[alive().length - 1] || 0) : 0, fr = pv % 1;
+        const xs = Math.floor(pv) + (fr && B.turnsTaken % Math.round(1 / fr) === 1 ? 1 : 0); // 0.5 = an extra strike every other boss turn
+        for (let i = 0; i < xs && !g.over; i++) { log(`${raid.short} strikes again!`, 'boss'); await bossStrike(); }
+      }
       B.turnsTaken++;
       if (g.over) return;
       // end of boss turn

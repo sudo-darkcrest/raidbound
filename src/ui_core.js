@@ -9,7 +9,7 @@
 
   /* ---------- persistence (per-browser; safe if storage is unavailable) ---------- */
   const KEY = 'raidbound.save.v1';
-  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, gold: 0, heroes: [], settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
+  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, mythicWins: {}, gold: 0, heroes: [], settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
   let save = fresh(), hadSave = false;
   try { const raw = localStorage.getItem(KEY); if (raw) { save = Object.assign(fresh(), JSON.parse(raw)); hadSave = true; } } catch (e) { }
   // Starting collection (Nov 8, 2026): a new player owns just the cards in each starting hero's starter deck, and gets
@@ -40,6 +40,7 @@
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
   U.persist();
   if (!save.heroicWins) save.heroicWins = {};
+  if (!save.mythicWins) save.mythicWins = {};
   if (typeof save.gold !== 'number') save.gold = 0;
   if (!Array.isArray(save.heroes)) save.heroes = [];
   U.heroOpen = id => RB.heroUnlocked(id, save);

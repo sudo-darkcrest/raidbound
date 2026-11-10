@@ -75,7 +75,9 @@
   const setup = U.setupState = { raid: 'crypt', diff: 'normal', seats: [{ hero: 'aldric', auto: false, custom: false }] };
   function heroBlurb(h) { return `<b>${esc(h.name)}</b> — ${RB.FACTIONS[h.fac].short} ${h.race} ${RB.CLASSES[h.cls].name} (${h.spec}). ${h.hp} health. <b>${esc(h.power.name)}:</b> ${esc(h.power.text)}${h.trait ? ' ' + esc(h.trait) : ''}`; }
   U.setup = function (keep) {
-    const raids = Object.values(R).map(r => `<button class="raid ${setup.raid === r.id ? 'sel' : ''}" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="body"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div><p>${esc(r.intro)}</p><ul class="rules">${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul><p style="color:var(--muted)">Treasure: ${r.treasure.map(t => esc(C[t].name)).join(', ')}${(save.wins[r.id] || 0) ? ` · Conquered ${save.wins[r.id]}×` : ''}</p></div></button>`).join('');
+    if (!RB.RAID_DIFFS[setup.diff]) setup.diff = 'normal';
+    if (setup.diff === 'mythic' && !U.mythicOpen(setup.raid)) setup.diff = 'heroic';
+    const raids = Object.values(R).map(r => `<button class="raid ${setup.raid === r.id ? 'sel' : ''}" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="body"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div><p>${esc(r.intro)}</p><ul class="rules">${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul><p style="color:var(--muted)">Treasure: ${r.treasure.map(t => esc(C[t].name)).join(', ')}${(save.wins[r.id] || 0) ? ` · Conquered ${save.wins[r.id]}×` : ''}</p>${U.diffBadges(r.id)}</div></button>`).join('');
     const seats = setup.seats.map((s, i) => {
       const h = H[s.hero];
       const deckOk = !s.custom || (save.decks[s.hero] && save.decks[s.hero].length === RB.DECK_SIZE);
@@ -88,16 +90,16 @@
     const el = U.show('setup', `<div class="page"><div class="pagehead"><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
       ${R[setup.raid].lore ? `<div class="lore" style="--lc:${R[setup.raid].theme || '#c9a25a'}"><h3>The tale of ${esc(R[setup.raid].name)}</h3>${R[setup.raid].lore.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
-      <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
+      <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button><button class="${setup.diff === 'mythic' ? 'on' : ''} ${U.mythicOpen(setup.raid) ? '' : 'locked'}" data-diff="mythic" title="${U.mythicOpen(setup.raid) ? 'The hardest way to raid' : 'Beat ' + esc(R[setup.raid].short) + ' on Heroic to unlock Mythic'}">${U.mythicOpen(setup.raid) ? '' : '&#128274; '}Mythic</button></span><span style="color:var(--muted);font-size:.92rem">${U.DIFF_TEXT[setup.diff] || U.DIFF_TEXT.normal}</span></div>
       <div class="difficulty"><span class="seg"><button class="${!setup.asBoss ? 'on' : ''}" data-side="heroes">Play the heroes</button><button class="${setup.asBoss ? 'on' : ''}" data-side="boss">Play the raid boss</button></span><span style="color:var(--muted);font-size:.92rem">${setup.asBoss ? `You are ${esc(R[setup.raid].boss)}. Each turn you hold a hand of boss cards and pick which to play, then choose who your minions and your strike attack. The AI plays the heroes.` : 'You lead the heroes against the AI-controlled boss.'}</span></div>
       <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
       <div class="seats">${seats}</div>
       ${U.bossScale(setup.raid, setup.seats.length, setup.diff, setup.asBoss)}
-      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
+      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${RB.RAID_DIFFS[setup.diff].name}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
       const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(true); }
-      const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(true); }
+      const df = t.closest('[data-diff]'); if (df) { if (df.dataset.diff === 'mythic' && !U.mythicOpen(setup.raid)) return U.toast(`Mythic is locked. Beat ${R[setup.raid].short} on Heroic first.`); setup.diff = df.dataset.diff; return U.setup(true); }
       const sd = t.closest('[data-side]'); if (sd) { setup.asBoss = sd.dataset.side === 'boss'; return U.setup(true); }
       const seatEl = t.closest('[data-seat]'); const seat = seatEl ? setup.seats[+seatEl.dataset.seat] : null;
       const hb = t.closest('[data-hero]'); if (hb && seat) { const hx = H[hb.dataset.hero]; if (!U.heroOpen(hx.id)) return U.toast(`${hx.name} is locked. To unlock: ${hx.unlock.text}.`); seat.hero = hb.dataset.hero; return U.setup(true); }
@@ -118,10 +120,24 @@
   };
   // #34 (user): show how the boss scales to the party
   U.bossScale = function (raidId, n, diff, asBoss) {
-    const r = R[raidId], hv = diff === 'heroic';
-    const hp = Math.round((r.hp + r.hpPer * (n - 1)) * (hv ? 1.3 : 1) * (asBoss ? 1.15 : 1));
-    const strike = r.strike + (hv ? 1 : 0) + (n - 1) + (n >= 2 ? 1 : 0);
-    return `<div class="bossscale"><b>${esc(r.short)} scales to ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${strike} · reveals ${n + (hv ? RB.HEROIC_EXTRA_CARDS || 0 : 0)} boss card${n + (hv ? RB.HEROIC_EXTRA_CARDS || 0 : 0) > 1 ? 's' : ''} a turn${n >= 2 ? ' · minion attacks +1' : ''}${r.id === 'tide' && n >= 3 ? ` · starts with ${n} tentacles` : ''}</div>`;
+    const r = R[raidId], DF = RB.RAID_DIFFS[diff] || RB.RAID_DIFFS.normal;
+    const hp = Math.round((r.hp + r.hpPer * (n - 1) * (DF.partyHp || 1)) * DF.hp * (asBoss ? 1.15 : 1));
+    const strike = r.strike + (DF.strike || 0) + (n - 1) + (n >= 2 ? 1 : 0);
+    const cards = n + (DF.cards || 0), pv = (DF.partyStrikes || [])[n - 1] || 0;
+    const times = pv >= 1 ? ` (${1 + Math.floor(pv)} times a turn)` : pv > 0 ? ' (twice every other turn)' : '';
+    return `<div class="bossscale"><b>${esc(r.short)} scales to ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${strike}${times} · reveals ${cards} boss card${cards > 1 ? 's' : ''} a turn${n >= 2 ? ' · minion attacks +1' : ''}${DF.enrage ? ` · enraged from round ${DF.enrage}` : ''}${r.id === 'tide' && n >= 3 ? ` · starts with ${n} tentacles` : ''}</div>`;
+  };
+  // #117: difficulty texts, Mythic unlock and win badges
+  U.DIFF_TEXT = {
+    normal: 'Normal: the recommended way to learn each raid.',
+    heroic: 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Against 2 or more heroes it also strikes extra times. Treasure packs hold an extra holofoil and better odds of a loot card, and you earn 25% more gold.',
+    mythic: 'Mythic: the hardest fight. The boss has 50% more health (and even more for each extra hero), strikes 1 harder, reveals 1 extra card, strikes extra times against parties and becomes Enraged at round 20. Every treasure card is a holofoil, two are raid treasures, loot is more likely, and you earn 50% more gold.',
+  };
+  U.mythicOpen = raidId => ((save.heroicWins || {})[raidId] || 0) > 0;
+  U.diffBadges = raidId => {
+    const h = (save.heroicWins || {})[raidId] || 0, m = (save.mythicWins || {})[raidId] || 0;
+    if (!h && !m) return '';
+    return `<div class="diffbadges">${h ? `<span class="db heroic">Heroic ${h}×</span>` : ''}${m ? `<span class="db mythic">&#9819; Mythic ${m}×</span>` : '<span class="db open">Mythic unlocked</span>'}</div>`;
   };
   U.startRaid = async function () {
     const autos = [];
@@ -207,8 +223,15 @@
       const open = save.loot.map((l, i) => [l, i]).filter(([l]) => !l.redeemed), used = save.loot.map((l, i) => [l, i]).filter(([l]) => l.redeemed);
       const lootRows = (open.length ? `<div class="cosgrid lootgrid">${open.map(([l, i]) => lootTile(l, i)).join('')}</div>` : '') + (set === 'loot' && used.length ? `<details class="usedloot"><summary>${used.length} redeemed code${used.length > 1 ? 's' : ''}</summary><ul>${used.map(([l]) => `<li><b>${esc(C[l.id].name)}</b> · ${esc(C[l.id].loot.label)} · <code>${l.code}</code> <span class="okmsg">Redeemed ✓</span></li>`).join('')}</ul></details>` : '');
       const showLoot = (set === 'all' && open.length) || (set === 'loot' && save.loot.length);
+      // #116: how much of each set you have collected (a card counts once you own at least one copy)
+      const inSet = k => Object.values(C).filter(d => k === 'all' || d.set === k || d.pack === k);
+      const prog = k => { const l = inSet(k), h = l.filter(d => save.owned[d.id] > 0).length; return { h, t: l.length, pct: l.length ? Math.round(100 * h / l.length) : 0 }; };
+      const SHORT = { ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', molten: 'Molten treasure', tide: 'Cathedral treasure' };
+      const setBtn = (k, v) => { const p = prog(k), done = p.t && p.h === p.t;
+        return `<button class="btn small setbtn ${set === k ? '' : 'ghost'} ${done ? 'done' : ''}" data-set="${k}" title="${esc(v)}: ${p.h} of ${p.t} collected"><span class="sn">${esc(SHORT[k] || v)}${done ? ' <b class="sdone">&#10003;</b>' : ''}</span><span class="sc">${p.h} / ${p.t}</span><i class="sbar"><b style="width:${p.pct}%"></b></i></button>`; };
+      const cur = prog(set), setLine = `<p class="setline">${set === 'all' ? 'You have collected' : `${esc(sets[set])}: you have`} <b>${cur.h} of ${cur.t}</b> cards (${cur.pct}%).${cur.h === cur.t ? ' <b class="sdone">Set complete!</b>' : ` ${cur.t - cur.h} still to find.`}</p>`;
       const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
-        <div class="filters">${Object.entries(sets).map(([k, v]) => `<button class="btn small ${set === k ? '' : 'ghost'}" data-set="${k}">${v}</button>`).join('')}</div>
+        <div class="filters setfilters">${Object.entries(sets).map(([k, v]) => setBtn(k, v)).join('')}</div>${setLine}
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
         <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
@@ -333,12 +356,12 @@
       { id: 'bossturn', icon: '💀', title: "The boss's turn", html: `
         <p>After every hero has acted, the boss takes its turn. It always happens in this order:</p>
         <ol class="fg-steps">
-          <li><b>Rage.</b> From round ${RB.ENRAGE_ROUND} the boss is <b>Enraged</b>: its strike grows 1 stronger every round, goes straight past Bulwark allies, and sees through Shrouded heroes. No fight can stall forever.</li>
+          <li><b>Rage.</b> From round ${RB.ENRAGE_ROUND} (round ${RB.RAID_DIFFS.mythic.enrage} on Mythic) the boss is <b>Enraged</b>: its strike grows 1 stronger every round, goes straight past Bulwark allies, and sees through Shrouded heroes. No fight can stall forever.</li>
           <li><b>The raid's gauge rises.</b> Embers, the Tide and other counters tick up. When one fills, something terrible happens. A boss in the air strafes the party instead.</li>
           <li><b>Omens.</b> If an omen is due, the next one is revealed and happens at once (see <i>Omens and Soak</i>).</li>
-          <li><b>Boss cards.</b> The boss reveals cards from its deck: one (two in its later phases), plus one for each extra hero. Before each one lands, you may answer with an <b>Instant</b>.</li>
+          <li><b>Boss cards.</b> The boss reveals cards from its deck: one (one more in its later phases, and one more on Heroic or Mythic), plus one for each extra hero. Before each one lands, you may answer with an <b>Instant</b>.</li>
           <li><b>Minions attack.</b> Each ready minion attacks a hero or an ally.</li>
-          <li><b>The strike.</b> The boss strikes the hero with the most <b>threat</b>.</li>
+          <li><b>The strike.</b> The boss strikes the hero with the most <b>threat</b>. On Heroic and Mythic a boss facing 2 or more heroes strikes extra times, picking a target each time.</li>
         </ol>
         <p>Every time a minion or the boss attacks, the same small steps play out:</p>
         ${fgEx(fgU('', '1 · Cover', 'a Bulwark may step in') + fgA() + fgU('', '2 · React', 'answer the attack') + fgA() + fgU('', '3 · Strike back', 'weapon or ally') + fgA() + fgU('', '4 · Damage', 'wards, then armor'), 'Cover, React, strike back, damage. Learn this rhythm and you will lose far fewer heroes.')}

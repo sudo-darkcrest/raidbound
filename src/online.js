@@ -152,7 +152,7 @@
       const D = isDungeon(L), dis = host ? '' : 'disabled';
       const raids = (D ? Object.values(RB.DUNGEONS) : Object.values(R)).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${dis}>${esc(D ? r.name : r.short)}</button>`).join('');
       const diffs = D ? Object.entries(RB.DUNGEON_MODES).map(([k, mm]) => `<button class="btn small ${L.diff === k ? '' : 'ghost'}" data-diff="${k}" ${dis} title="${esc(mm.text)}">${mm.name}</button>`).join('')
-        : `<button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${dis}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${dis}>Heroic</button>`;
+        : `<button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${dis}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${dis}>Heroic</button><button class="btn small ${L.diff === 'mythic' ? '' : 'ghost'}" data-diff="mythic" ${host && U.mythicOpen(L.raid) ? '' : 'disabled'} title="${U.mythicOpen(L.raid) || !host ? 'The hardest way to raid' : 'Beat this raid on Heroic to unlock Mythic'}">Mythic</button>`;
       const dd = D && RB.DUNGEONS[L.raid], dm = D && (RB.DUNGEON_MODES[L.diff] || RB.DUNGEON_MODES.novice);
       const scale = D && dd ? `<div class="bossscale"><b>${esc(dd.short)} for ${L.players.length} hero${L.players.length > 1 ? 'es' : ''}:</b> ${dd.hp + dd.hpPer * (L.players.length - 1)} health · starts at level ${dm.level} · ${dm.first ? 'goes first' : 'you go first'}</div>` : U.bossScale(L.raid, L.players.length, L.diff);
       const modeSeg = `<div class="filters"><span class="seg"><button class="${D ? '' : 'on'}" data-mode="raid" ${dis}>Raid</button><button class="${D ? 'on' : ''}" data-mode="dungeon" ${dis || (L.players.length > 3 ? 'disabled title="Dungeons take up to 3 heroes"' : '')}>Dungeon</button></span></div>`;
@@ -190,7 +190,7 @@
     const hb = t.closest('[data-hero]'); if (hb) { S.mySeat.hero = hb.dataset.hero; draw(); return sendSeat(); }
     const db = t.closest('[data-deck]'); if (db) { S.mySeat.deckMode = db.dataset.deck; draw(); return sendSeat(); }
     const mb = t.closest('[data-mode]'); if (mb && S.lobby && S.lobby.host === S.id) { const toD = mb.dataset.mode === 'dungeon'; if (toD === isDungeon(S.lobby)) return; return sendRaw(toD ? { t: 'settings', mode: 'dungeon', raid: (U.dungeonState && U.dungeonState.id) || 'thornwood', diff: (U.dungeonState && U.dungeonState.mode) || 'novice' } : { t: 'settings', mode: 'raid', raid: 'crypt', diff: 'normal' }); }
-    const rb = t.closest('[data-raid]'); if (rb) { sendRaw({ t: 'settings', raid: rb.dataset.raid }); setTimeout(sendSeat, 300); return; }
+    const rb = t.closest('[data-raid]'); if (rb) { const L0 = S.lobby || {}; sendRaw(Object.assign({ t: 'settings', raid: rb.dataset.raid }, !isDungeon(L0) && L0.diff === 'mythic' && !U.mythicOpen(rb.dataset.raid) ? { diff: 'heroic' } : {})); setTimeout(sendSeat, 300); return; }
     const df = t.closest('[data-diff]'); if (df) return sendRaw({ t: 'settings', diff: df.dataset.diff });
     const kb = t.closest('[data-kick]'); if (kb) return sendRaw({ t: 'kick', id: kb.dataset.kick });
     if (!a) return;

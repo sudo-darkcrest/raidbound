@@ -75,6 +75,7 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .raid .rules li { margin: .25rem 0; }
 .raid .rules b { color: var(--vellum); font-weight: 700; }
 .difficulty { display: flex; gap: .5rem; margin-top: 1rem; align-items: center; }
+.difficulty > .seg { flex: none; } /* #117: keep all three difficulty buttons visible beside long text */
 .seg { display: inline-flex; border: 1px solid var(--gilt-lo); border-radius: 4px; overflow: hidden; }
 .seg button { background: transparent; border: 0; padding: .45em 1em; color: var(--vellum); }
 .seg button.on { background: linear-gradient(#5a3a10, #2e1c06); color: var(--gilt-hi); }
@@ -1245,3 +1246,32 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 @keyframes cfloat { 0% { opacity: 0; margin-top: 6px; } 10% { opacity: 1; margin-top: 0; } 70% { opacity: 1; margin-top: -12px; } 100% { opacity: 0; margin-top: -26px; } }
 body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 @media (prefers-reduced-motion: reduce) { .counter.bump { animation: none; } .cfloat { animation-duration: .01s; } }
+
+/* #116 Collection: collected count and bar on each set button */
+.setfilters { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: .45rem; align-items: stretch; }
+.setfilters .setbtn { display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; gap: .22rem; min-width: 0; padding: .45rem .7rem .5rem; text-align: left; line-height: 1.15; }
+.setfilters .setbtn .sn { font-size: .84rem; }
+.setfilters .setbtn .sc { font: 700 .8rem var(--f-body); opacity: .85; }
+.setfilters .setbtn .sbar { display: block; height: 5px; border-radius: 99px; background: rgba(0, 0, 0, .45); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(246, 220, 149, .18); }
+.setfilters .setbtn .sbar b { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #c9973c, #f6dc95); }
+.setfilters .setbtn.done .sbar b { background: linear-gradient(90deg, #4fbf7a, #b8ffcf); }
+.setfilters .setbtn .sdone { color: #8df0b0; }
+.setfilters .setbtn:not(.ghost) .sdone { color: #1f6b3c; }
+.setline { margin: -.2rem 0 .9rem; color: var(--vellum-2); font-size: .95rem; }
+.setline .sdone { color: #8df0b0; }
+@media (max-width: 760px) {
+  .setfilters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
+  .setfilters .setbtn { min-width: 0; padding: .35rem .45rem .4rem; }
+  .setfilters .setbtn .sn { font-size: .72rem; white-space: normal; }
+  .setfilters .setbtn .sc { font-size: .72rem; }
+}
+
+/* #117 Mythic difficulty */
+.seg button[data-diff="mythic"].on { background: linear-gradient(#5a1a6a, #2a0a34); color: #f3d0ff; text-shadow: 0 0 8px rgba(220, 120, 255, .6); }
+.seg button.locked { opacity: .55; }
+.bbname em.mythic { color: #e7b8ff; border-color: #c77dff; text-shadow: 0 0 8px rgba(200, 110, 255, .7); }
+.diffbadges { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
+.diffbadges .db { font-family: var(--f-sc); font-size: .72rem; letter-spacing: .06em; padding: .12rem .45rem; border-radius: 3px; border: 1px solid; }
+.diffbadges .db.heroic { color: #ffcf6a; border-color: rgba(255, 207, 106, .6); }
+.diffbadges .db.mythic { color: #e7b8ff; border-color: #c77dff; background: rgba(120, 40, 160, .25); }
+.diffbadges .db.open { color: #c9a7e0; border-color: rgba(199, 125, 255, .4); border-style: dashed; }

@@ -96,6 +96,7 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .raid .rules li { margin: .25rem 0; }
 .raid .rules b { color: var(--vellum); font-weight: 700; }
 .difficulty { display: flex; gap: .5rem; margin-top: 1rem; align-items: center; }
+.difficulty > .seg { flex: none; } /* #117: keep all three difficulty buttons visible beside long text */
 .seg { display: inline-flex; border: 1px solid var(--gilt-lo); border-radius: 4px; overflow: hidden; }
 .seg button { background: transparent; border: 0; padding: .45em 1em; color: var(--vellum); }
 .seg button.on { background: linear-gradient(#5a3a10, #2e1c06); color: var(--gilt-hi); }
@@ -1266,6 +1267,35 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
 @keyframes cfloat { 0% { opacity: 0; margin-top: 6px; } 10% { opacity: 1; margin-top: 0; } 70% { opacity: 1; margin-top: -12px; } 100% { opacity: 0; margin-top: -26px; } }
 body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 @media (prefers-reduced-motion: reduce) { .counter.bump { animation: none; } .cfloat { animation-duration: .01s; } }
+
+/* #116 Collection: collected count and bar on each set button */
+.setfilters { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: .45rem; align-items: stretch; }
+.setfilters .setbtn { display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; gap: .22rem; min-width: 0; padding: .45rem .7rem .5rem; text-align: left; line-height: 1.15; }
+.setfilters .setbtn .sn { font-size: .84rem; }
+.setfilters .setbtn .sc { font: 700 .8rem var(--f-body); opacity: .85; }
+.setfilters .setbtn .sbar { display: block; height: 5px; border-radius: 99px; background: rgba(0, 0, 0, .45); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(246, 220, 149, .18); }
+.setfilters .setbtn .sbar b { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #c9973c, #f6dc95); }
+.setfilters .setbtn.done .sbar b { background: linear-gradient(90deg, #4fbf7a, #b8ffcf); }
+.setfilters .setbtn .sdone { color: #8df0b0; }
+.setfilters .setbtn:not(.ghost) .sdone { color: #1f6b3c; }
+.setline { margin: -.2rem 0 .9rem; color: var(--vellum-2); font-size: .95rem; }
+.setline .sdone { color: #8df0b0; }
+@media (max-width: 760px) {
+  .setfilters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
+  .setfilters .setbtn { min-width: 0; padding: .35rem .45rem .4rem; }
+  .setfilters .setbtn .sn { font-size: .72rem; white-space: normal; }
+  .setfilters .setbtn .sc { font-size: .72rem; }
+}
+
+/* #117 Mythic difficulty */
+.seg button[data-diff="mythic"].on { background: linear-gradient(#5a1a6a, #2a0a34); color: #f3d0ff; text-shadow: 0 0 8px rgba(220, 120, 255, .6); }
+.seg button.locked { opacity: .55; }
+.bbname em.mythic { color: #e7b8ff; border-color: #c77dff; text-shadow: 0 0 8px rgba(200, 110, 255, .7); }
+.diffbadges { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
+.diffbadges .db { font-family: var(--f-sc); font-size: .72rem; letter-spacing: .06em; padding: .12rem .45rem; border-radius: 3px; border: 1px solid; }
+.diffbadges .db.heroic { color: #ffcf6a; border-color: rgba(255, 207, 106, .6); }
+.diffbadges .db.mythic { color: #e7b8ff; border-color: #c77dff; background: rgba(120, 40, 160, .25); }
+.diffbadges .db.open { color: #c9a7e0; border-color: rgba(199, 125, 255, .4); border-style: dashed; }
 
 </style>
 </head>
@@ -4514,14 +4544,14 @@ globalThis.RB.WEB_BUILD = true;
         { name: 'Hallowed Light', text: 'Whenever a hero or ally is healed, the light sears the undead: a random undead minion takes 1 damage (up to 3 times each turn).' },
         { name: 'Omens: the Soul Bell', text: 'An omen every boss turn with 3 or 4 heroes, every other boss turn with 2, every third with 1. The next three are shown above Malgareth.' },
         { name: 'Phylactery (60%)', text: 'Malgareth hides his soul in a Phylactery (0/12, Guardian). Destroying it deals 10 damage to him.' },
-        { name: 'Death\'s Embrace (35%)', text: 'Malgareth reveals 2 boss cards each turn.' },
+        { name: 'Death\'s Embrace (35%)', text: 'Malgareth reveals 1 more boss card each turn.' },
       ],
       healSears: true,
       omens: ['cr_bell', 'cr_bell', 'cr_graves', 'cr_drain', 'cr_wail', 'cr_bonewall', 'cr_eclipse', 'cr_lull'],
       onAllyDeath: async (E, p, a) => { if (!a.token || a.token !== 'thrall') { E.log('Grave Harvest: the fallen rise as a Risen Thrall.', 'boss'); await E.summonMinion('thrall', 1); } },
       phases: [
         { at: 0.6, name: 'Phylactery', text: 'Malgareth splits his soul into a Phylactery. While it stands, he can\'t be attacked.', run: async E => E.summonMinion('phylactery', 1) },
-        { at: 0.35, name: 'Death\'s Embrace', text: 'Malgareth now reveals 2 boss cards each turn.', run: async E => { E.g.boss.cardsPerTurn = 2; } },
+        { at: 0.35, name: 'Death\'s Embrace', text: 'Malgareth now reveals 1 more boss card each turn.', run: async E => { E.g.boss.cardsPerTurn += 1; } },
       ],
       deck: [['raisedead', 3], ['colossus', 1], ['shadowbolt', 3], ['siphon', 2], ['frailty', 2], ['entomb', 1], ['deathcoil', 2], ['whispers', 1], ['army', 1], ['chill', 2], ['pact', 1], ['gaze', 1]],
       treasure: ['soulreaper', 'hollowcrown', 'phylshard'],
@@ -4536,7 +4566,7 @@ globalThis.RB.WEB_BUILD = true;
         { name: 'Wings of Flame', text: 'While he flies, he strafes the party each boss turn (2 damage to each hero), and only Volley and Skyward attacks, and abilities, can reach him. Deal 10 damage (+8 for each extra hero) to ground him: he crashes, stunned, and skips his next strike. Otherwise he lands after 3 boss turns.' },
         { name: 'Molten Scales', text: 'Melee attackers take 2 damage back when they strike Vorthrax.' },
         { name: 'Omens: Ashen Portents', text: 'An omen every boss turn with 3 or 4 heroes, every other boss turn with 2, every third with 1. The next three are shown above Vorthrax.' },
-        { name: 'Searing Fury (60%)', text: 'Vorthrax reveals 2 boss cards each turn.' },
+        { name: 'Searing Fury (60%)', text: 'Vorthrax reveals 1 more boss card each turn.' },
         { name: 'Desperation (25%)', text: 'Two Emberwhelps hatch at once, and Vorthrax\'s strike deals +2 damage.' },
       ],
       counter: { name: 'Embers', max: 5, riseText: 'Vorthrax gains an Ember: {v} of {max}.', fallText: 'Vorthrax loses Embers: {v} of {max}.', onMax: async E => { if (E.g.boss.flying) return; E.log('Vorthrax breathes Cinderstorm!', 'boss'); E.banner('Cinderstorm', 'boss'); for (const h of E.heroes()) await E.dmg(E.heroT(h), 4, { kind: 'boss' }); if (!E.g.over) await E.takeOff(); } },
@@ -4544,7 +4574,7 @@ globalThis.RB.WEB_BUILD = true;
       omens: ['mo_fall', 'mo_fall', 'mo_vents', 'mo_stoke', 'mo_hatch', 'mo_heat', 'mo_floor', 'mo_cool'],
       counterPerTurn: 1,
       phases: [
-        { at: 0.6, name: 'Searing Fury', text: 'Vorthrax now reveals 2 boss cards each turn.', run: async E => { E.g.boss.cardsPerTurn = 2; } },
+        { at: 0.6, name: 'Searing Fury', text: 'Vorthrax now reveals 1 more boss card each turn.', run: async E => { E.g.boss.cardsPerTurn += 1; } },
         { at: 0.25, name: 'Desperation', text: 'Two Emberwhelps hatch, and Vorthrax\'s strike grows fiercer.', run: async E => { await E.summonMinion('whelp', 2); E.g.boss.strikeBonus += 2; } },
       ],
       deck: [['tailswipe', 2], ['searingbreath', 2], ['cinderrain', 2], ['whelps', 3], ['magmaguard', 1], ['wingbuffet', 2], ['roar', 1], ['ignite', 2], ['devour', 1], ['emberfeast', 1], ['scorchclaw', 2], ['meltarmor', 1]],
@@ -4559,7 +4589,7 @@ globalThis.RB.WEB_BUILD = true;
         { name: 'Rising Tide', text: 'Each boss turn raises the Tide by 1, and Nethys\'s cards can raise it 1 more (never more than 2 in one boss turn). At 4, a Tidal Surge deals 3 damage to each hero and ally. Then the Tide recedes. On your turn you can bail water: pay 1 resource to lower the Tide by 1 (once per turn).' },
         { name: 'Grasp of the Deep', text: 'Nethys begins the fight with two Grasping Tentacles (3/4).' },
         { name: 'Coral Hide', text: 'Melee attackers take 2 damage back when they strike Nethys.' },
-        { name: 'The Deep Awakens (50%)', text: 'The Leviathan Maw (5/8, Crushing) rises: while it lives, Nethys takes half damage. Nethys now reveals 2 boss cards each turn.' },
+        { name: 'The Deep Awakens (50%)', text: 'The Leviathan Maw (5/8, Crushing) rises: while it lives, Nethys takes half damage. Nethys now reveals 1 more boss card each turn.' },
         { name: 'Omens: Drowned Portents', text: 'An omen every boss turn with 3 or 4 heroes, every other boss turn with 2, every third with 1. The next three are shown above Nethys.' },
       ],
       setup: async E => E.summonMinion('tentacle', E.g.players.length >= 3 ? E.g.players.length : 2),
@@ -4568,7 +4598,7 @@ globalThis.RB.WEB_BUILD = true;
       bail: { cost: 1 }, halvedBy: 'maw',
       omens: ['ti_wave', 'ti_wave', 'ti_spring', 'ti_lurkers', 'ti_pressure', 'ti_bells', 'ti_snare', 'ti_slack'],
       phases: [
-        { at: 0.5, name: 'The Deep Awakens', text: 'The Leviathan Maw rises from the abyss: while it lives, Nethys takes half damage. Nethys now reveals 2 boss cards each turn.', run: async E => { await E.summonMinion('maw', 1); E.g.boss.cardsPerTurn = 2; } },
+        { at: 0.5, name: 'The Deep Awakens', text: 'The Leviathan Maw rises from the abyss: while it lives, Nethys takes half damage. Nethys now reveals 1 more boss card each turn.', run: async E => { await E.summonMinion('maw', 1); E.g.boss.cardsPerTurn += 1; } },
       ],
       deck: [['tentaclecard', 3], ['undertow', 2], ['sirensong', 2], ['crushing', 2], ['maelstrom', 2], ['brinehex', 2], ['abyssheal', 1], ['spawn', 2], ['lash', 2], ['inkcloud', 1], ['dragbelow', 1]],
       treasure: ['trident', 'pearl', 'leviathan'],
@@ -4684,6 +4714,13 @@ globalThis.RB.WEB_BUILD = true;
   RB.BOSS_MINION_CAP = 7; // #109: the most minions a boss can have on the table at once
   RB.DUNGEON_PARTY_STRIKE = 1; // fix-sim: each extra hero adds 1 more to dungeon strikes (on top of the usual +1)
   RB.HEROIC_EXTRA_CARDS = 1; // fix-sim: Heroic raids reveal one more boss card each turn (smarter decks made Heroic too easy)
+  // #117: raid difficulty table (hp multiplier, extra strike, extra boss cards per turn, gauge head start, Enrage round)
+  RB.RAID_DIFFS = {
+    normal: { name: 'Normal', hp: 1, strike: 0, cards: 0, counter: 0 },
+    // partyStrikes: extra boss strikes each boss turn by heroes still standing (0.5 = one every other boss turn)
+    heroic: { name: 'Heroic', hp: 1.3, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, partyStrikes: [0, 0.5, 0.5, 1] },
+    mythic: { name: 'Mythic', hp: 1.5, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, enrage: 20, partyHp: 1.2, partyStrikes: [0, 0.5, 1, 1] },
+  };
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
@@ -4726,12 +4763,14 @@ globalThis.RB.WEB_BUILD = true;
     const n = g.players.length;
     g.partyFury = n >= 2 ? 1 : 0;
     const heroic = cfg.difficulty === 'heroic';
-    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1)) * (heroic ? 1.3 : 1) * (cfg.bossPlayer ? 1.15 : 1));
+    // dungeons keep their old rule (their 'heroic' mode adds 30% health and +1 strike); raids read RB.RAID_DIFFS
+    const DF = D ? { hp: heroic ? 1.3 : 1, strike: heroic ? 1 : 0, cards: 0, counter: heroic ? 1 : 0 } : (RB.RAID_DIFFS[cfg.difficulty] || RB.RAID_DIFFS.normal);
+    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1) * (DF.partyHp || 1)) * DF.hp * (cfg.bossPlayer ? 1.15 : 1));
     const bdeck = [];
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
-      maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: heroic && raid.counter ? 1 : 0,
-      cardsPerTurn: 1 + (heroic && !D ? (RB.HEROIC_EXTRA_CARDS || 0) : 0), strikeBonus: (heroic ? 1 : 0) + (n - 1), stunned: false, mark: null, phasesDone: [], lastCard: null,
+      maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: raid.counter ? (DF.counter || 0) : 0,
+      cardsPerTurn: 1 + (DF.cards || 0), strikeBonus: (DF.strike || 0) + (n - 1), enrageAt: DF.enrage || RB.ENRAGE_ROUND, partyStrikes: DF.partyStrikes || null, stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
       // #101 Omens: each raid's own deck of signature events, one per boss turn, the next three shown to the party
       omens: raid.omens && !D ? shuffle(raid.omens.slice(), rnd) : [], omenGrave: [], tempStrike: 0,
@@ -5349,7 +5388,7 @@ globalThis.RB.WEB_BUILD = true;
       B.minions.forEach(m => { m.ex = false; m.sick = false; });
       B.struck = false; // the boss's own strike is still to come (the AI keeps a Bulwark ally back for it)
       // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
-      if (g.round >= RB.ENRAGE_ROUND) {
+      if (g.round >= (B.enrageAt || RB.ENRAGE_ROUND)) {
         B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
         log(B.enrage === 1 ? `${raid.short} becomes ENRAGED! Its strikes grow 1 stronger every round and can no longer be intercepted by Bulwark allies.` : `${raid.short}'s rage grows: strikes +${B.enrage}.`, 'boss');
         if (B.enrage === 1) await H.anim('banner', { text: `${raid.short} is enraged!`, kind: 'boss' });
@@ -5412,7 +5451,13 @@ globalThis.RB.WEB_BUILD = true;
         await minionAttack(m);
       }
       if (g.over) return;
-      if (D ? B.turnsTaken > 0 : g.round > 1) await bossStrike();
+      if (D ? B.turnsTaken > 0 : g.round > 1) {
+        await bossStrike();
+        // #117: on harder raids a big party draws extra strikes (see RB.RAID_DIFFS partyStrikes)
+        const pv = B.partyStrikes ? (B.partyStrikes[alive().length - 1] || 0) : 0, fr = pv % 1;
+        const xs = Math.floor(pv) + (fr && B.turnsTaken % Math.round(1 / fr) === 1 ? 1 : 0); // 0.5 = an extra strike every other boss turn
+        for (let i = 0; i < xs && !g.over; i++) { log(`${raid.short} strikes again!`, 'boss'); await bossStrike(); }
+      }
       B.turnsTaken++;
       if (g.over) return;
       // end of boss turn
@@ -6406,8 +6451,8 @@ globalThis.RB.WEB_BUILD = true;
     // fix-sim: harder raids pay more (the Apprentice raid used to pay the most per round), and every harder mode pays a bonus
     const tier = RB.GOLD_TIER[g.raid.difficulty] || 0;
     if (tier) { const b = Math.round(total * tier); parts.push([`${g.raid.difficulty} raid bonus`, b]); total += b; }
-    const modeB = g.raid.dungeon ? (RB.DUNGEON_GOLD_BONUS[g.cfg.difficulty] || 0) : (g.cfg.difficulty === 'heroic' ? 0.25 : 0);
-    if (modeB) { const b = Math.round(total * modeB); parts.push([`${g.raid.dungeon ? (RB.DUNGEON_MODES[g.cfg.difficulty] || {}).name : 'Heroic'} bonus`, b]); total += b; }
+    const modeB = g.raid.dungeon ? (RB.DUNGEON_GOLD_BONUS[g.cfg.difficulty] || 0) : (g.cfg.difficulty === 'mythic' ? 0.5 : g.cfg.difficulty === 'heroic' ? 0.25 : 0);
+    if (modeB) { const b = Math.round(total * modeB); parts.push([`${g.raid.dungeon ? (RB.DUNGEON_MODES[g.cfg.difficulty] || {}).name : RB.RAID_DIFFS[g.cfg.difficulty].name} bonus`, b]); total += b; }
     return { parts, total };
   };
   // RB.rollBooster lives in packs.js (#47: each wrapper is its own set)
@@ -7262,7 +7307,7 @@ globalThis.RB.WEB_BUILD = true;
 
   /* ---------- persistence (per-browser; safe if storage is unavailable) ---------- */
   const KEY = 'raidbound.save.v1';
-  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, gold: 0, heroes: [], settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
+  const fresh = () => ({ owned: {}, holo: {}, loot: [], cos: [], sel: { back: '', board: '', pet: '' }, decks: {}, wins: {}, heroicWins: {}, mythicWins: {}, gold: 0, heroes: [], settings: { speed: 1, sound: true, music: true, sfxVol: 0.8, musicVol: 0.5, autoDefend: true, pauseForInstants: true }, seen: false });
   let save = fresh(), hadSave = false;
   try { const raw = localStorage.getItem(KEY); if (raw) { save = Object.assign(fresh(), JSON.parse(raw)); hadSave = true; } } catch (e) { }
   // Starting collection (Nov 8, 2026): a new player owns just the cards in each starting hero's starter deck, and gets
@@ -7293,6 +7338,7 @@ globalThis.RB.WEB_BUILD = true;
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
   U.persist();
   if (!save.heroicWins) save.heroicWins = {};
+  if (!save.mythicWins) save.mythicWins = {};
   if (typeof save.gold !== 'number') save.gold = 0;
   if (!Array.isArray(save.heroes)) save.heroes = [];
   U.heroOpen = id => RB.heroUnlocked(id, save);
@@ -8003,7 +8049,9 @@ globalThis.RB.WEB_BUILD = true;
   const setup = U.setupState = { raid: 'crypt', diff: 'normal', seats: [{ hero: 'aldric', auto: false, custom: false }] };
   function heroBlurb(h) { return `<b>${esc(h.name)}</b> — ${RB.FACTIONS[h.fac].short} ${h.race} ${RB.CLASSES[h.cls].name} (${h.spec}). ${h.hp} health. <b>${esc(h.power.name)}:</b> ${esc(h.power.text)}${h.trait ? ' ' + esc(h.trait) : ''}`; }
   U.setup = function (keep) {
-    const raids = Object.values(R).map(r => `<button class="raid ${setup.raid === r.id ? 'sel' : ''}" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="body"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div><p>${esc(r.intro)}</p><ul class="rules">${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul><p style="color:var(--muted)">Treasure: ${r.treasure.map(t => esc(C[t].name)).join(', ')}${(save.wins[r.id] || 0) ? ` · Conquered ${save.wins[r.id]}×` : ''}</p></div></button>`).join('');
+    if (!RB.RAID_DIFFS[setup.diff]) setup.diff = 'normal';
+    if (setup.diff === 'mythic' && !U.mythicOpen(setup.raid)) setup.diff = 'heroic';
+    const raids = Object.values(R).map(r => `<button class="raid ${setup.raid === r.id ? 'sel' : ''}" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="body"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div><p>${esc(r.intro)}</p><ul class="rules">${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul><p style="color:var(--muted)">Treasure: ${r.treasure.map(t => esc(C[t].name)).join(', ')}${(save.wins[r.id] || 0) ? ` · Conquered ${save.wins[r.id]}×` : ''}</p>${U.diffBadges(r.id)}</div></button>`).join('');
     const seats = setup.seats.map((s, i) => {
       const h = H[s.hero];
       const deckOk = !s.custom || (save.decks[s.hero] && save.decks[s.hero].length === RB.DECK_SIZE);
@@ -8016,16 +8064,16 @@ globalThis.RB.WEB_BUILD = true;
     const el = U.show('setup', `<div class="page"><div class="pagehead"><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
       ${R[setup.raid].lore ? `<div class="lore" style="--lc:${R[setup.raid].theme || '#c9a25a'}"><h3>The tale of ${esc(R[setup.raid].name)}</h3>${R[setup.raid].lore.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : ''}
-      <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button></span><span style="color:var(--muted);font-size:.92rem">${setup.diff === 'heroic' ? 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Treasure packs hold an extra holofoil and better odds of a loot card.' : 'Normal: the recommended way to learn each raid.'}</span></div>
+      <div class="difficulty"><span class="seg"><button class="${setup.diff === 'normal' ? 'on' : ''}" data-diff="normal">Normal</button><button class="${setup.diff === 'heroic' ? 'on' : ''}" data-diff="heroic">Heroic</button><button class="${setup.diff === 'mythic' ? 'on' : ''} ${U.mythicOpen(setup.raid) ? '' : 'locked'}" data-diff="mythic" title="${U.mythicOpen(setup.raid) ? 'The hardest way to raid' : 'Beat ' + esc(R[setup.raid].short) + ' on Heroic to unlock Mythic'}">${U.mythicOpen(setup.raid) ? '' : '&#128274; '}Mythic</button></span><span style="color:var(--muted);font-size:.92rem">${U.DIFF_TEXT[setup.diff] || U.DIFF_TEXT.normal}</span></div>
       <div class="difficulty"><span class="seg"><button class="${!setup.asBoss ? 'on' : ''}" data-side="heroes">Play the heroes</button><button class="${setup.asBoss ? 'on' : ''}" data-side="boss">Play the raid boss</button></span><span style="color:var(--muted);font-size:.92rem">${setup.asBoss ? `You are ${esc(R[setup.raid].boss)}. Each turn you hold a hand of boss cards and pick which to play, then choose who your minions and your strike attack. The AI plays the heroes.` : 'You lead the heroes against the AI-controlled boss.'}</span></div>
       <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
       <div class="seats">${seats}</div>
       ${U.bossScale(setup.raid, setup.seats.length, setup.diff, setup.asBoss)}
-      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${setup.diff === 'heroic' ? 'Heroic' : 'Normal'}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
+      <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${RB.RAID_DIFFS[setup.diff].name}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
       const raid = t.closest('[data-raid]'); if (raid) { setup.raid = raid.dataset.raid; return U.setup(true); }
-      const df = t.closest('[data-diff]'); if (df) { setup.diff = df.dataset.diff; return U.setup(true); }
+      const df = t.closest('[data-diff]'); if (df) { if (df.dataset.diff === 'mythic' && !U.mythicOpen(setup.raid)) return U.toast(`Mythic is locked. Beat ${R[setup.raid].short} on Heroic first.`); setup.diff = df.dataset.diff; return U.setup(true); }
       const sd = t.closest('[data-side]'); if (sd) { setup.asBoss = sd.dataset.side === 'boss'; return U.setup(true); }
       const seatEl = t.closest('[data-seat]'); const seat = seatEl ? setup.seats[+seatEl.dataset.seat] : null;
       const hb = t.closest('[data-hero]'); if (hb && seat) { const hx = H[hb.dataset.hero]; if (!U.heroOpen(hx.id)) return U.toast(`${hx.name} is locked. To unlock: ${hx.unlock.text}.`); seat.hero = hb.dataset.hero; return U.setup(true); }
@@ -8046,10 +8094,24 @@ globalThis.RB.WEB_BUILD = true;
   };
   // #34 (user): show how the boss scales to the party
   U.bossScale = function (raidId, n, diff, asBoss) {
-    const r = R[raidId], hv = diff === 'heroic';
-    const hp = Math.round((r.hp + r.hpPer * (n - 1)) * (hv ? 1.3 : 1) * (asBoss ? 1.15 : 1));
-    const strike = r.strike + (hv ? 1 : 0) + (n - 1) + (n >= 2 ? 1 : 0);
-    return `<div class="bossscale"><b>${esc(r.short)} scales to ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${strike} · reveals ${n + (hv ? RB.HEROIC_EXTRA_CARDS || 0 : 0)} boss card${n + (hv ? RB.HEROIC_EXTRA_CARDS || 0 : 0) > 1 ? 's' : ''} a turn${n >= 2 ? ' · minion attacks +1' : ''}${r.id === 'tide' && n >= 3 ? ` · starts with ${n} tentacles` : ''}</div>`;
+    const r = R[raidId], DF = RB.RAID_DIFFS[diff] || RB.RAID_DIFFS.normal;
+    const hp = Math.round((r.hp + r.hpPer * (n - 1) * (DF.partyHp || 1)) * DF.hp * (asBoss ? 1.15 : 1));
+    const strike = r.strike + (DF.strike || 0) + (n - 1) + (n >= 2 ? 1 : 0);
+    const cards = n + (DF.cards || 0), pv = (DF.partyStrikes || [])[n - 1] || 0;
+    const times = pv >= 1 ? ` (${1 + Math.floor(pv)} times a turn)` : pv > 0 ? ' (twice every other turn)' : '';
+    return `<div class="bossscale"><b>${esc(r.short)} scales to ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${strike}${times} · reveals ${cards} boss card${cards > 1 ? 's' : ''} a turn${n >= 2 ? ' · minion attacks +1' : ''}${DF.enrage ? ` · enraged from round ${DF.enrage}` : ''}${r.id === 'tide' && n >= 3 ? ` · starts with ${n} tentacles` : ''}</div>`;
+  };
+  // #117: difficulty texts, Mythic unlock and win badges
+  U.DIFF_TEXT = {
+    normal: 'Normal: the recommended way to learn each raid.',
+    heroic: 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Against 2 or more heroes it also strikes extra times. Treasure packs hold an extra holofoil and better odds of a loot card, and you earn 25% more gold.',
+    mythic: 'Mythic: the hardest fight. The boss has 50% more health (and even more for each extra hero), strikes 1 harder, reveals 1 extra card, strikes extra times against parties and becomes Enraged at round 20. Every treasure card is a holofoil, two are raid treasures, loot is more likely, and you earn 50% more gold.',
+  };
+  U.mythicOpen = raidId => ((save.heroicWins || {})[raidId] || 0) > 0;
+  U.diffBadges = raidId => {
+    const h = (save.heroicWins || {})[raidId] || 0, m = (save.mythicWins || {})[raidId] || 0;
+    if (!h && !m) return '';
+    return `<div class="diffbadges">${h ? `<span class="db heroic">Heroic ${h}×</span>` : ''}${m ? `<span class="db mythic">&#9819; Mythic ${m}×</span>` : '<span class="db open">Mythic unlocked</span>'}</div>`;
   };
   U.startRaid = async function () {
     const autos = [];
@@ -8135,8 +8197,15 @@ globalThis.RB.WEB_BUILD = true;
       const open = save.loot.map((l, i) => [l, i]).filter(([l]) => !l.redeemed), used = save.loot.map((l, i) => [l, i]).filter(([l]) => l.redeemed);
       const lootRows = (open.length ? `<div class="cosgrid lootgrid">${open.map(([l, i]) => lootTile(l, i)).join('')}</div>` : '') + (set === 'loot' && used.length ? `<details class="usedloot"><summary>${used.length} redeemed code${used.length > 1 ? 's' : ''}</summary><ul>${used.map(([l]) => `<li><b>${esc(C[l.id].name)}</b> · ${esc(C[l.id].loot.label)} · <code>${l.code}</code> <span class="okmsg">Redeemed ✓</span></li>`).join('')}</ul></details>` : '');
       const showLoot = (set === 'all' && open.length) || (set === 'loot' && save.loot.length);
+      // #116: how much of each set you have collected (a card counts once you own at least one copy)
+      const inSet = k => Object.values(C).filter(d => k === 'all' || d.set === k || d.pack === k);
+      const prog = k => { const l = inSet(k), h = l.filter(d => save.owned[d.id] > 0).length; return { h, t: l.length, pct: l.length ? Math.round(100 * h / l.length) : 0 }; };
+      const SHORT = { ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', molten: 'Molten treasure', tide: 'Cathedral treasure' };
+      const setBtn = (k, v) => { const p = prog(k), done = p.t && p.h === p.t;
+        return `<button class="btn small setbtn ${set === k ? '' : 'ghost'} ${done ? 'done' : ''}" data-set="${k}" title="${esc(v)}: ${p.h} of ${p.t} collected"><span class="sn">${esc(SHORT[k] || v)}${done ? ' <b class="sdone">&#10003;</b>' : ''}</span><span class="sc">${p.h} / ${p.t}</span><i class="sbar"><b style="width:${p.pct}%"></b></i></button>`; };
+      const cur = prog(set), setLine = `<p class="setline">${set === 'all' ? 'You have collected' : `${esc(sets[set])}: you have`} <b>${cur.h} of ${cur.t}</b> cards (${cur.pct}%).${cur.h === cur.t ? ' <b class="sdone">Set complete!</b>' : ` ${cur.t - cur.h} still to find.`}</p>`;
       const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
-        <div class="filters">${Object.entries(sets).map(([k, v]) => `<button class="btn small ${set === k ? '' : 'ghost'}" data-set="${k}">${v}</button>`).join('')}</div>
+        <div class="filters setfilters">${Object.entries(sets).map(([k, v]) => setBtn(k, v)).join('')}</div>${setLine}
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
         <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
@@ -8261,12 +8330,12 @@ globalThis.RB.WEB_BUILD = true;
       { id: 'bossturn', icon: '💀', title: "The boss's turn", html: `
         <p>After every hero has acted, the boss takes its turn. It always happens in this order:</p>
         <ol class="fg-steps">
-          <li><b>Rage.</b> From round ${RB.ENRAGE_ROUND} the boss is <b>Enraged</b>: its strike grows 1 stronger every round, goes straight past Bulwark allies, and sees through Shrouded heroes. No fight can stall forever.</li>
+          <li><b>Rage.</b> From round ${RB.ENRAGE_ROUND} (round ${RB.RAID_DIFFS.mythic.enrage} on Mythic) the boss is <b>Enraged</b>: its strike grows 1 stronger every round, goes straight past Bulwark allies, and sees through Shrouded heroes. No fight can stall forever.</li>
           <li><b>The raid's gauge rises.</b> Embers, the Tide and other counters tick up. When one fills, something terrible happens. A boss in the air strafes the party instead.</li>
           <li><b>Omens.</b> If an omen is due, the next one is revealed and happens at once (see <i>Omens and Soak</i>).</li>
-          <li><b>Boss cards.</b> The boss reveals cards from its deck: one (two in its later phases), plus one for each extra hero. Before each one lands, you may answer with an <b>Instant</b>.</li>
+          <li><b>Boss cards.</b> The boss reveals cards from its deck: one (one more in its later phases, and one more on Heroic or Mythic), plus one for each extra hero. Before each one lands, you may answer with an <b>Instant</b>.</li>
           <li><b>Minions attack.</b> Each ready minion attacks a hero or an ally.</li>
-          <li><b>The strike.</b> The boss strikes the hero with the most <b>threat</b>.</li>
+          <li><b>The strike.</b> The boss strikes the hero with the most <b>threat</b>. On Heroic and Mythic a boss facing 2 or more heroes strikes extra times, picking a target each time.</li>
         </ol>
         <p>Every time a minion or the boss attacks, the same small steps play out:</p>
         ${fgEx(fgU('', '1 · Cover', 'a Bulwark may step in') + fgA() + fgU('', '2 · React', 'answer the attack') + fgA() + fgU('', '3 · Strike back', 'weapon or ally') + fgA() + fgU('', '4 · Damage', 'wards, then armor'), 'Cover, React, strike back, damage. Learn this rhythm and you will lose far fewer heroes.')}
@@ -8462,13 +8531,13 @@ globalThis.RB.WEB_BUILD = true;
     const logHTML = g.log.slice(-120).map(e => `<div class="${e.cls}">${esc(e.msg)}</div>`).join('');
 
     morph(root, `<div class="table">
-      <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
+      <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${!raid.dungeon && RB.RAID_DIFFS[g.cfg.difficulty] && g.cfg.difficulty !== 'normal' ? ' · ' + RB.RAID_DIFFS[g.cfg.difficulty].name : g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button><button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
         <span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
         <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
       <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
         <div class="bossbar ${barFx}">
-          <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
+          <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : g.cfg.difficulty === 'mythic' ? '<em class="mythic">Mythic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
           <div class="bossrow">${raid.dungeon ? `${raid.stages ? (() => { const st = raid.stages[B.stage], nx = raid.stages[B.stage + 1]; return `<span class="chip dstage" title="${esc(nx ? `Next: ${nx.boss}` : 'The master of this dungeon')}">${B.stage < raid.stages.length - 1 ? `Under-boss ${B.stage + 1} of 2` : 'Final boss'}</span>${st.rule ? `<span class="chip drule" title="${esc(st.rule.text)}">✦ ${esc(st.rule.name)}</span>` : ''}`; })() : ''}<span class="chip dlevel" title="${raid.stages ? 'The dungeon levels up each time an under-boss falls' : 'The dungeon levels up at 70% and 40% health'}">Level ${B.level} · flips ${E.flipCount()}</span>${E.markedHero() && g.phase === 'boss' ? `<span class="chip dmark">🎯 ${esc(E.pdef(E.markedHero()).name.split(/[ ,]/)[0])} is marked</span>` : ''}${(B.equip || []).map(n => `<span class="chip dequip" title="Dungeon equipment">⚒ ${esc(n)}</span>`).join('')}` : ''}${counter}<span class="chip ${B.tempStrike ? 'hot' : ''}" title="The boss strikes the hero with the most threat at the end of its turn${B.tempStrike ? ` (${B.tempStrike} extra from an omen this turn)` : ''}">⚔ Strike ${strike}</span>${flight}${B.enrage ? `<span class="chip guard" title="From round ${RB.ENRAGE_ROUND} the boss strikes 1 harder every round, and Bulwark allies can't intercept its strikes">🔥 Enraged +${B.enrage}</span>` : ''}<span class="chip" title="Melee attackers take this much damage back">✦ Retaliation ${raid.retaliation}</span>${E.guardians().length ? '<span class="chip guard">⛨ Guarded — defeat the Guardian first</span>' : ''}${events}${mark}${stun}</div>
@@ -9055,14 +9124,14 @@ globalThis.RB.WEB_BUILD = true;
     if (raid.dungeon) return U.dungeonEnd(g, win, cfgLast, E);
     const heroesBefore = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id));
     const gold = RB.goldFor(g, win); save.gold = (save.gold || 0) + gold.total; U.persist();
-    let fresh = []; if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'heroic') save.heroicWins[raid.id] = (save.heroicWins[raid.id] || 0) + 1; U.persist(); fresh = U.checkUnlocks(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
+    let fresh = []; if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'heroic') save.heroicWins[raid.id] = (save.heroicWins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'mythic') { save.mythicWins = save.mythicWins || {}; save.mythicWins[raid.id] = (save.mythicWins[raid.id] || 0) + 1; } U.persist(); fresh = U.checkUnlocks(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
     const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${g.stats.dmgDealt}</b>damage dealt</div><div><b>${g.stats.cardsPlayed}</b>cards played</div><div><b>${g.players.filter(p => !p.hero.dead).length}/${g.players.length}</b>heroes standing</div></div>`;
-    const heroic = g.cfg.difficulty === 'heroic';
+    const heroic = g.cfg.difficulty === 'mythic' ? 'mythic' : g.cfg.difficulty === 'heroic'; // #117: Mythic packs are richer still
     const newHeroes = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id) && !heroesBefore.includes(id));
     const goldBox = `<div class="goldbox"><div class="gtitle">+${gold.total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${gold.parts.map(([k, v]) => `<span>${esc(k)} <b>+${v}</b></span>`).join('')}</div>${win ? '<div class="gnote">Open your treasure first — then visit the Market from the title screen.</div>' : '<button class="btn small" data-act="market">Spend it in the Market</button>'}</div>`
       + (newHeroes.length ? `<div class="newvault"><b>New hero unlocked:</b> ${newHeroes.map(id => `<span><img alt="" src="${U.cardArt(id)}">${esc(RB.HEROES[id].name)}</span>`).join('')}</div>` : '');
     const el = U.show('end', win
-      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}${goldBox}${U.packHTML({ theme: raid.id === 'crypt' ? 'void' : raid.id === 'tide' ? 'frost' : 'ember', img: U.art(raid.art, 'raid:' + raid.id), wide: true, act: 'open', cls: 'treasure', title: 'Raid Treasure', set: raid.name + (heroic ? ' · Heroic' : ''), count: '5 cards', fine: 'A guaranteed epic treasure card<br>Holofoils and a chance of loot', burst: true, label: 'Open treasure pack' })}<p style="color:var(--muted)">${U.isPhone() ? 'Tap' : 'Click'} the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
+      ? `<div class="endscreen"><h2>Victory</h2><p class="tagline">${esc(raid.boss)} has fallen. The treasure is yours.</p>${stats}${goldBox}${U.packHTML({ theme: raid.id === 'crypt' ? 'void' : raid.id === 'tide' ? 'frost' : 'ember', img: U.art(raid.art, 'raid:' + raid.id), wide: true, act: 'open', cls: 'treasure', title: 'Raid Treasure', set: raid.name + (heroic === 'mythic' ? ' · Mythic' : heroic ? ' · Heroic' : ''), count: '5 cards', fine: heroic === 'mythic' ? 'Two raid treasures, every card a holofoil<br>A good chance of loot' : 'A guaranteed epic treasure card<br>Holofoils and a chance of loot', burst: true, label: 'Open treasure pack' })}<p style="color:var(--muted)">${U.isPhone() ? 'Tap' : 'Click'} the pack to open it.</p>${fresh.length ? `<div class="newvault"><b>New in the Vault:</b> ${fresh.map(id => `<span><img alt="" src="${U.cosImg(id)}">${esc(RB.COSMETICS[id].name)}</span>`).join('')}</div>` : ''}</div>`
       : `<div class="endscreen lose"><h2>The raid has wiped</h2><p class="tagline">${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health. Regroup and try again.</p>${stats}${goldBox}<div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">Try again</button><button class="btn" data-act="party">Change party</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
     el.onclick = e => {
       const a = e.target.closest('[data-act]'); if (!a) return;
@@ -9081,12 +9150,12 @@ globalThis.RB.WEB_BUILD = true;
     // Against real players the full payout stands.
     // fix-sim: a seat the AI took over (player left) no longer counts as a human opponent
     const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some((s, i) => s && !s.auto && s.owner && g.players[i] && !g.players[i].wasAi));
-    const n = Math.max(1, g.players.length), heroic = g.cfg.difficulty === 'heroic';
+    const n = Math.max(1, g.players.length), heroic = g.cfg.difficulty === 'heroic' || g.cfg.difficulty === 'mythic';
     const raw = vsHumans ? [['Result', bossWon ? 110 : 35], ['Heroes defeated', slain * 20], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.4 / n)]]
       : [['Result', bossWon ? 50 : 15], ['Heroes defeated', slain * 8], ['Damage dealt', Math.round((g.stats.dmgTaken || 0) * 0.15 / n)]];
     const mult = vsHumans ? 1 : heroic ? 0.7 : 1;
     const parts = raw.map(([k, v]) => [k, Math.round(v * mult)]);
-    if (!vsHumans) parts.push([heroic ? 'Against AI heroes · Heroic (boss is stronger) ×0.7' : 'Against AI heroes', 0]);
+    if (!vsHumans) parts.push([heroic ? `Against AI heroes · ${RB.RAID_DIFFS[g.cfg.difficulty].name} (boss is stronger) ×0.7` : 'Against AI heroes', 0]);
     const total = parts.reduce((s, x) => s + x[1], 0);
     save.gold = (save.gold || 0) + total; save.bossWins = (save.bossWins || 0) + (bossWon ? 1 : 0); U.persist();
     if (bossWon) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
@@ -9259,7 +9328,7 @@ globalThis.RB.WEB_BUILD = true;
       const D = isDungeon(L), dis = host ? '' : 'disabled';
       const raids = (D ? Object.values(RB.DUNGEONS) : Object.values(R)).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${dis}>${esc(D ? r.name : r.short)}</button>`).join('');
       const diffs = D ? Object.entries(RB.DUNGEON_MODES).map(([k, mm]) => `<button class="btn small ${L.diff === k ? '' : 'ghost'}" data-diff="${k}" ${dis} title="${esc(mm.text)}">${mm.name}</button>`).join('')
-        : `<button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${dis}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${dis}>Heroic</button>`;
+        : `<button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${dis}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${dis}>Heroic</button><button class="btn small ${L.diff === 'mythic' ? '' : 'ghost'}" data-diff="mythic" ${host && U.mythicOpen(L.raid) ? '' : 'disabled'} title="${U.mythicOpen(L.raid) || !host ? 'The hardest way to raid' : 'Beat this raid on Heroic to unlock Mythic'}">Mythic</button>`;
       const dd = D && RB.DUNGEONS[L.raid], dm = D && (RB.DUNGEON_MODES[L.diff] || RB.DUNGEON_MODES.novice);
       const scale = D && dd ? `<div class="bossscale"><b>${esc(dd.short)} for ${L.players.length} hero${L.players.length > 1 ? 'es' : ''}:</b> ${dd.hp + dd.hpPer * (L.players.length - 1)} health · starts at level ${dm.level} · ${dm.first ? 'goes first' : 'you go first'}</div>` : U.bossScale(L.raid, L.players.length, L.diff);
       const modeSeg = `<div class="filters"><span class="seg"><button class="${D ? '' : 'on'}" data-mode="raid" ${dis}>Raid</button><button class="${D ? 'on' : ''}" data-mode="dungeon" ${dis || (L.players.length > 3 ? 'disabled title="Dungeons take up to 3 heroes"' : '')}>Dungeon</button></span></div>`;
@@ -9297,7 +9366,7 @@ globalThis.RB.WEB_BUILD = true;
     const hb = t.closest('[data-hero]'); if (hb) { S.mySeat.hero = hb.dataset.hero; draw(); return sendSeat(); }
     const db = t.closest('[data-deck]'); if (db) { S.mySeat.deckMode = db.dataset.deck; draw(); return sendSeat(); }
     const mb = t.closest('[data-mode]'); if (mb && S.lobby && S.lobby.host === S.id) { const toD = mb.dataset.mode === 'dungeon'; if (toD === isDungeon(S.lobby)) return; return sendRaw(toD ? { t: 'settings', mode: 'dungeon', raid: (U.dungeonState && U.dungeonState.id) || 'thornwood', diff: (U.dungeonState && U.dungeonState.mode) || 'novice' } : { t: 'settings', mode: 'raid', raid: 'crypt', diff: 'normal' }); }
-    const rb = t.closest('[data-raid]'); if (rb) { sendRaw({ t: 'settings', raid: rb.dataset.raid }); setTimeout(sendSeat, 300); return; }
+    const rb = t.closest('[data-raid]'); if (rb) { const L0 = S.lobby || {}; sendRaw(Object.assign({ t: 'settings', raid: rb.dataset.raid }, !isDungeon(L0) && L0.diff === 'mythic' && !U.mythicOpen(rb.dataset.raid) ? { diff: 'heroic' } : {})); setTimeout(sendSeat, 300); return; }
     const df = t.closest('[data-diff]'); if (df) return sendRaw({ t: 'settings', diff: df.dataset.diff });
     const kb = t.closest('[data-kick]'); if (kb) return sendRaw({ t: 'kick', id: kb.dataset.kick });
     if (!a) return;
@@ -9338,14 +9407,16 @@ globalThis.RB.WEB_BUILD = true;
     const out = [];
     // epic treasure is half as likely as rare treasure
     const wpick = list => { const w = list.map(id => C[id].rarity === 'e' ? 1 : 2), tot = w.reduce((a, b) => a + b, 0); let x = Math.random() * tot; for (let i = 0; i < list.length; i++) { x -= w[i]; if (x < 0) return list[i]; } return list[list.length - 1]; };
+    const myth = heroic === 'mythic'; // #117: Mythic = two raid treasures, every card holo, better loot odds
     out.push({ id: wpick(raid.treasure), holo: true });
-    if (Math.random() < (heroic ? 0.5 : 0.3)) { const others = raid.treasure.filter(t => t !== out[0].id); out.push({ id: wpick(others), holo: heroic }); }
+    if (myth || Math.random() < (heroic ? 0.5 : 0.3)) { const others = raid.treasure.filter(t => t !== out[0].id); out.push({ id: wpick(others), holo: heroic }); }
     else out.push({ id: pick(rares).id, holo: Math.random() < (heroic ? 0.6 : 0.3) });
     out.push({ id: pick(uncs).id, holo: Math.random() < 0.15 });
     out.push({ id: pick(coms).id, holo: Math.random() < 0.1 });
-    if (Math.random() < (heroic ? 0.4 : 0.25)) out.push({ id: pick(Object.values(C).filter(d => d.set === 'loot')).id, holo: true, loot: true });
+    if (Math.random() < (myth ? 0.6 : heroic ? 0.4 : 0.25)) out.push({ id: pick(Object.values(C).filter(d => d.set === 'loot')).id, holo: true, loot: true });
     else out.push({ id: pick(coms).id, holo: Math.random() < 0.1 });
     if (heroic) { const plain = out.find(x => !x.holo); if (plain) plain.holo = true; }
+    if (myth) out.forEach(x => { x.holo = true; });
     return out;
   };
   // pay for a booster: a free Core pack if one is waiting, otherwise gold. Returns false (with a message) if you can't.

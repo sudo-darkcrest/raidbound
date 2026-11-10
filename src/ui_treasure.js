@@ -12,14 +12,16 @@
     const out = [];
     // epic treasure is half as likely as rare treasure
     const wpick = list => { const w = list.map(id => C[id].rarity === 'e' ? 1 : 2), tot = w.reduce((a, b) => a + b, 0); let x = Math.random() * tot; for (let i = 0; i < list.length; i++) { x -= w[i]; if (x < 0) return list[i]; } return list[list.length - 1]; };
+    const myth = heroic === 'mythic'; // #117: Mythic = two raid treasures, every card holo, better loot odds
     out.push({ id: wpick(raid.treasure), holo: true });
-    if (Math.random() < (heroic ? 0.5 : 0.3)) { const others = raid.treasure.filter(t => t !== out[0].id); out.push({ id: wpick(others), holo: heroic }); }
+    if (myth || Math.random() < (heroic ? 0.5 : 0.3)) { const others = raid.treasure.filter(t => t !== out[0].id); out.push({ id: wpick(others), holo: heroic }); }
     else out.push({ id: pick(rares).id, holo: Math.random() < (heroic ? 0.6 : 0.3) });
     out.push({ id: pick(uncs).id, holo: Math.random() < 0.15 });
     out.push({ id: pick(coms).id, holo: Math.random() < 0.1 });
-    if (Math.random() < (heroic ? 0.4 : 0.25)) out.push({ id: pick(Object.values(C).filter(d => d.set === 'loot')).id, holo: true, loot: true });
+    if (Math.random() < (myth ? 0.6 : heroic ? 0.4 : 0.25)) out.push({ id: pick(Object.values(C).filter(d => d.set === 'loot')).id, holo: true, loot: true });
     else out.push({ id: pick(coms).id, holo: Math.random() < 0.1 });
     if (heroic) { const plain = out.find(x => !x.holo); if (plain) plain.holo = true; }
+    if (myth) out.forEach(x => { x.holo = true; });
     return out;
   };
   // pay for a booster: a free Core pack if one is waiting, otherwise gold. Returns false (with a message) if you can't.

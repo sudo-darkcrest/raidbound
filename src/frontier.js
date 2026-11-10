@@ -175,8 +175,8 @@
     // fix-sim: harder raids pay more (the Apprentice raid used to pay the most per round), and every harder mode pays a bonus
     const tier = RB.GOLD_TIER[g.raid.difficulty] || 0;
     if (tier) { const b = Math.round(total * tier); parts.push([`${g.raid.difficulty} raid bonus`, b]); total += b; }
-    const modeB = g.raid.dungeon ? (RB.DUNGEON_GOLD_BONUS[g.cfg.difficulty] || 0) : (g.cfg.difficulty === 'heroic' ? 0.25 : 0);
-    if (modeB) { const b = Math.round(total * modeB); parts.push([`${g.raid.dungeon ? (RB.DUNGEON_MODES[g.cfg.difficulty] || {}).name : 'Heroic'} bonus`, b]); total += b; }
+    const modeB = g.raid.dungeon ? (RB.DUNGEON_GOLD_BONUS[g.cfg.difficulty] || 0) : (g.cfg.difficulty === 'mythic' ? 0.5 : g.cfg.difficulty === 'heroic' ? 0.25 : 0);
+    if (modeB) { const b = Math.round(total * modeB); parts.push([`${g.raid.dungeon ? (RB.DUNGEON_MODES[g.cfg.difficulty] || {}).name : RB.RAID_DIFFS[g.cfg.difficulty].name} bonus`, b]); total += b; }
     return { parts, total };
   };
   // RB.rollBooster lives in packs.js (#47: each wrapper is its own set)
