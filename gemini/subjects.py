@@ -75,7 +75,7 @@ S = {
 'bard': (CORE, 'an elf bard in a purple cape playing a lute in a tavern, swirls of golden light rising from the strings'),
 'divineshield': (CORE, 'a paladin kneeling inside a glowing golden dome of holy light, radiant beams, a dark battlefield around him'),
 'justice': (CORE, 'a glowing golden war hammer descending from the heavens with a crack of holy lightning'),
-'heroicstrike': (CORE, 'a knight in plate armour lunging forward with a mighty sword strike, a glowing slash arc'),
+'heroicstrike': (CORE, 'a knight in plate armour lunging forward with a mighty sword strike, his raised sword blade glowing bright gold'),
 'laststand': (CORE, 'a battered knight bracing behind a huge tower shield on a stormy battlefield, refusing to fall'),
 'arcaneblast': (CORE, 'an elf mage releasing a ring of violet arcane energy exploding outward in all directions'),
 'icelance': (CORE, 'a spear of sharp blue ice flying toward the viewer, frost trailing behind it'),
@@ -258,7 +258,16 @@ COS = {
 # #97 redo (Nov 8, 2026): the user asked to redo Root Crush, Firebomb Barrage and the Vault cards so they fit together.
 # The Vault set is anchored on a repainted Iron Sentinel (the old painting has the real word "AEGIS" on its chest).
 # #98 done Nov 9, 2026: all 11 repainted (thw_crush, bfw_firebombs, sentinel and the 8 vis_ cards). Put ids back here to ask for another redo.
-REDO = []  # vis_lockdown redone Nov 9 (ChatGPT painting, colours matched to the Vault set)
+REDO = ['heroicstrike']  # vis_lockdown redone Nov 9 (ChatGPT painting, colours matched to the Vault set)
+# #120 (Nov 10, 2026): Valiant Blow's glowing arc is a big crescent in front of the knight that doesn't come from his sword
+# (the blade is still raised). An edit of the current painting: drop the arc, make the blade itself glow.
+REDO_EDIT = {
+'heroicstrike': ('Edit the attached picture of the armoured knight. Remove the big curved band of golden fire in the left half of the picture completely, '
+                 'and paint the snowy mountains, cloudy sky and green valley behind it where it was, so they match the rest of the landscape. '
+                 'Then make the knight\'s own sword blade glow bright gold with warm light, with a short golden blur hugging the back edge of the blade, '
+                 'as if the blade is slicing through the air. Nothing else glows. Keep the knight, his pose, his hands on the sword hilt, his armour, his red cape, '
+                 'the castle, the mountains, the dust at his feet and all the colours exactly the same. Keep the same painted fantasy card-art style.'),
+}
 SENTINEL_PROMPT = ('Repaint the attached Iron Sentinel picture exactly: the same stone-and-iron golem, horned helm, glowing blue eyes, pose, vault hall and lighting. '
                    'Only change its chest: remove the glowing letters and put a round glowing pale-blue crystal core, set in a thick iron ring, in the middle of its chest. '
                    'Keep the glowing runes on its arms and legs as simple rune shapes, never letters or words. Keep the same painted fantasy card-art style.')

@@ -2,7 +2,7 @@
 import sys, json, base64, io, pathlib
 here = pathlib.Path(__file__).parent; root = here.parent
 sys.path.insert(0, str(here))
-from subjects import S, SKINS_PROMPT, REDO, SENTINEL_PROMPT, DBOSS_PROMPT
+from subjects import S, SKINS_PROMPT, REDO, SENTINEL_PROMPT, DBOSS_PROMPT, REDO_EDIT
 from PIL import Image
 skins = json.load(open(root / 'skins/skins.json'))
 in_game = set(json.load(open(here / 'in_game.json')))
@@ -15,6 +15,7 @@ hero_th = {h: thumb(refs / f'hero_{h}.png', 120) for h in HEROES}
 hero_th['ref_sentinel'] = thumb(refs / 'ref_sentinel.png', 120)
 hero_th['ref_gnarlroot'] = thumb(root / 'gen/raw/thw_crush.jpg', 120)
 hero_th['ref_gorrash'] = thumb(root / 'gen/raw/bfw_cleave.jpg', 120)
+for k in REDO_EDIT: hero_th['ref_' + k] = thumb(root / f'gen/raw/{k}.jpg', 120)
 REDO_SEC = 'Redo (do these first, top to bottom)'
 PREFIX = 'Painted digital fantasy card art for a high-fantasy collectible card game, matching the style of the attached reference images: rich painterly colour, dark ink outlines, dramatic lighting, lots of detail. '
 SUFFIX = ' Wide 16:9 landscape image, full-bleed to every edge. No text, no letters, no logo, no border, no frame, no card layout, no watermark. Do not include any real-world logos, emblems, crests or symbols from existing games, films or brands; invent original designs.'
@@ -33,6 +34,8 @@ for k, (grp, subj) in S.items():
     if k in REDO:  # #97: stays in the game until the new picture replaces it
         it.update(sec=REDO_SEC, have=False, redo=True)
         if k.startswith('vis_'): it['refnote'] = 'your new <b>sentinel.png</b> (in the refs folder), plus the 4 style pictures'
+        if k in REDO_EDIT:  # #120: an edit of the current painting (attach it first)
+            it.update(refimg='ref_' + k, prompt=REDO_EDIT[k] + SUFFIX, refnote=f'<b>ref_{k}.png</b> (the current picture, in your refs folder, shown here) first, plus the 4 style pictures')
     items.append(it)
 if 'sentinel' in REDO: items.append(dict(sec=REDO_SEC, file='sentinel.png', refs='style', refimg='ref_sentinel', title='The Iron Sentinel (Vault boss)', have=False, redo=True,
                   refnote='<b>ref_sentinel.png</b> (in your refs folder, shown here), plus the 4 style pictures', prompt=SENTINEL_PROMPT + SUFFIX))

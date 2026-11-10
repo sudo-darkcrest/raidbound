@@ -14,7 +14,7 @@ async def main():
         await pg.screenshot(path='test/f_title.png')
         await pg.evaluate("RB.UI.save.settings.speed=0.15")
         # 2-hero party, second AI
-        await pg.click('text=Begin a raid'); await pg.wait_for_timeout(300)
+        await pg.click('#title [data-go=setup]'); await pg.wait_for_timeout(300)
         await pg.click('[data-act=add]'); await pg.wait_for_timeout(200)
         await pg.click('.seat >> nth=1 >> [data-hero=hruna]'); await pg.wait_for_timeout(200)
         await pg.click('.seat >> nth=1 >> [data-act=auto]'); await pg.wait_for_timeout(200)
@@ -73,7 +73,7 @@ async def main():
         print('cos', await pg.evaluate("JSON.stringify(RB.UI.save.cos)+' sel '+JSON.stringify(RB.UI.save.sel)"))
         # deck builder
         await pg.click('#vault .topnav [data-nav=title]'); await pg.wait_for_timeout(300)
-        await pg.click('#title >> text=Begin a raid'); await pg.wait_for_timeout(300)
+        await pg.click('#title [data-go=setup]'); await pg.wait_for_timeout(300)
         await pg.click('#setup .seat >> nth=0 >> [data-act=edit]'); await pg.wait_for_timeout(800)
         await pg.screenshot(path='test/f_deck.png')
         await pg.click('#deck [data-f=weapon]'); await pg.wait_for_timeout(300)

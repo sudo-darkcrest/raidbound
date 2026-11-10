@@ -18,7 +18,8 @@
     rules: '<path d="M3 5c3-1 6-1 8.5 1v14C9 18 6 18 3 19zM21 5c-3-1-6-1-8.5 1v14c2.5-2 5.5-2 8.5-1z"/>',
     settings: '<path d="M10.3 2h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9-2.6-.5v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8zM12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"/>',
   };
-  const NAV = [['title', 'Home', 'Home'], ['setup', 'Raids', 'Raids'], ['dungeons', 'Dungeons', 'Dungeons'], ['online', 'Play online', 'Online'], ['market', 'Market', 'Market'],
+  const NAV = [['title', 'Home', 'Home'], ['dungeons', 'Dungeons', 'Dungeons'], ['setup', 'Raids', 'Raids'], // #122: Dungeons before Raids
+     ['online', 'Play online', 'Online'], ['market', 'Market', 'Market'],
     ['collection', 'Collection', 'Cards'], ['vault', 'The Vault', 'Vault'], ['rules', 'How to play', 'Guide'], ['settings', 'Settings', 'Settings']];
   const NAV_ON = new Set(['setup', 'dungeons', 'online', 'market', 'collection', 'vault', 'rules', 'settings']);
   U.navHTML = function (cur) {
@@ -32,7 +33,7 @@
     const go = b.dataset.nav; if (typeof U[go] === 'function') U[go]();
   }, true);
 
-  U.show = function (name, html, keepScroll) {
+  U.show = function (name, html, keepScroll, navCur) {
     U.closePop(); U.hidePreview();
     // a hero unlocked since the last screen (raid win, purchase) brings their starter deck's cards into the collection
     if (U.syncStarters && U.syncStarters()) U.persist();
@@ -41,9 +42,10 @@
     $$('.screen').forEach(s => s.classList.add('hidden'));
     let el = $('#' + name);
     if (!el) { el = document.createElement('div'); el.id = name; el.className = 'screen'; app().appendChild(el); }
-    if (html != null) el.innerHTML = (NAV_ON.has(name) ? U.navHTML(name) : '') + html;
+    const navOn = NAV_ON.has(name) || !!navCur;
+    if (html != null) el.innerHTML = (navOn ? U.navHTML(navCur || name) : '') + html;
     el.classList.remove('hidden');
-    if (html != null && NAV_ON.has(name)) { const on = $('.topnav .on', el); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+    if (html != null && navOn) { const on = $('.topnav .on', el); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }
     el.scrollTop = prev;
     return el;
   };
@@ -59,7 +61,7 @@
     const raids = Object.values(R).map(r => `<button class="traid" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="tbody"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div>${(save.wins[r.id] || 0) ? `<div class="done">Conquered ${save.wins[r.id]}×</div>` : ''}</div></button>`).join('');
     const el = U.show('title', `<img class="bgart" alt="" src="${bg}"><div class="veil"></div>
       <div class="center"><h1 class="logo">Raidbound</h1><p class="tagline">Gather your party. Build your deck. Bring down the raid boss.</p>
-      <div class="menu"><div class="row"><button class="btn primary" data-go="setup">Begin a raid</button><button class="btn primary" data-go="dungeons">Dungeons</button><button class="btn primary" data-go="online">Play online</button></div>
+      <div class="menu"><div class="row"><button class="btn primary" data-go="dungeons">Dungeons</button><button class="btn primary" data-go="setup">Raid</button><button class="btn primary" data-go="online">Play online</button></div>
       <div class="row"><button class="btn" data-go="market">Market <span class="goldchip">${save.gold}</span>${save.freeCore > 0 ? `<span class="freebadge">${save.freeCore} free pack${save.freeCore > 1 ? 's' : ''}</span>` : ''}</button><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
       <div class="traids">${raids}</div>

@@ -1038,6 +1038,9 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   .startbar .summary { font-size: .82rem; }
   .startbar { background: linear-gradient(rgba(10, 14, 31, 0), rgba(10, 14, 31, .97) 1.2rem); margin: 0 -.8rem; padding-left: .8rem; padding-right: .8rem; }
   .startbar .btn { flex: none; }
+  .startbar:has(.btn + .btn) { flex-wrap: wrap; } /* dungeons: two buttons no longer push off the left edge */
+  .startbar:has(.btn + .btn) .summary { flex-basis: 100%; }
+  .startbar:has(.btn + .btn) .btn { flex: 1 1 0; min-width: 0; padding-left: .5rem; padding-right: .5rem; }
   .seg { max-width: 100%; overflow-x: auto; }
   .seg button { padding: .45em .7em; white-space: nowrap; font-size: .85rem; }
   .difficulty .seg:has(button:nth-child(4)) { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
@@ -1275,3 +1278,15 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .diffbadges .db.heroic { color: #ffcf6a; border-color: rgba(255, 207, 106, .6); }
 .diffbadges .db.mythic { color: #e7b8ff; border-color: #c77dff; background: rgba(120, 40, 160, .25); }
 .diffbadges .db.open { color: #c9a7e0; border-color: rgba(199, 125, 255, .4); border-style: dashed; }
+
+/* #121 dungeon hero picker: picture grid like the raid screen; hover a hero for the full card */
+.dseats { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-items: start; }
+.dseat { flex-direction: column; align-items: stretch; gap: .5rem; }
+.dseat header { display: flex; align-items: center; gap: .6rem; }
+.dseat header img { width: 64px; }
+.dseat header div { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.dseat header small { color: var(--muted); font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dseat .heropick { grid-template-columns: repeat(4, 1fr); }
+.dseat .heropick button img { width: 100%; border-radius: 0; }
+.dseats > .btn { align-self: center; justify-self: start; }
+.preview.heroprev { pointer-events: none; }

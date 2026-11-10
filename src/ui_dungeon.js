@@ -21,8 +21,10 @@
     st.seats.forEach(s => { if (!heroes.includes(s.hero)) s.hero = heroes[0]; });
     const cards = Object.values(D).map(x => { const clr = (save.dclears || {})[x.id] || 0;
       return `<button class="dcard ${x.id === st.id ? 'on' : ''}" data-did="${x.id}" style="--dc:${x.theme}"><img alt="" src="${U.art(x.art, 'raid:' + x.id)}"><div><span class="chip tier">${x.difficulty}</span><h4>${esc(x.name)}</h4><div class="boss">${esc(x.boss)}</div>${clr ? `<div class="done">Cleared ${clr}×</div>` : ''}</div></button>`; }).join('');
-    const seats = st.seats.map((s, i) => `<div class="dseat"><img alt="" src="${U.cardArt(s.hero)}"><div><label>Hero ${i + 1}<select data-seat="${i}" aria-label="Hero ${i + 1}">${heroes.map(h => `<option value="${h}" ${h === s.hero ? 'selected' : ''}>${esc(RB.HEROES[h].name)}</option>`).join('')}</select></label>
-      <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</div>`).join('');
+    // #121: pick heroes from pictures (hover one to see its full card), like the raid screen
+    const seats = st.seats.map((s, i) => `<div class="dseat" data-dseat="${i}"><header><img alt="" src="${U.cardArt(s.hero)}"><div><strong>Hero ${i + 1}</strong><small>${esc(RB.HEROES[s.hero].name)}</small></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</header>
+      <div class="heropick">${heroes.map(h => { const x = RB.HEROES[h]; return `<button class="${h === s.hero ? 'on' : ''}" data-hero="${h}" title="${esc(x.name)}" aria-label="${esc(x.name)}"><img alt="" src="${U.cardArt(h)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`; }).join('')}</div>
+      <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>`).join('');
     const n = st.seats.length, hp = d.hp + d.hpPer * (n - 1), mode = M[st.mode];
     const el = U.show('dungeons', `<div class="page"><div class="pagehead"><h2>Dungeons</h2><span class="sp"></span></div>
       <p class="lede">A dungeon runs itself: no boss player needed. Up to three heroes go in with their <b>starter decks</b>. Each turn the dungeon <b>flips</b> cards from its deck (allies, equipment and attacks), then <b>marks</b> one hero at random — and everything it has attacks that hero. Fight through <b>two under-bosses</b>, then the master of the dungeon, in one fight. The dungeon levels up each time an under-boss falls. Win to earn Dungeon XP: every level lets more of your own cards into your deck.</p>
@@ -39,12 +41,12 @@
       const c = t.closest('[data-did]'); if (c) { st.id = c.dataset.did; return U.dungeons(true); }
       const m = t.closest('[data-mode]'); if (m) { st.mode = m.dataset.mode; return U.dungeons(true); }
       const r = t.closest('[data-rm]'); if (r) { st.seats.splice(+r.dataset.rm, 1); return U.dungeons(true); }
+      const hb = t.closest('.dseat [data-hero]'); if (hb) { st.seats[+hb.closest('[data-dseat]').dataset.dseat].hero = hb.dataset.hero; return U.dungeons(true); }
       if (t.closest('[data-act=add]')) { const used = st.seats.map(s => s.hero); st.seats.push({ hero: heroes.find(h => !used.includes(h)) || heroes[0], auto: true }); return U.dungeons(true); }
       if (t.closest('[data-act=go]')) return U.startDungeon();
       if (t.closest('[data-act=online]')) return U.online({ dungeon: { id: st.id, diff: st.mode } });
     };
     el.onchange = e => {
-      const s = e.target.closest('[data-seat]'); if (s) { st.seats[+s.dataset.seat].hero = s.value; return U.dungeons(true); }
       const a = e.target.closest('[data-auto]'); if (a) { st.seats[+a.dataset.auto].auto = a.checked; }
     };
   };

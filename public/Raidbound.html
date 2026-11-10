@@ -1059,6 +1059,9 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   .startbar .summary { font-size: .82rem; }
   .startbar { background: linear-gradient(rgba(10, 14, 31, 0), rgba(10, 14, 31, .97) 1.2rem); margin: 0 -.8rem; padding-left: .8rem; padding-right: .8rem; }
   .startbar .btn { flex: none; }
+  .startbar:has(.btn + .btn) { flex-wrap: wrap; } /* dungeons: two buttons no longer push off the left edge */
+  .startbar:has(.btn + .btn) .summary { flex-basis: 100%; }
+  .startbar:has(.btn + .btn) .btn { flex: 1 1 0; min-width: 0; padding-left: .5rem; padding-right: .5rem; }
   .seg { max-width: 100%; overflow-x: auto; }
   .seg button { padding: .45em .7em; white-space: nowrap; font-size: .85rem; }
   .difficulty .seg:has(button:nth-child(4)) { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
@@ -1296,6 +1299,18 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .diffbadges .db.heroic { color: #ffcf6a; border-color: rgba(255, 207, 106, .6); }
 .diffbadges .db.mythic { color: #e7b8ff; border-color: #c77dff; background: rgba(120, 40, 160, .25); }
 .diffbadges .db.open { color: #c9a7e0; border-color: rgba(199, 125, 255, .4); border-style: dashed; }
+
+/* #121 dungeon hero picker: picture grid like the raid screen; hover a hero for the full card */
+.dseats { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-items: start; }
+.dseat { flex-direction: column; align-items: stretch; gap: .5rem; }
+.dseat header { display: flex; align-items: center; gap: .6rem; }
+.dseat header img { width: 64px; }
+.dseat header div { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.dseat header small { color: var(--muted); font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dseat .heropick { grid-template-columns: repeat(4, 1fr); }
+.dseat .heropick button img { width: 100%; border-radius: 0; }
+.dseats > .btn { align-self: center; justify-self: start; }
+.preview.heroprev { pointer-events: none; }
 
 </style>
 </head>
@@ -7506,6 +7521,20 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     pv.style.left = x + 'px'; pv.style.top = Math.max(8, y) + 'px';
   };
   U.hidePreview = () => { if (pv) { pv.remove(); pv = null; } };
+  // #121: hovering a hero in any hero picker (raid setup, dungeons, online lobby) shows the full hero card
+  if (typeof document !== 'undefined') {
+    const canHover = () => typeof matchMedia === 'undefined' || matchMedia('(hover: hover)').matches;
+    document.addEventListener('mouseover', e => {
+      const b = e.target.closest && e.target.closest('.heropick [data-hero]'); if (!b || !canHover() || U.isPhone()) return;
+      if (pv && pv.dataset.for === b.dataset.hero) return;
+      U.preview(U.heroCardHTML(b.dataset.hero), b); if (pv) { pv.dataset.for = b.dataset.hero; pv.classList.add('heroprev'); }
+    });
+    document.addEventListener('mouseout', e => {
+      const b = e.target.closest && e.target.closest('.heropick [data-hero]'); if (!b) return;
+      if (e.relatedTarget && b.contains(e.relatedTarget)) return;
+      U.hidePreview();
+    });
+  }
 
   /* ---------- popover / toast / dialog ---------- */
   let pop = null;
@@ -7991,7 +8020,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     rules: '<path d="M3 5c3-1 6-1 8.5 1v14C9 18 6 18 3 19zM21 5c-3-1-6-1-8.5 1v14c2.5-2 5.5-2 8.5-1z"/>',
     settings: '<path d="M10.3 2h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9-2.6-.5v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8zM12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"/>',
   };
-  const NAV = [['title', 'Home', 'Home'], ['setup', 'Raids', 'Raids'], ['dungeons', 'Dungeons', 'Dungeons'], ['online', 'Play online', 'Online'], ['market', 'Market', 'Market'],
+  const NAV = [['title', 'Home', 'Home'], ['dungeons', 'Dungeons', 'Dungeons'], ['setup', 'Raids', 'Raids'], // #122: Dungeons before Raids
+     ['online', 'Play online', 'Online'], ['market', 'Market', 'Market'],
     ['collection', 'Collection', 'Cards'], ['vault', 'The Vault', 'Vault'], ['rules', 'How to play', 'Guide'], ['settings', 'Settings', 'Settings']];
   const NAV_ON = new Set(['setup', 'dungeons', 'online', 'market', 'collection', 'vault', 'rules', 'settings']);
   U.navHTML = function (cur) {
@@ -8005,7 +8035,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const go = b.dataset.nav; if (typeof U[go] === 'function') U[go]();
   }, true);
 
-  U.show = function (name, html, keepScroll) {
+  U.show = function (name, html, keepScroll, navCur) {
     U.closePop(); U.hidePreview();
     // a hero unlocked since the last screen (raid win, purchase) brings their starter deck's cards into the collection
     if (U.syncStarters && U.syncStarters()) U.persist();
@@ -8014,9 +8044,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     $$('.screen').forEach(s => s.classList.add('hidden'));
     let el = $('#' + name);
     if (!el) { el = document.createElement('div'); el.id = name; el.className = 'screen'; app().appendChild(el); }
-    if (html != null) el.innerHTML = (NAV_ON.has(name) ? U.navHTML(name) : '') + html;
+    const navOn = NAV_ON.has(name) || !!navCur;
+    if (html != null) el.innerHTML = (navOn ? U.navHTML(navCur || name) : '') + html;
     el.classList.remove('hidden');
-    if (html != null && NAV_ON.has(name)) { const on = $('.topnav .on', el); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+    if (html != null && navOn) { const on = $('.topnav .on', el); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }
     el.scrollTop = prev;
     return el;
   };
@@ -8032,7 +8063,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const raids = Object.values(R).map(r => `<button class="traid" data-raid="${r.id}"><img alt="" src="${U.art(r.art, 'raid:' + r.id)}"><span class="chip tier">${r.difficulty}</span><div class="tbody"><h4>${esc(r.name)}</h4><div class="boss">${esc(r.boss)}</div>${(save.wins[r.id] || 0) ? `<div class="done">Conquered ${save.wins[r.id]}×</div>` : ''}</div></button>`).join('');
     const el = U.show('title', `<img class="bgart" alt="" src="${bg}"><div class="veil"></div>
       <div class="center"><h1 class="logo">Raidbound</h1><p class="tagline">Gather your party. Build your deck. Bring down the raid boss.</p>
-      <div class="menu"><div class="row"><button class="btn primary" data-go="setup">Begin a raid</button><button class="btn primary" data-go="dungeons">Dungeons</button><button class="btn primary" data-go="online">Play online</button></div>
+      <div class="menu"><div class="row"><button class="btn primary" data-go="dungeons">Dungeons</button><button class="btn primary" data-go="setup">Raid</button><button class="btn primary" data-go="online">Play online</button></div>
       <div class="row"><button class="btn" data-go="market">Market <span class="goldchip">${save.gold}</span>${save.freeCore > 0 ? `<span class="freebadge">${save.freeCore} free pack${save.freeCore > 1 ? 's' : ''}</span>` : ''}</button><button class="btn" data-go="collection">Collection</button><button class="btn" data-go="vault">The Vault</button></div>
       <div class="row"><button class="btn ghost" data-go="rules">How to play</button><button class="btn ghost" data-go="settings">Settings</button></div></div>
       <div class="traids">${raids}</div>
@@ -9455,7 +9486,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
           return `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">Core ${RB.CORE_SIZES.map(s => `${s[0]} cards ${s[1]}`).join(' · ')} gold · themed ${RB.PACK_PRICE} gold</span></div>
           ${(() => { const mini = o => { const k = o.style, p = RB.packPrice(k, o.size), fr = k === 'core' && o.size === 5 && save.freeCore > 0; return `<div class="packpick">${U.packHTML({ theme: k, art: o.art, act: 'buyagain', set: (RB.PACK_SETS[k].short || RB.PACK_SETS[k].name) + ' Set', count: `${o.size} random cards`, cls: (o.size > 5 ? 'sz' + o.size + ' ' : '') + (fr || save.gold >= p ? '' : 'broke'), data: `data-style="${k}" data-size="${o.size}"`, label: fr ? `Open a free ${o.name} pack` : `Buy another ${o.name} pack for ${p} gold` })}<div class="pname">${o.short}${k === style && o.size === size ? ' <small>(again)</small>' : ''}${fr ? ' <small class="okmsg">free</small>' : ''}</div></div>`; }; return ['core', 'themed'].map(g => `<div class="packrow mini">${RB.packOffers().filter(o => (o.style === 'core') === (g === 'core')).map(mini).join('')}</div>`).join(''); })()}
           ${free ? `<button class="btn primary" data-act="buyagain">Open your free ${PS.name} pack (${save.freeCore} left)</button>` : save.gold >= pr ? `<button class="btn primary" data-act="buyagain" data-size="${size}">Another ${PS.name}${sz} pack — ${pr} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${pr - save.gold} more gold for another ${PS.name}${sz} pack. Go raid!</p>`}</div>`; })() : ''}
-        <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster || fromMarket ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">${opts && opts.online ? 'Back to the party lobby' : 'Raid again'}</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+        <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem"><button class="btn" data-act="all">Reveal all</button>${booster || fromMarket ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">${opts && opts.online ? 'Back to the party lobby' : 'Raid again'}</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`, false, booster || fromMarket ? 'market' : null);
       packBusy = false;
       if (newBoards && newBoards.length) setTimeout(() => U.toast(`Unlocked: ${newBoards.map(id => RB.COSMETICS[id].name).join(', ')}! Pick it in the Vault.`), 1200);
       $$('.packcards .card', el).forEach(c => c.style.setProperty('--cw', '100%'));
@@ -9715,8 +9746,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     st.seats.forEach(s => { if (!heroes.includes(s.hero)) s.hero = heroes[0]; });
     const cards = Object.values(D).map(x => { const clr = (save.dclears || {})[x.id] || 0;
       return `<button class="dcard ${x.id === st.id ? 'on' : ''}" data-did="${x.id}" style="--dc:${x.theme}"><img alt="" src="${U.art(x.art, 'raid:' + x.id)}"><div><span class="chip tier">${x.difficulty}</span><h4>${esc(x.name)}</h4><div class="boss">${esc(x.boss)}</div>${clr ? `<div class="done">Cleared ${clr}×</div>` : ''}</div></button>`; }).join('');
-    const seats = st.seats.map((s, i) => `<div class="dseat"><img alt="" src="${U.cardArt(s.hero)}"><div><label>Hero ${i + 1}<select data-seat="${i}" aria-label="Hero ${i + 1}">${heroes.map(h => `<option value="${h}" ${h === s.hero ? 'selected' : ''}>${esc(RB.HEROES[h].name)}</option>`).join('')}</select></label>
-      <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</div>`).join('');
+    // #121: pick heroes from pictures (hover one to see its full card), like the raid screen
+    const seats = st.seats.map((s, i) => `<div class="dseat" data-dseat="${i}"><header><img alt="" src="${U.cardArt(s.hero)}"><div><strong>Hero ${i + 1}</strong><small>${esc(RB.HEROES[s.hero].name)}</small></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</header>
+      <div class="heropick">${heroes.map(h => { const x = RB.HEROES[h]; return `<button class="${h === s.hero ? 'on' : ''}" data-hero="${h}" title="${esc(x.name)}" aria-label="${esc(x.name)}"><img alt="" src="${U.cardArt(h)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`; }).join('')}</div>
+      <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>`).join('');
     const n = st.seats.length, hp = d.hp + d.hpPer * (n - 1), mode = M[st.mode];
     const el = U.show('dungeons', `<div class="page"><div class="pagehead"><h2>Dungeons</h2><span class="sp"></span></div>
       <p class="lede">A dungeon runs itself: no boss player needed. Up to three heroes go in with their <b>starter decks</b>. Each turn the dungeon <b>flips</b> cards from its deck (allies, equipment and attacks), then <b>marks</b> one hero at random — and everything it has attacks that hero. Fight through <b>two under-bosses</b>, then the master of the dungeon, in one fight. The dungeon levels up each time an under-boss falls. Win to earn Dungeon XP: every level lets more of your own cards into your deck.</p>
@@ -9733,12 +9766,12 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       const c = t.closest('[data-did]'); if (c) { st.id = c.dataset.did; return U.dungeons(true); }
       const m = t.closest('[data-mode]'); if (m) { st.mode = m.dataset.mode; return U.dungeons(true); }
       const r = t.closest('[data-rm]'); if (r) { st.seats.splice(+r.dataset.rm, 1); return U.dungeons(true); }
+      const hb = t.closest('.dseat [data-hero]'); if (hb) { st.seats[+hb.closest('[data-dseat]').dataset.dseat].hero = hb.dataset.hero; return U.dungeons(true); }
       if (t.closest('[data-act=add]')) { const used = st.seats.map(s => s.hero); st.seats.push({ hero: heroes.find(h => !used.includes(h)) || heroes[0], auto: true }); return U.dungeons(true); }
       if (t.closest('[data-act=go]')) return U.startDungeon();
       if (t.closest('[data-act=online]')) return U.online({ dungeon: { id: st.id, diff: st.mode } });
     };
     el.onchange = e => {
-      const s = e.target.closest('[data-seat]'); if (s) { st.seats[+s.dataset.seat].hero = s.value; return U.dungeons(true); }
       const a = e.target.closest('[data-auto]'); if (a) { st.seats[+a.dataset.auto].auto = a.checked; }
     };
   };

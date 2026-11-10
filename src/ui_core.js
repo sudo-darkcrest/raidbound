@@ -209,6 +209,20 @@
     pv.style.left = x + 'px'; pv.style.top = Math.max(8, y) + 'px';
   };
   U.hidePreview = () => { if (pv) { pv.remove(); pv = null; } };
+  // #121: hovering a hero in any hero picker (raid setup, dungeons, online lobby) shows the full hero card
+  if (typeof document !== 'undefined') {
+    const canHover = () => typeof matchMedia === 'undefined' || matchMedia('(hover: hover)').matches;
+    document.addEventListener('mouseover', e => {
+      const b = e.target.closest && e.target.closest('.heropick [data-hero]'); if (!b || !canHover() || U.isPhone()) return;
+      if (pv && pv.dataset.for === b.dataset.hero) return;
+      U.preview(U.heroCardHTML(b.dataset.hero), b); if (pv) { pv.dataset.for = b.dataset.hero; pv.classList.add('heroprev'); }
+    });
+    document.addEventListener('mouseout', e => {
+      const b = e.target.closest && e.target.closest('.heropick [data-hero]'); if (!b) return;
+      if (e.relatedTarget && b.contains(e.relatedTarget)) return;
+      U.hidePreview();
+    });
+  }
 
   /* ---------- popover / toast / dialog ---------- */
   let pop = null;
