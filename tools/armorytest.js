@@ -1,6 +1,6 @@
 // Set 4 (The Armory) rules check: node tools/armorytest.js
 globalThis.RB = {};
-for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
+for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
 const RB = globalThis.RB, C = RB.CARDS;
 let fails = 0, uidn = 900;
 const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console.log('ok  ', m); };

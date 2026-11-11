@@ -111,6 +111,7 @@
   }
   function scoreCard0(E, p, inst) {
     const d = C[inst.id];
+    if (d.aiScore) { const v = d.aiScore(E, p); if (typeof v === 'number') return { s: v, target: d.target && d.target !== 'none' ? E.autoTarget(p, d) : null }; } // a card can judge itself
     const sp = E.spellPower(p);
     const hpPct = E.heroHp(p) / E.heroMax(p);
     const tags = d.tags || [];
@@ -210,6 +211,7 @@
       else if (d.id === 'emptythrone') s = p.grave.some(c => C[c.id].type === 'ally') && p.hand.length <= 7 ? 6 : -1;
       else if (d.id === 'lighthouse') s = 4 + (heroDmg >= 2 ? 2 : 0);
       else if (d.id === 'stagshrine') s = 4 + 1.5 * (E.heroes().length - 1);
+      else if (d.aiScore) { s = d.aiScore(E, p); if (d.ltarget) target = E.autoTarget(p, { target: d.ltarget }); }
       else s = LOC_VALUE[d.id] || (tags.includes('summon') ? 8 : tags.includes('draw') ? 6 : tags.includes('shield') ? 5 : tags.includes('dmg') ? 6 : 4);
       if ((d.id === 'library' || d.id === 'harbormarket' || d.id === 'whispervault') && p.hand.length > 7) s = 2;
       if (s > 0) acts.push({ s, go: () => E.useLocation(p, loc, target) });
@@ -242,6 +244,15 @@
       if (s <= 0) continue;
       acts.push({ s, go: () => E.playCard(p, inst, sc.target) });
     }
+    // Sunscorch: Unearth a card from the discard pile (worth a little less than the same card from hand: it's gone after)
+    if (E.unearthable) for (const inst of E.unearthable(p)) {
+      const d = C[inst.id];
+      if (d.speed === 'instant' && d.react) continue; // React instants are kept for the boss's turn
+      const sc = scoreCard(E, p, inst, dz);
+      if (sc.s <= 0 || (E.needsTarget(inst) && !sc.target)) continue;
+      const s = sc.s - E.unearthCost(p, d) * 0.3 - 1.5 - (avail - E.unearthCost(p, d) >= reserve ? 0 : 7);
+      if (s > 0) acts.push({ s, go: () => E.playCard(p, inst, sc.target, { unearth: true }) });
+    }
     // #102 bail water before a Tidal Surge
     if (E.canBail && E.canBail(p)) {
       const B = E.g.boss, mx = E.raid.counter.max;
@@ -257,6 +268,7 @@
       const tags = d.tags || [];
       if (tags.includes('heal')) { target = mostWoundedFriendly(E, d.use.target); s = target && E.maxHpOf(target) - E.hpOf(target) >= (d.heal || 4) ? 8 : -1; }
       else if (tags.includes('dmg')) { const b = bestEnemy(E, p, d.dmg || 4); target = b.t; s = b.s > 6 || E.g.round >= 5 ? b.s : -1; }
+      else if (d.aiUse) s = d.aiUse(E, p);
       else if (tags.includes('ramp')) s = p.hand.some(c => C[c.id].cost === E.available(p) + 1) ? 7 : -1;
       else if (tags.includes('draw')) s = d.use.cost ? (E.available(p) >= d.use.cost + 0 ? 3 : -1) : 4;
       else if (tags.includes('buff')) s = d.id === 'warhorn' ? (p.allies.filter(a => !a.ex && !a.sick).length >= 2 ? 5 : -1) : (E.canAttackWith(p, 'hero') ? 4 : -1);

@@ -430,6 +430,7 @@
   /* ---------- scene backgrounds ---------- */
   function scene(name, r, P, o) {
     o = o || {};
+    if (A.extraScenes && A.extraScenes[name]) return A.extraScenes[name](r, P, o); // art_wild.js (sets 5 and 6)
     const gy = o.ground != null ? o.ground : 196;
     if (A.PHOTOS && A.PHOTOS[name] && !o.noPhoto && !A.noPhotos) {
       if (name === 'forge') return forgeInterior(P) + `<rect x="0" y="${gy}" width="${W}" height="${H - gy}" fill="${P.ground}"/>` + photoLayer(name, r, P);
@@ -571,7 +572,7 @@
     if (spec.fg) body += A.foreground(spec.fg, r, P);
     const pk = spec.p === undefined ? P.part : spec.p;
     if (pk && pk !== 'none') body += particles(pk, r, P, spec.pn);
-    body += `<rect width="${W}" height="${H}" fill="url(#vig)"/><rect width="${W}" height="${H}" filter="url(#grain)" opacity=".5"/>`;
+    body += `<rect width="${W}" height="${H}" fill="url(#vig)" opacity="${spec.vig != null ? spec.vig : 1}"/><rect width="${W}" height="${H}" filter="url(#grain)" opacity="${spec.grain != null ? spec.grain : 0.5}"/>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${defs(P)}${body}</svg>`;
   };
   A.uri = function (spec, key) {

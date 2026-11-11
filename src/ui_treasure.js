@@ -99,6 +99,8 @@
     frost: { name: 'Frostwing', art: 'pack_frost' },
     void: { name: 'Voidshade', art: 'pack_void' },
     armory: { name: 'The Armory', art: 'pack_armory' },
+    wild: { name: 'Wildbloom', art: 'pack_wild' },
+    sun: { name: 'Sunscorch', art: 'pack_sun' },
   };
   // #96: each Core size is its own pack with its own wrapper: 5 cards (title_alt crop), 10 (title_wide crop), 20 (the user's booster20.png)
   RB.CORE_ART = { 5: 'pack_core', 10: 'pack_core10', 20: 'pack_core20' };

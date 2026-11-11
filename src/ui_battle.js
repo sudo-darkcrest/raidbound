@@ -102,6 +102,10 @@
     for (const slot of Object.keys(RB.SLOTS)) if (p.armor[slot]) { const d = C[p.armor[slot].c.id]; gear += gslot(p.armor[slot], `${RB.SLOTS[slot]} · pay ${d.use}${p.armor[slot].ex ? ' · used' : ''}`, '⛨ ' + d.def, 'armor', false); }
     for (const it of p.items) { const d = C[it.c.id]; gear += gslot(it, d.use ? (it.ex ? 'Used this turn' : (U.isPhone() ? 'Tap to use' : 'Click to use')) : 'Item', d.use ? (d.use.cost ? d.use.cost + '◆' : '') : '', 'item', canAct && E.itemReady(p, it)); }
     if (!Object.keys(p.armor).length && !p.items.length) gear += `<div class="gslot">No armor or items</div>`;
+    // Wildbloom: planted seeds, with their pips left
+    for (const sd of p.seeds) { const d = C[sd.id] || RB.TOKENS[sd.id]; gear += `<div class="gslot has seed" data-act="seed" data-sid="${sd.uid}" data-card="${sd.id}" title="${esc(d.name)}: ${esc(d.text || '')}"><img alt="" src="${U.cardArt(sd.id)}"><span class="gn"><b>${esc(d.name)}</b>Blooms in ${sd.pips} turn${sd.pips === 1 ? '' : 's'}</span><span class="gv pips">${'●'.repeat(Math.max(0, sd.pips))}</span></div>`; }
+    // Sunscorch: cards in the discard pile that can be Unearthed right now
+    if (canAct) for (const c of E.unearthable(p)) { const d = C[c.id]; gear += `<div class="gslot has unearth can" data-act="unearth" data-uid="${c.uid}" data-card="${c.id}" title="Unearth: play ${esc(d.name)} again from your discard pile. It leaves the game afterwards."><img alt="" src="${U.cardArt(c.id)}"><span class="gn"><b>Unearth ${esc(d.name)}</b>From your discard pile</span><span class="gv">${E.unearthCost(p, d)}◆</span></div>`; }
     const resOrder = p.res.map((r, i) => i).sort((a, b) => ((p.res[a].quest || p.res[a].loc) ? 1 : 0) - ((p.res[b].quest || p.res[b].loc) ? 1 : 0));
     const resCards = resOrder.map(i => { const r = p.res[i];
       const d = C[r.c.id];
@@ -390,7 +394,7 @@
       const html = `<h3><b class="kw react">React</b> — ${esc(ctx.attacker)} attacks!</h3>
         <div class="instwhy"><p><b>${esc(ctx.attacker)} is about to hit ${esc(E.nameOf(dT))} for ${inc} damage.</b> ${esc(E.nameOf(dT))} has ${E.hpOf(dT)} health${ward ? ` and a ward of ${ward}` : ''}.</p>
         <p class="small">A <b>React</b> card can be played right now, before the hit lands. It uses resources you left ready — they refresh at the start of your next turn.</p></div>
-        <div class="cards">${opts.map((o, i) => `<div class="pick" data-v="${i}">${U.cardHTML(o.inst.id, { holo: o.inst.holo })}<div class="ihint">${good === o ? '<span class="itag good">Good answer</span>' : ''}<b>${who(o)}</b> · costs ${C[o.inst.id].cost} (${E.available(o.p)} ready)<br>${esc(hint(o))}</div></div>`).join('')}</div>
+        <div class="cards">${opts.map((o, i) => `<div class="pick" data-v="${i}">${U.cardHTML(o.inst.id, { holo: o.inst.holo })}<div class="ihint">${good === o ? '<span class="itag good">Good answer</span>' : ''}<b>${who(o)}</b> · ${o.unearth ? `Unearth from the discard pile for ${E.unearthCost(o.p, C[o.inst.id])}` : `costs ${C[o.inst.id].cost}`} (${E.available(o.p)} ready)<br>${esc(hint(o))}</div></div>`).join('')}</div>
         <p class="small" style="text-align:center;margin:.6rem 0 0">${U.isPhone() ? 'Tap' : 'Click'} a card to play it, or take the hit and keep your cards. You can turn these pauses off in Settings.</p>
         <div class="acts"><button class="btn primary" data-v="pass">Take the hit</button></div>`;
       const v = await U.dialog(html);
@@ -421,7 +425,7 @@
   }
 
   /* ---------- player actions (local, or sent through the online relay) ---------- */
-  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation', 'bail', 'discardCard'];
+  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation', 'bail', 'discardCard', 'unearth'];
   async function doAction(name, args) {
     const p = args[0];
     if (name === 'end') return E.endHeroTurn();
@@ -447,7 +451,7 @@
       if (a.P != null) return E.g.players[a.P];
       if (a.R != null) return findRef(a.R);
       if (a.C != null) return p0 && (p0.items.find(e => e.c.uid === a.C) || p0.res.find(r => r.c.uid === a.C) || (p0.weapon && p0.weapon.c.uid === a.C ? p0.weapon : null));
-      if (a.U != null) return p0 && (p0.hand.find(c => c.uid === a.U) || p0.allies.find(x => x.uid === a.U));
+      if (a.U != null) return p0 && (p0.hand.find(c => c.uid === a.U) || p0.allies.find(x => x.uid === a.U) || p0.grave.find(c => c.uid === a.U));
       return null;
     });
   }
@@ -747,6 +751,9 @@
         case 'hero': return heroActions(p, act);
         case 'item': { const it = p.items.find(x => x.c.uid === act.dataset.gid); if (it) return itemAction(p, it, act); return; }
         case 'res': { const r = p.res[+act.dataset.ri]; if (r) return resAction(p, r, act); return; }
+        case 'seed': return U.popover(act, (C[act.dataset.card] || RB.TOKENS[act.dataset.card]).name, [{ why: 'A seed loses one pip at the start of each of your turns. When the last one goes, it blooms.' }], { card: U.cardHTML(act.dataset.card) });
+        case 'unearth': { const inst = p.grave.find(c => c.uid === act.dataset.uid); if (!inst) return; const d = C[inst.id];
+          return U.popover(act, null, [{ label: `Unearth ${esc(d.name)} · ${E.unearthCost(p, d)} ◆`, go: () => { const tk = E.needsTarget(inst); if (!tk) return doAct('unearth', p, inst, null); const friendly = ['friendly', 'friendlyHero', 'ally'].includes(tk); startTargeting(`${d.name}: choose ${friendly ? 'a friendly target' : 'an enemy'}`, E.targetsFor(tk, p), friendly, t => doAct('unearth', p, inst, t)); } }, { why: 'Unearth plays this card again from your discard pile. Afterwards it leaves the game for good.' }], { card: U.cardHTML(inst.id) }); }
         case 'weapon': return U.popover(act, C[p.weapon.c.id].name, [{ why: `Attack with your hero to use this weapon (strike cost ${E.strikeCost(p)}). It can also strike back when your hero is attacked.` }], { card: U.cardHTML(p.weapon.c.id) });
         case 'armor': return U.popover(act, C[act.dataset.card].name, [{ why: 'Armor blocks automatically when your hero takes damage, if you have enough ready resources to pay its cost.' }], { card: U.cardHTML(act.dataset.card) });
       }

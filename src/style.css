@@ -230,7 +230,13 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .herocard.dead { filter: grayscale(1) brightness(.4); }
 .herocard .tags { position: absolute; left: .3rem; top: .3rem; display: flex; gap: .25rem; flex-wrap: wrap; }
 .herocard .tags span { font-family: var(--f-sc); font-size: .7rem; padding: .05rem .35rem; border-radius: 3px; background: rgba(0, 0, 0, .7); color: var(--gilt-hi); border: 1px solid var(--gilt-lo); }
-.herocard:has(.hatk) .tags { left: 2.5rem; } /* keep hero tags clear of the ATK badge */
+.herocard:has(.hatk) .tags { left: 2.5rem; }
+/* Wildbloom seeds and Sunscorch Unearth on the gear row */
+.gslot.seed { border-color: rgba(140, 230, 90, .55); background: linear-gradient(90deg, rgba(40, 90, 20, .45), rgba(0, 0, 0, .25)); }
+.gslot.seed .gv.pips { color: #b8ff7a; letter-spacing: -.05em; font-size: .7rem; }
+.gslot.unearth { border-color: rgba(240, 184, 74, .7); background: linear-gradient(90deg, rgba(110, 76, 20, .55), rgba(30, 20, 6, .35)); cursor: pointer; }
+.gslot.unearth .gn b { color: #ffd98a; }
+.gslot.unearth:hover { box-shadow: 0 0 10px rgba(240, 184, 74, .6); } /* keep hero tags clear of the ATK badge */
 .herocard .tags span.geared { background: linear-gradient(180deg, #4a5a70, #232c3a); color: #e8f0ff; border-color: #9ab0cc; box-shadow: 0 0 6px rgba(150, 190, 240, .6); }
 .powerbtn { margin-top: .4rem; width: 100%; display: block; text-align: left; font-size: .8rem; padding: .35rem .5rem; line-height: 1.15; }
 .powerbtn b { display: block; font-family: var(--f-display); font-weight: 700; font-size: 1rem; }
@@ -554,6 +560,11 @@ body.special-back .cardback::after, .cos.special .swatch::after { display: block
 .tcgpack { --trim: #f2c76a; --trim2: #a8701e; --glow: rgba(255, 140, 40, .45); position: relative; width: 236px; aspect-ratio: 236 / 420; cursor: pointer; display: flex; flex-direction: column; filter: drop-shadow(0 22px 26px rgba(0, 0, 0, .7)); transition: transform .25s ease; user-select: none; }
 .tcgpack.v-frost { --trim: #d8f2ff; --trim2: #4a8ab8; --glow: rgba(120, 200, 255, .45); }
 .tcgpack.v-void { --trim: #e2c8ff; --trim2: #6a3aa8; --glow: rgba(170, 100, 255, .45); }
+.tcgpack.v-wild { --trim: #e8ffc8; --trim2: #3e8a2a; --glow: rgba(150, 240, 100, .5); }
+.tcgpack.v-sun { --trim: #fff0c0; --trim2: #c0801e; --glow: rgba(255, 200, 90, .55); }
+.tcgpack.v-wild .plogo, .tcgpack.v-sun .plogo { top: 3%; }
+.tcgpack.v-wild .ribbon, .tcgpack.v-sun .ribbon { top: auto; bottom: 4%; }
+.tcgpack.v-wild .shade, .tcgpack.v-sun .shade { background: linear-gradient(180deg, rgba(0, 0, 0, .5), rgba(0, 0, 0, .05) 24%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, .55) 100%); }
 .tcgpack.v-armory { --trim: #e6f0ff; --trim2: #5a7aa0; --glow: rgba(150, 200, 255, .5); }
 /* Set 4: the Armory wrapper has Everforge in the middle, so the logo goes up into the vault and the ribbon down onto the floor */
 .tcgpack.v-armory .plogo { top: 3%; }

@@ -51,7 +51,7 @@
       g.players.push({
         idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
         hero: { master: null, damage: 0, shield: 0, tempAtk: 0, ex: false, elusive: false, taunt: false, powerUsed: false, dead: false, pet: seat.pet || null },
-        deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [],
+        deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [], seeds: [], exile: [], blooms: 0, unearthed: 0,
         resPlayed: false, spareRes: 0, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
       });
     });
@@ -90,21 +90,25 @@
 
     /* ---------- basic queries ---------- */
     const pdef = p => p.hero.master ? C[p.hero.master] : HEROES[p.heroId];
-    const heroMax = p => (p.hero.master ? C[p.hero.master].hp : HEROES[p.heroId].hp) + (p.hero.hpB || 0);
+    const heroMax = p => (p.hero.master ? C[p.hero.master].hp : HEROES[p.heroId].hp) + (p.hero.hpB || 0) + p.items.reduce((s, e) => s + (C[e.c.id].maxHp || 0), 0);
     const heroHp = p => heroMax(p) - p.hero.damage;
     const alive = () => g.players.filter(p => !p.hero.dead);
     const gear = p => [p.weapon, ...Object.values(p.armor), ...p.items].filter(Boolean);
-    const spellPower = p => gear(p).reduce((s, e) => s + (C[e.c.id].spell || 0), 0) + (p.hero.master ? (C[p.hero.master].spell || 0) : 0);
+    const deep = p => p.grave.length >= 10; // Sunscorch: 10 or more cards in your discard pile
+    const spellPower = p => gear(p).reduce((s, e) => s + (C[e.c.id].spell || 0) + (deep(p) ? (C[e.c.id].spellDeep || 0) : 0), 0) + (p.hero.master ? (C[p.hero.master].spell || 0) : 0);
     const itemSum = (p, key) => p.items.reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
     // Set 4 (The Armory): Geared = the hero has a weapon and at least 2 pieces of armor
     const geared = p => !!p && !!p.weapon && Object.keys(p.armor).length >= 2;
     const gearSum = (p, key) => gear(p).reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
     const strikeCost = p => p.weapon ? Math.max(0, (C[p.weapon.c.id].strike || 0) - (geared(p) ? gearSum(p, 'gearedStrike') : 0)) : 0;
-    const weaponAtk = p => p.weapon ? C[p.weapon.c.id].atk + (p.weapon.atkB || 0) + (geared(p) ? (C[p.weapon.c.id].gearedAtk || 0) : 0) + itemSum(p, 'wpnAtk') : 0;
+    const weaponAtk = p => p.weapon ? C[p.weapon.c.id].atk + (p.weapon.atkB || 0) + (geared(p) ? (C[p.weapon.c.id].gearedAtk || 0) : 0) + (deep(p) ? (C[p.weapon.c.id].deepAtk || 0) : 0) + itemSum(p, 'wpnAtk') : 0;
     const heroAtk = p => p.hero.tempAtk + (p.hero.permAtk || 0) + gear(p).reduce((s, e) => s + (C[e.c.id].heroAtk || 0), 0) + (geared(p) ? gearSum(p, 'gearedHeroAtk') : 0) + (p.hero.master ? (C[p.hero.master].heroAtk || 0) : 0);
     const allyDef = a => def(a.id);
-    const allyAtk = (p, a) => { const d = allyDef(a); return Math.max(0, (d.atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk') + (geared(p) ? itemSum(p, 'gearedAllyAtk') + (d.gearedBuff || 0) : 0) + (hasKw(d, 'longrange') ? itemSum(p, 'volleyAllyAtk') : 0) + (d.atkPerArmor ? Math.min(d.atkPerArmor, Object.keys(p.armor).length) : 0)); };
+    const allyAtk = (p, a) => { const d = allyDef(a); return Math.max(0, (d.atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk') + (geared(p) ? itemSum(p, 'gearedAllyAtk') + (d.gearedBuff || 0) : 0) + (hasKw(d, 'longrange') ? itemSum(p, 'volleyAllyAtk') : 0) + (d.atkPerArmor ? Math.min(d.atkPerArmor, Object.keys(p.armor).length) : 0) + (hasKw(d, 'frenzy') ? a.damage : 0)); };
     const allyMax = (p, a) => (allyDef(a).hp || 1) + a.hpB + itemSum(p, 'allyHp') + (geared(p) ? (allyDef(a).gearedBuff || 0) : 0);
+    // Sunscorch: a card played again with Unearth (or for free from the discard pile) leaves the game afterwards
+    const bury = (p, c) => { if (!c) return; if (c.gone) p.exile.push(c); else p.grave.push(c); };
+    const unearthCost = (p, d) => Math.max(0, (d.unearth || 0) - gearSum(p, 'unearthOff'));
     // a card's cost after discounts (Brooch of Quick Casting, Quick Change)
     const costOf = (p, d) => { let c = d.cost || 0; if (d.type === 'ability' && !p.abTurn) c -= gearSum(p, 'firstAbilityOff'); if ((d.type === 'weapon' || d.type === 'armor') && p.quickChange) c -= p.quickChange; return Math.max(0, c); };
     const hasKw = (d, k) => (d.kw || []).includes(k);
@@ -221,16 +225,18 @@
         const d = C[e.c.id];
         if (available(p) < d.use) continue;
         pay(p, d.use); e.ex = true;
-        const red = Math.min(n, d.def + (geared(p) ? (d.gearedDef || 0) : 0)); n -= red;
+        const red = Math.min(n, d.def + (geared(p) ? (d.gearedDef || 0) : 0) + (deep(p) ? (d.deepDef || 0) : 0)); n -= red;
         log(`${d.name} blocks ${red}.`, 'def');
         await H.anim('armor', { ref: 'hero' + p.idx, amount: red, name: d.name });
         if (d.blockDraw) { log(`${d.name}: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
+        if (d.onBlock && !g.over) await d.onBlock(api, p, g.curAtt);
         if (n <= 0) break;
       }
       return n;
     }
-    async function heal(target, amount) {
+    async function heal(target, amount, src) {
       if (!target || !isAlive(target) || g.over) return 0;
+      { const hp = (src && src.p) || ((g.phase === 'main' || g.phase === 'start') && (target.t === 'hero' || target.t === 'ally') ? g.players[g.turn] : null); if (hp && amount > 0) amount += itemSum(hp, 'healPlus'); }
       let cur = target.t === 'boss' ? g.boss.damage : target.t === 'minion' ? target.m.damage : target.t === 'hero' ? target.p.hero.damage : target.a.damage;
       const h = Math.min(cur, amount);
       if (h <= 0) return 0;
@@ -267,7 +273,7 @@
       if (t.t === 'ally') {
         const p = t.p, a = t.a, d = allyDef(a);
         p.allies.splice(p.allies.indexOf(a), 1);
-        if (!a.token) p.grave.push(a.c);
+        if (!a.token) bury(p, a.c);
         log(`${d.name} falls.`, 'loss');
         await H.anim('death', { ref: a.uid });
         H.update();
@@ -295,8 +301,8 @@
           return;
         }
         p.hero.dead = true; p.hero.shield = 0;
-        for (const a of p.allies) if (!a.token) p.grave.push(a.c);
-        p.allies = [];
+        for (const a of p.allies) if (!a.token) bury(p, a.c);
+        p.allies = []; p.seeds = [];
         log(`${pdef(p).name} has been defeated!`, 'loss');
         await H.anim('heroDeath', { ref: 'hero' + p.idx });
         H.update();
@@ -363,6 +369,34 @@
       H.update();
     }
 
+    /* ---------- Wildbloom seeds ---------- */
+    const seedDef = id => C[id] || TK[id];
+    function plantSeed(p, id, inst) {
+      const d = seedDef(id); if (!d || p.hero.dead) return;
+      p.seeds.push({ uid: inst ? inst.uid : uid(), id, c: inst || null, pips: d.grow || 2 });
+      log(`${pdef(p).name} plants ${d.name} (Grow ${d.grow || 2}).`, 'play'); H.update();
+    }
+    async function bloomSeed(p, s) {
+      const i = p.seeds.indexOf(s); if (i < 0 || g.over) return;
+      p.seeds.splice(i, 1); p.blooms++;
+      const d = seedDef(s.id);
+      log(`${d.name} blooms!`, 'win');
+      await H.anim('heal', { ref: 'hero' + p.idx, amount: 0 });
+      if (d.bloom) await d.bloom(api, p);
+      if (s.c) bury(p, s.c);
+      H.update();
+      for (const a of [...p.allies]) { const ad = allyDef(a); if (ad.onBloom && p.allies.includes(a) && !g.over) await ad.onBloom(api, p); }
+      for (const e of [...p.items]) { const ed = C[e.c.id]; if (ed.onBloom && !g.over) await ed.onBloom(api, p); }
+    }
+    async function growSeeds(p, k, quiet) {
+      if (!p.seeds.length || k <= 0) return;
+      for (const s of p.seeds) s.pips -= k;
+      if (!quiet) log(`${pdef(p).name}'s seeds grow ${k}.`, 'def');
+      H.update();
+      for (const s of p.seeds.filter(x => x.pips <= 0)) { await bloomSeed(p, s); if (g.over) return; }
+    }
+    async function bloomAll(p) { for (const s of [...p.seeds]) { await bloomSeed(p, s); if (g.over) return; } }
+
     /* ---------- resources ---------- */
     function pay(p, nAmt) {
       let k = nAmt;
@@ -413,6 +447,20 @@
       }
       return { ok: true };
     }
+    // Sunscorch Unearth N: pay N to play a card from your discard pile again (on your turn; a React Instant also when its trigger happens)
+    function canUnearth(p, inst) {
+      const d = C[inst.id];
+      if (!d || !d.unearth || !p.grave.includes(inst)) return { ok: false, why: 'This card can\'t be Unearthed.' };
+      if (g.over || p.hero.dead) return { ok: false, why: 'Not now.' };
+      if (!isActive(p) && !(d.type === 'ability' && d.speed === 'instant' && (g.window || (g.react && reactMatch(d, p, g.react))))) return { ok: false, why: 'You can Unearth on your turn (a React Instant also when its trigger happens).' };
+      const k = unearthCost(p, d);
+      if (available(p) < k) return { ok: false, why: `Unearth needs ${k} resource${k === 1 ? '' : 's'} (you have ${available(p)}).` };
+      if (hasKw(d, 'unique') && d.type === 'ally' && p.allies.some(a => a.id === d.id)) return { ok: false, why: 'Unique: you already have one in play.' };
+      if ((d.type === 'weapon' || d.type === 'armor') && !canEquip(p, d)) return { ok: false, why: 'Your hero can\'t use this.' };
+      if (d.target && d.target !== 'none' && d.type === 'ability' && !targetsFor(d.target, p).length) return { ok: false, why: 'There is no valid target.' };
+      return { ok: true };
+    }
+    const unearthable = p => p.grave.filter((c, i) => C[c.id] && C[c.id].unearth && p.grave.findIndex(x => x.id === c.id) === i && canUnearth(p, c).ok);
     function needsTarget(inst) { const d = C[inst.id]; return d.target && d.target !== 'none' && targetsFor(d.target).length ? d.target : null; }
 
     /* ---------- actions ---------- */
@@ -436,7 +484,7 @@
         p.res.push({ c: inst, ex: false, loc: true, used: false });
         log(`${pdef(p).name} claims ${d.name}.`, 'play');
       } else if (d.type === 'quest') {
-        p.res.push({ c: inst, ex: false, quest: true, done: false });
+        p.res.push({ c: inst, ex: false, quest: true, done: false, mk: g.minionsKilled });
         log(`${pdef(p).name} takes up the quest: ${d.name}.`, 'play');
       } else {
         p.res.push({ c: inst, ex: false });
@@ -460,21 +508,25 @@
     // #125: lands, quests and locations can always become resources; any other card only RB.SPARE_RES times a fight
     function spareLeft(p) { return Math.max(0, RB.SPARE_RES - (p.spareRes || 0)); }
     function canResource(p, inst) { const t = C[inst.id].type; return t === 'land' || t === 'quest' || t === 'location' || cfg.noLands || spareLeft(p) > 0; }
-    async function playCard(p, inst, target) {
-      const ok = canPlay(p, inst);
+    async function playCard(p, inst, target, opts) {
+      opts = opts || {};
+      const ok = opts.unearth ? canUnearth(p, inst) : opts.free ? { ok: !g.over && !p.hero.dead } : canPlay(p, inst);
       if (!ok.ok) return ok;
       const d = C[inst.id];
       const tk = needsTarget(inst);
       if (tk && (!target || !targetsFor(tk, p).some(t => same(t, target)))) return { ok: false, why: 'Choose a target.' };
-      const i = p.hand.indexOf(inst); if (i < 0) return { ok: false, why: 'Card not in hand.' };
-      p.hand.splice(i, 1);
-      pay(p, costOf(p, d));
+      const zone = opts.unearth || opts.free ? p.grave : p.hand;
+      const i = zone.indexOf(inst); if (i < 0) return { ok: false, why: opts.unearth || opts.free ? 'Card not in your discard pile.' : 'Card not in hand.' };
+      zone.splice(i, 1);
+      if (opts.unearth || opts.free) { inst.gone = true; if (opts.unearth) { pay(p, unearthCost(p, d)); p.unearthed++; } }
+      else pay(p, costOf(p, d));
       if (d.type === 'ability') p.abTurn = (p.abTurn || 0) + 1;
       if ((d.type === 'weapon' || d.type === 'armor') && p.quickChange) p.quickChange = 0;
       g.stats.cardsPlayed++;
       const ctx = { p, target, card: inst };
       await H.anim('play', { p: p.idx, id: inst.id, holo: inst.holo, target: target ? refId(target) : null });
-      log(`${pdef(p).name} plays ${d.name}${target ? ' on ' + nameOf(target) : ''}.`, 'play');
+      log(`${pdef(p).name} ${opts.unearth ? 'unearths' : opts.free ? 'plays again' : 'plays'} ${d.name}${target ? ' on ' + nameOf(target) : ''}.`, 'play');
+      if (opts.unearth) for (const e of gear(p)) { const gd = C[e.c.id]; if (gd.onUnearth && !g.over) await gd.onUnearth(api, p); }
       switch (d.type) {
         case 'ally': {
           const a = { uid: inst.uid, id: inst.id, c: inst, damage: 0, ex: false, sick: true, atkB: 0, hpB: 0, tmp: 0, frozen: false, token: null };
@@ -491,22 +543,23 @@
         }
         case 'ability':
           await d.run(api, ctx);
-          p.grave.push(inst);
+          bury(p, inst);
           for (const e of gear(p)) { const gd = C[e.c.id]; if (gd.onAbility && !g.over) await gd.onAbility(api, p); }
           break;
         case 'weapon':
-          if (p.weapon) p.grave.push(p.weapon.c);
+          if (p.weapon) bury(p, p.weapon.c);
           p.weapon = { c: inst, ex: false, atkB: 0 };
           if (d.onEnter) await d.onEnter(api, ctx);
           for (const e of [...p.items]) { const gd = C[e.c.id]; if (gd.onGear && !g.over) await gd.onGear(api, p); }
           break;
         case 'armor':
-          if (p.armor[d.slot]) p.grave.push(p.armor[d.slot].c);
+          if (p.armor[d.slot]) bury(p, p.armor[d.slot].c);
           p.armor[d.slot] = { c: inst, ex: false };
           if (d.onEnter) await d.onEnter(api, ctx);
           for (const e of [...p.items]) { const gd = C[e.c.id]; if (gd.onGear && !g.over) await gd.onGear(api, p); }
           break;
         case 'item':
+          if (d.grow) { plantSeed(p, inst.id, inst); break; } // Wildbloom: a seed card is planted, not equipped
           p.items.push({ c: inst, ex: false });
           if (d.onEnter) await d.onEnter(api, ctx);
           break;
@@ -542,7 +595,7 @@
         ironHide = (HEROES[p.heroId].ironHide && !p.hero.master) ? HEROES[p.heroId].ironHide : 0;
         attackerT = T.hero(p);
       } else {
-        atk = allyAtk(p, who); who.ex = true; longrange = allyKw(p, who, 'longrange'); attackerT = T.ally(p, who);
+        atk = allyAtk(p, who); who.ex = true; longrange = allyKw(p, who, 'longrange'); attackerT = T.ally(p, who); if (allyDef(who).onAttack) { const ad = allyDef(who), me = who; onAttack = (E, c) => ad.onAttack(E, Object.assign({ a: me }, c)); }
       }
       log(`${nameOf(attackerT)} attacks ${nameOf(target)}${wname}.`, 'atk');
       await H.anim('attack', { from: refId(attackerT), to: refId(target) });
@@ -601,7 +654,7 @@
       log(`${pdef(p).name} uses ${d.name}.`, 'play');
       await d.urun(api, { p, target });
       // #78: a used-up item reaches the discard only after its effect, so "destroy this to draw" can't reshuffle and redraw itself
-      if (d.use.destroy) p.grave.push(e.c);
+      if (d.use.destroy) bury(p, e.c);
       H.update();
       return { ok: true };
     }
@@ -614,7 +667,7 @@
       p.allies.forEach(a => { if (a.frozen) { a.frozen = false; a.ex = true; } else a.ex = false; a.sick = false; a.tmp = 0; });
       p.hero.ex = false; p.hero.tempAtk = 0; p.hero.elusive = false; p.hero.taunt = false;
       gear(p).forEach(e => e.ex = false);
-      p.tempRes = 0; p.resPlayed = false; p.bailed = false; p.abTurn = 0; p.quickChange = 0;
+      p.tempRes = 0; p.resPlayed = false; p.bailed = false; p.abTurn = 0; p.quickChange = 0; p.bloomDrew = false; p.unearthDrew = false;
       if (g.boss.mark && g.boss.mark.by === p.idx) g.boss.mark = null;
       H.update();
       await H.anim('turn', { p: p.idx, name: p.name, hero: pdef(p).name });
@@ -626,13 +679,15 @@
       for (const a of [...p.allies]) { const d = allyDef(a); if (d.start && p.allies.includes(a)) await d.start(api, p); if (g.over) return; }
       // #103 Tend: each Tend ally heals 1 from its hero's most wounded friend (hero or ally)
       for (const a of [...p.allies]) {
-        if (!hasKw(allyDef(a), 'tend') || !p.allies.includes(a) || p.hero.dead) continue;
+        if (!(hasKw(allyDef(a), 'tend') || a.tend) || !p.allies.includes(a) || p.hero.dead) continue;
         const pool = [T.hero(p), ...p.allies.map(x => T.ally(p, x))].filter(t => maxHpOf(t) - hpOf(t) > 0);
         if (!pool.length) continue;
         const t = pool.reduce((x, y) => (maxHpOf(y) - hpOf(y)) * (y.t === 'hero' ? 1.3 : 1) > (maxHpOf(x) - hpOf(x)) * (x.t === 'hero' ? 1.3 : 1) ? y : x);
-        log(`${allyDef(a).name} tends ${nameOf(t)}.`, 'def'); await heal(t, 1); if (g.over) return;
+        log(`${allyDef(a).name} tends ${nameOf(t)}.`, 'def'); await heal(t, 1 + itemSum(p, 'tendPlus')); if (g.over) return;
       }
       for (const e of [...p.items]) { const d = C[e.c.id]; if (d.start) await d.start(api, p); if (g.over) return; }
+      // Wildbloom: seeds lose a pip each turn (more with Bloomcaller Druids and Oriel), and bloom at zero
+      if (p.seeds.length && !p.hero.dead) { await growSeeds(p, 1 + p.allies.reduce((s, a) => s + (allyDef(a).extraGrow || 0), 0), true); if (g.over) return; }
       for (const ev of [...g.boss.events]) { const d = BC[ev.id]; if (d.heroStart) await d.heroStart(api, p); if (g.over) return; }
       if (p.hero.dead) return endHeroTurn();
       g.phase = 'main';
@@ -704,6 +759,15 @@
         if (d.target && d.target !== 'none' && !target) continue;
         out.push({ p, inst: c, target });
       }
+      // Sunscorch: a React Instant in the discard pile can be Unearthed when its trigger happens
+      for (const p of (who || alive())) for (const c of p.grave) {
+        const d = C[c.id];
+        if (!d.unearth || d.type !== 'ability' || d.speed !== 'instant' || !reactMatch(d, p, ctx) || available(p) < unearthCost(p, d)) continue;
+        if (out.some(o => o.p === p && o.inst.id === c.id)) continue;
+        const target = reactTarget(d, ctx);
+        if (d.target && d.target !== 'none' && !target) continue;
+        out.push({ p, inst: c, target, unearth: true });
+      }
       return out;
     }
     async function reactWindow(ctx) {
@@ -717,7 +781,7 @@
       if (!choice || g.over) return;
       g.react = ctx;
       log(`${pdef(choice.p).name} reacts!`, 'def');
-      await playCard(choice.p, choice.inst, choice.target);
+      await playCard(choice.p, choice.inst, choice.target, choice.unearth ? { unearth: true } : undefined);
       g.react = null;
     }
     // #101 Omens
@@ -875,7 +939,7 @@
       if (defT.t === 'hero' && shrouded(defT.p)) { log(`${pdef(defT.p).name} slips into the shadows — the attack misses!`, 'def'); await H.anim('banner', { text: 'Missed!', kind: 'def' }); return; }
       // defender's counter-damage
       let back = 0;
-      if (defT.t === 'ally') back = allyAtk(defT.p, defT.a);
+      if (defT.t === 'ally') back = allyAtk(defT.p, defT.a) + (allyDef(defT.a).thorns || 0);
       else if (defT.t === 'hero') {
         const p = defT.p;
         if (p.weapon && !p.weapon.ex && available(p) >= strikeCost(p)) {
@@ -887,7 +951,9 @@
       }
       const attackerT = isBoss ? T.boss() : T.minion(attackerRef);
       const before = defT.t === 'ally' ? hpOf(defT) : 0;
+      g.curAtt = attackerT;
       const dealt = await dmg(defT, atkVal, { kind: isBoss ? 'boss' : 'minion', strike: isBoss });
+      g.curAtt = null;
       // #103 Crushing: damage beyond a defending ally's health carries on to that ally's hero
       if (defT.t === 'ally' && attackerDef && hasKw(attackerDef, 'crushing') && dealt > before && !defT.p.hero.dead && !g.over) {
         const over = dealt - before;
@@ -956,8 +1022,8 @@
     /* ---------- helpers exposed to card effects ---------- */
     const api = {
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
-      canPlay, canEquip, needsTarget, geared, strikeCost, weaponAtk, costOf, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
-      playResource, canResource, spareLeft, discardCard, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
+      canPlay, canEquip, needsTarget, geared, strikeCost, weaponAtk, costOf, deep, unearthCost, canUnearth, unearthable, plantSeed, growSeeds, bloomAll, bury, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
+      playResource, canResource, spareLeft, discardCard, playCard, unearth: (p, inst, target) => playCard(p, inst, target, { unearth: true }), attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
         { const st = stageNow(); if (st) { log(`${st.boss} blocks the way.${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss'); if (st.rule && st.rule.onEnter) await st.rule.onEnter(api); H.update(); } }
@@ -1037,6 +1103,28 @@
       taunt: p => { p.hero.taunt = true; log(`${pdef(p).name} taunts the enemy!`, 'def'); },
       elusive: p => { p.hero.elusive = true; log(`${pdef(p).name} melts into the shadows.`, 'def'); H.update(); },
       tempAtk: (p, k) => { p.hero.tempAtk += k; H.update(); },
+      plant: (p, id, k) => { for (let i = 0; i < (k || 1); i++) plantSeed(p, id); },
+      mill: (p, k) => { for (let i = 0; i < k && p.deck.length; i++) { const c = p.deck.pop(); p.grave.push(c); log(`${C[c.id].name} goes to ${pdef(p).name}'s discard pile.`, ''); } H.update(); },
+      // a sensible target for a card played by an effect (no player choice): strongest threat for damage, most hurt friend for help
+      autoTarget: (p, d) => { if (!d.target || d.target === 'none') return null; const ts = targetsFor(d.target, p); if (!ts.length) return null;
+        if (d.target === 'enemy' || d.target === 'minion') { const kill = ts.filter(t => t.t === 'minion' && hpOf(t) <= (d.dmg || 3)); return (kill.length ? kill : ts).reduce((a, b) => (b.t === 'minion' ? minAtk(b.m) : 0) > (a.t === 'minion' ? minAtk(a.m) : 0) ? b : a); }
+        if (d.target === 'ally') { const mine = ts.filter(t => t.p === p); return (mine.length ? mine : ts)[0]; }
+        return ts.reduce((a, b) => (maxHpOf(b) - hpOf(b)) > (maxHpOf(a) - hpOf(a)) ? b : a); },
+      // Queen Asheera / Find the Lost City: play the best card from the discard pile for free; it then leaves the game
+      replayFromGrave: async (p, ok) => {
+        const pool = p.grave.filter(c => { const d = C[c.id]; if (!d || !['ally', 'ability', 'item', 'weapon', 'armor'].includes(d.type) || (ok && !ok(d))) return false;
+          if (d.type === 'ability' && d.speed !== 'instant' && d.target && d.target !== 'none' && !targetsFor(d.target, p).length) return false;
+          if (hasKw(d, 'unique') && d.type === 'ally' && p.allies.some(a => a.id === d.id)) return false;
+          if ((d.type === 'weapon' || d.type === 'armor') && !canEquip(p, d)) return false;
+          return true; });
+        if (!pool.length) { log('There is nothing in the discard pile to bring back.', ''); return; }
+        const c = pool.reduce((a, b) => (C[b.id].cost || 0) > (C[a.id].cost || 0) ? b : a);
+        await playCard(p, c, api.autoTarget(p, C[c.id]), { free: true });
+      },
+      // put the best card from the discard pile into your hand (Scarab of Return, the Buried Sun Temple)
+      recoverBest: (p, ok) => { const pool = p.grave.filter(c => C[c.id] && (!ok || ok(C[c.id]))); if (!pool.length || p.hand.length >= 10) { log('Nothing comes back.', ''); return; }
+        const c = pool.reduce((a, b) => (RB.cardScore ? RB.cardScore(C[b.id]) : C[b.id].cost) > (RB.cardScore ? RB.cardScore(C[a.id]) : C[a.id].cost) ? b : a);
+        p.grave.splice(p.grave.indexOf(c), 1); p.hand.push(c); log(`${C[c.id].name} returns to ${pdef(p).name}'s hand.`, 'play'); H.update(); },
       // Set 4: a permanent bonus on the equipped weapon (cap: the most a source may add, tracked under its own key)
       sharpen: (p, k, key, cap) => { if (!p.weapon) return 0; if (key) { const had = p.weapon[key] || 0; k = Math.max(0, Math.min(k, cap - had)); p.weapon[key] = had + k; } if (!k) return 0; p.weapon.atkB = (p.weapon.atkB || 0) + k; log(`${C[p.weapon.c.id].name} gains +${k} ATK.`, 'def'); H.update(); return k; },
       allyTempAtk: (p, k) => { p.allies.forEach(a => a.tmp += k); H.update(); },

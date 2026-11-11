@@ -299,7 +299,7 @@
         }
       };
     }
-    const sets = { all: 'All cards', core: 'Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', armory: 'The Armory packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
+    const sets = { all: 'All cards', core: 'Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', armory: 'The Armory packs', wild: 'Wildbloom packs', sun: 'Sunscorch packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
     function draw() {
       if (view === 'decks') return drawDecks();
       const list = Object.values(C).filter(d => set === 'all' || d.set === set || d.pack === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
@@ -312,7 +312,7 @@
       // #116: how much of each set you have collected (a card counts once you own at least one copy)
       const inSet = k => Object.values(C).filter(d => k === 'all' || d.set === k || d.pack === k);
       const prog = k => { const l = inSet(k), h = l.filter(d => save.owned[d.id] > 0).length; return { h, t: l.length, pct: l.length ? Math.round(100 * h / l.length) : 0 }; };
-      const SHORT = { ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', armory: 'Armory', molten: 'Molten treasure', tide: 'Cathedral treasure' };
+      const SHORT = { ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', armory: 'Armory', wild: 'Wildbloom', sun: 'Sunscorch', molten: 'Molten treasure', tide: 'Cathedral treasure' };
       const setBtn = (k, v) => { const p = prog(k), done = p.t && p.h === p.t;
         return `<button class="btn small setbtn ${set === k ? '' : 'ghost'} ${done ? 'done' : ''}" data-set="${k}" title="${esc(v)}: ${p.h} of ${p.t} collected"><span class="sn">${esc(SHORT[k] || v)}${done ? ' <b class="sdone">&#10003;</b>' : ''}</span><span class="sc">${p.h} / ${p.t}</span><i class="sbar"><b style="width:${p.pct}%"></b></i></button>`; };
       const cur = prog(set), setLine = `<p class="setline">${set === 'all' ? 'You have collected' : `${esc(sets[set])}: you have`} <b>${cur.h} of ${cur.t}</b> cards (${cur.pct}%).${cur.h === cur.t ? ' <b class="sdone">Set complete!</b>' : ` ${cur.t - cur.h} still to find.`}</p>`;
