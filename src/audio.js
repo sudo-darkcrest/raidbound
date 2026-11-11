@@ -220,6 +220,12 @@
     [[67, 0, 0.12], [72, 0.11, 0.12], [76, 0.22, 0.12], [79, 0.34, 0.5]].forEach(([m, d, l]) => brass(t + d, hz(m), l, 0.085));
     bell(t + 0.34, hz(91), 0.07, 1.4);
   };
+  // #123: a short rising two-note chime when the turn passes to you, and a soft tick for a chat line
+  fx.yourTurn = t => {
+    bell(t, hz(79), 0.11, 1.1); bell(t + 0.16, hz(86), 0.12, 1.6);
+    tone(t, { type: 'triangle', f: hz(67), a: 0.005, d: 0.22, vol: 0.07, verb: 0.3 }); tone(t + 0.16, { type: 'triangle', f: hz(74), a: 0.005, d: 0.4, vol: 0.07, verb: 0.3 });
+  };
+  fx.chat = t => { tone(t, { type: 'sine', f: hz(84), f2: hz(88), glide: 0.05, a: 0.003, d: 0.09, vol: 0.06 }); tone(t + 0.07, { type: 'sine', f: hz(91), a: 0.003, d: 0.12, vol: 0.045, verb: 0.2 }); };
   fx.master = t => {
     fx.power(t);
     [50, 57, 62, 66, 69].forEach((m, i) => tone(t + 0.4, { type: 'sawtooth', f: hz(m), det: rnd(-5, 5), a: 0.6, hold: 0.8, d: 1.3, vol: 0.04, vib: [5, 3], flt: ['bandpass', 800, 0, 2.5], flt2: ['lowpass', 1800], verb: 0.6, pan: (i - 2) * 0.25 }));
@@ -243,7 +249,7 @@
   };
 
   U.sfx = {};
-  Object.keys(fx).forEach(k => { U.sfx[k] = (...args) => { if (!on('sound') || !ctx()) return; try { fx[k](T(), ...args); } catch (e) { /* audio must never break the game */ } }; });
+  Object.keys(fx).forEach(k => { U.sfx[k] = (...args) => { if (away || !on('sound') || !ctx()) return; try { fx[k](T(), ...args); } catch (e) { /* audio must never break the game */ } }; });
   AU.fx = fx; AU.T = T;
 
   AU.duck = function (depth, dur) {
@@ -339,6 +345,20 @@
     away = false;
     if (!ac || (!on('sound') && !on('music'))) return;
     if (canWake()) ac.resume().then(() => { if (pending && !mus && on('music')) startMusic(pending); }).catch(() => {});
+  };
+  // #123 The turn chime is the one sound allowed while the page is hidden (you looked away waiting for your turn).
+  // The audio wakes for a moment with the music held silent, plays the chime, and goes back to sleep.
+  AU.state = () => (ac ? ac.state : 'none');
+  AU.alert = function (name) {
+    if (!on('sound') || !fx[name]) return;
+    if (!away) { if (ctx()) { try { fx[name](T()); } catch (e) { /* never break the game */ } } return; }
+    if (!ac || !ac.resume || ac.state === 'closed') return; // sound was never switched on in this visit
+    const hush = v => { try { duckG.gain.cancelScheduledValues(ac.currentTime); duckG.gain.setValueAtTime(v, ac.currentTime); } catch (e) { /* ignore */ } };
+    hush(0);
+    ac.resume().then(() => {
+      try { fx[name](T()); } catch (e) { /* ignore */ }
+      setTimeout(() => { hush(1); if (away && ac.state === 'running') ac.suspend().catch(() => {}); }, 2200);
+    }).catch(() => hush(1));
   };
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => (document.hidden ? sleep() : wake()));

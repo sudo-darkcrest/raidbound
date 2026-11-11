@@ -46,6 +46,8 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
 - **The Vault:** 49 cosmetics (21 card backs, six of them shimmering foil backs from loot cards; 16 table themes; 12 companions, each giving its hero one tiny bonus) and 20 hero skins. You earn them from raids, dungeons, packs and loot codes.
 - **Party play:** up to four heroes share one device. The AI can run any seat, and bosses scale with party size. You can also play as the raid boss against AI heroes.
 - **Online:** one player creates a party and shares a 5-letter code, and friends join from their own computer or phone.
+  - **Party chat:** a Chat button in the lobby and during the fight opens quick phrases ("Heal me!", "Save your Instants"…) and a box to type in. A closed chat shows a red count and the newest line for a few seconds. You can mute any player, and someone who drops and rejoins sees the last 50 lines.
+- **Turn chime:** a short chime plays when the turn passes to you, even when the game is in another browser tab (the tab's title flashes too). Switch it off in Settings.
   - Raids take up to 4 heroes and dungeons up to 3.
   - The host can fill empty seats with AI heroes.
   - If someone drops out, the AI plays their hero until they come back.
@@ -65,7 +67,7 @@ The website is `dist/web/`, committed as `public/`. Render serves it as a static
 
 ### Online server
 
-`server/` holds a small Node relay for online play. It keeps lobbies and passes each player's moves to everyone in the same order. Every browser runs the same game from the same random seed, so the server never runs any game rules. To host it yourself:
+`server/` holds a small Node relay for online play. It keeps lobbies and passes each player's moves to everyone in the same order. It also passes chat lines along (plain text, at most 200 letters, 6 lines in 8 seconds per player), kept apart from the moves. Every browser runs the same game from the same random seed, so the server never runs any game rules. To host it yourself:
 
 ```
 cd server && npm install

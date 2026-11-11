@@ -1290,3 +1290,55 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .dseat .heropick button img { width: 100%; border-radius: 0; }
 .dseats > .btn { align-self: center; justify-self: start; }
 .preview.heroprev { pointer-events: none; }
+
+/* ---------- #123 party chat ---------- */
+.chatdock { position: fixed; right: 1rem; bottom: 1rem; z-index: 66; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; pointer-events: none; font-size: .95rem; }
+.chatdock > * { pointer-events: auto; }
+.chatfab { position: relative; display: inline-flex; align-items: center; gap: .45rem; padding: .5rem .95rem; border-radius: 99px; border: 1px solid var(--gilt); background: linear-gradient(#1c2446, #0d1128); color: var(--vellum); font-family: var(--f-sc); font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, .7); }
+.chatfab:hover, .chatdock.open .chatfab { border-color: #ffe7a0; background: linear-gradient(#263058, #121838); }
+.chatfab:focus-visible, .chatx:focus-visible, .chatquick button:focus-visible, .chatmute button:focus-visible, .chatpeek:focus-visible { outline: 2px solid #ffe7a0; outline-offset: 2px; }
+.chatfab svg { width: 1.15rem; height: 1.15rem; fill: var(--gilt); }
+.chatdot { position: absolute; right: -.35rem; top: -.45rem; min-width: 1.35rem; height: 1.35rem; padding: 0 .3rem; box-sizing: border-box; border-radius: 99px; display: grid; place-items: center; background: #d8402a; color: #fff; font-family: var(--f-display); font-weight: 900; font-size: .8rem; border: 2px solid #0d1128; animation: chatpop .25s ease; }
+.chatdot[hidden], .chatpeek[hidden], .chatpanel[hidden], .chatmute[hidden] { display: none; }
+.chatpeek { max-width: min(19rem, 76vw); padding: .45rem .75rem; border-radius: 12px 12px 2px 12px; border: 1px solid var(--gilt-lo); background: rgba(13, 17, 40, .96); color: var(--vellum); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, .7); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; animation: chatpop .2s ease; }
+.chatpanel { order: -1; width: min(18.5rem, calc(100vw - 2rem)); height: min(28rem, calc(100vh - 6.5rem)); height: min(28rem, calc(100dvh - 6.5rem)); display: flex; flex-direction: column; border: 1px solid var(--gilt-lo); border-radius: 10px; background: linear-gradient(#1a2142, #0b0f24); box-shadow: 0 16px 44px rgba(0, 0, 0, .8); overflow: hidden; animation: chatpop .16s ease; }
+.chathead { display: flex; align-items: center; justify-content: space-between; padding: .45rem .5rem .45rem .8rem; border-bottom: 1px solid rgba(212, 166, 74, .3); font-family: var(--f-sc); color: var(--gilt); }
+.chatx { width: 2rem; height: 2rem; border: 0; border-radius: 6px; background: transparent; color: var(--vellum); font-size: 1rem; cursor: pointer; }
+.chatx:hover { background: rgba(255, 255, 255, .1); }
+.chatmute { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; padding: .35rem .6rem; border-bottom: 1px solid rgba(212, 166, 74, .18); font-size: .82rem; color: var(--muted); }
+.chatmute button { border: 1px solid rgba(255, 255, 255, .22); border-radius: 99px; background: transparent; color: var(--vellum); font: inherit; padding: .12rem .55rem; cursor: pointer; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chatmute button.on { border-color: #ff7a4a; color: #ffb9a0; background: rgba(120, 30, 10, .35); }
+.chatlist { flex: 1; min-height: 0; overflow-y: auto; padding: .5rem .7rem; display: flex; flex-direction: column; gap: .3rem; overscroll-behavior: contain; }
+.chatline { margin: 0; line-height: 1.3; overflow-wrap: anywhere; color: var(--vellum); }
+.chatline b { font-family: var(--f-sc); margin-right: .15rem; }
+.chatline.q span { font-style: italic; }
+.chatline.me { opacity: .92; }
+.chatempty { margin: auto 0; text-align: center; color: var(--muted); font-size: .9rem; }
+.chatquick { display: flex; flex-wrap: wrap; gap: .3rem; padding: .45rem .6rem; border-top: 1px solid rgba(212, 166, 74, .18); flex: none; }
+.chatquick button { border: 1px solid var(--gilt-lo); border-radius: 99px; background: rgba(212, 166, 74, .1); color: var(--vellum); font: inherit; font-size: .85rem; padding: .22rem .6rem; cursor: pointer; white-space: nowrap; }
+.chatquick button:hover { background: rgba(212, 166, 74, .28); }
+.chatform { display: flex; gap: .4rem; padding: .5rem .6rem calc(.5rem + env(safe-area-inset-bottom)); border-top: 1px solid rgba(212, 166, 74, .3); background: rgba(5, 8, 20, .6); }
+.chatin { flex: 1; min-width: 0; padding: .45rem .6rem; border-radius: 6px; border: 1px solid var(--gilt-lo); background: #070a16; color: var(--vellum); font: inherit; font-size: 1rem; }
+.chatin:focus { outline: none; border-color: #ffe7a0; }
+@keyframes chatpop { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .chatdot, .chatpeek, .chatpanel { animation: none; } }
+/* no side column (tablets and phones): the fight's top bar carries the chat button, and the panel hangs below it, clear of the hand and End turn */
+.chatbtn { position: relative; }
+.chatbtn .chatdot { right: -.4rem; top: -.4rem; }
+@media (max-width: 1100px) {
+  .chatdock.inbattle { right: .5rem; bottom: auto; top: var(--chattop, 3.4rem); }
+  .chatdock.inbattle .chatfab { display: none; }
+  .chatdock.inbattle .chatpeek { border-radius: 12px 2px 12px 12px; }
+  .chatdock.inbattle .chatpanel { height: min(24rem, calc(100vh - var(--chattop, 3.4rem) - 11rem)); height: min(24rem, calc(100dvh - var(--chattop, 3.4rem) - 11rem)); min-height: 14rem; }
+}
+/* short, wide screens (a phone on its side): one row of quick phrases that scrolls sideways, so the messages keep their room */
+@media (max-height: 500px) {
+  .chatquick { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+  .chatdock.inbattle .chatpanel, .chatpanel { height: calc(100vh - var(--chattop, 3.4rem) - .5rem); height: calc(100dvh - var(--chattop, 3.4rem) - .5rem); min-height: 0; }
+  .chatdock:not(.inbattle) .chatpanel { height: calc(100vh - 5rem); height: calc(100dvh - 5rem); }
+}
+@media (max-width: 560px) {
+  .chatdock.open { left: 0; right: 0; bottom: 0; top: auto; align-items: stretch; gap: 0; }
+  .chatdock.open .chatfab { display: none; }
+  .chatdock.open .chatpanel { order: 0; width: 100%; height: min(62vh, 30rem); height: min(62dvh, 30rem); border-radius: 14px 14px 0 0; border-width: 1px 0 0; }
+}

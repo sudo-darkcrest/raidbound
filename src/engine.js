@@ -845,7 +845,9 @@
       log(`${raid.short} rolls the die and MARKS ${pdef(p).name}! Every dungeon attack this turn goes at them.`, 'boss');
       H.anim('banner', { text: `${pdef(p).name} is marked!`, kind: 'boss' }); H.update();
     }
-    function threatTarget() {
+    // `peek` is for screens that only describe who is likely to be hit: it must never draw from the shared random
+    // sequence (the Instant prompt did, on the asked player's computer only, and online games drifted apart on a tie).
+    function threatTarget(peek) {
       const cands = alive().filter(p => !shrouded(p));
       if (!cands.length) return null;
       const taunt = cands.filter(p => p.hero.taunt);
@@ -853,7 +855,7 @@
       if (D && markedHero()) return markedHero();
       const top = Math.max(...cands.map(p => p.threat));
       const tied = cands.filter(p => p.threat === top);
-      return tied.length === 1 ? tied[0] : pick(tied);
+      return tied.length === 1 ? tied[0] : peek ? null : pick(tied);
     }
     async function minionAttack(m) {
       const d = minDef(m);

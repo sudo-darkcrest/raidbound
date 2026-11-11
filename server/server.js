@@ -26,6 +26,11 @@ function lobbyState(room) {
     players: room.players.map(p => ({ id: p.id, name: p.name, hero: p.hero, deckMode: p.deckMode, ready: !!p.deck, online: !!p.bot || !!(p.ws && p.ws.readyState === 1), ai: !!p.ai, bot: !!p.bot })) };
 }
 function broadcast(room, msg) { for (const p of room.players) send(p.ws, msg); }
+// Chat: plain text only, kept apart from the game's command list so it can never knock players out of step.
+// The last 50 lines are kept so someone who drops and rejoins sees what they missed.
+const CHAT_KEEP = 50, CHAT_LEN = 200, CHAT_BURST = 6, CHAT_WINDOW = 8000;
+const cleanChat = t => String(t == null ? '' : t).replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, CHAT_LEN);
+const chatLog = room => ({ t: 'chatlog', log: room.chat });
 function pushCmd(room, c, from) {
   const m = { t: 'cmd', seq: room.cmds.length, c, from };
   room.cmds.push(m);
@@ -39,7 +44,7 @@ wss.on('connection', ws => {
     if (m.t === 'ping') return send(ws, { t: 'pong' });
     if (m.t === 'create') {
       const code = newCode();
-      room = { code, host: null, players: [], mode: 'raid', raid: 'crypt', diff: 'normal', start: null, cmds: [], touched: Date.now() };
+      room = { code, host: null, players: [], mode: 'raid', raid: 'crypt', diff: 'normal', start: null, cmds: [], chat: [], chatN: 0, touched: Date.now() };
       rooms.set(code, room);
       me = { id: newId(), name: (m.name || 'Hero').slice(0, 24), hero: m.hero || 'aldric', deckMode: 'starter', deck: null, ws };
       room.host = me.id; room.players.push(me);
@@ -55,6 +60,7 @@ wss.on('connection', ws => {
         const wasAi = known.ai;
         room = r; me = known; me.ws = ws; me.ai = false;
         send(ws, { t: 'welcome', id: me.id, code: r.code, rejoin: true });
+        send(ws, chatLog(r));
         broadcast(r, lobbyState(r));
         if (r.start) {
           send(ws, r.start); for (const c of r.cmds) send(ws, c); send(ws, { t: 'caughtup', seq: r.cmds.length });
@@ -68,6 +74,7 @@ wss.on('connection', ws => {
       me = { id: newId(), name: (m.name || 'Hero').slice(0, 24), hero: m.hero || 'aldric', deckMode: 'starter', deck: null, ws };
       r.players.push(me);
       send(ws, { t: 'welcome', id: me.id, code: r.code });
+      send(ws, chatLog(r));
       return broadcast(r, lobbyState(r));
     }
     if (!room || !me) return;
@@ -128,7 +135,16 @@ wss.on('connection', ws => {
       room.players.forEach(p => { if (!p.bot) p.ai = false; });
       return broadcast(room, lobbyState(room));
     }
-    if (m.t === 'chat') return broadcast(room, { t: 'chat', from: me.name, text: String(m.text || '').slice(0, 200) });
+    if (m.t === 'chat') {
+      const text = cleanChat(m.text); if (!text) return;
+      const now = Date.now();
+      me.chatT = (me.chatT || []).filter(x => now - x < CHAT_WINDOW);
+      if (me.chatT.length >= CHAT_BURST) return send(ws, { t: 'chatslow' }); // spam guard: 6 lines in 8 seconds
+      me.chatT.push(now);
+      const line = { t: 'chat', n: ++room.chatN, id: me.id, from: me.name, text, q: !!m.q };
+      room.chat.push(line); if (room.chat.length > CHAT_KEEP) room.chat.shift();
+      return broadcast(room, line);
+    }
   });
   ws.on('close', () => {
     if (!room || !me) return;

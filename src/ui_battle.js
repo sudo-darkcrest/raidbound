@@ -136,7 +136,7 @@
 
     morph(root, `<div class="table">
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${!raid.dungeon && RB.RAID_DIFFS[g.cfg.difficulty] && g.cfg.difficulty !== 'normal' ? ' · ' + RB.RAID_DIFFS[g.cfg.difficulty].name : g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
-        <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button><button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
+        <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button>${net && U.chatBtnHTML ? U.chatBtnHTML() : ''}<button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
         <span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
         <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
       <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
@@ -263,8 +263,8 @@
         case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
         case 'turn': { const p = E.g.players[d.p];
           if (!p.auto && !net && !E.g.cfg.bossPlayer) { if (localHumans() > 1 && view.lastHuman !== d.p) view.curtain = d.p; view.lastHuman = d.p; }
-          view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
-        case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
+          view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (human(p) && !E.g.cfg.bossPlayer) U.turnAlert(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
+        case 'bossTurn': if (E.g.cfg.bossPlayer) U.turnAlert(); U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
         case 'counter': { // #114: the gauge pulses and shows +1 / -1, so a change never goes unnoticed
           const el = document.querySelector('#battle .bossrow .counter');
           if (el) {
@@ -333,7 +333,7 @@
       let who = '';
       if (/each hero|every hero|all heroes/.test(txt)) who = 'every hero';
       else if (/hero with the most health/.test(txt)) { const h = E.mostHealth && E.mostHealth(); if (h) who = hp(h); }
-      else if (/most threat/.test(txt)) { const h = E.threatTarget && E.threatTarget(); if (h) who = hp(h); }
+      else if (/most threat/.test(txt)) { const h = E.threatTarget && E.threatTarget(true); who = h ? hp(h) : 'one of the heroes tied for the most threat'; }
       else if (/most wounded|least health|lowest health/.test(txt)) { const h = E.mostWounded && E.mostWounded(); if (h) who = hp(h); }
       if (/each ally|every ally|ally with/.test(txt)) who = who ? who + ' and allies' : 'your allies';
       const hint = (o) => {
@@ -636,6 +636,7 @@
     if (act && act.dataset.act === 'soundpop') return U.soundPop(act);
     if (act && act.dataset.act === 'speed') return changeSpeed();
     if (act && act.dataset.act === 'menu') return phoneMenu(act);
+    if (act && act.dataset.act === 'chat') return U.chatToggle();
     if (act && act.dataset.act === 'drawer') { view.drawer = !view.drawer; return render(); }
     if (t === root && view.drawer) { view.drawer = false; return render(); }
     const focus = t.closest('[data-focus]');

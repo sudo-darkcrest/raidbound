@@ -269,6 +269,18 @@
     return pop;
   };
   document.addEventListener('pointerdown', e => { if (pop && !pop.contains(e.target) && !e.target.closest('.hc,.unit,.herocard,.gslot,.rcard,.bosscard,.rchip,.rmember')) U.closePop(); }, true);
+  // #123: a chime when the turn passes to you. If the page is hidden, the tab's title flashes too until you look back.
+  let titleWas = null, titleT = 0;
+  const titleBack = () => { clearInterval(titleT); titleT = 0; if (titleWas != null) { document.title = titleWas; titleWas = null; } };
+  U.turnAlert = function () {
+    if (save.settings.turnAlert === false) return;
+    RB.AUDIO.alert('yourTurn');
+    if (typeof document === 'undefined' || !document.hidden || titleT) return;
+    titleWas = document.title; let flip = false;
+    const tick = () => { document.title = (flip = !flip) ? '⚔ Your turn! · Raidbound' : titleWas; };
+    tick(); titleT = setInterval(tick, 1200);
+  };
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (!document.hidden) titleBack(); });
   U.toast = function (msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); };
   U.dialog = function (html, opts) {
     return new Promise(resolve => {

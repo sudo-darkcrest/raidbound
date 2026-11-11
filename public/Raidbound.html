@@ -1312,6 +1312,58 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .dseats > .btn { align-self: center; justify-self: start; }
 .preview.heroprev { pointer-events: none; }
 
+/* ---------- #123 party chat ---------- */
+.chatdock { position: fixed; right: 1rem; bottom: 1rem; z-index: 66; display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; pointer-events: none; font-size: .95rem; }
+.chatdock > * { pointer-events: auto; }
+.chatfab { position: relative; display: inline-flex; align-items: center; gap: .45rem; padding: .5rem .95rem; border-radius: 99px; border: 1px solid var(--gilt); background: linear-gradient(#1c2446, #0d1128); color: var(--vellum); font-family: var(--f-sc); font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, .7); }
+.chatfab:hover, .chatdock.open .chatfab { border-color: #ffe7a0; background: linear-gradient(#263058, #121838); }
+.chatfab:focus-visible, .chatx:focus-visible, .chatquick button:focus-visible, .chatmute button:focus-visible, .chatpeek:focus-visible { outline: 2px solid #ffe7a0; outline-offset: 2px; }
+.chatfab svg { width: 1.15rem; height: 1.15rem; fill: var(--gilt); }
+.chatdot { position: absolute; right: -.35rem; top: -.45rem; min-width: 1.35rem; height: 1.35rem; padding: 0 .3rem; box-sizing: border-box; border-radius: 99px; display: grid; place-items: center; background: #d8402a; color: #fff; font-family: var(--f-display); font-weight: 900; font-size: .8rem; border: 2px solid #0d1128; animation: chatpop .25s ease; }
+.chatdot[hidden], .chatpeek[hidden], .chatpanel[hidden], .chatmute[hidden] { display: none; }
+.chatpeek { max-width: min(19rem, 76vw); padding: .45rem .75rem; border-radius: 12px 12px 2px 12px; border: 1px solid var(--gilt-lo); background: rgba(13, 17, 40, .96); color: var(--vellum); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, .7); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; animation: chatpop .2s ease; }
+.chatpanel { order: -1; width: min(18.5rem, calc(100vw - 2rem)); height: min(28rem, calc(100vh - 6.5rem)); height: min(28rem, calc(100dvh - 6.5rem)); display: flex; flex-direction: column; border: 1px solid var(--gilt-lo); border-radius: 10px; background: linear-gradient(#1a2142, #0b0f24); box-shadow: 0 16px 44px rgba(0, 0, 0, .8); overflow: hidden; animation: chatpop .16s ease; }
+.chathead { display: flex; align-items: center; justify-content: space-between; padding: .45rem .5rem .45rem .8rem; border-bottom: 1px solid rgba(212, 166, 74, .3); font-family: var(--f-sc); color: var(--gilt); }
+.chatx { width: 2rem; height: 2rem; border: 0; border-radius: 6px; background: transparent; color: var(--vellum); font-size: 1rem; cursor: pointer; }
+.chatx:hover { background: rgba(255, 255, 255, .1); }
+.chatmute { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; padding: .35rem .6rem; border-bottom: 1px solid rgba(212, 166, 74, .18); font-size: .82rem; color: var(--muted); }
+.chatmute button { border: 1px solid rgba(255, 255, 255, .22); border-radius: 99px; background: transparent; color: var(--vellum); font: inherit; padding: .12rem .55rem; cursor: pointer; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chatmute button.on { border-color: #ff7a4a; color: #ffb9a0; background: rgba(120, 30, 10, .35); }
+.chatlist { flex: 1; min-height: 0; overflow-y: auto; padding: .5rem .7rem; display: flex; flex-direction: column; gap: .3rem; overscroll-behavior: contain; }
+.chatline { margin: 0; line-height: 1.3; overflow-wrap: anywhere; color: var(--vellum); }
+.chatline b { font-family: var(--f-sc); margin-right: .15rem; }
+.chatline.q span { font-style: italic; }
+.chatline.me { opacity: .92; }
+.chatempty { margin: auto 0; text-align: center; color: var(--muted); font-size: .9rem; }
+.chatquick { display: flex; flex-wrap: wrap; gap: .3rem; padding: .45rem .6rem; border-top: 1px solid rgba(212, 166, 74, .18); flex: none; }
+.chatquick button { border: 1px solid var(--gilt-lo); border-radius: 99px; background: rgba(212, 166, 74, .1); color: var(--vellum); font: inherit; font-size: .85rem; padding: .22rem .6rem; cursor: pointer; white-space: nowrap; }
+.chatquick button:hover { background: rgba(212, 166, 74, .28); }
+.chatform { display: flex; gap: .4rem; padding: .5rem .6rem calc(.5rem + env(safe-area-inset-bottom)); border-top: 1px solid rgba(212, 166, 74, .3); background: rgba(5, 8, 20, .6); }
+.chatin { flex: 1; min-width: 0; padding: .45rem .6rem; border-radius: 6px; border: 1px solid var(--gilt-lo); background: #070a16; color: var(--vellum); font: inherit; font-size: 1rem; }
+.chatin:focus { outline: none; border-color: #ffe7a0; }
+@keyframes chatpop { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .chatdot, .chatpeek, .chatpanel { animation: none; } }
+/* no side column (tablets and phones): the fight's top bar carries the chat button, and the panel hangs below it, clear of the hand and End turn */
+.chatbtn { position: relative; }
+.chatbtn .chatdot { right: -.4rem; top: -.4rem; }
+@media (max-width: 1100px) {
+  .chatdock.inbattle { right: .5rem; bottom: auto; top: var(--chattop, 3.4rem); }
+  .chatdock.inbattle .chatfab { display: none; }
+  .chatdock.inbattle .chatpeek { border-radius: 12px 2px 12px 12px; }
+  .chatdock.inbattle .chatpanel { height: min(24rem, calc(100vh - var(--chattop, 3.4rem) - 11rem)); height: min(24rem, calc(100dvh - var(--chattop, 3.4rem) - 11rem)); min-height: 14rem; }
+}
+/* short, wide screens (a phone on its side): one row of quick phrases that scrolls sideways, so the messages keep their room */
+@media (max-height: 500px) {
+  .chatquick { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+  .chatdock.inbattle .chatpanel, .chatpanel { height: calc(100vh - var(--chattop, 3.4rem) - .5rem); height: calc(100dvh - var(--chattop, 3.4rem) - .5rem); min-height: 0; }
+  .chatdock:not(.inbattle) .chatpanel { height: calc(100vh - 5rem); height: calc(100dvh - 5rem); }
+}
+@media (max-width: 560px) {
+  .chatdock.open { left: 0; right: 0; bottom: 0; top: auto; align-items: stretch; gap: 0; }
+  .chatdock.open .chatfab { display: none; }
+  .chatdock.open .chatpanel { order: 0; width: 100%; height: min(62vh, 30rem); height: min(62dvh, 30rem); border-radius: 14px 14px 0 0; border-width: 1px 0 0; }
+}
+
 </style>
 </head>
 <body>
@@ -5562,7 +5614,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       log(`${raid.short} rolls the die and MARKS ${pdef(p).name}! Every dungeon attack this turn goes at them.`, 'boss');
       H.anim('banner', { text: `${pdef(p).name} is marked!`, kind: 'boss' }); H.update();
     }
-    function threatTarget() {
+    // `peek` is for screens that only describe who is likely to be hit: it must never draw from the shared random
+    // sequence (the Instant prompt did, on the asked player's computer only, and online games drifted apart on a tie).
+    function threatTarget(peek) {
       const cands = alive().filter(p => !shrouded(p));
       if (!cands.length) return null;
       const taunt = cands.filter(p => p.hero.taunt);
@@ -5570,7 +5624,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       if (D && markedHero()) return markedHero();
       const top = Math.max(...cands.map(p => p.threat));
       const tied = cands.filter(p => p.threat === top);
-      return tied.length === 1 ? tied[0] : pick(tied);
+      return tied.length === 1 ? tied[0] : peek ? null : pick(tied);
     }
     async function minionAttack(m) {
       const d = minDef(m);
@@ -7581,6 +7635,18 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     return pop;
   };
   document.addEventListener('pointerdown', e => { if (pop && !pop.contains(e.target) && !e.target.closest('.hc,.unit,.herocard,.gslot,.rcard,.bosscard,.rchip,.rmember')) U.closePop(); }, true);
+  // #123: a chime when the turn passes to you. If the page is hidden, the tab's title flashes too until you look back.
+  let titleWas = null, titleT = 0;
+  const titleBack = () => { clearInterval(titleT); titleT = 0; if (titleWas != null) { document.title = titleWas; titleWas = null; } };
+  U.turnAlert = function () {
+    if (save.settings.turnAlert === false) return;
+    RB.AUDIO.alert('yourTurn');
+    if (typeof document === 'undefined' || !document.hidden || titleT) return;
+    titleWas = document.title; let flip = false;
+    const tick = () => { document.title = (flip = !flip) ? '⚔ Your turn! · Raidbound' : titleWas; };
+    tick(); titleT = setInterval(tick, 1200);
+  };
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (!document.hidden) titleBack(); });
   U.toast = function (msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); };
   U.dialog = function (html, opts) {
     return new Promise(resolve => {
@@ -7872,6 +7938,12 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     [[67, 0, 0.12], [72, 0.11, 0.12], [76, 0.22, 0.12], [79, 0.34, 0.5]].forEach(([m, d, l]) => brass(t + d, hz(m), l, 0.085));
     bell(t + 0.34, hz(91), 0.07, 1.4);
   };
+  // #123: a short rising two-note chime when the turn passes to you, and a soft tick for a chat line
+  fx.yourTurn = t => {
+    bell(t, hz(79), 0.11, 1.1); bell(t + 0.16, hz(86), 0.12, 1.6);
+    tone(t, { type: 'triangle', f: hz(67), a: 0.005, d: 0.22, vol: 0.07, verb: 0.3 }); tone(t + 0.16, { type: 'triangle', f: hz(74), a: 0.005, d: 0.4, vol: 0.07, verb: 0.3 });
+  };
+  fx.chat = t => { tone(t, { type: 'sine', f: hz(84), f2: hz(88), glide: 0.05, a: 0.003, d: 0.09, vol: 0.06 }); tone(t + 0.07, { type: 'sine', f: hz(91), a: 0.003, d: 0.12, vol: 0.045, verb: 0.2 }); };
   fx.master = t => {
     fx.power(t);
     [50, 57, 62, 66, 69].forEach((m, i) => tone(t + 0.4, { type: 'sawtooth', f: hz(m), det: rnd(-5, 5), a: 0.6, hold: 0.8, d: 1.3, vol: 0.04, vib: [5, 3], flt: ['bandpass', 800, 0, 2.5], flt2: ['lowpass', 1800], verb: 0.6, pan: (i - 2) * 0.25 }));
@@ -7895,7 +7967,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   };
 
   U.sfx = {};
-  Object.keys(fx).forEach(k => { U.sfx[k] = (...args) => { if (!on('sound') || !ctx()) return; try { fx[k](T(), ...args); } catch (e) { /* audio must never break the game */ } }; });
+  Object.keys(fx).forEach(k => { U.sfx[k] = (...args) => { if (away || !on('sound') || !ctx()) return; try { fx[k](T(), ...args); } catch (e) { /* audio must never break the game */ } }; });
   AU.fx = fx; AU.T = T;
 
   AU.duck = function (depth, dur) {
@@ -7991,6 +8063,20 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     away = false;
     if (!ac || (!on('sound') && !on('music'))) return;
     if (canWake()) ac.resume().then(() => { if (pending && !mus && on('music')) startMusic(pending); }).catch(() => {});
+  };
+  // #123 The turn chime is the one sound allowed while the page is hidden (you looked away waiting for your turn).
+  // The audio wakes for a moment with the music held silent, plays the chime, and goes back to sleep.
+  AU.state = () => (ac ? ac.state : 'none');
+  AU.alert = function (name) {
+    if (!on('sound') || !fx[name]) return;
+    if (!away) { if (ctx()) { try { fx[name](T()); } catch (e) { /* never break the game */ } } return; }
+    if (!ac || !ac.resume || ac.state === 'closed') return; // sound was never switched on in this visit
+    const hush = v => { try { duckG.gain.cancelScheduledValues(ac.currentTime); duckG.gain.setValueAtTime(v, ac.currentTime); } catch (e) { /* ignore */ } };
+    hush(0);
+    ac.resume().then(() => {
+      try { fx[name](T()); } catch (e) { /* ignore */ }
+      setTimeout(() => { hush(1); if (away && ac.state === 'running') ac.suspend().catch(() => {}); }, 2200);
+    }).catch(() => hush(1));
   };
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => (document.hidden ? sleep() : wake()));
@@ -8313,7 +8399,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       <div class="audioset"><h3 class="sec" style="margin-top:0">Sound</h3>
         <label class="toggle" style="margin-bottom:.4rem"><input type="checkbox" data-k="muted" ${s.muted ? 'checked' : ''}> Mute everything (press M any time, or use the 🔊 button during a raid)</label>
         <div class="vrow"><label class="toggle"><input type="checkbox" data-k="sound" ${s.sound !== false ? 'checked' : ''}> Sound effects</label><input type="range" min="0" max="1" step="0.05" value="${s.sfxVol ?? 0.8}" data-vol="sfxVol" aria-label="Sound effects volume"><button class="btn small ghost" data-act="testfx">Test</button></div>
-        <div class="vrow"><label class="toggle"><input type="checkbox" data-k="music" ${s.music !== false ? 'checked' : ''}> Music</label><input type="range" min="0" max="1" step="0.05" value="${s.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"><span></span></div></div>
+        <div class="vrow"><label class="toggle"><input type="checkbox" data-k="music" ${s.music !== false ? 'checked' : ''}> Music</label><input type="range" min="0" max="1" step="0.05" value="${s.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"><span></span></div>
+        <label class="toggle" style="margin-top:.4rem"><input type="checkbox" data-k="turnAlert" ${s.turnAlert !== false ? 'checked' : ''}> Chime when it's my turn (also when the game is in another tab)</label></div>
       <label class="toggle"><input type="checkbox" data-k="autoDefend" ${s.autoDefend ? 'checked' : ''}> Defend automatically (use armor, strike back with your weapon and cover with Bulwark allies without asking)</label>
       <label class="toggle"><input type="checkbox" data-k="pauseForInstants" ${s.pauseForInstants ? 'checked' : ''}> Pause so I can answer the boss: play an Instant when a boss card is revealed, or a React card when an attack is coming</label>
       <div style="margin-top:1.4rem"><button class="btn ghost small" data-act="reset">Reset all progress</button></div></div></div>`);
@@ -8322,7 +8409,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     el.onclick = async e => {
       if (e.target.closest('[data-act=back]')) return U.title();
       const sp = e.target.closest('[data-speed]'); if (sp) { s.speed = +sp.dataset.speed; U.persist(); return U.settings(); }
-      const k = e.target.closest('[data-k]'); if (k) { s[k.dataset.k] = k.checked; U.persist(); RB.AUDIO.refresh(); return; }
+      const k = e.target.closest('[data-k]'); if (k) { s[k.dataset.k] = k.checked; U.persist(); RB.AUDIO.refresh(); if (k.dataset.k === 'turnAlert' && k.checked) U.sfx.yourTurn(); return; }
       if (e.target.closest('[data-act=testfx]')) { const f = ['hit', 'block', 'heal', 'power', 'bossReveal']; U.sfx[f[(U._fxi = ((U._fxi || 0) + 1) % f.length)]](5); return; }
       if (e.target.closest('[data-act=reset]')) { const v = await U.dialog('<h3>Reset all progress?</h3><p>This removes your treasure cards, loot codes, unlocked cosmetics and saved decks. It can\'t be undone.</p><div class="acts"><button class="btn ghost" data-v="no">Keep my progress</button><button class="btn primary" data-v="yes">Reset everything</button></div>', { dismiss: 'no' }); if (v === 'yes') { try { localStorage.removeItem('raidbound.save.v1'); } catch (er) { } location.reload(); } }
     };
@@ -8562,7 +8649,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 
     morph(root, `<div class="table">
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${!raid.dungeon && RB.RAID_DIFFS[g.cfg.difficulty] && g.cfg.difficulty !== 'normal' ? ' · ' + RB.RAID_DIFFS[g.cfg.difficulty].name : g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
-        <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button><button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
+        <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button>${net && U.chatBtnHTML ? U.chatBtnHTML() : ''}<button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
         <span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
         <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
       <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
@@ -8689,8 +8776,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
         case 'turn': { const p = E.g.players[d.p];
           if (!p.auto && !net && !E.g.cfg.bossPlayer) { if (localHumans() > 1 && view.lastHuman !== d.p) view.curtain = d.p; view.lastHuman = d.p; }
-          view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
-        case 'bossTurn': U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
+          view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (human(p) && !E.g.cfg.bossPlayer) U.turnAlert(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
+        case 'bossTurn': if (E.g.cfg.bossPlayer) U.turnAlert(); U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
         case 'counter': { // #114: the gauge pulses and shows +1 / -1, so a change never goes unnoticed
           const el = document.querySelector('#battle .bossrow .counter');
           if (el) {
@@ -8759,7 +8846,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       let who = '';
       if (/each hero|every hero|all heroes/.test(txt)) who = 'every hero';
       else if (/hero with the most health/.test(txt)) { const h = E.mostHealth && E.mostHealth(); if (h) who = hp(h); }
-      else if (/most threat/.test(txt)) { const h = E.threatTarget && E.threatTarget(); if (h) who = hp(h); }
+      else if (/most threat/.test(txt)) { const h = E.threatTarget && E.threatTarget(true); who = h ? hp(h) : 'one of the heroes tied for the most threat'; }
       else if (/most wounded|least health|lowest health/.test(txt)) { const h = E.mostWounded && E.mostWounded(); if (h) who = hp(h); }
       if (/each ally|every ally|ally with/.test(txt)) who = who ? who + ' and allies' : 'your allies';
       const hint = (o) => {
@@ -9062,6 +9149,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     if (act && act.dataset.act === 'soundpop') return U.soundPop(act);
     if (act && act.dataset.act === 'speed') return changeSpeed();
     if (act && act.dataset.act === 'menu') return phoneMenu(act);
+    if (act && act.dataset.act === 'chat') return U.chatToggle();
     if (act && act.dataset.act === 'drawer') { view.drawer = !view.drawer; return render(); }
     if (t === root && view.drawer) { view.drawer = false; return render(); }
     const focus = t.closest('[data-focus]');
@@ -9245,7 +9333,11 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   setInterval(() => sendRaw({ t: 'ping' }), 25000); // keeps the free server awake during a raid
   function setStatus(t) { S.status = t; const el = $('#online .netstatus'); if (el) el.textContent = t; }
 
-  function onMsg(m) {
+  function onMsg(m) { onMsg0(m); chatSync(); }
+  function onMsg0(m) {
+    if (m.t === 'chat') return chatIn(m);
+    if (m.t === 'chatlog') { CH.log = Array.isArray(m.log) ? m.log.slice(-CHAT_KEEP) : []; CH.lastN = CH.log.reduce((a, x) => Math.max(a, x.n || 0), 0); CH.dirty = true; return; }
+    if (m.t === 'chatslow') return U.toast('Slow down a little: too many messages at once.');
     if (m.t === 'welcome') { S.id = m.id; S.code = m.code; S.rejoining = !!m.rejoin; S.autoJoin = false; remember(); if (S.wantMode && !m.rejoin) { const w = S.wantMode; S.wantMode = null; sendRaw({ t: 'settings', mode: 'dungeon', raid: w.id, diff: w.diff }); } return; }
     if (m.t === 'error') {
       if (/No raid with that code/.test(m.why)) { forget(); S.lobby = null; if (S.autoJoin) { S.autoJoin = false; S.err = ''; U.toast('Your last online party has closed. Create or join a new one.'); return draw(); } }
@@ -9264,6 +9356,94 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     if (m.t === 'cmd') { if (S.net) S.net.push(m); return; }
     if (m.t === 'caughtup') { if (S.net) S.net.catchUp(m.seq); return; }
   }
+
+
+  /* ---------- party chat (#123): quick phrases plus free typing, in the lobby and during the fight ----------
+     Chat lines travel beside the game's commands, never inside them, so they can't disturb the lockstep.
+     Everything is shown as plain text. Muting is per player and only on this computer. */
+  const CHAT_KEEP = 50, CHAT_LEN = 200;
+  const QUICK = {
+    lobby: ['Hello!', 'Ready when you are', 'One moment…', 'Which raid?', 'Good luck!', 'Good game'],
+    battle: ['Heal me!', 'I\'ll take the hit', 'Save your Instants', 'Focus the boss', 'Clear the minions', 'Step into the circle!', 'Nice one!', 'Good game'],
+  };
+  const NAMECOL = ['#ffd27a', '#9ae8ff', '#b8f0a0', '#f3a9e6'];
+  const CH = { log: [], lastN: 0, open: false, unread: 0, muted: new Set(), el: null, code: null, dirty: false, peekT: 0, mode: '' };
+  const chatOn = () => !!(S.lobby && S.code && S.id);
+  const others = () => (S.lobby ? S.lobby.players : []).filter(p => !p.bot && p.id !== S.id);
+  const nameCol = id => { const i = (S.lobby ? S.lobby.players : []).findIndex(p => p.id === id); return NAMECOL[(i < 0 ? 0 : i) % NAMECOL.length]; };
+  function chatIn(m) {
+    if (m.n && m.n <= CH.lastN) return; // already have it
+    if (m.n) CH.lastN = m.n;
+    CH.log.push(m); if (CH.log.length > CHAT_KEEP) CH.log.shift();
+    CH.dirty = true;
+    if (m.id === S.id || CH.muted.has(m.id)) return;
+    if (!CH.open) { CH.unread++; CH.peek = m; }
+    if (U.sfx && U.sfx.chat) U.sfx.chat();
+  }
+  function chatSend(text, quick) {
+    text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, CHAT_LEN);
+    if (!text) return;
+    if (!S.ws || S.ws.readyState !== 1) return U.toast('Not connected right now. Your message was not sent.');
+    sendRaw(quick ? { t: 'chat', text, q: 1 } : { t: 'chat', text });
+  }
+  function chatDock() {
+    if (CH.el) return CH.el;
+    const d = CH.el = document.createElement('div'); d.id = 'chatdock'; d.className = 'chatdock';
+    d.innerHTML = `<button type="button" class="chatpeek" hidden></button>
+      <button type="button" class="chatfab" aria-expanded="false" aria-controls="chatpanel" title="Party chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 012 2v9a2 2 0 01-2 2h-7l-5 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg><span class="chatlabel">Chat</span><span class="chatdot" hidden></span></button>
+      <section class="chatpanel" id="chatpanel" aria-label="Party chat" hidden>
+        <header class="chathead"><b>Party chat</b><button type="button" class="chatx" aria-label="Close chat">✕</button></header>
+        <div class="chatmute" hidden></div>
+        <div class="chatlist" role="log" aria-live="polite"></div>
+        <div class="chatquick"></div>
+        <form class="chatform" autocomplete="off"><input class="chatin" maxlength="${CHAT_LEN}" placeholder="Say something…" aria-label="Message" enterkeyhint="send"><button class="btn small" type="submit">Send</button></form>
+      </section>`;
+    const q = sel => d.querySelector(sel);
+    const setOpen = CH.setOpen = v => { CH.open = v; if (v) { CH.unread = 0; CH.peek = null; } CH.dirty = true; chatSync(); if (v) { const l = q('.chatlist'); l.scrollTop = l.scrollHeight; if (matchMedia('(hover: hover)').matches) q('.chatin').focus(); } };
+    q('.chatfab').onclick = () => setOpen(!CH.open);
+    q('.chatpeek').onclick = () => setOpen(true);
+    q('.chatx').onclick = () => setOpen(false);
+    q('.chatform').onsubmit = e => { e.preventDefault(); const i = q('.chatin'); chatSend(i.value); i.value = ''; };
+    q('.chatquick').onclick = e => { const b = e.target.closest('button'); if (b) chatSend(b.textContent, true); };
+    q('.chatmute').onclick = e => { const b = e.target.closest('[data-mute]'); if (!b) return; const id = b.dataset.mute; if (CH.muted.has(id)) CH.muted.delete(id); else CH.muted.add(id); CH.dirty = true; chatSync(); };
+    // typing must never reach the game's own keys; Escape closes the panel
+    d.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape' && CH.open) { setOpen(false); const b = $('#battle .chatbtn'); (b && b.offsetParent ? b : q('.chatfab')).focus(); } });
+    document.body.appendChild(d);
+    return d;
+  }
+  function chatSync() {
+    if (!chatOn()) { if (CH.el) { CH.el.remove(); CH.el = null; } CH.open = false; CH.unread = 0; CH.peek = null; if (!S.code) { CH.log = []; CH.lastN = 0; CH.code = null; CH.muted.clear(); } return; }
+    if (CH.code !== S.code) { if (CH.code) { CH.log = []; CH.lastN = 0; CH.muted.clear(); } CH.code = S.code; CH.dirty = true; }
+    const d = chatDock(), q = sel => d.querySelector(sel);
+    const mode = S.net ? 'battle' : 'lobby';
+    d.classList.toggle('inbattle', !!S.net); d.classList.toggle('open', CH.open);
+    q('.chatpanel').hidden = !CH.open; q('.chatfab').setAttribute('aria-expanded', CH.open ? 'true' : 'false');
+    const dot = q('.chatdot'); dot.hidden = !CH.unread; dot.textContent = CH.unread > 9 ? '9+' : CH.unread || '';
+    // without the side column (tablets, phones) the fight's top bar carries the chat button; the panel hangs below it
+    const tb = S.net && $('#battle .chatbtn');
+    if (tb) { const td = tb.querySelector('.chatdot'); td.hidden = !CH.unread; td.textContent = dot.textContent; tb.setAttribute('aria-expanded', CH.open ? 'true' : 'false'); if (tb.offsetParent) d.style.setProperty('--chattop', Math.round((tb.closest('.topbar') || tb).getBoundingClientRect().bottom + 6) + 'px'); }
+    q('.chatfab').setAttribute('aria-label', CH.unread ? `Party chat, ${CH.unread} new` : 'Party chat');
+    if (CH.mode !== mode || !q('.chatquick').firstChild) { CH.mode = mode; q('.chatquick').innerHTML = QUICK[mode].map(t => `<button type="button">${esc(t)}</button>`).join(''); }
+    // who can be muted: the other people in the party
+    const ppl = others(), mk = ppl.map(p => p.id + (CH.muted.has(p.id) ? '!' : '') + p.name).join('|');
+    if (CH.muteKey !== mk) { CH.muteKey = mk; const mu = q('.chatmute'); mu.hidden = !ppl.length; mu.innerHTML = ppl.length ? '<span>Mute:</span>' + ppl.map(p => `<button type="button" data-mute="${esc(p.id)}" aria-pressed="${CH.muted.has(p.id)}" class="${CH.muted.has(p.id) ? 'on' : ''}" title="${CH.muted.has(p.id) ? 'Muted. Click to hear them again' : 'Hide this player\'s messages'}">${CH.muted.has(p.id) ? '🔇' : '🔈'} ${esc(p.name)}</button>`).join('') : ''; }
+    if (CH.dirty) {
+      CH.dirty = false;
+      const l = q('.chatlist'), stick = l.scrollHeight - l.scrollTop - l.clientHeight < 40;
+      const shown = CH.log.filter(m => !CH.muted.has(m.id));
+      l.innerHTML = shown.length ? shown.map(m => `<p class="chatline${m.id === S.id ? ' me' : ''}${m.q ? ' q' : ''}"><b style="color:${nameCol(m.id)}">${esc(m.from || 'Hero')}</b> <span>${esc(m.text)}</span></p>`).join('')
+        : `<p class="chatempty">No messages yet. Tap a quick phrase or type below. ${ppl.length ? '' : 'Your friends will see it once they join.'}</p>`;
+      if (stick || CH.open) l.scrollTop = l.scrollHeight;
+    }
+    // a closed chat shows the newest line for a few seconds
+    const pk = q('.chatpeek');
+    if (CH.peek && !CH.open) { const m = CH.peek; CH.peek = null; pk.innerHTML = `<b style="color:${nameCol(m.id)}">${esc(m.from || 'Hero')}</b> ${esc(m.text)}`; pk.hidden = false; clearTimeout(CH.peekT); CH.peekT = setTimeout(() => { pk.hidden = true; }, 6000); }
+    else if (CH.open) { pk.hidden = true; clearTimeout(CH.peekT); }
+  }
+  U.chatState = () => CH; // for tests
+  U.chatToggle = () => { if (!chatOn()) return; chatDock(); CH.setOpen(!CH.open); };
+  U.chatBtnHTML = () => `<button class="btn small ghost narrow-only chatbtn" data-act="chat" aria-label="Party chat" aria-expanded="${CH.open ? 'true' : 'false'}">💬<span class="chatdot" ${CH.unread ? '' : 'hidden'}>${CH.unread > 9 ? '9+' : CH.unread || ''}</span></button>`;
+  if (typeof window !== 'undefined') window.addEventListener('resize', () => { if (CH.el) chatSync(); });
 
   /* ---------- the link handed to the battle screen ---------- */
   function makeNet(cfg) {
@@ -9292,7 +9472,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         if (!waitEl) { waitEl = document.createElement('div'); waitEl.className = 'netwait'; document.body.appendChild(waitEl); }
         waitEl.innerHTML = text;
       },
-      leave() { net.closed = true; S.net = null; forget(); try { S.ws && S.ws.close(); } catch (e) { } },
+      leave() { net.closed = true; S.net = null; forget(); try { S.ws && S.ws.close(); } catch (e) { } chatSync(); },
     };
     function check() { if (net.replaying && upTo >= 0 && applied >= upTo) { net.replaying = false; U.toast('You\'re back in the raid.'); } }
     async function pump() {
@@ -9320,6 +9500,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     if (S.rejoining) S.net.replaying = true;
     S.rejoining = false;
     U.battle(cfg, S.net);
+    chatSync();
   }
 
   /* ---------- screens ---------- */
@@ -9339,6 +9520,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length); }
   function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
   function draw() {
+    chatSync();
     if (S.net) return;
     const L = S.lobby;
     let body;

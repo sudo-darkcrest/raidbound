@@ -311,7 +311,8 @@
       <div class="audioset"><h3 class="sec" style="margin-top:0">Sound</h3>
         <label class="toggle" style="margin-bottom:.4rem"><input type="checkbox" data-k="muted" ${s.muted ? 'checked' : ''}> Mute everything (press M any time, or use the 🔊 button during a raid)</label>
         <div class="vrow"><label class="toggle"><input type="checkbox" data-k="sound" ${s.sound !== false ? 'checked' : ''}> Sound effects</label><input type="range" min="0" max="1" step="0.05" value="${s.sfxVol ?? 0.8}" data-vol="sfxVol" aria-label="Sound effects volume"><button class="btn small ghost" data-act="testfx">Test</button></div>
-        <div class="vrow"><label class="toggle"><input type="checkbox" data-k="music" ${s.music !== false ? 'checked' : ''}> Music</label><input type="range" min="0" max="1" step="0.05" value="${s.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"><span></span></div></div>
+        <div class="vrow"><label class="toggle"><input type="checkbox" data-k="music" ${s.music !== false ? 'checked' : ''}> Music</label><input type="range" min="0" max="1" step="0.05" value="${s.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"><span></span></div>
+        <label class="toggle" style="margin-top:.4rem"><input type="checkbox" data-k="turnAlert" ${s.turnAlert !== false ? 'checked' : ''}> Chime when it's my turn (also when the game is in another tab)</label></div>
       <label class="toggle"><input type="checkbox" data-k="autoDefend" ${s.autoDefend ? 'checked' : ''}> Defend automatically (use armor, strike back with your weapon and cover with Bulwark allies without asking)</label>
       <label class="toggle"><input type="checkbox" data-k="pauseForInstants" ${s.pauseForInstants ? 'checked' : ''}> Pause so I can answer the boss: play an Instant when a boss card is revealed, or a React card when an attack is coming</label>
       <div style="margin-top:1.4rem"><button class="btn ghost small" data-act="reset">Reset all progress</button></div></div></div>`);
@@ -320,7 +321,7 @@
     el.onclick = async e => {
       if (e.target.closest('[data-act=back]')) return U.title();
       const sp = e.target.closest('[data-speed]'); if (sp) { s.speed = +sp.dataset.speed; U.persist(); return U.settings(); }
-      const k = e.target.closest('[data-k]'); if (k) { s[k.dataset.k] = k.checked; U.persist(); RB.AUDIO.refresh(); return; }
+      const k = e.target.closest('[data-k]'); if (k) { s[k.dataset.k] = k.checked; U.persist(); RB.AUDIO.refresh(); if (k.dataset.k === 'turnAlert' && k.checked) U.sfx.yourTurn(); return; }
       if (e.target.closest('[data-act=testfx]')) { const f = ['hit', 'block', 'heal', 'power', 'bossReveal']; U.sfx[f[(U._fxi = ((U._fxi || 0) + 1) % f.length)]](5); return; }
       if (e.target.closest('[data-act=reset]')) { const v = await U.dialog('<h3>Reset all progress?</h3><p>This removes your treasure cards, loot codes, unlocked cosmetics and saved decks. It can\'t be undone.</p><div class="acts"><button class="btn ghost" data-v="no">Keep my progress</button><button class="btn primary" data-v="yes">Reset everything</button></div>', { dismiss: 'no' }); if (v === 'yes') { try { localStorage.removeItem('raidbound.save.v1'); } catch (er) { } location.reload(); } }
     };

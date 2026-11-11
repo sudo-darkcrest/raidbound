@@ -39,7 +39,11 @@
   setInterval(() => sendRaw({ t: 'ping' }), 25000); // keeps the free server awake during a raid
   function setStatus(t) { S.status = t; const el = $('#online .netstatus'); if (el) el.textContent = t; }
 
-  function onMsg(m) {
+  function onMsg(m) { onMsg0(m); chatSync(); }
+  function onMsg0(m) {
+    if (m.t === 'chat') return chatIn(m);
+    if (m.t === 'chatlog') { CH.log = Array.isArray(m.log) ? m.log.slice(-CHAT_KEEP) : []; CH.lastN = CH.log.reduce((a, x) => Math.max(a, x.n || 0), 0); CH.dirty = true; return; }
+    if (m.t === 'chatslow') return U.toast('Slow down a little: too many messages at once.');
     if (m.t === 'welcome') { S.id = m.id; S.code = m.code; S.rejoining = !!m.rejoin; S.autoJoin = false; remember(); if (S.wantMode && !m.rejoin) { const w = S.wantMode; S.wantMode = null; sendRaw({ t: 'settings', mode: 'dungeon', raid: w.id, diff: w.diff }); } return; }
     if (m.t === 'error') {
       if (/No raid with that code/.test(m.why)) { forget(); S.lobby = null; if (S.autoJoin) { S.autoJoin = false; S.err = ''; U.toast('Your last online party has closed. Create or join a new one.'); return draw(); } }
@@ -58,6 +62,94 @@
     if (m.t === 'cmd') { if (S.net) S.net.push(m); return; }
     if (m.t === 'caughtup') { if (S.net) S.net.catchUp(m.seq); return; }
   }
+
+
+  /* ---------- party chat (#123): quick phrases plus free typing, in the lobby and during the fight ----------
+     Chat lines travel beside the game's commands, never inside them, so they can't disturb the lockstep.
+     Everything is shown as plain text. Muting is per player and only on this computer. */
+  const CHAT_KEEP = 50, CHAT_LEN = 200;
+  const QUICK = {
+    lobby: ['Hello!', 'Ready when you are', 'One moment…', 'Which raid?', 'Good luck!', 'Good game'],
+    battle: ['Heal me!', 'I\'ll take the hit', 'Save your Instants', 'Focus the boss', 'Clear the minions', 'Step into the circle!', 'Nice one!', 'Good game'],
+  };
+  const NAMECOL = ['#ffd27a', '#9ae8ff', '#b8f0a0', '#f3a9e6'];
+  const CH = { log: [], lastN: 0, open: false, unread: 0, muted: new Set(), el: null, code: null, dirty: false, peekT: 0, mode: '' };
+  const chatOn = () => !!(S.lobby && S.code && S.id);
+  const others = () => (S.lobby ? S.lobby.players : []).filter(p => !p.bot && p.id !== S.id);
+  const nameCol = id => { const i = (S.lobby ? S.lobby.players : []).findIndex(p => p.id === id); return NAMECOL[(i < 0 ? 0 : i) % NAMECOL.length]; };
+  function chatIn(m) {
+    if (m.n && m.n <= CH.lastN) return; // already have it
+    if (m.n) CH.lastN = m.n;
+    CH.log.push(m); if (CH.log.length > CHAT_KEEP) CH.log.shift();
+    CH.dirty = true;
+    if (m.id === S.id || CH.muted.has(m.id)) return;
+    if (!CH.open) { CH.unread++; CH.peek = m; }
+    if (U.sfx && U.sfx.chat) U.sfx.chat();
+  }
+  function chatSend(text, quick) {
+    text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, CHAT_LEN);
+    if (!text) return;
+    if (!S.ws || S.ws.readyState !== 1) return U.toast('Not connected right now. Your message was not sent.');
+    sendRaw(quick ? { t: 'chat', text, q: 1 } : { t: 'chat', text });
+  }
+  function chatDock() {
+    if (CH.el) return CH.el;
+    const d = CH.el = document.createElement('div'); d.id = 'chatdock'; d.className = 'chatdock';
+    d.innerHTML = `<button type="button" class="chatpeek" hidden></button>
+      <button type="button" class="chatfab" aria-expanded="false" aria-controls="chatpanel" title="Party chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 012 2v9a2 2 0 01-2 2h-7l-5 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg><span class="chatlabel">Chat</span><span class="chatdot" hidden></span></button>
+      <section class="chatpanel" id="chatpanel" aria-label="Party chat" hidden>
+        <header class="chathead"><b>Party chat</b><button type="button" class="chatx" aria-label="Close chat">✕</button></header>
+        <div class="chatmute" hidden></div>
+        <div class="chatlist" role="log" aria-live="polite"></div>
+        <div class="chatquick"></div>
+        <form class="chatform" autocomplete="off"><input class="chatin" maxlength="${CHAT_LEN}" placeholder="Say something…" aria-label="Message" enterkeyhint="send"><button class="btn small" type="submit">Send</button></form>
+      </section>`;
+    const q = sel => d.querySelector(sel);
+    const setOpen = CH.setOpen = v => { CH.open = v; if (v) { CH.unread = 0; CH.peek = null; } CH.dirty = true; chatSync(); if (v) { const l = q('.chatlist'); l.scrollTop = l.scrollHeight; if (matchMedia('(hover: hover)').matches) q('.chatin').focus(); } };
+    q('.chatfab').onclick = () => setOpen(!CH.open);
+    q('.chatpeek').onclick = () => setOpen(true);
+    q('.chatx').onclick = () => setOpen(false);
+    q('.chatform').onsubmit = e => { e.preventDefault(); const i = q('.chatin'); chatSend(i.value); i.value = ''; };
+    q('.chatquick').onclick = e => { const b = e.target.closest('button'); if (b) chatSend(b.textContent, true); };
+    q('.chatmute').onclick = e => { const b = e.target.closest('[data-mute]'); if (!b) return; const id = b.dataset.mute; if (CH.muted.has(id)) CH.muted.delete(id); else CH.muted.add(id); CH.dirty = true; chatSync(); };
+    // typing must never reach the game's own keys; Escape closes the panel
+    d.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape' && CH.open) { setOpen(false); const b = $('#battle .chatbtn'); (b && b.offsetParent ? b : q('.chatfab')).focus(); } });
+    document.body.appendChild(d);
+    return d;
+  }
+  function chatSync() {
+    if (!chatOn()) { if (CH.el) { CH.el.remove(); CH.el = null; } CH.open = false; CH.unread = 0; CH.peek = null; if (!S.code) { CH.log = []; CH.lastN = 0; CH.code = null; CH.muted.clear(); } return; }
+    if (CH.code !== S.code) { if (CH.code) { CH.log = []; CH.lastN = 0; CH.muted.clear(); } CH.code = S.code; CH.dirty = true; }
+    const d = chatDock(), q = sel => d.querySelector(sel);
+    const mode = S.net ? 'battle' : 'lobby';
+    d.classList.toggle('inbattle', !!S.net); d.classList.toggle('open', CH.open);
+    q('.chatpanel').hidden = !CH.open; q('.chatfab').setAttribute('aria-expanded', CH.open ? 'true' : 'false');
+    const dot = q('.chatdot'); dot.hidden = !CH.unread; dot.textContent = CH.unread > 9 ? '9+' : CH.unread || '';
+    // without the side column (tablets, phones) the fight's top bar carries the chat button; the panel hangs below it
+    const tb = S.net && $('#battle .chatbtn');
+    if (tb) { const td = tb.querySelector('.chatdot'); td.hidden = !CH.unread; td.textContent = dot.textContent; tb.setAttribute('aria-expanded', CH.open ? 'true' : 'false'); if (tb.offsetParent) d.style.setProperty('--chattop', Math.round((tb.closest('.topbar') || tb).getBoundingClientRect().bottom + 6) + 'px'); }
+    q('.chatfab').setAttribute('aria-label', CH.unread ? `Party chat, ${CH.unread} new` : 'Party chat');
+    if (CH.mode !== mode || !q('.chatquick').firstChild) { CH.mode = mode; q('.chatquick').innerHTML = QUICK[mode].map(t => `<button type="button">${esc(t)}</button>`).join(''); }
+    // who can be muted: the other people in the party
+    const ppl = others(), mk = ppl.map(p => p.id + (CH.muted.has(p.id) ? '!' : '') + p.name).join('|');
+    if (CH.muteKey !== mk) { CH.muteKey = mk; const mu = q('.chatmute'); mu.hidden = !ppl.length; mu.innerHTML = ppl.length ? '<span>Mute:</span>' + ppl.map(p => `<button type="button" data-mute="${esc(p.id)}" aria-pressed="${CH.muted.has(p.id)}" class="${CH.muted.has(p.id) ? 'on' : ''}" title="${CH.muted.has(p.id) ? 'Muted. Click to hear them again' : 'Hide this player\'s messages'}">${CH.muted.has(p.id) ? '🔇' : '🔈'} ${esc(p.name)}</button>`).join('') : ''; }
+    if (CH.dirty) {
+      CH.dirty = false;
+      const l = q('.chatlist'), stick = l.scrollHeight - l.scrollTop - l.clientHeight < 40;
+      const shown = CH.log.filter(m => !CH.muted.has(m.id));
+      l.innerHTML = shown.length ? shown.map(m => `<p class="chatline${m.id === S.id ? ' me' : ''}${m.q ? ' q' : ''}"><b style="color:${nameCol(m.id)}">${esc(m.from || 'Hero')}</b> <span>${esc(m.text)}</span></p>`).join('')
+        : `<p class="chatempty">No messages yet. Tap a quick phrase or type below. ${ppl.length ? '' : 'Your friends will see it once they join.'}</p>`;
+      if (stick || CH.open) l.scrollTop = l.scrollHeight;
+    }
+    // a closed chat shows the newest line for a few seconds
+    const pk = q('.chatpeek');
+    if (CH.peek && !CH.open) { const m = CH.peek; CH.peek = null; pk.innerHTML = `<b style="color:${nameCol(m.id)}">${esc(m.from || 'Hero')}</b> ${esc(m.text)}`; pk.hidden = false; clearTimeout(CH.peekT); CH.peekT = setTimeout(() => { pk.hidden = true; }, 6000); }
+    else if (CH.open) { pk.hidden = true; clearTimeout(CH.peekT); }
+  }
+  U.chatState = () => CH; // for tests
+  U.chatToggle = () => { if (!chatOn()) return; chatDock(); CH.setOpen(!CH.open); };
+  U.chatBtnHTML = () => `<button class="btn small ghost narrow-only chatbtn" data-act="chat" aria-label="Party chat" aria-expanded="${CH.open ? 'true' : 'false'}">💬<span class="chatdot" ${CH.unread ? '' : 'hidden'}>${CH.unread > 9 ? '9+' : CH.unread || ''}</span></button>`;
+  if (typeof window !== 'undefined') window.addEventListener('resize', () => { if (CH.el) chatSync(); });
 
   /* ---------- the link handed to the battle screen ---------- */
   function makeNet(cfg) {
@@ -86,7 +178,7 @@
         if (!waitEl) { waitEl = document.createElement('div'); waitEl.className = 'netwait'; document.body.appendChild(waitEl); }
         waitEl.innerHTML = text;
       },
-      leave() { net.closed = true; S.net = null; forget(); try { S.ws && S.ws.close(); } catch (e) { } },
+      leave() { net.closed = true; S.net = null; forget(); try { S.ws && S.ws.close(); } catch (e) { } chatSync(); },
     };
     function check() { if (net.replaying && upTo >= 0 && applied >= upTo) { net.replaying = false; U.toast('You\'re back in the raid.'); } }
     async function pump() {
@@ -114,6 +206,7 @@
     if (S.rejoining) S.net.replaying = true;
     S.rejoining = false;
     U.battle(cfg, S.net);
+    chatSync();
   }
 
   /* ---------- screens ---------- */
@@ -133,6 +226,7 @@
   function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length); }
   function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
   function draw() {
+    chatSync();
     if (S.net) return;
     const L = S.lobby;
     let body;
