@@ -22,6 +22,9 @@
     }
     save.econ = 2;
   }
+  // #125: lands are free. Everyone always owns two of each, and a hero's own pick of ten lives in save.lands[hero].
+  for (const k of RB.LANDS || []) if (!(save.owned[k] >= 2)) save.owned[k] = 2;
+  save.lands = save.lands || {};
   // every hero you can play (the six starting heroes, and each hero once unlocked) brings the cards of their starter deck
   U.syncStarters = () => {
     save.starterGot = save.starterGot || [];
@@ -121,6 +124,7 @@
       case 'item': return 'Item';
       case 'quest': return 'Quest';
       case 'location': return 'Location';
+      case 'land': return 'Land';
       case 'master': return 'Master Hero';
       case 'hero': return `Hero — ${d.race} ${RB.CLASSES[d.cls].name}`;
       default: return d.omen ? 'Omen' : d.kind ? 'Boss ' + cap(d.kind) : 'Minion';
@@ -179,7 +183,7 @@
     if (d.type === 'weapon') stats = `<div class="stat atk">${d.atk}</div>`;
     if (d.type === 'armor') stats = `<div class="stat use" title="Use cost">${d.use}</div><div class="stat def">${d.def}</div>`;
     if (d.type === 'master') stats = `<div class="stat hp">${d.hp}</div>`;
-    const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' ? '' : `<div class="cost">${d.cost}</div>`;
+    const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' || d.type === 'land' ? '' : `<div class="cost">${d.cost}</div>`;
     const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
     return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;

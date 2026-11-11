@@ -1368,6 +1368,12 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 /* #127: choices (dialogs) sit above the phone side panel, card sheet and chat, so they can always be answered */
 .overlay:not(.clear) { z-index: 88; }
 
+/* ---------- #125 lands ---------- */
+.restray .lbl .spare { display: block; font-family: var(--f-body, inherit); font-size: .72rem; color: var(--muted); letter-spacing: 0; white-space: nowrap; }
+.decklist .landhead { margin: .9rem 0 .3rem; padding-top: .6rem; border-top: 1px solid rgba(212, 166, 74, .3); cursor: pointer; }
+.landnote { margin: .2rem 0 .7rem; }
+.card.t-land .cname { background: linear-gradient(#2d4a2a, #142412); }
+
 </style>
 </head>
 <body>
@@ -4535,6 +4541,58 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 
   /* ======================= RAID BOSSES ======================= */
   const B = {};
+
+  /* ---------- #125 lands: dedicated resource cards. A land is only ever played as a resource (one a turn, like any
+     resource) and does one small thing as it arrives. Every deck carries RB.LAND_COUNT of them on top of its 30 cards. ---------- */
+  RB.LAND_COUNT = 10;   // lands in every deck
+  RB.SPARE_RES = 3;     // other cards (not lands, quests or locations) a hero may turn into resources in one fight
+  const hero1 = (E, p) => E.T.hero(p);
+  const LAND_FX = {
+    heal1: ['Your hero heals 1.', async (E, p) => E.heal(hero1(E, p), 1)],
+    heal2: ['Your hero heals 2.', async (E, p) => E.heal(hero1(E, p), 2)],
+    healAll: ['Each friendly hero heals 1.', async (E, p) => { for (const q of E.heroes()) await E.heal(hero1(E, q), 1); }],
+    ward1: ['Prevent the next 1 damage to your hero.', async (E, p) => E.shield(p, 1)],
+    ward2: ['Prevent the next 2 damage to your hero.', async (E, p) => E.shield(p, 2)],
+    mend: ['Each of your allies heals 1.', async (E, p) => { for (const a of p.allies.slice()) await E.heal(E.T.ally(p, a), 1); }],
+    snipe: ['Deal 1 damage to a random enemy minion.', async (E, p) => { const m = E.minions(); if (m.length) await E.dmg(m[Math.floor(E.rnd() * m.length)], 1, { p, kind: 'effect' }); }],
+    bossHit: ['Deal 1 damage to the boss.', async (E, p) => E.dmg(E.bossT(), 1, { p, kind: 'effect' })],
+    calm: ['Your hero loses 2 threat.', async (E, p) => { p.threat = Math.max(0, p.threat - 2); }],
+    scout: ['Look at the top card of the boss deck. You may put it on the bottom.', async (E, p) => E.scoutBoss(p)],
+    might: ['Your hero gets +1 ATK this turn.', async (E, p) => E.tempAtk(p, 1)],
+    rally: ['Your allies get +1 ATK this turn.', async (E, p) => E.allyTempAtk(p, 1)],
+  };
+  RB.LAND_FX = LAND_FX;
+  const land = (id, name, fac, fx, alt, flavor) => add('land_' + id, { name, type: 'land', cost: 0, fac, rarity: 'c', land: fx, text: 'Land. Play as a resource. When it arrives: ' + LAND_FX[fx][0].charAt(0).toLowerCase() + LAND_FX[fx][0].slice(1), onLand: LAND_FX[fx][1], flavor, art: { s: 'forest', L: [], img: 'land_' + id, alt } });
+  // neutral
+  land('crossroads', 'Wayfarer\'s Crossroads', 'neutral', 'heal1', 'caravan', 'Every road in the realm passes a signpost like this one.');
+  land('kingsroad', 'The Old King\'s Road', 'neutral', 'ward1', 'highwatch', 'Paved by a king nobody remembers. The stones still hold.');
+  land('glade', 'Mistwood Glade', 'neutral', 'mend', 'moonwell', 'Wounds close faster where the mist lies thick.');
+  land('foothills', 'Ashen Foothills', 'neutral', 'snipe', 'ashcaravan', 'Good high ground, if you don\'t mind the smell.');
+  land('shrine', 'Stillwater Shrine', 'neutral', 'calm', 'moonpetals', 'Even a raid boss looks away from still water.');
+  land('watchtower', 'Ruined Watchtower', 'neutral', 'scout', 'battleplans', 'Half a tower still sees twice as far as none.');
+  land('tarn', 'Moonlit Tarn', 'neutral', 'might', 'northlights', 'Drink, and feel the cold run down into your sword arm.');
+  // Silver Concord
+  land('farmlands', 'Silverhold Farmlands', 'concord', 'heal2', 'citadel', 'Bread wins more wars than steel.');
+  land('abbey', 'Dawnward Abbey', 'concord', 'healAll', 'aurora', 'The bells ring for everyone inside the walls.');
+  land('quarry', 'Stonevow Quarry', 'concord', 'ward2', 'ancientforge', 'Dwarves cut the stone. The stone returns the favour.');
+  land('lecturehall', 'Aethermoor Lecture Hall', 'concord', 'scout', 'library', '"Today: the feeding habits of dragons. Sit near the door."');
+  land('barracks', 'Highmarch Barracks', 'concord', 'rally', 'concordbanner', 'Reveille comes before dawn, and so does the Concord.');
+  land('foundry', 'Sunsteel Foundry', 'concord', 'might', 'ashenforge', 'Sunsteel holds an edge and a grudge.');
+  land('eldergrove', 'Elder Grove of Lysse', 'concord', 'mend', 'silverstag', 'The oldest trees remember every elf by name.');
+  // Ember Clans
+  land('steppe', 'Bloodrock Steppe', 'clans', 'might', 'encampment', 'Red stone, red dust, red sunsets. The Clans call it home.');
+  land('huntgrounds', 'Redmoon Hunting Grounds', 'clans', 'snipe', 'greathunt', 'Nothing here dies of old age.');
+  land('scrapyard', 'Goblin Scrapyard', 'clans', 'scout', 'rocketboots', 'One goblin\'s junk is the same goblin\'s spyglass.');
+  land('mesa', 'Stormhorn Mesa', 'clans', 'heal2', 'earthwarden', 'The minotaurs say the rain here knows your wounds.');
+  land('warcamp', 'Emberclaw War Camp', 'clans', 'rally', 'redhorn', 'When the drums start, even the cooks pick up axes.');
+  land('totemring', 'Tuskfire Totem Ring', 'clans', 'ward2', 'witchdoctor', 'Seven totems, seven ancestors, all of them watching.');
+  land('arena', 'Cinderpit Arena', 'clans', 'bossHit', 'warlord', 'Practice on each other. Then go and find something bigger.');
+  RB.LANDS = Object.keys(C).filter(k => C[k].type === 'land');
+  // the ten lands a hero's deck gets when the player hasn't chosen any: the seven of the hero's faction and three neutral ones
+  RB.defaultLands = heroId => { const f = RB.HEROES[heroId].fac; return RB.LANDS.filter(k => C[k].fac === f).concat(['land_crossroads', 'land_kingsroad', 'land_watchtower']).slice(0, RB.LAND_COUNT); };
+  // a player's own choice is used only when it is exactly ten legal lands with at most two copies of each
+  RB.landsOk = (heroId, list) => Array.isArray(list) && list.length === RB.LAND_COUNT && list.every(k => C[k] && C[k].type === 'land' && (C[k].fac === 'neutral' || C[k].fac === RB.HEROES[heroId].fac) && list.filter(x => x === k).length <= 2);
+  RB.landsFor = (heroId, list) => RB.landsOk(heroId, list) ? list.slice() : RB.defaultLands(heroId);
   const addB = (id, o) => { o.id = id; B[id] = o; };
   // Molten Spire
   addB('tailswipe', { name: 'Tail Swipe', kind: 'attack', text: 'Deal 2 damage to each ally.', run: async E => { for (const t of E.allAllies()) await E.dmg(t, 2, { kind: 'boss' }); }, art: { s: 'volcano', L: [['fx', { t: 'whirl', x: 150, y: 170, c: '#ffb070' }], ['dragon', { x: 170, y: 140, s: 0.7, flip: 1 }]] } });
@@ -4816,12 +4874,15 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 
     /* ---------- setup ---------- */
     cfg.party.forEach((seat, i) => {
-      const deck = shuffle(seat.deck.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
+      // #125: every deck carries ten lands on top of its 30 cards (the player's own pick, or the hero's usual ten)
+      const idOf = e => typeof e === 'string' ? e : e.id;
+      const full = seat.deck.some(e => C[idOf(e)] && C[idOf(e)].type === 'land') || cfg.noLands ? seat.deck : seat.deck.concat(RB.landsFor(seat.hero, seat.lands));
+      const deck = shuffle(full.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
         idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
         hero: { master: null, damage: 0, shield: 0, tempAtk: 0, ex: false, elusive: false, taunt: false, powerUsed: false, dead: false, pet: seat.pet || null },
         deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [],
-        resPlayed: false, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
+        resPlayed: false, spareRes: 0, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
       });
     });
     // #90: companion perks (one tiny bonus per hero; never in boss mode). petUsed marks once-per-fight perks.
@@ -5150,7 +5211,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       const d = C[inst.id];
       if (g.over) return { ok: false, why: 'The raid is over.' };
       if (p.hero.dead) return { ok: false, why: 'Your hero has been defeated.' };
-      if (d.type === 'quest' || d.type === 'location') return { ok: false, why: 'Play this card as a resource.' };
+      if (d.type === 'quest' || d.type === 'location' || d.type === 'land') return { ok: false, why: 'Play this card as a resource.' };
       const myTurn = isActive(p);
       if (!myTurn) {
         const inst = d.type === 'ability' && d.speed === 'instant';
@@ -5172,8 +5233,18 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     async function playResource(p, inst) {
       if (!isActive(p) || p.resPlayed) return false;
       const i = p.hand.indexOf(inst); if (i < 0) return false;
+      if (!canResource(p, inst)) return false; // #125: only three cards that aren't lands, quests or locations per fight
       p.hand.splice(i, 1);
       const d = C[inst.id];
+      if (d.type === 'land') {
+        p.res.push({ c: inst, ex: false, land: true });
+        log(`${pdef(p).name} settles ${d.name}.`, 'play');
+        p.resPlayed = true;
+        await H.anim('resource', { p: p.idx, id: inst.id });
+        H.update();
+        if (d.onLand && !g.over) { await d.onLand(api, p); H.update(); }
+        return true;
+      }
       if (d.type === 'location') {
         const old = p.res.find(r => r.loc); if (old) old.loc = false;
         p.res.push({ c: inst, ex: false, loc: true, used: false });
@@ -5183,13 +5254,17 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         log(`${pdef(p).name} takes up the quest: ${d.name}.`, 'play');
       } else {
         p.res.push({ c: inst, ex: false });
-        log(`${pdef(p).name} plays a card as a resource.`, '');
+        p.spareRes++;
+        log(`${pdef(p).name} plays a card as a resource (${p.spareRes} of ${RB.SPARE_RES} that aren't lands).`, '');
       }
       p.resPlayed = true;
       await H.anim('resource', { p: p.idx });
       H.update();
       return true;
     }
+    // #125: lands, quests and locations can always become resources; any other card only RB.SPARE_RES times a fight
+    function spareLeft(p) { return Math.max(0, RB.SPARE_RES - (p.spareRes || 0)); }
+    function canResource(p, inst) { const t = C[inst.id].type; return t === 'land' || t === 'quest' || t === 'location' || cfg.noLands || spareLeft(p) > 0; }
     async function playCard(p, inst, target) {
       const ok = canPlay(p, inst);
       if (!ok.ok) return ok;
@@ -5682,7 +5757,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const api = {
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
       canPlay, canEquip, needsTarget, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
-      playResource, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
+      playResource, canResource, spareLeft, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
         { const st = stageNow(); if (st) { log(`${st.boss} blocks the way.${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss'); if (st.rule && st.rule.onEnter) await st.rule.onEnter(api); H.update(); } }
@@ -6069,15 +6144,23 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const cur = p.res.find(r => r.loc);
     const bestLoc = hand.filter(c => C[c.id].type === 'location').sort((a, b) => locRank(C[b.id]) - locRank(C[a.id]))[0];
     if (bestLoc && (!cur || locRank(C[bestLoc.id]) > locRank(C[cur.c.id]))) return bestLoc;
+    // #125: a land is always worth settling (it costs no real card); pick the one whose small effect does something now
+    const lands = hand.filter(c => C[c.id].type === 'land');
+    if (lands.length) {
+      const use = c => { const k = C[c.id].land, hurt = p.hero.damage; return k === 'heal2' ? (hurt >= 2 ? 3 : hurt ? 1.5 : 0.2) : k === 'heal1' || k === 'healAll' ? (hurt ? 1.6 : 0.2) : k === 'ward2' ? 2.2 : k === 'ward1' ? 1.4 : k === 'snipe' ? (E.minions().length ? 2 : 0.1) : k === 'bossHit' ? 1.5 : k === 'mend' ? (p.allies.some(a => a.damage > 0) ? 1.8 : 0.1) : k === 'rally' ? (p.allies.length ? 1.2 + p.allies.length * 0.4 : 0.1) : k === 'might' ? 1.3 : k === 'calm' ? (p.threat > 0 ? 1 : 0.3) : 0.8; };
+      return lands.slice().sort((a, b) => use(b) - use(a))[0];
+    }
     if (quest && res < 9) return quest;
     if (location && !cur) return location;
     if (res >= 7 && hand.length <= 4) return null;
     if (res >= 9) return null;
+    if (E.spareLeft && E.spareLeft(p) <= 0 && !E.g.cfg.noLands) return null; // #125: the three spare resources are spent
     let worst = null, wv = 1e9;
     const counts = {};
     hand.forEach(c => counts[c.id] = (counts[c.id] || 0) + 1);
     for (const c of hand) {
       const d = C[c.id];
+      if (d.type === 'land' || d.type === 'quest' || d.type === 'location') continue;
       let v = 6;
       if (d.type === 'weapon') v = p.weapon ? 2 : 8;
       else if (d.type === 'armor') v = p.armor[d.slot] ? 1.5 : 6;
@@ -6328,7 +6411,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     else Object.assign(out, { ally: 11, ability: 9, weapon: 2, armor: 3, item: 2, quest: 2, master: 1 });
     return out;
   }
-  const poolFor = (heroId, owned) => Object.values(C).filter(d => RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
+  const poolFor = (heroId, owned) => Object.values(C).filter(d => d.type !== 'land' && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
   const copiesOf = (d, owned) => Math.min(RB.maxCopies(d), owned ? owned[d.id] || 0 : 2);
   // fast heuristic pick (instant)
   RB.autoDeck = function (heroId, raidId, owned, partySize) {
@@ -6679,7 +6762,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   // #95: Core packs come in 5, 10 and 20 cards (the 20 is a small bulk discount). Themed boosters are always 5.
   RB.CORE_SIZES = [[5, 75], [10, 150], [20, 275]];
   RB.packPrice = (style, size) => style === 'core' ? ((RB.CORE_SIZES.find(s => s[0] === (size || 5)) || RB.CORE_SIZES[0])[1]) : RB.PACK_PRICE;
-  RB.CORE_POOL = () => Object.values(C).filter(d => d.set === 'core' && d.type !== 'master');
+  RB.CORE_POOL = () => Object.values(C).filter(d => d.set === 'core' && d.type !== 'master' && d.type !== 'land'); // #125: lands are free to everyone, so never in packs, the shop or the Workshop
   RB.packPool = style => style === 'core' ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'frontier' && d.pack === style);
   RB.BOOSTER_SETS = ['ember', 'frost', 'void'];
 
@@ -7439,6 +7522,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     }
     save.econ = 2;
   }
+  // #125: lands are free. Everyone always owns two of each, and a hero's own pick of ten lives in save.lands[hero].
+  for (const k of RB.LANDS || []) if (!(save.owned[k] >= 2)) save.owned[k] = 2;
+  save.lands = save.lands || {};
   // every hero you can play (the six starting heroes, and each hero once unlocked) brings the cards of their starter deck
   U.syncStarters = () => {
     save.starterGot = save.starterGot || [];
@@ -7538,6 +7624,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       case 'item': return 'Item';
       case 'quest': return 'Quest';
       case 'location': return 'Location';
+      case 'land': return 'Land';
       case 'master': return 'Master Hero';
       case 'hero': return `Hero — ${d.race} ${RB.CLASSES[d.cls].name}`;
       default: return d.omen ? 'Omen' : d.kind ? 'Boss ' + cap(d.kind) : 'Minion';
@@ -7596,7 +7683,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     if (d.type === 'weapon') stats = `<div class="stat atk">${d.atk}</div>`;
     if (d.type === 'armor') stats = `<div class="stat use" title="Use cost">${d.use}</div><div class="stat def">${d.def}</div>`;
     if (d.type === 'master') stats = `<div class="stat hp">${d.hp}</div>`;
-    const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' ? '' : `<div class="cost">${d.cost}</div>`;
+    const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' || d.type === 'land' ? '' : `<div class="cost">${d.cost}</div>`;
     const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
     return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
@@ -8289,7 +8376,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       const ids = autos[i] ? autos[i].slice() : custom ? save.decks[s.hero].slice() : RB.buildDeck(s.hero, save.owned, setup.seats.length);
       const holoLeft = Object.assign({}, save.holo);
       const deck = ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; });
-      return { hero: s.hero, auto: s.auto, deck, name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null };
+      return { hero: s.hero, auto: s.auto, deck, lands: RB.landsFor(s.hero, save.lands[s.hero]), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null };
     });
     U.battle({ raid: setup.raid, difficulty: setup.diff, party, bossPlayer: !!setup.asBoss, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };
@@ -8314,35 +8401,42 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   U.deckbuilder = function (hid, onDone) {
     const h = H[hid];
     let deck = (save.decks[hid] || RB.buildDeck(hid, save.owned)).slice();
+    let lands = RB.landsFor(hid, save.lands[hid]); // #125: ten lands ride along with the 30 cards
     let filter = 'all', q = '', dlMini = false, drawn = false;
-    const legal = Object.values(C).filter(d => RB.legalFor(hid, d) && (save.owned[d.id] || 0) > 0);
-    const types = ['all', 'ally', 'ability', 'weapon', 'armor', 'item', 'quest', 'location', 'master'];
+    const legalAll = Object.values(C).filter(d => RB.legalFor(hid, d) && (save.owned[d.id] || 0) > 0);
+    const legal = legalAll.filter(d => d.type !== 'land'), legalLands = legalAll.filter(d => d.type === 'land');
+    const types = ['all', 'ally', 'ability', 'weapon', 'armor', 'item', 'quest', 'location', 'master', 'land'];
     function draw() {
       const counts = deck.reduce((m, id) => (m[id] = (m[id] || 0) + 1, m), {});
-      const list = legal.filter(d => (filter === 'all' || d.type === filter) && (!q || (d.name + ' ' + (d.text || '')).toLowerCase().includes(q))).sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
+      const onLands = filter === 'land', lcounts = lands.reduce((m, id) => (m[id] = (m[id] || 0) + 1, m), {});
+      const list = (onLands ? legalLands : legal).filter(d => (filter === 'all' || d.type === filter) && (!q || (d.name + ' ' + (d.text || '')).toLowerCase().includes(q))).sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
       const curve = [0, 1, 2, 3, 4, 5, 6, 7].map(c => deck.filter(id => Math.min(7, C[id].cost) === c && !['quest', 'location'].includes(C[id].type)).length);
       const maxC = Math.max(1, ...curve);
       const rows = Object.entries(counts).sort((a, b) => C[a[0]].cost - C[b[0]].cost).map(([id, k]) => `<div class="row" data-rm="${id}" title="Click to remove one"><span class="c">${['quest', 'location'].includes(C[id].type) ? '·' : C[id].cost}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('');
       const byType = t => deck.filter(id => C[id].type === t).length;
       const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2>${esc(h.name)}'s deck</h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
-        <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', location: 'Locations', master: 'Master heroes' }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
-        <div class="pool">${list.map(d => { const k = counts[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
-        <aside class="decklist ${dlMini ? 'mini' : ''}"><h4 data-act="dlmini">${deck.length} / ${RB.DECK_SIZE} cards<span class="dltoggle phone-only">${dlMini ? '▲ Show deck' : '▼ Hide'}</span></h4><div style="font-size:.8rem;color:var(--muted)">Allies ${byType('ally')} · Abilities ${byType('ability')} · Gear ${byType('weapon') + byType('armor') + byType('item')} · Quests & locations ${byType('quest') + byType('location')}</div><div class="curve">${curve.map((v, i) => `<div style="height:${(v / maxC) * 100}%"><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div><div style="height:.6rem"></div>${rows || '<p style="color:var(--muted)">' + (U.isPhone() ? 'Tap cards to add them.' : 'Click cards on the left to add them.') + '</p>'}</aside></div></div>`, drawn);
+        <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', location: 'Locations', master: 'Master heroes', land: `Lands ${lands.length}/${RB.LAND_COUNT}` }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
+        ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} lands</b> on top of its 30 cards. Lands are free: play one a turn as a resource and it does one small thing as it arrives. Up to 2 copies of each. Other cards can only become resources ${RB.SPARE_RES} times a fight (quests and locations don't count).</p>` : ''}
+        <div class="pool">${list.map(d => { const k = (onLands ? lcounts : counts)[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
+        <aside class="decklist ${dlMini ? 'mini' : ''}"><h4 data-act="dlmini">${deck.length} / ${RB.DECK_SIZE} cards<span class="dltoggle phone-only">${dlMini ? '▲ Show deck' : '▼ Hide'}</span></h4><div style="font-size:.8rem;color:var(--muted)">Allies ${byType('ally')} · Abilities ${byType('ability')} · Gear ${byType('weapon') + byType('armor') + byType('item')} · Quests & locations ${byType('quest') + byType('location')}</div><div class="curve">${curve.map((v, i) => `<div style="height:${(v / maxC) * 100}%"><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div><div style="height:.6rem"></div>${rows || '<p style="color:var(--muted)">' + (U.isPhone() ? 'Tap cards to add them.' : 'Click cards on the left to add them.') + '</p>'}
+          <h4 class="landhead" data-f="land" title="Choose your lands">Lands ${lands.length} / ${RB.LAND_COUNT}</h4>${Object.entries(lcounts).map(([id, k]) => `<div class="row" data-rml="${id}" title="Click to remove one"><span class="c">◆</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('')}</aside></div></div>`, drawn);
       drawn = true;
       const inp = $('input[type=search]', el);
       inp.oninput = () => { q = inp.value.toLowerCase(); const pos = inp.selectionStart; draw(); const n = $('#deck input[type=search]'); n.focus(); n.setSelectionRange(pos, pos); };
       el.onclick = e => {
         const t = e.target;
         const f = t.closest('[data-f]'); if (f) { filter = f.dataset.f; return draw(); }
-        const ad = t.closest('[data-add]'); if (ad) { const d = C[ad.dataset.add]; const k = counts[d.id] || 0; if (deck.length >= RB.DECK_SIZE) return U.toast('Your deck already has 30 cards. Remove one first.'); if (k >= Math.min(RB.maxCopies(d), save.owned[d.id] || 0)) return U.toast(k >= RB.maxCopies(d) ? 'That\'s the most copies allowed.' : 'You don\'t own more copies of this card.'); deck.push(d.id); return draw(); }
+        const rml = t.closest('[data-rml]'); if (rml) { lands.splice(lands.indexOf(rml.dataset.rml), 1); return draw(); }
+        const ad = t.closest('[data-add]'); if (ad && C[ad.dataset.add].type === 'land') { const d = C[ad.dataset.add]; if (lands.length >= RB.LAND_COUNT) return U.toast(`You already have ${RB.LAND_COUNT} lands. Remove one first (click it in the list).`); if ((lcounts[d.id] || 0) >= 2) return U.toast('That\'s the most copies allowed.'); lands.push(d.id); return draw(); }
+        if (ad) { const d = C[ad.dataset.add]; const k = counts[d.id] || 0; if (deck.length >= RB.DECK_SIZE) return U.toast('Your deck already has 30 cards. Remove one first.'); if (k >= Math.min(RB.maxCopies(d), save.owned[d.id] || 0)) return U.toast(k >= RB.maxCopies(d) ? 'That\'s the most copies allowed.' : 'You don\'t own more copies of this card.'); deck.push(d.id); return draw(); }
         const rm = t.closest('[data-rm]'); if (rm) { deck.splice(deck.indexOf(rm.dataset.rm), 1); return draw(); }
         const a = t.closest('[data-act]'); if (!a) return;
-        if (a.dataset.act === 'starter') { deck = RB.buildDeck(hid, save.owned); return draw(); }
+        if (a.dataset.act === 'starter') { deck = RB.buildDeck(hid, save.owned); lands = RB.defaultLands(hid); return draw(); }
         if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
         if (a.dataset.act === 'clear') { deck = []; return draw(); }
         if (a.dataset.act === 'dlmini') { dlMini = !dlMini; return draw(); }
-        if (a.dataset.act === 'done') { save.decks[hid] = deck; U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); (onDone || U.title)(); }
+        if (a.dataset.act === 'done') { save.decks[hid] = deck; if (RB.landsOk(hid, lands)) save.lands[hid] = lands.slice(); else delete save.lands[hid]; U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
       };
       hoverPreview(el);
     }
@@ -8484,7 +8578,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         <p class="fg-lead">Well met, raider. This little book was stitched together by the guild's survivors. Read it before you go below, and keep it close once you're there.</p>
         <section><h4>The goal</h4><p>Your party of heroes fights a raid boss. Bring the boss to 0 health to win and earn a treasure pack. If every hero falls, the raid wipes.</p></section>
         <section><h4>Your hero</h4><p>Each hero has health, a faction (Silver Concord or Ember Clans), a race, a class, a specialization and two professions. These traits decide which cards can go in the deck. Every hero also has a unique power you can use once per game.</p></section>
-        <section><h4>Resources</h4><p>Once per turn you may place any card from your hand face-down as a resource. You begin with two. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, and they keep their special abilities.</p>
+        <section><h4>Resources</h4><p>Once per turn you may play one card from your hand as a resource. You begin with two. <b>Lands</b> are made for this: every deck carries ${RB.LAND_COUNT} of them on top of its 30 cards, and each does one small thing as it arrives (a little healing, a ward, a point of damage). You may also turn any other card face-down into a resource, but only <b>${RB.SPARE_RES} times in a fight</b>, so choose which cards to give up. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, never count against those ${RB.SPARE_RES}, and keep their special abilities.</p>
         ${fgEx(fgU('', '◆ ◆ ◆ ◆', '4 ready') + fgA('spend 2 on your turn') + fgU('', '◆ ◆ ◇ ◇', '2 still ready') + fgA('the boss attacks') + fgU(ca('laststand'), 'Last Stand', 'costs 2 · played as a React', 'ok'), 'End your turn with 2 resources ready and Last Stand is waiting for the boss. Next turn, all 4 ready again.')}</section>
         <section><h4>Your turn</h4><p>Ready everything, draw two cards, then act in any order: play one resource, play cards, attack, use items, complete quests, use your location and use your hero power. Press <b>End turn</b> when you're done, or <b>Auto-play turn</b> to let the AI finish it for you.</p></section>
         <section><h4>Card types</h4><ul><li><b>Allies</b> fight beside you. They can attack the turn after they arrive, unless they have Swift.</li><li><b>Abilities</b> take effect at once. Basic abilities are played on your turn. <b>Instants</b> can also be played when a boss card is revealed, and <b>React</b> cards when their trigger happens.</li><li><b>Weapons</b> add attack. Pay the strike cost each time you use one.</li><li><b>Armor</b> goes in a slot (head, chest, hands, legs, feet or off-hand). When your hero would take damage, exhaust it and pay its cost to block.</li><li><b>Items</b> are rings, potions and trinkets with lasting or one-shot effects.</li><li><b>Quests</b> are resources you can complete for a reward; they then turn face down.</li><li><b>Locations</b> are resources with an ability you can use once per turn. You control one at a time.</li><li><b>Master Heroes</b> replace your hero. Damage and gear carry over, but your original power does not.</li><li><b>Loot cards</b> play like normal cards and hide a scratch-off code for the Vault.</li></ul></section>` },
@@ -8720,7 +8814,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
       </div>
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
-        <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
+        <div class="restray"><span class="lbl" title="Lands, quests and locations can always be played as resources. Any other card: only ${RB.SPARE_RES} times a fight.">Resources<small class="spare">${E.g.cfg.noLands ? '' : `spare cards ${E.spareLeft(p)}/${RB.SPARE_RES}`}</small></span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
       <div class="handbar">${g.cfg.bossPlayer ? `<div class="hand bosshand">${(B.hand || []).map((id, k, arr) => `<div class="hc bosshc" data-bc="${id}" style="transform:rotate(${((k - (arr.length - 1) / 2) * 3).toFixed(1)}deg)">${U.cardHTML(id)}</div>`).join('') || '<div class="handnote">Your boss cards arrive on your turn</div>'}<div class="bhlabel">${esc(raid.short)}\'s hand</div>` : `<div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) && showHand ? '' : 'other'} ${showHand ? '' : 'hidden'}">${hand}${!showHand && view.curtain == null ? `<div class="handnote">${esc(E.pdef(p).name)}'s hand · ${p.hand.length} card${p.hand.length === 1 ? '' : 's'} · hidden</div>` : ''}`}</div>
         ${view.curtain != null && view.curtain === p.idx ? `<div class="curtain"><b>${esc(E.pdef(p).name)}'s turn</b><span>Pass the computer to ${esc(E.pdef(p).name)}'s player. Everyone else, look away!</span><button class="btn primary" data-act="reveal">Show my hand</button></div>` : ''}
@@ -8847,7 +8941,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         case 'quest': U.sfx.quest(); banner('Quest complete', '', C[d.id].name, 1200); await wait(800); break;
         case 'master': U.sfx.master(); banner(C[d.id].name, '', 'A Master Hero rises', 1600); await wait(1200); break;
         case 'bossDeath': U.sfx.roar(E.raid.id); RB.AUDIO.music(null); banner(E.raid.short + ' is defeated!', '', null, 2200); await wait(1600); break;
-        case 'resource': await wait(120); break;
+        case 'resource': if (d.id && C[d.id]) { U.sfx.card(); const q = E.g.players[d.p], mine = human(q); await reveal(U.cardHTML(d.id), mine ? 700 : 1500, null, (mine ? '' : (net && E.g.cfg.party[q.idx].name ? E.g.cfg.party[q.idx].name + ' · ' : '') + E.pdef(q).name + ' settles a ') + (mine ? 'Land' : 'land'), true); } else await wait(120); break; // #125: a land arrives face up
         default: break;
       }
     } finally {
@@ -9104,14 +9198,16 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const d = C[inst.id];
     const items = [];
     const chk = E.canPlay(p, inst);
-    if (d.type === 'quest' || d.type === 'location') {
-      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : ' (quest)'}`, disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
+    if (d.type === 'quest' || d.type === 'location' || d.type === 'land') {
+      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : d.type === 'land' ? ' (land)' : ' (quest)'}`, disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
     } else {
       items.push({ label: `Play ${esc(d.name)} · ${d.cost} ◆`, disabled: !chk.ok, go: () => playWithTarget(p, inst) });
       if (!chk.ok) items.push({ why: chk.why });
-      items.push({ label: 'Use as a resource', disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
+      const spare = E.spareLeft(p); // #125: only three cards that aren't lands may become resources in a fight
+      items.push({ label: `Use as a resource (${spare} of ${RB.SPARE_RES} left)`, disabled: p.resPlayed || !spare, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
+      else if (!spare) items.push({ why: `You have already turned ${RB.SPARE_RES} cards into resources this fight. From now on only lands, quests and locations can be played as resources.` });
     }
     anchor.classList.add('open');
     U.popover(anchor, null, items, { card: U.cardHTML(inst.id, { holo: inst.holo }) });
@@ -9646,7 +9742,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
     else deck = RB.buildDeck(hid, save.owned, n);
-    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: RB.landsFor(hid, save.lands[hid]), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
   }
   async function onClick(e) {
     const t = e.target, a = t.closest('[data-act]');
@@ -9690,7 +9786,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 
   U.rollPack = function (raidId, heroic) {
     const raid = RB.RAIDS[raidId];
-    const core = RB.CORE_POOL ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'core' && d.type !== 'master');
+    const core = RB.CORE_POOL ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'core' && d.type !== 'master' && d.type !== 'land');
     const rares = core.filter(d => d.rarity === 'r'), uncs = core.filter(d => d.rarity === 'u'), coms = core.filter(d => d.rarity === 'c');
     const out = [];
     // epic treasure is half as likely as rare treasure
@@ -10039,7 +10135,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const party = st.seats.map((s, i) => {
       const ids = RB.dungeonDeck(s.hero, save.owned, swaps);
       const holoLeft = Object.assign({}, save.holo);
-      return { hero: s.hero, auto: i === 0 ? false : s.auto, name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
+      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: RB.landsFor(s.hero, save.lands[s.hero]), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
     });
     U.battle({ raid: st.id, dungeon: true, difficulty: st.mode, dungeonLevel: mode.level, dungeonFirst: mode.first, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };

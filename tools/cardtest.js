@@ -32,7 +32,7 @@ async function winrate(hero, raid, deck) {
   const base = {};
   for (const h of HEROES) for (const r of RAIDS) base[h + r] = await winrate(h, r, RB.buildDeck(h, null, 1));
   const only = process.env.CARDS ? process.env.CARDS.split(',') : null; // CARDS=id,id measures just those
-  const cards = Object.values(C).filter(d => d.type !== 'hero' && d.type !== 'master' && !d.dungeonCard && (!only || only.includes(d.id))).sort((a, b) => a.id < b.id ? -1 : 1).filter((d, i) => i % parts === part);
+  const cards = Object.values(C).filter(d => d.type !== 'hero' && d.type !== 'master' && d.type !== 'land' && !d.dungeonCard && (!only || only.includes(d.id))).sort((a, b) => a.id < b.id ? -1 : 1).filter((d, i) => i % parts === part);
   // heroes ordered by how far their baseline is from always-win / always-lose (less saturation = clearer signal)
   const mid = h => RAIDS.reduce((s, r) => s + Math.abs(base[h + r].w - 0.5), 0);
   const res = {};

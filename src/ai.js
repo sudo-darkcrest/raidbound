@@ -256,15 +256,23 @@
     const cur = p.res.find(r => r.loc);
     const bestLoc = hand.filter(c => C[c.id].type === 'location').sort((a, b) => locRank(C[b.id]) - locRank(C[a.id]))[0];
     if (bestLoc && (!cur || locRank(C[bestLoc.id]) > locRank(C[cur.c.id]))) return bestLoc;
+    // #125: a land is always worth settling (it costs no real card); pick the one whose small effect does something now
+    const lands = hand.filter(c => C[c.id].type === 'land');
+    if (lands.length) {
+      const use = c => { const k = C[c.id].land, hurt = p.hero.damage; return k === 'heal2' ? (hurt >= 2 ? 3 : hurt ? 1.5 : 0.2) : k === 'heal1' || k === 'healAll' ? (hurt ? 1.6 : 0.2) : k === 'ward2' ? 2.2 : k === 'ward1' ? 1.4 : k === 'snipe' ? (E.minions().length ? 2 : 0.1) : k === 'bossHit' ? 1.5 : k === 'mend' ? (p.allies.some(a => a.damage > 0) ? 1.8 : 0.1) : k === 'rally' ? (p.allies.length ? 1.2 + p.allies.length * 0.4 : 0.1) : k === 'might' ? 1.3 : k === 'calm' ? (p.threat > 0 ? 1 : 0.3) : 0.8; };
+      return lands.slice().sort((a, b) => use(b) - use(a))[0];
+    }
     if (quest && res < 9) return quest;
     if (location && !cur) return location;
     if (res >= 7 && hand.length <= 4) return null;
     if (res >= 9) return null;
+    if (E.spareLeft && E.spareLeft(p) <= 0 && !E.g.cfg.noLands) return null; // #125: the three spare resources are spent
     let worst = null, wv = 1e9;
     const counts = {};
     hand.forEach(c => counts[c.id] = (counts[c.id] || 0) + 1);
     for (const c of hand) {
       const d = C[c.id];
+      if (d.type === 'land' || d.type === 'quest' || d.type === 'location') continue;
       let v = 6;
       if (d.type === 'weapon') v = p.weapon ? 2 : 8;
       else if (d.type === 'armor') v = p.armor[d.slot] ? 1.5 : 6;
@@ -515,7 +523,7 @@
     else Object.assign(out, { ally: 11, ability: 9, weapon: 2, armor: 3, item: 2, quest: 2, master: 1 });
     return out;
   }
-  const poolFor = (heroId, owned) => Object.values(C).filter(d => RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
+  const poolFor = (heroId, owned) => Object.values(C).filter(d => d.type !== 'land' && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
   const copiesOf = (d, owned) => Math.min(RB.maxCopies(d), owned ? owned[d.id] || 0 : 2);
   // fast heuristic pick (instant)
   RB.autoDeck = function (heroId, raidId, owned, partySize) {

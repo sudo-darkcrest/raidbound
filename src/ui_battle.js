@@ -155,7 +155,7 @@
         ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
       </div>
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
-        <div class="restray"><span class="lbl">Resources</span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
+        <div class="restray"><span class="lbl" title="Lands, quests and locations can always be played as resources. Any other card: only ${RB.SPARE_RES} times a fight.">Resources<small class="spare">${E.g.cfg.noLands ? '' : `spare cards ${E.spareLeft(p)}/${RB.SPARE_RES}`}</small></span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
       <div class="handbar">${g.cfg.bossPlayer ? `<div class="hand bosshand">${(B.hand || []).map((id, k, arr) => `<div class="hc bosshc" data-bc="${id}" style="transform:rotate(${((k - (arr.length - 1) / 2) * 3).toFixed(1)}deg)">${U.cardHTML(id)}</div>`).join('') || '<div class="handnote">Your boss cards arrive on your turn</div>'}<div class="bhlabel">${esc(raid.short)}\'s hand</div>` : `<div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) && showHand ? '' : 'other'} ${showHand ? '' : 'hidden'}">${hand}${!showHand && view.curtain == null ? `<div class="handnote">${esc(E.pdef(p).name)}'s hand · ${p.hand.length} card${p.hand.length === 1 ? '' : 's'} · hidden</div>` : ''}`}</div>
         ${view.curtain != null && view.curtain === p.idx ? `<div class="curtain"><b>${esc(E.pdef(p).name)}'s turn</b><span>Pass the computer to ${esc(E.pdef(p).name)}'s player. Everyone else, look away!</span><button class="btn primary" data-act="reveal">Show my hand</button></div>` : ''}
@@ -282,7 +282,7 @@
         case 'quest': U.sfx.quest(); banner('Quest complete', '', C[d.id].name, 1200); await wait(800); break;
         case 'master': U.sfx.master(); banner(C[d.id].name, '', 'A Master Hero rises', 1600); await wait(1200); break;
         case 'bossDeath': U.sfx.roar(E.raid.id); RB.AUDIO.music(null); banner(E.raid.short + ' is defeated!', '', null, 2200); await wait(1600); break;
-        case 'resource': await wait(120); break;
+        case 'resource': if (d.id && C[d.id]) { U.sfx.card(); const q = E.g.players[d.p], mine = human(q); await reveal(U.cardHTML(d.id), mine ? 700 : 1500, null, (mine ? '' : (net && E.g.cfg.party[q.idx].name ? E.g.cfg.party[q.idx].name + ' · ' : '') + E.pdef(q).name + ' settles a ') + (mine ? 'Land' : 'land'), true); } else await wait(120); break; // #125: a land arrives face up
         default: break;
       }
     } finally {
@@ -539,14 +539,16 @@
     const d = C[inst.id];
     const items = [];
     const chk = E.canPlay(p, inst);
-    if (d.type === 'quest' || d.type === 'location') {
-      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : ' (quest)'}`, disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
+    if (d.type === 'quest' || d.type === 'location' || d.type === 'land') {
+      items.push({ label: `Play as a resource${d.type === 'location' ? ' (location)' : d.type === 'land' ? ' (land)' : ' (quest)'}`, disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
     } else {
       items.push({ label: `Play ${esc(d.name)} · ${d.cost} ◆`, disabled: !chk.ok, go: () => playWithTarget(p, inst) });
       if (!chk.ok) items.push({ why: chk.why });
-      items.push({ label: 'Use as a resource', disabled: p.resPlayed, go: () => doAct('playResource', p, inst) });
+      const spare = E.spareLeft(p); // #125: only three cards that aren't lands may become resources in a fight
+      items.push({ label: `Use as a resource (${spare} of ${RB.SPARE_RES} left)`, disabled: p.resPlayed || !spare, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
+      else if (!spare) items.push({ why: `You have already turned ${RB.SPARE_RES} cards into resources this fight. From now on only lands, quests and locations can be played as resources.` });
     }
     anchor.classList.add('open');
     U.popover(anchor, null, items, { card: U.cardHTML(inst.id, { holo: inst.holo }) });

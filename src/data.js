@@ -284,6 +284,58 @@
 
   /* ======================= RAID BOSSES ======================= */
   const B = {};
+
+  /* ---------- #125 lands: dedicated resource cards. A land is only ever played as a resource (one a turn, like any
+     resource) and does one small thing as it arrives. Every deck carries RB.LAND_COUNT of them on top of its 30 cards. ---------- */
+  RB.LAND_COUNT = 10;   // lands in every deck
+  RB.SPARE_RES = 3;     // other cards (not lands, quests or locations) a hero may turn into resources in one fight
+  const hero1 = (E, p) => E.T.hero(p);
+  const LAND_FX = {
+    heal1: ['Your hero heals 1.', async (E, p) => E.heal(hero1(E, p), 1)],
+    heal2: ['Your hero heals 2.', async (E, p) => E.heal(hero1(E, p), 2)],
+    healAll: ['Each friendly hero heals 1.', async (E, p) => { for (const q of E.heroes()) await E.heal(hero1(E, q), 1); }],
+    ward1: ['Prevent the next 1 damage to your hero.', async (E, p) => E.shield(p, 1)],
+    ward2: ['Prevent the next 2 damage to your hero.', async (E, p) => E.shield(p, 2)],
+    mend: ['Each of your allies heals 1.', async (E, p) => { for (const a of p.allies.slice()) await E.heal(E.T.ally(p, a), 1); }],
+    snipe: ['Deal 1 damage to a random enemy minion.', async (E, p) => { const m = E.minions(); if (m.length) await E.dmg(m[Math.floor(E.rnd() * m.length)], 1, { p, kind: 'effect' }); }],
+    bossHit: ['Deal 1 damage to the boss.', async (E, p) => E.dmg(E.bossT(), 1, { p, kind: 'effect' })],
+    calm: ['Your hero loses 2 threat.', async (E, p) => { p.threat = Math.max(0, p.threat - 2); }],
+    scout: ['Look at the top card of the boss deck. You may put it on the bottom.', async (E, p) => E.scoutBoss(p)],
+    might: ['Your hero gets +1 ATK this turn.', async (E, p) => E.tempAtk(p, 1)],
+    rally: ['Your allies get +1 ATK this turn.', async (E, p) => E.allyTempAtk(p, 1)],
+  };
+  RB.LAND_FX = LAND_FX;
+  const land = (id, name, fac, fx, alt, flavor) => add('land_' + id, { name, type: 'land', cost: 0, fac, rarity: 'c', land: fx, text: 'Land. Play as a resource. When it arrives: ' + LAND_FX[fx][0].charAt(0).toLowerCase() + LAND_FX[fx][0].slice(1), onLand: LAND_FX[fx][1], flavor, art: { s: 'forest', L: [], img: 'land_' + id, alt } });
+  // neutral
+  land('crossroads', 'Wayfarer\'s Crossroads', 'neutral', 'heal1', 'caravan', 'Every road in the realm passes a signpost like this one.');
+  land('kingsroad', 'The Old King\'s Road', 'neutral', 'ward1', 'highwatch', 'Paved by a king nobody remembers. The stones still hold.');
+  land('glade', 'Mistwood Glade', 'neutral', 'mend', 'moonwell', 'Wounds close faster where the mist lies thick.');
+  land('foothills', 'Ashen Foothills', 'neutral', 'snipe', 'ashcaravan', 'Good high ground, if you don\'t mind the smell.');
+  land('shrine', 'Stillwater Shrine', 'neutral', 'calm', 'moonpetals', 'Even a raid boss looks away from still water.');
+  land('watchtower', 'Ruined Watchtower', 'neutral', 'scout', 'battleplans', 'Half a tower still sees twice as far as none.');
+  land('tarn', 'Moonlit Tarn', 'neutral', 'might', 'northlights', 'Drink, and feel the cold run down into your sword arm.');
+  // Silver Concord
+  land('farmlands', 'Silverhold Farmlands', 'concord', 'heal2', 'citadel', 'Bread wins more wars than steel.');
+  land('abbey', 'Dawnward Abbey', 'concord', 'healAll', 'aurora', 'The bells ring for everyone inside the walls.');
+  land('quarry', 'Stonevow Quarry', 'concord', 'ward2', 'ancientforge', 'Dwarves cut the stone. The stone returns the favour.');
+  land('lecturehall', 'Aethermoor Lecture Hall', 'concord', 'scout', 'library', '"Today: the feeding habits of dragons. Sit near the door."');
+  land('barracks', 'Highmarch Barracks', 'concord', 'rally', 'concordbanner', 'Reveille comes before dawn, and so does the Concord.');
+  land('foundry', 'Sunsteel Foundry', 'concord', 'might', 'ashenforge', 'Sunsteel holds an edge and a grudge.');
+  land('eldergrove', 'Elder Grove of Lysse', 'concord', 'mend', 'silverstag', 'The oldest trees remember every elf by name.');
+  // Ember Clans
+  land('steppe', 'Bloodrock Steppe', 'clans', 'might', 'encampment', 'Red stone, red dust, red sunsets. The Clans call it home.');
+  land('huntgrounds', 'Redmoon Hunting Grounds', 'clans', 'snipe', 'greathunt', 'Nothing here dies of old age.');
+  land('scrapyard', 'Goblin Scrapyard', 'clans', 'scout', 'rocketboots', 'One goblin\'s junk is the same goblin\'s spyglass.');
+  land('mesa', 'Stormhorn Mesa', 'clans', 'heal2', 'earthwarden', 'The minotaurs say the rain here knows your wounds.');
+  land('warcamp', 'Emberclaw War Camp', 'clans', 'rally', 'redhorn', 'When the drums start, even the cooks pick up axes.');
+  land('totemring', 'Tuskfire Totem Ring', 'clans', 'ward2', 'witchdoctor', 'Seven totems, seven ancestors, all of them watching.');
+  land('arena', 'Cinderpit Arena', 'clans', 'bossHit', 'warlord', 'Practice on each other. Then go and find something bigger.');
+  RB.LANDS = Object.keys(C).filter(k => C[k].type === 'land');
+  // the ten lands a hero's deck gets when the player hasn't chosen any: the seven of the hero's faction and three neutral ones
+  RB.defaultLands = heroId => { const f = RB.HEROES[heroId].fac; return RB.LANDS.filter(k => C[k].fac === f).concat(['land_crossroads', 'land_kingsroad', 'land_watchtower']).slice(0, RB.LAND_COUNT); };
+  // a player's own choice is used only when it is exactly ten legal lands with at most two copies of each
+  RB.landsOk = (heroId, list) => Array.isArray(list) && list.length === RB.LAND_COUNT && list.every(k => C[k] && C[k].type === 'land' && (C[k].fac === 'neutral' || C[k].fac === RB.HEROES[heroId].fac) && list.filter(x => x === k).length <= 2);
+  RB.landsFor = (heroId, list) => RB.landsOk(heroId, list) ? list.slice() : RB.defaultLands(heroId);
   const addB = (id, o) => { o.id = id; B[id] = o; };
   // Molten Spire
   addB('tailswipe', { name: 'Tail Swipe', kind: 'attack', text: 'Deal 2 damage to each ally.', run: async E => { for (const t of E.allAllies()) await E.dmg(t, 2, { kind: 'boss' }); }, art: { s: 'volcano', L: [['fx', { t: 'whirl', x: 150, y: 170, c: '#ffb070' }], ['dragon', { x: 170, y: 140, s: 0.7, flip: 1 }]] } });

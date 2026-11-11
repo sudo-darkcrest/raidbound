@@ -7,7 +7,7 @@
 
   U.rollPack = function (raidId, heroic) {
     const raid = RB.RAIDS[raidId];
-    const core = RB.CORE_POOL ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'core' && d.type !== 'master');
+    const core = RB.CORE_POOL ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'core' && d.type !== 'master' && d.type !== 'land');
     const rares = core.filter(d => d.rarity === 'r'), uncs = core.filter(d => d.rarity === 'u'), coms = core.filter(d => d.rarity === 'c');
     const out = [];
     // epic treasure is half as likely as rare treasure

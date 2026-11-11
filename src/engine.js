@@ -43,12 +43,15 @@
 
     /* ---------- setup ---------- */
     cfg.party.forEach((seat, i) => {
-      const deck = shuffle(seat.deck.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
+      // #125: every deck carries ten lands on top of its 30 cards (the player's own pick, or the hero's usual ten)
+      const idOf = e => typeof e === 'string' ? e : e.id;
+      const full = seat.deck.some(e => C[idOf(e)] && C[idOf(e)].type === 'land') || cfg.noLands ? seat.deck : seat.deck.concat(RB.landsFor(seat.hero, seat.lands));
+      const deck = shuffle(full.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
         idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
         hero: { master: null, damage: 0, shield: 0, tempAtk: 0, ex: false, elusive: false, taunt: false, powerUsed: false, dead: false, pet: seat.pet || null },
         deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [],
-        resPlayed: false, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
+        resPlayed: false, spareRes: 0, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
       });
     });
     // #90: companion perks (one tiny bonus per hero; never in boss mode). petUsed marks once-per-fight perks.
@@ -377,7 +380,7 @@
       const d = C[inst.id];
       if (g.over) return { ok: false, why: 'The raid is over.' };
       if (p.hero.dead) return { ok: false, why: 'Your hero has been defeated.' };
-      if (d.type === 'quest' || d.type === 'location') return { ok: false, why: 'Play this card as a resource.' };
+      if (d.type === 'quest' || d.type === 'location' || d.type === 'land') return { ok: false, why: 'Play this card as a resource.' };
       const myTurn = isActive(p);
       if (!myTurn) {
         const inst = d.type === 'ability' && d.speed === 'instant';
@@ -399,8 +402,18 @@
     async function playResource(p, inst) {
       if (!isActive(p) || p.resPlayed) return false;
       const i = p.hand.indexOf(inst); if (i < 0) return false;
+      if (!canResource(p, inst)) return false; // #125: only three cards that aren't lands, quests or locations per fight
       p.hand.splice(i, 1);
       const d = C[inst.id];
+      if (d.type === 'land') {
+        p.res.push({ c: inst, ex: false, land: true });
+        log(`${pdef(p).name} settles ${d.name}.`, 'play');
+        p.resPlayed = true;
+        await H.anim('resource', { p: p.idx, id: inst.id });
+        H.update();
+        if (d.onLand && !g.over) { await d.onLand(api, p); H.update(); }
+        return true;
+      }
       if (d.type === 'location') {
         const old = p.res.find(r => r.loc); if (old) old.loc = false;
         p.res.push({ c: inst, ex: false, loc: true, used: false });
@@ -410,13 +423,17 @@
         log(`${pdef(p).name} takes up the quest: ${d.name}.`, 'play');
       } else {
         p.res.push({ c: inst, ex: false });
-        log(`${pdef(p).name} plays a card as a resource.`, '');
+        p.spareRes++;
+        log(`${pdef(p).name} plays a card as a resource (${p.spareRes} of ${RB.SPARE_RES} that aren't lands).`, '');
       }
       p.resPlayed = true;
       await H.anim('resource', { p: p.idx });
       H.update();
       return true;
     }
+    // #125: lands, quests and locations can always become resources; any other card only RB.SPARE_RES times a fight
+    function spareLeft(p) { return Math.max(0, RB.SPARE_RES - (p.spareRes || 0)); }
+    function canResource(p, inst) { const t = C[inst.id].type; return t === 'land' || t === 'quest' || t === 'location' || cfg.noLands || spareLeft(p) > 0; }
     async function playCard(p, inst, target) {
       const ok = canPlay(p, inst);
       if (!ok.ok) return ok;
@@ -909,7 +926,7 @@
     const api = {
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
       canPlay, canEquip, needsTarget, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
-      playResource, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
+      playResource, canResource, spareLeft, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
         { const st = stageNow(); if (st) { log(`${st.boss} blocks the way.${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss'); if (st.rule && st.rule.onEnter) await st.rule.onEnter(api); H.update(); } }

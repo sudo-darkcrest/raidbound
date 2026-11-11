@@ -31,6 +31,7 @@ async function play(cfg, tag) {
   let rounds = 0;
   const hooks = { update: () => { if (game && game.g.round > 60) throw new Error('STALL'); } };
   let game = null;
+  if (process.env.NOLANDS) cfg.noLands = true;
   game = RB.newGame(cfg, hooks);
   const t0 = Date.now();
   try { await game.start(); }

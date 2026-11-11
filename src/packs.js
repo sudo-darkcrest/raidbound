@@ -100,7 +100,7 @@
   // #95: Core packs come in 5, 10 and 20 cards (the 20 is a small bulk discount). Themed boosters are always 5.
   RB.CORE_SIZES = [[5, 75], [10, 150], [20, 275]];
   RB.packPrice = (style, size) => style === 'core' ? ((RB.CORE_SIZES.find(s => s[0] === (size || 5)) || RB.CORE_SIZES[0])[1]) : RB.PACK_PRICE;
-  RB.CORE_POOL = () => Object.values(C).filter(d => d.set === 'core' && d.type !== 'master');
+  RB.CORE_POOL = () => Object.values(C).filter(d => d.set === 'core' && d.type !== 'master' && d.type !== 'land'); // #125: lands are free to everyone, so never in packs, the shop or the Workshop
   RB.packPool = style => style === 'core' ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'frontier' && d.pack === style);
   RB.BOOSTER_SETS = ['ember', 'frost', 'void'];
 

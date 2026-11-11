@@ -56,7 +56,7 @@
     const party = st.seats.map((s, i) => {
       const ids = RB.dungeonDeck(s.hero, save.owned, swaps);
       const holoLeft = Object.assign({}, save.holo);
-      return { hero: s.hero, auto: i === 0 ? false : s.auto, name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
+      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: RB.landsFor(s.hero, save.lands[s.hero]), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
     });
     U.battle({ raid: st.id, dungeon: true, difficulty: st.mode, dungeonLevel: mode.level, dungeonFirst: mode.first, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };

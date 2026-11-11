@@ -20,7 +20,7 @@ REDO_SEC = 'Redo (do these first, top to bottom)'
 PREFIX = 'Painted digital fantasy card art for a high-fantasy collectible card game, matching the style of the attached reference images: rich painterly colour, dark ink outlines, dramatic lighting, lots of detail. '
 SUFFIX = ' Wide 16:9 landscape image, full-bleed to every edge. No text, no letters, no logo, no border, no frame, no card layout, no watermark. Do not include any real-world logos, emblems, crests or symbols from existing games, films or brands; invent original designs.'
 DBOSS_SEC = 'Dungeon bosses (new: each gets its own picture)'
-ORDER = [REDO_SEC, DBOSS_SEC, 'Omen: Crypt of the Hollow King', 'Omen: The Molten Spire', 'Omen: The Sunken Cathedral', 'Legendaries', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
+ORDER = [REDO_SEC, 'Land cards (new: 21 resource cards)', DBOSS_SEC, 'Omen: Crypt of the Hollow King', 'Omen: The Molten Spire', 'Omen: The Sunken Cathedral', 'Legendaries', 'Emberfall set (fire, forge and fury)', 'Frostwing set (ice, beasts and the far north)', 'Voidshade set (shadow, stars and secrets)', 'Core set',
          'Raid treasure: Crypt of the Hollow King', 'Raid treasure: The Molten Spire', 'Raid treasure: The Sunken Cathedral', 'Loot card (rare prize)', 'Dungeon under-boss', 'Dungeon boss card: Thornwood Hollow', 'Dungeon boss card: Bloodfang Warcamp', 'Dungeon boss card: The Runebound Vault', 'Summoned creatures & minions', 'Boss cards']
 items = []
 for k, (grp, subj) in S.items():

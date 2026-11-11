@@ -1346,3 +1346,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 
 /* #127: choices (dialogs) sit above the phone side panel, card sheet and chat, so they can always be answered */
 .overlay:not(.clear) { z-index: 88; }
+
+/* ---------- #125 lands ---------- */
+.restray .lbl .spare { display: block; font-family: var(--f-body, inherit); font-size: .72rem; color: var(--muted); letter-spacing: 0; white-space: nowrap; }
+.decklist .landhead { margin: .9rem 0 .3rem; padding-top: .6rem; border-top: 1px solid rgba(212, 166, 74, .3); cursor: pointer; }
+.landnote { margin: .2rem 0 .7rem; }
+.card.t-land .cname { background: linear-gradient(#2d4a2a, #142412); }

@@ -113,6 +113,31 @@ S = {
 'whirlpool': ('Boss card: The Sunken Cathedral (sea witch, tentacles)', 'a massive whirlpool sucking ships and debris into the dark sea'),
 'coldcurrent': ('Boss card: The Sunken Cathedral (sea witch, tentacles)', 'icy blue underwater currents with glowing runes swirling through a sunken ruin'),
 }
+# ---------------- #125 land cards (wide scenery; the place is the subject) ----------------
+LAND = 'Land cards (new: 21 resource cards)'
+S.update({
+'land_crossroads': (LAND, "a quiet crossroads of two dirt roads on a green plain at golden hour, a weathered wooden signpost with blank arms and a small traveller's lantern hanging from it, wildflowers, distant hills"),
+'land_kingsroad': (LAND, 'an ancient paved stone highway running straight across rolling moorland, lined with worn moss-covered statues of forgotten kings, a low sun, long shadows'),
+'land_glade': (LAND, 'a hidden forest glade filled with soft silver mist, shafts of pale light through old trees, glowing blue mushrooms and a ring of smooth standing stones'),
+'land_foothills': (LAND, 'grey ash-covered foothills below a smoking volcano, black rock outcrops, a few scorched dead trees, thin streams of glowing lava far away under a hazy orange sky'),
+'land_shrine': (LAND, 'a small stone shrine on an island in a perfectly still lake at dawn, the water like a mirror, lotus flowers, a single stone bridge leading to it'),
+'land_watchtower': (LAND, 'a crumbling stone watchtower on a windy hilltop, half its wall fallen away, crows circling, a wide view of forest and river far below under tall clouds'),
+'land_tarn': (LAND, 'a small dark mountain lake high among rocky peaks at night, a full moon and its reflection on the water, snow on the slopes, pine trees'),
+'land_farmlands': (LAND, 'golden wheat fields and tidy stone farmhouses with blue roofs, a windmill, farmers with a hay cart, a white castle with blue banners small on the horizon, warm afternoon sun'),
+'land_abbey': (LAND, 'a white stone abbey with tall bell towers and stained-glass windows on a green hill at sunrise, golden light breaking over it, robed figures walking in the garden'),
+'land_quarry': (LAND, 'a great dwarven stone quarry cut in terraces into a mountainside, wooden cranes and scaffolds, dwarves with hammers cutting huge square blocks, dust in sunlight'),
+'land_lecturehall': (LAND, 'a grand circular mage lecture hall with rising rows of wooden benches, floating candles and glowing blue star charts in the air, tall shelves of books, a robed elf teacher at the centre'),
+'land_barracks': (LAND, 'a stone army barracks courtyard at dawn, rows of human soldiers in silver armour and blue tabards drilling with spears, weapon racks, blue sun banners on the walls'),
+'land_foundry': (LAND, 'a bright dwarven foundry where a river of golden molten steel pours from a huge crucible into moulds, dwarf smiths in leather aprons, sparks, shafts of sunlight from high windows'),
+'land_eldergrove': (LAND, 'a grove of colossal ancient trees with silver bark and glowing green leaves, graceful elven walkways and lanterns between the trunks, fireflies, soft twilight'),
+'land_steppe': (LAND, 'a vast red-rock steppe under an enormous sky at sunset, wind-carved red stone pillars, dry golden grass, a herd of shaggy beasts far away, a red moon rising'),
+'land_huntgrounds': (LAND, 'wild savanna hunting grounds under a huge red moon, orc hunters with spears crouched in tall grass watching a herd of great horned beasts, a bone trophy pole'),
+'land_scrapyard': (LAND, 'a chaotic goblin scrapyard, towering heaps of gears, pipes and broken machines, rickety shacks with smoking chimneys, goblins in goggles hauling junk, a crane with a big hook'),
+'land_mesa': (LAND, 'a flat-topped mesa of banded orange rock under a dark thundercloud with lightning striking its top, minotaur cliff dwellings and rope bridges on its side, rain falling in the distance'),
+'land_warcamp': (LAND, 'a big orc war camp at night, hide tents and tall red war banners with invented axe symbols, roaring bonfires, war drums, orc warriors sharpening axes'),
+'land_totemring': (LAND, 'a ring of seven tall carved wooden totem poles with tusks and painted faces on a hilltop, a fire burning in the centre, glowing orange spirit smoke rising, dusk sky'),
+'land_arena': (LAND, 'a round fighting pit dug into volcanic rock and ringed with burning braziers, two orc gladiators circling each other on black sand, a cheering crowd of orcs and goblins on stone terraces'),
+})
 SKINS_PROMPT = {
  'shadow': 'Repaint the attached character exactly (same pose, face, composition and background), but change their armour to jet-black obsidian plate with a subtle violet sheen and dark silver trim.',
  'gilded': 'Repaint the attached character exactly (same pose, face, composition and background), but change their armour and metal to polished, ornate gold.',
