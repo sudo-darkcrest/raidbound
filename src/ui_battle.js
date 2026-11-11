@@ -82,13 +82,13 @@
     const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley and Skyward attackers, and abilities, can reach him. The ones that can are glowing. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
-    const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? C[p.weapon.c.id].atk : 0);
+    const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? E.weaponAtk(p) : 0);
     const heroCan = canAct && E.canAttackWith(p, 'hero');
     // #112: while the boss is in the air, light up whatever can reach him and dim the rest
     const airborne = !!(B.flying && raid.flight && !g.over);
     const reachCls = can => airborne ? (can ? ' reach' : ' noreach') : '';
     const heroReach = !!(p.weapon && (C[p.weapon.c.id].kw || []).includes('longrange'));
-    const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Shrouded', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
+    const tags = [p.hero.taunt && 'Taunt', p.hero.elusive && 'Shrouded', p.hero.tempAtk && `+${p.hero.tempAtk} ATK`, p.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('') + (E.geared(p) ? `<span class="geared" title="Geared: your hero has a weapon and at least 2 pieces of armor. Cards that say Geared get their bonus.">⚙ Geared</span>` : '');
     const petImg = p.hero.pet && RB.COSMETICS[p.hero.pet] && U.cosImg(p.hero.pet) ? `<div class="petspot"><img class="pet" alt="${esc(RB.COSMETICS[p.hero.pet].name)}" src="${U.cosImg(p.hero.pet)}" title="${esc(RB.COSMETICS[p.hero.pet].name + (RB.PET_PERKS && RB.PET_PERKS[p.hero.pet] && !g.cfg.bossPlayer ? ': ' + RB.PET_PERKS[p.hero.pet].text : ''))}"></div>` : '';
     const pw = HE[p.heroId].power;
     const powerBtn = p.hero.master ? `<button class="btn small ghost powerbtn used" disabled><b>Master Hero</b>Original power set aside</button>` :
@@ -98,7 +98,7 @@
       ${heroAtk > 0 ? `<div class="hatk" title="Attack with weapon">${heroAtk}</div>` : ''}<div class="hhp ${E.heroHp(p) <= 8 ? 'low' : ''}">${Math.max(0, E.heroHp(p))}</div>${p.hero.shield ? `<div class="shield" title="Ward: prevents the next ${p.hero.shield} damage">◈ ${p.hero.shield}</div>` : ''}
       <div class="hn"><b>${esc(hd.name)}</b><small>${HE[p.heroId].race} ${RB.CLASSES[HE[p.heroId].cls].name} · ${E.heroMax(p)} max HP</small></div></div>${powerBtn}${petImg}`;
     const gslot = (e, label, val, act, can) => e ? `<div class="gslot has ${e.ex ? 'ex' : ''} ${can ? 'can' : ''}" data-act="${act}" data-gid="${e.c.uid}" data-card="${e.c.id}"><img alt="" src="${U.cardArt(e.c.id)}"><span class="gn"><b>${esc(C[e.c.id].name)}</b>${label}</span><span class="gv">${val}</span></div>` : '';
-    let gear = p.weapon ? gslot(p.weapon, `Strike ${C[p.weapon.c.id].strike}${p.weapon.ex ? ' · used' : ''}`, '⚔ ' + C[p.weapon.c.id].atk, 'weapon', false) : `<div class="gslot">No weapon</div>`;
+    let gear = p.weapon ? gslot(p.weapon, `Strike ${E.strikeCost(p)}${p.weapon.ex ? ' · used' : ''}`, '⚔ ' + E.weaponAtk(p), 'weapon', false) : `<div class="gslot">No weapon</div>`;
     for (const slot of Object.keys(RB.SLOTS)) if (p.armor[slot]) { const d = C[p.armor[slot].c.id]; gear += gslot(p.armor[slot], `${RB.SLOTS[slot]} · pay ${d.use}${p.armor[slot].ex ? ' · used' : ''}`, '⛨ ' + d.def, 'armor', false); }
     for (const it of p.items) { const d = C[it.c.id]; gear += gslot(it, d.use ? (it.ex ? 'Used this turn' : (U.isPhone() ? 'Tap to use' : 'Click to use')) : 'Item', d.use ? (d.use.cost ? d.use.cost + '◆' : '') : '', 'item', canAct && E.itemReady(p, it)); }
     if (!Object.keys(p.armor).length && !p.items.length) gear += `<div class="gslot">No armor or items</div>`;
@@ -312,7 +312,7 @@
     }
     if (kind === 'strikeBack') {
       const w = C[d.p.weapon.c.id];
-      const v = await U.dialog(`<h3>Strike back?</h3><p>${esc(d.attacker)} attacks ${esc(E.pdef(d.p).name)}. Pay ${w.strike} to strike back with ${esc(w.name)} for ${E.heroAttackValue(d.p, true)} damage?</p><div class="acts"><button class="btn ghost" data-v="no">Don't</button><button class="btn primary" data-v="yes">Strike back</button></div>`);
+      const v = await U.dialog(`<h3>Strike back?</h3><p>${esc(d.attacker)} attacks ${esc(E.pdef(d.p).name)}. Pay ${E.strikeCost(d.p)} to strike back with ${esc(w.name)} for ${E.heroAttackValue(d.p, true)} damage?</p><div class="acts"><button class="btn ghost" data-v="no">Don't</button><button class="btn primary" data-v="yes">Strike back</button></div>`);
       return v === 'yes';
     }
     if (kind === 'armor') {
@@ -631,9 +631,9 @@
   function heroActions(p, anchor) {
     const items = [];
     if (E.canAttackWith(p, 'hero')) {
-      const useW = p.weapon && !p.weapon.ex && E.available(p) >= C[p.weapon.c.id].strike;
-      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${C[p.weapon.c.id].strike}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
-    } else if (!p.hero.ex) items.push({ why: p.weapon ? (p.weapon.ex ? 'Your weapon has already been used this round.' : `You need ${C[p.weapon.c.id].strike} ready resource${C[p.weapon.c.id].strike === 1 ? '' : 's'} to strike with your weapon.`) : 'Your hero needs a weapon (or an attack bonus) to attack.' });
+      const useW = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p);
+      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${E.strikeCost(p)}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
+    } else if (!p.hero.ex) items.push({ why: p.weapon ? (p.weapon.ex ? 'Your weapon has already been used this round.' : `You need ${E.strikeCost(p)} ready resource${E.strikeCost(p) === 1 ? '' : 's'} to strike with your weapon.`) : 'Your hero needs a weapon (or an attack bonus) to attack.' });
     else items.push({ why: 'Your hero has already attacked this turn.' });
     if (!p.hero.powerUsed && !p.hero.master) items.push({ label: `Use ${esc(HE[p.heroId].power.name)} (once per game)`, go: () => usePower(p) });
     U.popover(anchor, E.pdef(p).name, items, { card: p.hero.master ? U.cardHTML(p.hero.master) : U.heroCardHTML(p.heroId) });
@@ -747,7 +747,7 @@
         case 'hero': return heroActions(p, act);
         case 'item': { const it = p.items.find(x => x.c.uid === act.dataset.gid); if (it) return itemAction(p, it, act); return; }
         case 'res': { const r = p.res[+act.dataset.ri]; if (r) return resAction(p, r, act); return; }
-        case 'weapon': return U.popover(act, C[p.weapon.c.id].name, [{ why: `Attack with your hero to use this weapon (strike cost ${C[p.weapon.c.id].strike}). It can also strike back when your hero is attacked.` }], { card: U.cardHTML(p.weapon.c.id) });
+        case 'weapon': return U.popover(act, C[p.weapon.c.id].name, [{ why: `Attack with your hero to use this weapon (strike cost ${E.strikeCost(p)}). It can also strike back when your hero is attacked.` }], { card: U.cardHTML(p.weapon.c.id) });
         case 'armor': return U.popover(act, C[act.dataset.card].name, [{ why: 'Armor blocks automatically when your hero takes damage, if you have enough ready resources to pay its cost.' }], { card: U.cardHTML(act.dataset.card) });
       }
     }

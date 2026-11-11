@@ -179,7 +179,7 @@
     const kws = (d.type === 'weapon' ? (d.kw || []).filter(k => k !== 'longrange') : (d.kw || [])).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ');
     if (kws) h += kws + ' ';
     if (d.react && RB.REACT[d.react]) h += `<b class="kw react">React</b> — ${RB.REACT[d.react]}. `; // #99
-    if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Skyward|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete)\b(?=[: .,])/g, '<b class="kw">$1</b>');
+    if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Skyward|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete|Geared)\b(?=[: .,])/g, '<b class="kw">$1</b>');
     if (d.loot) h += ` <span class="fl" style="font-style:normal;color:#6a3a08">Scratch-off code inside: ${esc(d.loot.label)}.</span>`;
     if (d.flavor) h += `<span class="fl">${esc(d.flavor)}</span>`;
     return h;

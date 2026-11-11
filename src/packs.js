@@ -123,7 +123,7 @@
   RB.rollBooster = (rand, style, size) => {
     rand = rand || Math.random;
     if (style === 'core') return RB.rollCore(rand, size);
-    if (!RB.BOOSTER_SETS.includes(style)) style = RB.BOOSTER_SETS[Math.floor(rand() * 3)];
+    if (!RB.BOOSTER_SETS.includes(style)) style = RB.BOOSTER_SETS[Math.floor(rand() * RB.BOOSTER_SETS.length)];
     const pk = a => a[Math.floor(rand() * a.length)];
     const own = RB.packPool(style), core = RB.CORE_POOL();
     const byR = (list, r) => list.filter(d => d.rarity === r);

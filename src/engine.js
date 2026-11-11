@@ -96,10 +96,17 @@
     const gear = p => [p.weapon, ...Object.values(p.armor), ...p.items].filter(Boolean);
     const spellPower = p => gear(p).reduce((s, e) => s + (C[e.c.id].spell || 0), 0) + (p.hero.master ? (C[p.hero.master].spell || 0) : 0);
     const itemSum = (p, key) => p.items.reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
-    const heroAtk = p => p.hero.tempAtk + gear(p).reduce((s, e) => s + (C[e.c.id].heroAtk || 0), 0) + (p.hero.master ? (C[p.hero.master].heroAtk || 0) : 0);
+    // Set 4 (The Armory): Geared = the hero has a weapon and at least 2 pieces of armor
+    const geared = p => !!p && !!p.weapon && Object.keys(p.armor).length >= 2;
+    const gearSum = (p, key) => gear(p).reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
+    const strikeCost = p => p.weapon ? Math.max(0, (C[p.weapon.c.id].strike || 0) - (geared(p) ? gearSum(p, 'gearedStrike') : 0)) : 0;
+    const weaponAtk = p => p.weapon ? C[p.weapon.c.id].atk + (p.weapon.atkB || 0) + (geared(p) ? (C[p.weapon.c.id].gearedAtk || 0) : 0) + itemSum(p, 'wpnAtk') : 0;
+    const heroAtk = p => p.hero.tempAtk + (p.hero.permAtk || 0) + gear(p).reduce((s, e) => s + (C[e.c.id].heroAtk || 0), 0) + (geared(p) ? gearSum(p, 'gearedHeroAtk') : 0) + (p.hero.master ? (C[p.hero.master].heroAtk || 0) : 0);
     const allyDef = a => def(a.id);
-    const allyAtk = (p, a) => Math.max(0, (allyDef(a).atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk'));
-    const allyMax = (p, a) => (allyDef(a).hp || 1) + a.hpB + itemSum(p, 'allyHp');
+    const allyAtk = (p, a) => { const d = allyDef(a); return Math.max(0, (d.atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk') + (geared(p) ? itemSum(p, 'gearedAllyAtk') + (d.gearedBuff || 0) : 0) + (hasKw(d, 'longrange') ? itemSum(p, 'volleyAllyAtk') : 0) + (d.atkPerArmor ? Math.min(d.atkPerArmor, Object.keys(p.armor).length) : 0)); };
+    const allyMax = (p, a) => (allyDef(a).hp || 1) + a.hpB + itemSum(p, 'allyHp') + (geared(p) ? (allyDef(a).gearedBuff || 0) : 0);
+    // a card's cost after discounts (Brooch of Quick Casting, Quick Change)
+    const costOf = (p, d) => { let c = d.cost || 0; if (d.type === 'ability' && !p.abTurn) c -= gearSum(p, 'firstAbilityOff'); if ((d.type === 'weapon' || d.type === 'armor') && p.quickChange) c -= p.quickChange; return Math.max(0, c); };
     const hasKw = (d, k) => (d.kw || []).includes(k);
     const allyKw = (p, a, k) => hasKw(allyDef(a), k) || (k === 'ferocity' && p.hero.master && C[p.hero.master].allyFerocity);
     const minDef = m => TK[m.id];
@@ -150,7 +157,7 @@
     // #102: while the boss is in the air only Volley attacks reach it (abilities still can)
     function volleyAttack(p, who) {
       if (!p || who == null) return false;
-      if (who === 'hero') return !!(p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike && hasKw(C[p.weapon.c.id], 'longrange'));
+      if (who === 'hero') return !!(p.weapon && !p.weapon.ex && available(p) >= strikeCost(p) && hasKw(C[p.weapon.c.id], 'longrange'));
       return allyKw(p, who, 'longrange') || allyKw(p, who, 'skyward'); // #112 Skyward reaches a flier too
     }
     function attackTargets(p, who) {
@@ -171,6 +178,7 @@
       if (target.t === 'hero') {
         n += g.boss.events.reduce((s, e) => s + (BC[e.id].dmgTakenMod || 0), 0);
         const p = target.p;
+        if (src.kind === 'minion' && n > 0) n = Math.max(0, n - itemSum(p, 'minionDR'));
         if (p.hero.shield > 0 && n > 0) {
           const ab = Math.min(p.hero.shield, n); p.hero.shield -= ab; n -= ab;
           if (ab) { log(`${pdef(p).name}'s ward absorbs ${ab}.`, 'def'); await H.anim('shield', { ref: refId(target), amount: ab }); }
@@ -213,9 +221,10 @@
         const d = C[e.c.id];
         if (available(p) < d.use) continue;
         pay(p, d.use); e.ex = true;
-        const red = Math.min(n, d.def); n -= red;
+        const red = Math.min(n, d.def + (geared(p) ? (d.gearedDef || 0) : 0)); n -= red;
         log(`${d.name} blocks ${red}.`, 'def');
         await H.anim('armor', { ref: 'hero' + p.idx, amount: red, name: d.name });
+        if (d.blockDraw) { log(`${d.name}: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
         if (n <= 0) break;
       }
       return n;
@@ -269,6 +278,13 @@
       }
       if (t.t === 'hero') {
         const p = t.p;
+        const stand = !p.hero.lastStand && Object.values(p.armor).find(e => C[e.c.id].lastStand);
+        if (stand) {
+          p.hero.lastStand = true; p.hero.damage = heroMax(p) - 1;
+          log(`${C[stand.c.id].name} holds — ${pdef(p).name} stands at 1 health!`, 'def');
+          await H.anim('banner', { text: 'Last stand!', kind: 'def' }); H.update();
+          return;
+        }
         const shard = p.items.find(e => C[e.c.id].cheatDeath);
         if (shard) {
           // a saving item burns away for good (it doesn't go back into the deck), so it can only save you once per fight
@@ -371,7 +387,7 @@
 
     /* ---------- legality ---------- */
     function canEquip(p, d) {
-      if (p.hero.master) return true;
+      if (p.hero.master || d.anyClass) return true;
       const cls = RB.CLASSES[HEROES[p.heroId].cls];
       if (d.type === 'weapon') return cls.weapons.includes(d.wtype);
       if (d.type === 'armor') return cls.armor.includes(d.atype);
@@ -387,7 +403,7 @@
         const inst = d.type === 'ability' && d.speed === 'instant';
         if (!(inst && (g.window || (g.react && reactMatch(d, p, g.react))))) return { ok: false, why: d.speed === 'instant' ? (d.react ? `Instants can be played on your turn or in response to a boss card. This one can also React ${RB.REACT[d.react]}.` : 'Instants can be played on your turn or in response to a boss card.') : 'You can only play this on your turn.' };
       }
-      if (available(p) < d.cost) return { ok: false, why: `Needs ${d.cost} resource${d.cost === 1 ? '' : 's'} (you have ${available(p)}).` };
+      { const k = costOf(p, d); if (available(p) < k) return { ok: false, why: `Needs ${k} resource${k === 1 ? '' : 's'} (you have ${available(p)}).` }; }
       if (hasKw(d, 'unique') && d.type === 'ally' && p.allies.some(a => a.id === d.id)) return { ok: false, why: 'Unique: you already have one in play.' };
       if ((d.type === 'weapon' || d.type === 'armor') && !canEquip(p, d)) return { ok: false, why: `${RB.CLASSES[HEROES[p.heroId].cls].name}s can't use ${d.type === 'weapon' ? d.wtype + 's' : d.atype + ' armor'}.` };
       if (d.type === 'master' && p.hero.master) return { ok: false, why: 'You are already a Master Hero.' };
@@ -452,7 +468,9 @@
       if (tk && (!target || !targetsFor(tk, p).some(t => same(t, target)))) return { ok: false, why: 'Choose a target.' };
       const i = p.hand.indexOf(inst); if (i < 0) return { ok: false, why: 'Card not in hand.' };
       p.hand.splice(i, 1);
-      pay(p, d.cost);
+      pay(p, costOf(p, d));
+      if (d.type === 'ability') p.abTurn = (p.abTurn || 0) + 1;
+      if ((d.type === 'weapon' || d.type === 'armor') && p.quickChange) p.quickChange = 0;
       g.stats.cardsPlayed++;
       const ctx = { p, target, card: inst };
       await H.anim('play', { p: p.idx, id: inst.id, holo: inst.holo, target: target ? refId(target) : null });
@@ -474,16 +492,19 @@
         case 'ability':
           await d.run(api, ctx);
           p.grave.push(inst);
+          for (const e of gear(p)) { const gd = C[e.c.id]; if (gd.onAbility && !g.over) await gd.onAbility(api, p); }
           break;
         case 'weapon':
           if (p.weapon) p.grave.push(p.weapon.c);
-          p.weapon = { c: inst, ex: false };
+          p.weapon = { c: inst, ex: false, atkB: 0 };
           if (d.onEnter) await d.onEnter(api, ctx);
+          for (const e of [...p.items]) { const gd = C[e.c.id]; if (gd.onGear && !g.over) await gd.onGear(api, p); }
           break;
         case 'armor':
           if (p.armor[d.slot]) p.grave.push(p.armor[d.slot].c);
           p.armor[d.slot] = { c: inst, ex: false };
           if (d.onEnter) await d.onEnter(api, ctx);
+          for (const e of [...p.items]) { const gd = C[e.c.id]; if (gd.onGear && !g.over) await gd.onGear(api, p); }
           break;
         case 'item':
           p.items.push({ c: inst, ex: false });
@@ -502,20 +523,20 @@
       if (!isActive(p) || g.over) return false;
       if (who === 'hero') {
         if (p.hero.ex || p.hero.dead) return false;
-        const w = p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike;
+        const w = p.weapon && !p.weapon.ex && available(p) >= strikeCost(p);
         return w || heroAtk(p) > 0;
       }
       const a = who; return p.allies.includes(a) && !a.ex && !a.sick && !a.frozen && allyAtk(p, a) > 0;
     }
-    function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? C[p.weapon.c.id].atk : 0); }
+    function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? weaponAtk(p) : 0); }
     async function attack(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
       if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley and Skyward attacks can reach him.` : 'Invalid target.' };
       let atk, longrange = false, attackerT, onAttack = null, wname = '', ironHide = 0;
       if (who === 'hero') {
-        const useW = p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike;
-        if (useW) { const wd = C[p.weapon.c.id]; pay(p, wd.strike); p.weapon.ex = true; longrange = hasKw(wd, 'longrange'); onAttack = wd.onAttack; wname = ` with ${wd.name}`; }
-        atk = heroAttackValue(p, useW);
+        const useW = p.weapon && !p.weapon.ex && available(p) >= strikeCost(p);
+        if (useW) { const wd = C[p.weapon.c.id]; atk = heroAttackValue(p, true); pay(p, strikeCost(p)); p.weapon.ex = true; p.wAttacks = (p.wAttacks || 0) + 1; longrange = hasKw(wd, 'longrange'); onAttack = wd.onAttack; wname = ` with ${wd.name}`; }
+        if (!useW) atk = heroAttackValue(p, false);
         const ram = perkIs(p, 'firstAtk'); if (ram && !p.hero.petUsed) { p.hero.petUsed = true; atk += ram.n; log(`${petName(p)} charges in with ${pdef(p).name}: +${ram.n} damage.`, 'def'); }
         p.hero.ex = true;
         ironHide = (HEROES[p.heroId].ironHide && !p.hero.master) ? HEROES[p.heroId].ironHide : 0;
@@ -558,7 +579,7 @@
       return { ok: true };
     }
     const drawBlocked = p => p.hand.length >= 10 ? 'Your hand is full (10 cards), so the card would be thrown away.' : (!p.deck.length && !p.grave.length) ? 'You have no cards left to draw.' : null;
-    function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost && !(C[r.c.id].draws && drawBlocked(p)); }
+    function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost && !(C[r.c.id].draws && drawBlocked(p)) && (!C[r.c.id].lready || C[r.c.id].lready(api, p)); }
     async function useLocation(p, r, target) {
       if (!isActive(p) || !locationReady(p, r)) return { ok: false, why: 'The location can\'t be used right now.' };
       const d = C[r.c.id];
@@ -569,7 +590,7 @@
       H.update();
       return { ok: true };
     }
-    function itemReady(p, e) { const d = C[e.c.id]; return d.use && !e.ex && available(p) >= d.use.cost && (d.use.target === 'none' || !d.use.target || targetsFor(d.use.target, p).length); }
+    function itemReady(p, e) { const d = C[e.c.id]; return d.use && !e.ex && available(p) >= d.use.cost && (!d.use.ready || d.use.ready(api, p)) && (d.use.target === 'none' || !d.use.target || targetsFor(d.use.target, p).length); }
     async function useItem(p, e, target) {
       const d = C[e.c.id];
       if (!isActive(p) || !itemReady(p, e)) return { ok: false, why: 'This item can\'t be used right now.' };
@@ -593,7 +614,7 @@
       p.allies.forEach(a => { if (a.frozen) { a.frozen = false; a.ex = true; } else a.ex = false; a.sick = false; a.tmp = 0; });
       p.hero.ex = false; p.hero.tempAtk = 0; p.hero.elusive = false; p.hero.taunt = false;
       gear(p).forEach(e => e.ex = false);
-      p.tempRes = 0; p.resPlayed = false; p.bailed = false;
+      p.tempRes = 0; p.resPlayed = false; p.bailed = false; p.abTurn = 0; p.quickChange = 0;
       if (g.boss.mark && g.boss.mark.by === p.idx) g.boss.mark = null;
       H.update();
       await H.anim('turn', { p: p.idx, name: p.name, hero: pdef(p).name });
@@ -849,7 +870,7 @@
       log(`${attackerName} attacks ${nameOf(defT)}.`, 'boss');
       await H.anim('attack', { from: attackerRef === 'boss' ? 'boss' : attackerRef.uid || attackerRef, to: refId(defT), enemy: true });
       // #99 React: answer the attack before it lands
-      await reactWindow({ attacker: attackerName, atk: atkVal, defT, isBoss: !!isBoss, attackerDef });
+      await reactWindow({ attacker: attackerName, atk: atkVal, defT, isBoss: !!isBoss, attackerDef, attT: isBoss ? T.boss() : T.minion(attackerRef) });
       if (g.over || !isAlive(defT)) return;
       if (defT.t === 'hero' && shrouded(defT.p)) { log(`${pdef(defT.p).name} slips into the shadows — the attack misses!`, 'def'); await H.anim('banner', { text: 'Missed!', kind: 'def' }); return; }
       // defender's counter-damage
@@ -857,11 +878,11 @@
       if (defT.t === 'ally') back = allyAtk(defT.p, defT.a);
       else if (defT.t === 'hero') {
         const p = defT.p;
-        if (p.weapon && !p.weapon.ex && available(p) >= C[p.weapon.c.id].strike) {
+        if (p.weapon && !p.weapon.ex && available(p) >= strikeCost(p)) {
           let yes;
           if (g.settings.autoDefend || p.auto || cfg.allAuto || !H.ask) yes = RB.AI.chooseStrikeBack(api, p);
           else yes = await H.ask('strikeBack', { p, attacker: attackerName });
-          if (yes) { pay(p, C[p.weapon.c.id].strike); p.weapon.ex = true; back = heroAttackValue(p, true); log(`${pdef(p).name} strikes back with ${C[p.weapon.c.id].name}.`, 'def'); }
+          if (yes) { back = heroAttackValue(p, true); pay(p, strikeCost(p)); p.weapon.ex = true; log(`${pdef(p).name} strikes back with ${C[p.weapon.c.id].name}.`, 'def'); }
         } else if (heroAtk(p) > 0) back = heroAtk(p);
       }
       const attackerT = isBoss ? T.boss() : T.minion(attackerRef);
@@ -935,7 +956,7 @@
     /* ---------- helpers exposed to card effects ---------- */
     const api = {
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
-      canPlay, canEquip, needsTarget, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
+      canPlay, canEquip, needsTarget, geared, strikeCost, weaponAtk, costOf, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, canResource, spareLeft, discardCard, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
@@ -1016,6 +1037,8 @@
       taunt: p => { p.hero.taunt = true; log(`${pdef(p).name} taunts the enemy!`, 'def'); },
       elusive: p => { p.hero.elusive = true; log(`${pdef(p).name} melts into the shadows.`, 'def'); H.update(); },
       tempAtk: (p, k) => { p.hero.tempAtk += k; H.update(); },
+      // Set 4: a permanent bonus on the equipped weapon (cap: the most a source may add, tracked under its own key)
+      sharpen: (p, k, key, cap) => { if (!p.weapon) return 0; if (key) { const had = p.weapon[key] || 0; k = Math.max(0, Math.min(k, cap - had)); p.weapon[key] = had + k; } if (!k) return 0; p.weapon.atkB = (p.weapon.atkB || 0) + k; log(`${C[p.weapon.c.id].name} gains +${k} ATK.`, 'def'); H.update(); return k; },
       allyTempAtk: (p, k) => { p.allies.forEach(a => a.tmp += k); H.update(); },
       readyHero: p => { p.hero.ex = false; if (p.weapon) p.weapon.ex = false; },
       readyAllies: p => { p.allies.forEach(a => { a.ex = false; a.frozen = false; }); H.update(); },

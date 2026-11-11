@@ -272,7 +272,7 @@
         if (!targets.length) continue;
         let atk, myHp, lr;
         if (who === 'hero') {
-          const useW = p.weapon && !p.weapon.ex && E.available(p) >= C[p.weapon.c.id].strike;
+          const useW = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p);
           atk = E.heroAttackValue(p, useW); myHp = E.heroHp(p); lr = useW && (C[p.weapon.c.id].kw || []).includes('longrange');
         } else { atk = E.allyAtk(p, who); myHp = E.allyMax(p, who) - who.damage; lr = E.allyKw(p, who, 'longrange'); }
         let best = null, bs = -1;
@@ -496,7 +496,7 @@
     if (d.cls && !d.cls.includes(h.cls)) return false;
     if (d.prof && !h.profs.includes(d.prof)) return false;
     const cls = RB.CLASSES[h.cls];
-    if (d.type === 'weapon' && !cls.weapons.includes(d.wtype)) return false;
+    if (d.type === 'weapon' && !d.anyClass && !cls.weapons.includes(d.wtype)) return false;
     if (d.type === 'armor' && !cls.armor.includes(d.atype)) return false;
     return true;
   };
