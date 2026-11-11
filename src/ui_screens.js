@@ -172,11 +172,43 @@
     } finally { ov.remove(); }
   };
 
+  /* ---------------- #134 named decks ----------------
+     save.deckList holds every deck you have built: { id, name, hero, cards (30), lands (the ten resource cards) }.
+     save.deckUse[hero] is the one that hero plays as "My deck"; it is mirrored into save.decks[hero] and
+     save.lands[hero], which the raid setup and online lobby already read. */
+  const DK = U.decks = {
+    list() {
+      if (!Array.isArray(save.deckList)) {
+        save.deckList = []; save.deckUse = {};
+        for (const [hid, ids] of Object.entries(save.decks || {})) if (H[hid] && Array.isArray(ids) && ids.length) DK.add(hid, DK.heroShort(hid) + '\'s deck', ids, save.lands[hid], true);
+        U.persist();
+      }
+      save.deckUse = save.deckUse || {};
+      return save.deckList;
+    },
+    heroShort: hid => H[hid].name.replace(/^Ser /, '').split(/[ ,]/)[0],
+    get: id => DK.list().find(d => d.id === id),
+    ready: d => d.cards.length === RB.DECK_SIZE && d.cards.every(id => C[id] && RB.legalFor(d.hero, C[id])),
+    add(hid, name, cards, lands, use) {
+      const d = { id: 'k' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36), name: String(name || 'New deck').slice(0, 30), hero: hid, cards: (cards || []).filter(id => C[id] && !RB.isResCard(C[id])), lands: RB.landsFor(hid, lands) };
+      save.deckList.push(d); if (use) DK.use(d.id); return d;
+    },
+    // make this deck the one its hero plays
+    use(id) { const d = save.deckList.find(x => x.id === id); if (!d) return; save.deckUse = save.deckUse || {}; save.deckUse[d.hero] = d.id; save.decks[d.hero] = d.cards.slice(); if (RB.landsOk(d.hero, d.lands)) save.lands[d.hero] = d.lands.slice(); else delete save.lands[d.hero]; },
+    sync(d) { if ((save.deckUse || {})[d.hero] === d.id) DK.use(d.id); },
+    remove(id) { const d = DK.get(id); if (!d) return; save.deckList = save.deckList.filter(x => x.id !== id); if (save.deckUse[d.hero] === id) { delete save.deckUse[d.hero]; const next = save.deckList.find(x => x.hero === d.hero); if (next) DK.use(next.id); else { delete save.decks[d.hero]; delete save.lands[d.hero]; } } },
+    // the deck a hero's "My deck" edits: the one in use, or a new one made from the starter deck
+    forHero(hid) { DK.list(); let d = DK.get(save.deckUse[hid]); if (!d) d = DK.add(hid, DK.heroShort(hid) + '\'s deck', save.decks[hid] || RB.buildDeck(hid, save.owned), save.lands[hid], true); return d; },
+  };
+
   /* ---------------- deck builder ---------------- */
-  U.deckbuilder = function (hid, onDone) {
+  U.deckbuilder = function (hid, onDone, deckId) {
+    const entry = (deckId && DK.get(deckId)) || DK.forHero(hid);
+    hid = entry.hero;
     const h = H[hid];
-    let deck = (save.decks[hid] || RB.buildDeck(hid, save.owned)).slice();
-    let lands = RB.landsFor(hid, save.lands[hid]); // the ten resource cards (lands, quests, locations) that ride along with the 30
+    let name = entry.name;
+    let deck = entry.cards.slice();
+    let lands = RB.landsFor(hid, entry.lands); // the ten resource cards (lands, quests, locations) that ride along with the 30
     let filter = 'all', q = '', dlMini = false, drawn = false;
     const legalAll = Object.values(C).filter(d => RB.legalFor(hid, d) && (save.owned[d.id] || 0) > 0);
     const legal = legalAll.filter(d => !RB.isResCard(d)), legalLands = legalAll.filter(d => RB.isResCard(d)).sort((a, b) => 'land quest location'.indexOf(a.type) - 'land quest location'.indexOf(b.type));
@@ -190,7 +222,7 @@
       const maxC = Math.max(1, ...curve);
       const rows = Object.entries(counts).sort((a, b) => C[a[0]].cost - C[b[0]].cost).map(([id, k]) => `<div class="row" data-rm="${id}" title="Click to remove one"><span class="c">${['quest', 'location'].includes(C[id].type) ? '·' : C[id].cost}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('');
       const byType = t => deck.filter(id => C[id].type === t).length;
-      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2>${esc(h.name)}'s deck</h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
+      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2 class="deckttl"><input class="decknamein" maxlength="30" value="${esc(name)}" aria-label="Deck name" title="Click to rename this deck"><small>${esc(h.name)}</small></h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
         <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', master: 'Master heroes', land: `Lands, quests & locations ${lands.length}/${RB.LAND_COUNT}` }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
         ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its 30 normal cards: any mix of <b>lands, quests and locations</b>. You play one a turn as a resource. Lands are free and do one small thing as they arrive; quests and locations keep their abilities (you can only hold one location at a time). Up to 2 copies of each. Normal cards can only become resources ${RB.SPARE_RES} times a fight.</p>` : ''}
@@ -198,6 +230,7 @@
         <aside class="decklist ${dlMini ? 'mini' : ''}"><h4 data-act="dlmini">${deck.length} / ${RB.DECK_SIZE} cards<span class="dltoggle phone-only">${dlMini ? '▲ Show deck' : '▼ Hide'}</span></h4><div style="font-size:.8rem;color:var(--muted)">Allies ${byType('ally')} · Abilities ${byType('ability')} · Gear ${byType('weapon') + byType('armor') + byType('item')}</div><div class="curve">${curve.map((v, i) => `<div style="height:${(v / maxC) * 100}%"><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div><div style="height:.6rem"></div>${rows || '<p style="color:var(--muted)">' + (U.isPhone() ? 'Tap cards to add them.' : 'Click cards on the left to add them.') + '</p>'}
           <h4 class="landhead" data-f="land" title="Choose your lands, quests and locations">Lands, quests & locations ${lands.length} / ${RB.LAND_COUNT}</h4>${Object.entries(lcounts).map(([id, k]) => `<div class="row" data-rml="${id}" title="Click to remove one"><span class="c">${C[id].type === 'land' ? '◆' : C[id].type === 'quest' ? 'Q' : 'L'}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('')}</aside></div></div>`, drawn);
       drawn = true;
+      const nin = $('.decknamein', el); nin.oninput = () => { name = nin.value; };
       const inp = $('input[type=search]', el);
       inp.oninput = () => { q = inp.value.toLowerCase(); const pos = inp.selectionStart; draw(); const n = $('#deck input[type=search]'); n.focus(); n.setSelectionRange(pos, pos); };
       el.onclick = e => {
@@ -212,7 +245,7 @@
         if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); lands = RB.autoSide(hid, setup.raid, save.owned); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
         if (a.dataset.act === 'clear') { deck = []; return draw(); }
         if (a.dataset.act === 'dlmini') { dlMini = !dlMini; return draw(); }
-        if (a.dataset.act === 'done') { save.decks[hid] = deck; if (RB.landsOk(hid, lands)) save.lands[hid] = lands.slice(); else delete save.lands[hid]; U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, quests and locations, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
+        if (a.dataset.act === 'done') { entry.name = (name.trim() || DK.heroShort(hid) + '\'s deck').slice(0, 30); entry.cards = deck.slice(); entry.lands = RB.landsOk(hid, lands) ? lands.slice() : RB.defaultLands(hid); DK.sync(entry); U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, quests and locations, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
       };
       hoverPreview(el);
     }
@@ -224,10 +257,51 @@
   }
 
   /* ---------------- collection ---------------- */
-  U.collection = function () {
-    let set = 'all';
+  U.collection = function (startView) {
+    let set = 'all', view = startView === 'decks' ? 'decks' : 'cards', newHero = '';
+    const viewSeg = () => `<span class="seg colview"><button class="${view === 'cards' ? 'on' : ''}" data-view="cards">Cards</button><button class="${view === 'decks' ? 'on' : ''}" data-view="decks">Decks (${DK.list().length})</button></span>`;
+    // #134: build, name and assign decks without starting a raid
+    function drawDecks() {
+      const list = DK.list(), heroes = Object.values(H).filter(x => U.heroOpen(x.id));
+      if (!newHero || !U.heroOpen(newHero)) newHero = heroes[0].id;
+      const tile = d => { const hh = H[d.hero], inUse = save.deckUse[d.hero] === d.id, ok = DK.ready(d), q = d.lands.filter(id => C[id] && C[id].type !== 'land').length;
+        return `<div class="decktile ${inUse ? 'inuse' : ''}" data-deck="${d.id}"><img alt="" src="${U.cardArt(d.hero)}"><div class="dbody">
+          <input class="decknamein" maxlength="30" value="${esc(d.name)}" aria-label="Deck name" title="Click to rename">
+          <div class="sub">${esc(hh.name)} · ${RB.CLASSES[hh.cls].name}</div>
+          <div class="sub">${ok ? `<span class="okmsg">Ready</span> · 30 cards` : `<span class="warnmsg">Not ready</span> · ${d.cards.length} of 30 cards`} · ${d.lands.length - q} lands, ${q} quests & locations</div>
+          <div class="dacts">${inUse ? `<span class="chip ok">${esc(DK.heroShort(d.hero))} plays this deck</span>` : `<button class="btn small primary" data-dk="use" ${ok ? '' : 'disabled title="Finish the deck first (it needs exactly 30 cards)"'}>Give to ${esc(DK.heroShort(d.hero))}</button>`}<button class="btn small" data-dk="edit">Edit</button><button class="btn small ghost" data-dk="copy">Copy</button><button class="btn small ghost" data-dk="hero">Copy to another hero</button><button class="btn small ghost" data-dk="del">Delete</button></div></div></div>`; };
+      const byHero = heroes.map(x => [x, list.filter(d => d.hero === x.id)]).filter(([, l]) => l.length);
+      const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2>${viewSeg()}<span class="sp"></span><span class="chip">${list.length} deck${list.length === 1 ? '' : 's'}</span></div>
+        <p class="lede">Build as many decks as you like, name them, and choose which one each hero plays. A deck belongs to one hero, because a hero's faction and class decide which cards it can hold. The deck a hero plays is the one used when you pick <b>My deck</b> in a raid or online.</p>
+        <div class="newdeck"><label>New deck for <select id="newdeckhero" aria-label="Hero">${heroes.map(x => `<option value="${x.id}" ${x.id === newHero ? 'selected' : ''}>${esc(x.name)} · ${RB.CLASSES[x.cls].name}</option>`).join('')}</select></label><button class="btn primary" data-dk="new">Build a new deck</button><span class="sub">It starts as that hero's starter deck. Change anything you like.</span></div>
+        ${byHero.length ? byHero.map(([x, l]) => `<h3 class="sec">${esc(x.name)}</h3><div class="deckgrid">${l.map(tile).join('')}</div>`).join('') : '<p class="sub" style="margin-top:1rem">You have no decks yet. Pick a hero above and build one.</p>'}</div>`);
+      el.onchange = e => { const sel = e.target.closest('#newdeckhero'); if (sel) { newHero = sel.value; return; } const ni = e.target.closest('.decktile .decknamein'); if (ni) { const d = DK.get(ni.closest('[data-deck]').dataset.deck); if (d) { d.name = (ni.value.trim() || d.name).slice(0, 30); U.persist(); U.toast('Deck renamed.'); } } };
+      el.onclick = async e => {
+        const v = e.target.closest('[data-view]'); if (v) { view = v.dataset.view; return draw(); }
+        const b = e.target.closest('[data-dk]'); if (!b) return;
+        const back = () => U.collection('decks');
+        if (b.dataset.dk === 'new') { const d = DK.add(newHero, 'New ' + DK.heroShort(newHero) + ' deck', RB.buildDeck(newHero, save.owned), null, !save.deckUse[newHero]); U.persist(); return U.deckbuilder(newHero, back, d.id); }
+        const d = DK.get(b.closest('[data-deck]').dataset.deck); if (!d) return;
+        switch (b.dataset.dk) {
+          case 'edit': return U.deckbuilder(d.hero, back, d.id);
+          case 'use': DK.use(d.id); U.persist(); U.toast(`${DK.heroShort(d.hero)} now plays "${d.name}".`); return drawDecks();
+          case 'copy': DK.add(d.hero, ('Copy of ' + d.name).slice(0, 30), d.cards, d.lands, false); U.persist(); return drawDecks();
+          case 'hero': {
+            const others = heroes.filter(x => x.id !== d.hero);
+            const pick = await U.dialog(`<h3>Copy "${esc(d.name)}" to another hero</h3><p>Cards the new hero can't use are left out, so the copy may need a few more cards before it is ready.</p><div class="heropick">${others.map(x => `<button data-v="${x.id}"><img alt="" src="${U.cardArt(x.id)}"><span>${esc(DK.heroShort(x.id))} · ${RB.CLASSES[x.cls].name} · keeps ${d.cards.filter(id => RB.legalFor(x.id, C[id])).length}</span></button>`).join('')}</div><div class="acts"><button class="btn ghost" data-v="x">Cancel</button></div>`, { dismiss: 'x' });
+            if (!pick || !H[pick]) return;
+            const cnt = {}, cards = d.cards.filter(id => RB.legalFor(pick, C[id]) && (cnt[id] = (cnt[id] || 0) + 1) <= Math.min(RB.maxCopies(C[id]), save.owned[id] || 0));
+            const nd = DK.add(pick, (d.name + ' (' + DK.heroShort(pick) + ')').slice(0, 30), cards, d.lands.filter(id => RB.legalFor(pick, C[id])), false); U.persist();
+            U.toast(cards.length === RB.DECK_SIZE ? `Copied for ${DK.heroShort(pick)}.` : `Copied for ${DK.heroShort(pick)} with ${cards.length} of 30 cards. Add ${RB.DECK_SIZE - cards.length} more to finish it.`);
+            return cards.length === RB.DECK_SIZE ? drawDecks() : U.deckbuilder(pick, back, nd.id);
+          }
+          case 'del': { const ok = await U.dialog(`<h3>Delete "${esc(d.name)}"?</h3><p>The deck list is removed. You keep every card.</p><div class="acts"><button class="btn ghost" data-v="no">Keep it</button><button class="btn primary" data-v="yes">Delete</button></div>`, { dismiss: 'no' }); if (ok !== 'yes') return; DK.remove(d.id); U.persist(); return drawDecks(); }
+        }
+      };
+    }
     const sets = { all: 'All cards', core: 'Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
     function draw() {
+      if (view === 'decks') return drawDecks();
       const list = Object.values(C).filter(d => set === 'all' || d.set === set || d.pack === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
       const total = Object.values(C).length, have = Object.values(C).filter(d => save.owned[d.id] > 0).length;
       // #62: unscratched or unredeemed codes are shown in full; redeemed ones shrink to a compact list (Loot tab only)
@@ -242,11 +316,11 @@
       const setBtn = (k, v) => { const p = prog(k), done = p.t && p.h === p.t;
         return `<button class="btn small setbtn ${set === k ? '' : 'ghost'} ${done ? 'done' : ''}" data-set="${k}" title="${esc(v)}: ${p.h} of ${p.t} collected"><span class="sn">${esc(SHORT[k] || v)}${done ? ' <b class="sdone">&#10003;</b>' : ''}</span><span class="sc">${p.h} / ${p.t}</span><i class="sbar"><b style="width:${p.pct}%"></b></i></button>`; };
       const cur = prog(set), setLine = `<p class="setline">${set === 'all' ? 'You have collected' : `${esc(sets[set])}: you have`} <b>${cur.h} of ${cur.t}</b> cards (${cur.pct}%).${cur.h === cur.t ? ' <b class="sdone">Set complete!</b>' : ` ${cur.t - cur.h} still to find.`}</p>`;
-      const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2><span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
+      const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2>${viewSeg()}<span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters setfilters">${Object.entries(sets).map(([k, v]) => setBtn(k, v)).join('')}</div>${setLine}
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
         <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
-      el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
+      el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const vw = e.target.closest('[data-view]'); if (vw) { view = vw.dataset.view; return draw(); } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });
     }

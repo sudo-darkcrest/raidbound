@@ -155,7 +155,7 @@
         ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
       </div>
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
-        <div class="restray"><span class="lbl" title="Lands, quests and locations can always be played as resources. Any other card: only ${RB.SPARE_RES} times a fight.">Resources<small class="spare">${E.g.cfg.noLands ? '' : `spare cards ${E.spareLeft(p)}/${RB.SPARE_RES}`}</small></span><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
+        <div class="restray"><span class="lbl" title="Lands, quests and locations can always be played as resources. Any other card: only ${RB.SPARE_RES} times a fight.">Resources<small class="spare">${E.g.cfg.noLands ? '' : `spare cards ${E.spareLeft(p)}/${RB.SPARE_RES}`}</small></span><button class="pilechip" data-act="piles" title="Cards left in this hero's deck, and cards in the discard pile. ${U.isPhone() ? 'Tap' : 'Click'} to see the discard pile."><span>Deck <b>${p.deck.length}</b></span><span>Discard <b>${p.grave.length}</b></span></button><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
       <div class="handbar">${g.cfg.bossPlayer ? `<div class="hand bosshand">${(B.hand || []).map((id, k, arr) => `<div class="hc bosshc" data-bc="${id}" style="transform:rotate(${((k - (arr.length - 1) / 2) * 3).toFixed(1)}deg)">${U.cardHTML(id)}</div>`).join('') || '<div class="handnote">Your boss cards arrive on your turn</div>'}<div class="bhlabel">${esc(raid.short)}\'s hand</div>` : `<div style="${view.ov ? '--ov:' + view.ov : ''}" class="hand ${p === active && human(p) && showHand ? '' : 'other'} ${showHand ? '' : 'hidden'}">${hand}${!showHand && view.curtain == null ? `<div class="handnote">${esc(E.pdef(p).name)}'s hand · ${p.hand.length} card${p.hand.length === 1 ? '' : 's'} · hidden</div>` : ''}`}</div>
         ${view.curtain != null && view.curtain === p.idx ? `<div class="curtain"><b>${esc(E.pdef(p).name)}'s turn</b><span>Pass the computer to ${esc(E.pdef(p).name)}'s player. Everyone else, look away!</span><button class="btn primary" data-act="reveal">Show my hand</button></div>` : ''}
@@ -421,7 +421,7 @@
   }
 
   /* ---------- player actions (local, or sent through the online relay) ---------- */
-  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation', 'bail'];
+  const ACTS = ['playResource', 'playCard', 'attack', 'usePower', 'useItem', 'completeQuest', 'useLocation', 'bail', 'discardCard'];
   async function doAction(name, args) {
     const p = args[0];
     if (name === 'end') return E.endHeroTurn();
@@ -550,6 +550,9 @@
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
       else if (!spare) items.push({ why: `You have already turned ${RB.SPARE_RES} cards into resources this fight. From now on only lands, quests and locations can be played as resources.` });
     }
+    // #138: throw a card away to make room (a full hand of 10 wastes the cards you would draw next turn)
+    items.push({ label: 'Discard this card', cls: 'minor', go: () => doAct('discardCard', p, inst) });
+    if (p.hand.length >= 9) items.push({ why: `Your hand holds ${p.hand.length} of 10. You draw 2 each turn, and cards that don't fit are thrown away, so discarding one you don't need can save a better one.` });
     anchor.classList.add('open');
     U.popover(anchor, null, items, { card: U.cardHTML(inst.id, { holo: inst.holo }) });
   }
@@ -648,6 +651,11 @@
     if (act && act.dataset.act === 'speed') return changeSpeed();
     if (act && act.dataset.act === 'menu') return phoneMenu(act);
     if (act && act.dataset.act === 'chat') return U.chatToggle();
+    if (act && act.dataset.act === 'piles') { // #131: what is in the discard pile (the deck's order stays hidden)
+      const q = E.g.players[view.focus] || E.g.players[0], cnt = {}; q.grave.forEach(c => cnt[c.id] = (cnt[c.id] || 0) + 1);
+      const rows = Object.entries(cnt).sort((a, b) => C[a[0]].name.localeCompare(C[b[0]].name)).map(([id, k]) => `<li>${esc(C[id].name)}${k > 1 ? ` ×${k}` : ''}</li>`).join('');
+      return U.dialog(`<h3>${esc(E.pdef(q).name)}'s cards</h3><p><b>${q.deck.length}</b> left in the deck · <b>${q.hand.length}</b> in hand · <b>${q.grave.length}</b> in the discard pile.</p><p class="sub">When the deck runs out, the discard pile is shuffled to make a new deck.</p>${rows ? `<ul class="pilelist">${rows}</ul>` : '<p class="sub">The discard pile is empty.</p>'}<div class="acts"><button class="btn primary" data-v="ok">Close</button></div>`, { dismiss: 'ok' });
+    }
     if (act && act.dataset.act === 'drawer') { view.drawer = !view.drawer; return render(); }
     if (t === root && view.drawer) { view.drawer = false; return render(); }
     const focus = t.closest('[data-focus]');

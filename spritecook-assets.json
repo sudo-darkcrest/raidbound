@@ -62,7 +62,7 @@
  "rebirth": "350401e8-2246-409f-ab8a-a534bece8c62",
  "stormlash": "a6b85e6a-1e2f-4a27-8255-f137b593db93",
  "ancestralwrath": "12bd3c08-e300-49a9-b64e-8651c131be47",
- "backstab": "1e4621f5-e211-45d5-90fe-41d7ce40b961",
+ "backstab": "bd57aa8c-ea96-45b7-bc53-dc721b864992",
  "poisonblades": "ef8a93b0-e348-473f-a7af-4b3b48c61219",
  "evasion": "30c34307-1e47-408a-a7e9-7ac86b2afa9a",
  "fanknives": "e058afdf-2107-41d1-8ebc-eaf3c4269db0",
@@ -343,5 +343,6 @@
  "land_mesa": "d124bcfd-d56c-4bef-8a05-f4df8672c1a4",
  "land_warcamp": "7db6dcd7-96b2-4db3-8c67-25ce362aee31",
  "land_totemring": "96303342-9c96-4bbb-a91c-8faa3462dda3",
- "land_arena": "68d6ac46-c39b-45f7-a311-3c453925d96e"
+ "land_arena": "68d6ac46-c39b-45f7-a311-3c453925d96e",
+ "gravegloves": "92eed8db-0d71-45ec-8247-54688a1a3f30"
 }

@@ -432,6 +432,15 @@
       H.update();
       return true;
     }
+    // #138: on your turn you may throw a card from your hand onto your discard pile, to make room for next turn's draw
+    async function discardCard(p, inst) {
+      if (!isActive(p)) return { ok: false, why: 'You can only discard on your own turn.' };
+      const i = p.hand.indexOf(inst); if (i < 0) return { ok: false };
+      p.hand.splice(i, 1); p.grave.push(inst);
+      log(`${pdef(p).name} discards ${C[inst.id].name}.`, 'loss');
+      H.update();
+      return { ok: true };
+    }
     // #125: lands, quests and locations can always become resources; any other card only RB.SPARE_RES times a fight
     function spareLeft(p) { return Math.max(0, RB.SPARE_RES - (p.spareRes || 0)); }
     function canResource(p, inst) { const t = C[inst.id].type; return t === 'land' || t === 'quest' || t === 'location' || cfg.noLands || spareLeft(p) > 0; }
@@ -927,7 +936,7 @@
     const api = {
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
       canPlay, canEquip, needsTarget, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
-      playResource, canResource, spareLeft, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
+      playResource, canResource, spareLeft, discardCard, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
         { const st = stageNow(); if (st) { log(`${st.boss} blocks the way.${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss'); if (st.rule && st.rule.onEnter) await st.rule.onEnter(api); H.update(); } }

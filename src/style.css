@@ -1352,3 +1352,43 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .decklist .landhead { margin: .9rem 0 .3rem; padding-top: .6rem; border-top: 1px solid rgba(212, 166, 74, .3); cursor: pointer; }
 .landnote { margin: .2rem 0 .7rem; }
 .card.t-land .cname { background: linear-gradient(#2d4a2a, #142412); }
+
+/* ---------- #131 deck and discard counts, #138 discard ---------- */
+.pilechip { display: inline-flex; flex-direction: column; gap: .05rem; align-items: flex-start; margin: 0 .5rem 0 .1rem; padding: .2rem .55rem; border-radius: 6px; border: 1px solid rgba(212, 166, 74, .35); background: rgba(5, 8, 20, .55); color: var(--muted); font-family: var(--f-sc); font-size: .78rem; line-height: 1.15; cursor: pointer; white-space: nowrap; }
+.pilechip b { color: var(--vellum); font-family: var(--f-display); font-size: .95rem; }
+.pilechip:hover, .pilechip:focus-visible { border-color: var(--gilt); outline: none; }
+.pilelist { margin: .4rem 0 0; padding-left: 1.2rem; max-height: 40vh; overflow: auto; columns: 2; column-gap: 1.5rem; text-align: left; }
+@media (max-width: 760px) { .pilechip { flex-direction: row; gap: .5rem; font-size: .72rem; padding: .15rem .4rem; } .pilelist { columns: 1; } }
+
+/* ---------- #137 choose spares to dust, #139 core pack sizes ---------- */
+.sparelist { margin: -.3rem 0 1rem; border: 1px solid rgba(200, 170, 255, .3); border-radius: 10px; background: rgba(20, 12, 40, .35); }
+.sparelist summary { cursor: pointer; padding: .6rem .9rem; font-family: var(--f-sc); color: var(--vellum); }
+.sparerows { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: .4rem; padding: 0 .7rem .7rem; max-height: 46vh; overflow: auto; }
+.sparerow { display: flex; align-items: center; gap: .6rem; padding: .35rem .5rem; border-radius: 8px; background: rgba(5, 8, 20, .55); border-left: 3px solid #8a8f9c; }
+.sparerow.r-u { border-left-color: #5ac878; } .sparerow.r-r { border-left-color: #5aa0ff; } .sparerow.r-e { border-left-color: #c07aff; } .sparerow.r-l { border-left-color: #ffb43a; }
+.sparerow img { width: 58px; height: 42px; object-fit: cover; border-radius: 4px; flex: none; }
+.sparerow .sn { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sparerow .sn b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sparerow .sn small { color: var(--muted); font-size: .8rem; }
+.packhead small { font-family: var(--f-body, inherit); font-size: .95rem; font-weight: 400; color: var(--muted); margin-left: .5rem; letter-spacing: 0; }
+.coreexplain { max-width: 80ch; margin: -.2rem 0 .8rem; color: var(--vellum); }
+.sizechip { display: inline-block; padding: .05rem .5rem; border-radius: 99px; border: 1px solid var(--sc, var(--gilt)); color: var(--sc, var(--gilt)); font-family: var(--f-sc); font-size: .8rem; margin-right: .3rem; }
+@media (max-width: 560px) { .sparerows { grid-template-columns: 1fr; } .sparerow { flex-wrap: wrap; } }
+
+/* ---------- #134 decks in the Collection ---------- */
+.colview { margin-left: 1rem; }
+.newdeck { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; padding: .8rem 1rem; border: 1px solid var(--gilt-lo); border-radius: 10px; background: rgba(5, 8, 20, .55); }
+.newdeck select { margin-left: .4rem; padding: .4rem .5rem; border-radius: 6px; border: 1px solid var(--gilt-lo); background: #070a16; color: var(--vellum); font: inherit; max-width: 70vw; }
+.deckgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: .7rem; }
+.decktile { display: flex; gap: .8rem; padding: .7rem; border-radius: 10px; border: 1px solid rgba(212, 166, 74, .3); background: rgba(5, 8, 20, .6); }
+.decktile.inuse { border-color: var(--verd-hi, #6fd9a0); box-shadow: 0 0 0 1px rgba(111, 217, 160, .25) inset; }
+.decktile > img { width: 96px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #000; flex: none; }
+.decktile .dbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
+.decknamein { width: 100%; box-sizing: border-box; padding: .2rem .4rem; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--gilt-hi, #ffe7a0); font-family: var(--f-display); font-weight: 700; font-size: 1.2rem; }
+.decknamein:hover, .decknamein:focus { border-color: var(--gilt-lo); background: #070a16; outline: none; }
+.decktile .dacts { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin-top: .3rem; }
+.warnmsg { color: var(--danger); }
+.deckttl { display: flex; flex-direction: column; min-width: 0; }
+.deckttl .decknamein { font-size: 1.9rem; min-width: min(60vw, 22rem); }
+.deckttl small { font-family: var(--f-sc); font-size: .9rem; color: var(--muted); font-weight: 400; padding-left: .4rem; }
+@media (max-width: 560px) { .deckgrid { grid-template-columns: 1fr; } .decktile > img { width: 64px; height: 48px; } .deckttl .decknamein { font-size: 1.3rem; } .colview { margin-left: .4rem; } }

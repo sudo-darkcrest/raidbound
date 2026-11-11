@@ -444,7 +444,7 @@
     if (d.type === 'armor' && !cls.armor.includes(d.atype)) return false;
     return true;
   };
-  RB.maxCopies = d => (d.kw || []).includes('unique') || d.type === 'master' ? 1 : 2;
+  RB.maxCopies = d => d.limit || ((d.kw || []).includes('unique') || d.type === 'master' ? 1 : 2); // #136: a card can set its own limit
   RB.DECK_SIZE = 30;
   const STARTER = {
     aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, archon: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
