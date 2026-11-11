@@ -97,6 +97,7 @@
       <h3 class="sec">${setup.asBoss ? 'The heroes you will face' : 'Your party'}</h3><p class="lede">${setup.asBoss ? 'Pick one to four heroes for the AI to play against you. More heroes means a tougher fight — and the boss gets more health and plays more cards each turn to match.' : 'Play solo or bring up to four heroes. You take every hero\'s turn yourself (pass-and-play), or hand any of them to the AI. The boss scales with your party size.'}</p>
       <div class="seats">${seats}</div>
       ${U.bossScale(setup.raid, setup.seats.length, setup.diff, setup.asBoss)}
+      <p class="ainote neterr" ${!setup.asBoss && setup.seats.every(x => x.auto) ? '' : 'hidden'}>The AI is playing every hero. You can watch, but an all-AI party earns no gold, treasure or wins.</p>
       <div class="startbar"><span class="summary">${esc(R[setup.raid].name)} · ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''} · ${RB.RAID_DIFFS[setup.diff].name}${setup.asBoss ? ' · You are the boss' : ''}</span><button class="btn primary" data-act="go">${setup.asBoss ? 'Take the throne' : 'Enter the raid'}</button></div></div>`, keep === true);
     el.onclick = e => {
       const t = e.target;
@@ -114,7 +115,7 @@
         case 'autodeck': seat.custom = false; seat.autoD = true; return U.setup(true);
         case 'custom': seat.custom = true; seat.autoD = false; if (!save.decks[seat.hero]) save.decks[seat.hero] = RB.buildDeck(seat.hero, save.owned, setup.seats.length); U.persist(); return U.setup(true);
         case 'edit': seat.custom = true; seat.autoD = false; return U.deckbuilder(seat.hero, () => U.setup(true));
-        case 'auto': seat.auto = a.checked; return;
+        case 'auto': { seat.auto = a.checked; const nt = $('#setup .ainote'); if (nt) nt.hidden = setup.asBoss || !setup.seats.every(x => x.auto); return; }
         case 'go': return U.startRaid();
         case 'heroAuto': return;
       }

@@ -736,6 +736,16 @@
     const raid = g.raid;
     if (g.cfg.bossPlayer) return bossEndScreen();
     if (raid.dungeon) return U.dungeonEnd(g, win, cfgLast, E);
+    // #119: a party played entirely by the AI earns nothing: no gold, no treasure pack, no win, no unlocks
+    if ((g.cfg.party || []).length && g.cfg.party.every(s => s && s.auto)) {
+      if (win) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
+      const st = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${g.stats.dmgDealt}</b>damage dealt</div><div><b>${g.stats.cardsPlayed}</b>cards played</div><div><b>${g.players.filter(p => !p.hero.dead).length}/${g.players.length}</b>heroes standing</div></div>`;
+      const elA = U.show('end', `<div class="endscreen ${win ? '' : 'lose'}"><h2>${win ? 'Victory' : 'The raid has wiped'}</h2><p class="tagline">${win ? `${esc(raid.boss)} has fallen to an all-AI party.` : `${esc(raid.short)} still stands with ${Math.max(0, E.bossHp())} health.`}</p>${st}
+        <div class="goldbox"><div class="gtitle">No rewards</div><div class="gnote">The AI played every hero, so this raid pays no gold or treasure and doesn't count as a win. Play at least one hero yourself to earn rewards.</div></div>
+        <div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="party">Change party</button><button class="btn" data-act="retry">Watch again</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+      elA.onclick = e => { const a = e.target.closest('[data-act]'); if (!a) return; if (a.dataset.act === 'retry') return U.battle(JSON.parse(JSON.stringify(cfgLast))); if (a.dataset.act === 'party') return U.setup(); if (a.dataset.act === 'title') return U.title(); };
+      return;
+    }
     const heroesBefore = RB.UNLOCK_HEROES.filter(id => U.heroOpen(id));
     const gold = RB.goldFor(g, win); save.gold = (save.gold || 0) + gold.total; U.persist();
     let fresh = []; if (win) { save.wins[raid.id] = (save.wins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'heroic') save.heroicWins[raid.id] = (save.heroicWins[raid.id] || 0) + 1; if (g.cfg.difficulty === 'mythic') { save.mythicWins = save.mythicWins || {}; save.mythicWins[raid.id] = (save.mythicWins[raid.id] || 0) + 1; } U.persist(); fresh = U.checkUnlocks(); U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
