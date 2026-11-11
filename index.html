@@ -546,7 +546,14 @@ body.special-back .cardback::after, .cos.special .swatch::after { display: block
 .netp .sub, #online .sub { font-size: .82rem; color: var(--muted); }
 .netstatus { color: var(--gilt-hi); min-height: 1.2em; }
 .neterr { color: var(--danger); }
-.netwait { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 60; padding: .5rem 1rem; border-radius: 99px; background: rgba(10, 20, 30, .92); border: 1px solid #9ae8ff; color: #d8f4ff; font-size: .95rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .6); }
+/* #146: what the party is waiting for, big enough to read at a glance */
+.netwait, .idlewarn { position: fixed; left: 50%; top: 4.2rem; transform: translateX(-50%); z-index: 87; display: block; max-width: min(92vw, 44rem); padding: .85rem 1.6rem .85rem 3.1rem; border-radius: 14px; background: linear-gradient(rgba(14, 26, 44, .97), rgba(8, 14, 28, .97)); border: 2px solid #9ae8ff; color: #e8f8ff; font-family: var(--f-sc); font-size: 1.35rem; line-height: 1.3; text-align: center; box-shadow: 0 0 0 4px rgba(0, 0, 0, .45), 0 10px 34px rgba(0, 0, 0, .75), 0 0 24px rgba(154, 232, 255, .25); pointer-events: none; animation: chatpop .2s ease; }
+.netwait::before, .idlewarn::before { content: ''; position: absolute; left: 1.1rem; top: 50%; width: 1.1rem; height: 1.1rem; margin-top: -.55rem; border-radius: 50%; border: 3px solid rgba(154, 232, 255, .3); border-top-color: #9ae8ff; animation: netspin 1s linear infinite; }
+.netwait small, .idlewarn small { display: block; margin-top: .2rem; font-family: var(--f-body, inherit); font-size: 1rem; color: #ffe7a0; }
+.idlewarn { top: auto; bottom: 9.5rem; border-color: #ffb43a; color: #fff3dc; box-shadow: 0 0 0 4px rgba(0, 0, 0, .45), 0 10px 34px rgba(0, 0, 0, .75), 0 0 24px rgba(255, 180, 58, .3); }
+.idlewarn::before { border-color: rgba(255, 180, 58, .3); border-top-color: #ffb43a; }
+@keyframes netspin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .netwait::before, .idlewarn::before { animation: none; } }
 /* #32 boss minions: a bit bigger, and their attack/health badges sit inside the card */
 .unit.minion { --uw: clamp(100px, min(9.2vw, 15vh), 148px); }
 .unit.minion .un { padding-bottom: 2.35rem; text-align: center; }
@@ -1104,7 +1111,9 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   .audioset .vrow > :first-child { grid-column: 1 / -1; }
 }
 @media (max-width: 760px), (max-height: 500px) {
-  .netwait { top: 3.4rem; left: .5rem; right: .5rem; transform: none; max-width: none; font-size: .85rem; text-align: center; }
+  .netwait, .idlewarn { left: .5rem; right: .5rem; transform: none; max-width: none; font-size: 1.1rem; padding: .7rem .9rem .7rem 2.6rem; }
+  .netwait { top: 3.4rem; } .idlewarn { bottom: 11rem; }
+  .netwait::before, .idlewarn::before { left: .8rem; }
   .codebar { flex-wrap: wrap; gap: .6rem; }
   .codebar .bigcode { font-size: 2.2rem; }
 }
@@ -1413,6 +1422,11 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .deckttl .decknamein { font-size: 1.9rem; min-width: min(60vw, 22rem); }
 .deckttl small { font-family: var(--f-sc); font-size: .9rem; color: var(--muted); font-weight: 400; padding-left: .4rem; }
 @media (max-width: 560px) { .deckgrid { grid-template-columns: 1fr; } .decktile > img { width: 64px; height: 48px; } .deckttl .decknamein { font-size: 1.3rem; } .colview { margin-left: .4rem; } }
+/* #147: which deck a hero takes into a dungeon */
+.dseat .opts { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.dnote { margin: .1rem 0 0; font-size: .85rem; color: var(--muted); line-height: 1.35; }
+.dnote.ok { color: #9fe0a8; }
+.dnote.warn { color: #ffb49a; }
 
 </style>
 </head>
@@ -4524,7 +4538,7 @@ globalThis.RB.WEB_BUILD = true;
 
   // ---------- quests ----------
   add('caravan', { name: 'The Missing Caravan', type: 'quest', cost: 0, qcost: 2, text: 'Play as a resource. Complete (pay 2): draw 2 cards.', reward: async (E, c) => E.draw(c.p, 2), art: { s: 'steppe', L: [['obj', { t: 'scroll', x: 150, y: 130, s: 0.9 }]] } });
-  add('bounty', { name: 'Bounty: Ashfang Marauders', type: 'quest', cost: 0, qcost: 0, repeat: true, limit: 1, cond: (E, p, r) => E.g.minionsKilled - ((r && r.base) || 0) >= 2, progress: (E, p, r) => Math.min(2, E.g.minionsKilled - ((r && r.base) || 0)) + ' of 2 minions destroyed', condText: 'your party has destroyed 2 more minions', text: 'Play as a resource. Repeatable: each time your party destroys 2 minions, complete this to draw a card and heal 4 damage from your hero. It never turns face down and always counts as one resource. Limit 1 per deck.', reward: async (E, c) => { await E.draw(c.p, 1); await E.heal(E.heroT(c.p), 4); }, art: { s: 'tavern', L: [['obj', { t: 'scroll', x: 150, y: 120, s: 0.85 }], ['obj', { t: 'coin', x: 220, y: 160, s: 0.4 }]] } });
+  add('bounty', { name: 'Bounty: Ashfang Marauders', type: 'quest', cost: 0, qcost: 0, repeat: true, limit: 1, cond: (E, p, r) => E.g.minionsKilled - ((r && r.base) || 0) >= 5, progress: (E, p, r) => Math.min(5, E.g.minionsKilled - ((r && r.base) || 0)) + ' of 5 minions destroyed', condText: 'your party has destroyed 5 more minions', text: 'Play as a resource. Repeatable: each time your party destroys 5 minions, complete this to draw a card and heal 4 damage from your hero. It never turns face down and always counts as one resource. Limit 1 per deck.', reward: async (E, c) => { await E.draw(c.p, 1); await E.heal(E.heroT(c.p), 4); }, art: { s: 'tavern', L: [['obj', { t: 'scroll', x: 150, y: 120, s: 0.85 }], ['obj', { t: 'coin', x: 220, y: 160, s: 0.4 }]] } });
   add('moonpetals', { name: 'Gather Moonpetals', type: 'quest', cost: 0, qcost: 1, text: 'Play as a resource. Complete (pay 1): heal 5 damage from your hero.', reward: async (E, c) => E.heal(E.heroT(c.p), 5), art: { s: 'forest', L: [['fx', { t: 'heal', x: 150, y: 140, c: '#e0d0ff', leaves: 0 }], ['fx', { t: 'sparkle', n: 12, c: '#e6d8ff' }]] } });
   add('ancientforge', { name: 'Rekindle the Ancient Forge', type: 'quest', cost: 0, qcost: 3, rarity: 'u', text: 'Play as a resource. Complete (pay 3): search your deck for a weapon or armor card and put it into your hand.', reward: async (E, c) => E.tutor(c.p, d => d.type === 'weapon' || d.type === 'armor'), art: { s: 'forge', L: [fig({ race: 'dwarf', pose: 'heroic', w: 'hammer', wGlow: '#ff9a3a', x: 150, y: 210, s: 1 })] } });
   add('scout', { name: 'Scout the Enemy Lair', type: 'quest', cost: 0, qcost: 1, text: 'Play as a resource. Complete (pay 1): look at the top card of the boss deck. You may put it on the bottom.', reward: async (E, c) => E.scoutBoss(c.p), art: { s: 'rooftops', L: [fig({ race: 'goblin', pose: 'hunch', helm: 'hood', x: 120, y: 210, s: 1.1, eye: '#ffd060' })] } });
@@ -4584,7 +4598,7 @@ globalThis.RB.WEB_BUILD = true;
   const B = {};
 
   /* ---------- #125 lands: dedicated resource cards. A land is only ever played as a resource (one a turn, like any
-     resource) and does one small thing as it arrives. Every deck carries RB.LAND_COUNT of them on top of its 30 cards. ---------- */
+     resource) and does one small thing as it arrives. Every deck carries RB.LAND_COUNT of them on top of its RB.DECK_SIZE (40) cards. ---------- */
   RB.LAND_COUNT = 10;   // lands in every deck
   RB.SPARE_RES = 3;     // other cards (not lands, quests or locations) a hero may turn into resources in one fight
   const hero1 = (E, p) => E.T.hero(p);
@@ -4930,7 +4944,7 @@ globalThis.RB.WEB_BUILD = true;
 
     /* ---------- setup ---------- */
     cfg.party.forEach((seat, i) => {
-      // #125: every deck carries ten lands on top of its 30 cards (the player's own pick, or the hero's usual ten)
+      // #125: every deck carries ten lands on top of its 40 cards (the player's own pick, or the hero's usual ten)
       const idOf = e => typeof e === 'string' ? e : e.id;
       // (Nov 10: the ten are any mix of lands, quests and locations, and the 30 hold none of them)
       const full = cfg.noLands ? seat.deck : seat.deck.filter(e => !RB.isResCard(C[idOf(e)])).concat(RB.landsFor(seat.hero, seat.lands, seat.deck.map(idOf)));
@@ -5989,6 +6003,30 @@ globalThis.RB.WEB_BUILD = true;
     const o = RB.BOSSCARDS[B.omens[B.omens.length - 1]];
     return !!(o && (o.soak || /strike this turn/.test(o.text || '')));
   }
+  // #79: how much of this hero's health the coming boss turn is likely to take (0 = safe, 1 = all of it), after its
+  // ward and ready armor. The boss strikes the hero with the most threat (damage dealt this round), so a hero who is
+  // already top threat, or alone, expects the strike; minions pick at random among heroes and allies.
+  const DW = () => (RB.AI_DANGER != null ? RB.AI_DANGER : 1);
+  function danger(E, p) {
+    const heroes = E.heroes(), hp = E.heroHp(p);
+    if (!heroes.length || hp <= 0 || !DW()) return 0;
+    const B = E.g.boss, strike = E.strikeNow ? E.strikeNow() : E.raid.strike;
+    const taunt = heroes.find(h => h.hero.taunt);
+    let pS;
+    if (B.stunned) pS = 0;
+    else if (taunt) pS = taunt === p ? 1 : 0;
+    else if (heroes.length === 1) pS = 1;
+    else if (E.raid.dungeon) pS = 1 / heroes.length;
+    else { const top = Math.max(...heroes.map(h => h.threat)); pS = top > 0 && p.threat >= top ? 0.85 : 1 / heroes.length; }
+    const allies = heroes.reduce((n, h) => n + h.allies.length, 0);
+    const mAtk = E.minions().reduce((n, t) => n + E.minAtk(t.m), 0);
+    const mS = taunt ? (taunt === p ? 1 : 0) : E.raid.dungeon ? 1 / heroes.length : 1 / Math.max(1, heroes.length + allies);
+    let block = p.hero.shield || 0;
+    for (const e of Object.values(p.armor)) if (!e.ex) block += C[e.c.id].def * 0.7;
+    const incoming = Math.max(0, strike * pS + mAtk * mS + (dangerSoon(E) ? 4 : 0) - block);
+    return Math.min(1.5, incoming / hp) * DW();
+  }
+  AI.danger = danger;
   // #110: keep enough resources ready on your turn to play a React card (or defensive Instant) when the boss comes for you.
   // Resources ready again at the start of your own turn, so holding one back costs nothing next turn.
   function reactReserve(E, p) {
@@ -6007,7 +6045,39 @@ globalThis.RB.WEB_BUILD = true;
   AI.reactReserve = reactReserve;
 
   // score a playable card; returns {s, target}
-  function scoreCard(E, p, inst) {
+  function scoreCard(E, p, inst, dz) {
+    const sc = scoreCard0(E, p, inst);
+    if (sc.s <= 0) return sc;
+    // #79: with friends in the raid, the boss strikes whoever dealt the most damage this round. A hurt hero who would
+    // take the lead with this hit draws the strike on themselves; let a healthier friend lead instead.
+    if (RB.AI_THREAT !== 0 && DW() && C[inst.id].type === 'ability' && sc.target && (sc.target.t === 'boss' || sc.target.t === 'minion') && sc.s < 1000) {
+      const hs = E.heroes(), d0 = C[inst.id];
+      if (hs.length > 1 && !hs.some(h => h.hero.taunt) && !E.raid.dungeon) {
+        const top = Math.max(0, ...hs.filter(h => h !== p).map(h => h.threat)), hit = (d0.dmg || 3) + E.spellPower(p), strike = E.strikeNow ? E.strikeNow() : E.raid.strike;
+        if (p.threat <= top && p.threat + hit > top && E.heroHp(p) <= strike * 1.6 && hs.some(h => h !== p && E.heroHp(h) > E.heroHp(p) + 4)) sc.s -= 5;
+      }
+      if (sc.s <= 0) return sc;
+    }
+    if (!dz) return sc;
+    // #79: when the coming boss turn could hurt badly, defense first; damage that doesn't remove a threat waits
+    const d = C[inst.id], tags = d.tags || [], k = Math.min(1, dz), mine = sc.target && sc.target.t === 'hero' && sc.target.p === p;
+    let s = sc.s;
+    if (d.type === 'armor') s += p.armor[d.slot] ? 2 * k : 8 * k;
+    else if (d.type === 'ally') s += ((d.kw || []).includes('protector') ? 4 : 0) * k;
+    else if (d.type === 'ability') {
+      const t = sc.target;
+      if (tags.includes('heal') || tags.includes('selfheal') || tags.includes('healAll')) s += (mine || tags.includes('selfheal') ? 6 : tags.includes('healAll') ? 3 : 0) * k;
+      else if (tags.includes('shield') && d.speed !== 'instant') s += 5 * k;
+      if (tags.includes('dmg') || tags.includes('dmgRandom') || tags.includes('aoe')) {
+        const kill = t && t.t === 'minion' && (d.dmg || 3) + E.spellPower(p) >= E.hpOf(t);
+        const lethal = t && t.t === 'boss' && sc.s >= 1000;
+        if (kill) s += E.minAtk(t.m) * 1.2 * k;                    // one less attacker on the boss turn
+        else if (!lethal && !tags.includes('aoe') && !(tags.includes('heal') || tags.includes('shield'))) s *= 1 - 0.4 * k;
+      }
+    }
+    return { s, target: sc.target };
+  }
+  function scoreCard0(E, p, inst) {
     const d = C[inst.id];
     const sp = E.spellPower(p);
     const hpPct = E.heroHp(p) / E.heroMax(p);
@@ -6127,11 +6197,11 @@ globalThis.RB.WEB_BUILD = true;
       if (s > 0) acts.push({ s, go: () => E.usePower(p, target) });
     }
     // cards
-    const reserve = reactReserve(E, p), avail = E.available(p);
+    const reserve = reactReserve(E, p), avail = E.available(p), dz = danger(E, p);
     for (const inst of p.hand) {
       const d = C[inst.id];
       if (!E.canPlay(p, inst).ok) continue;
-      const sc = scoreCard(E, p, inst);
+      const sc = scoreCard(E, p, inst, dz);
       if (sc.s <= 0) continue;
       if (E.needsTarget(inst) && !sc.target) continue;
       // #110: dipping into the React reserve needs a clearly better play
@@ -6399,18 +6469,18 @@ globalThis.RB.WEB_BUILD = true;
     return true;
   };
   RB.maxCopies = d => d.limit || ((d.kw || []).includes('unique') || d.type === 'master' ? 1 : 2); // #136: a card can set its own limit
-  RB.DECK_SIZE = 30;
+  RB.DECK_SIZE = 40; // #151 (Nov 10, 2026): 40 normal cards (was 30), plus the 10 resource cards
   const STARTER = {
-    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, archon: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
-    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
-    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, tempest: 1, battleplans: 2, sentinel: 2, satchel: 1, dawnamulet: 1 },
-    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
-    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, tempest: 1, hedgewitch: 1, bram: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
-    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 2, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1, satchel: 1 },
+    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 2, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 2, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, archon: 1, satchel: 2, dawnamulet: 2, battleplans: 2, bandage: 1, divineshield: 1, bram: 1, squire: 1, fieldmedic: 1 },
+    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, archon: 1, battleplans: 2, lionknight: 2, sentinel: 1, treant: 1, satchel: 2, leatherhood: 1, dawnamulet: 2, bram: 1, battlemage: 1, squire: 1, fieldmedic: 1, rally: 1, volley: 1, companion: 1 },
+    lyssara: { fireball: 2, frostnova: 2, missiles: 2, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, tempest: 1, battleplans: 2, sentinel: 2, satchel: 2, dawnamulet: 2, bram: 1, battlemage: 1, squire: 1, fieldmedic: 1, arcaneblast: 1, rally: 1, icelance: 1 },
+    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 2, bard: 1, satchel: 2, leatherhood: 1, dawnamulet: 2, battleplans: 1, battleshout: 1, bram: 1, taunt: 1, sentinel: 1, earthwarden: 1, revenant: 1 },
+    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 2, warding: 2, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 2, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, tempest: 1, hedgewitch: 1, bram: 1, satchel: 2, dawnamulet: 2, battleplans: 2, bandage: 1, fieldmedic: 1, sentinel: 1, cavebear: 1 },
+    snix: { backstab: 2, ambush: 2, fanknives: 2, recuperate: 2, evasion: 2, kidneyshot: 1, pickpocket: 2, bandage: 2, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1, satchel: 2, leatherhood: 1, battleplans: 1, bram: 1, fieldmedic: 1, sentinel: 1, earthwarden: 1 },
   };
   // fix-sim: the worst-measured cards in these starters were swapped like for like (see tools/cardtest.js)
   RB.STARTER = STARTER;
-  // Resource cards: every deck is 30 normal cards plus RB.LAND_COUNT (10) resource cards, which are any mix of lands,
+  // Resource cards: every deck is RB.DECK_SIZE (40) normal cards plus RB.LAND_COUNT (10) resource cards, which are any mix of lands,
   // quests and locations (the user's rule, Nov 10, 2026). Quests and locations no longer go in the 30.
   // These are the quests and locations each starting hero brings; lands fill the rest of the ten.
   RB.STARTER_RES = {'aldric': ['caravan', 'ancientforge', 'citadel'], 'thorgrim': ['caravan', 'bounty', 'citadel'], 'lyssara': ['caravan', 'moonpetals', 'library'], 'grukka': ['caravan', 'slaybeast', 'encampment'], 'hruna': ['moonpetals', 'caravan', 'encampment'], 'snix': ['bounty', 'encampment']};
@@ -6478,7 +6548,7 @@ globalThis.RB.WEB_BUILD = true;
   function shape(heroId) {
     const st = RB.STARTER[heroId], out = {};
     if (st) for (const [id, k] of Object.entries(st)) { const t = C[id].type === 'location' ? 'quest' : C[id].type; out[t] = (out[t] || 0) + k; }
-    else Object.assign(out, { ally: 12, ability: 10, weapon: 2, armor: 3, item: 2, master: 1 });
+    else Object.assign(out, { ally: 16, ability: 14, weapon: 2, armor: 4, item: 3, master: 1 });
     return out;
   }
   const poolFor = (heroId, owned) => Object.values(C).filter(d => !RB.isResCard(d) && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
@@ -7137,7 +7207,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'sunken', L: [glow(150, 120, 60, '#5ad8ff', 0.6), ['obj', { t: 'ring', x: 150, y: 120, s: 1.2, gem: '#5ad8ff' }]] } });
 
   /* ======================= +1 core card ======================= */
-  C.fieldmedic = { id: 'fieldmedic', name: 'Field Medic', type: 'ally', cost: 2, atk: 1, hp: 3, race: 'Human', fac: 'neutral', rarity: 'c', set: 'core', target: 'friendlyHero', tags: ['heal'], text: 'When this enters play, heal 3 damage from a friendly hero.', onEnter: async (E, c) => { if (c.target) await E.heal(c.target, 3); }, flavor: 'Bandages, splints and a very firm voice.',
+  C.fieldmedic = { id: 'fieldmedic', name: 'Field Healer', type: 'ally', cost: 2, atk: 1, hp: 3, race: 'Human', fac: 'neutral', rarity: 'c', set: 'core', target: 'friendlyHero', tags: ['heal'], text: 'When this enters play, heal 3 damage from a friendly hero.', onEnter: async (E, c) => { if (c.target) await E.heal(c.target, 3); }, flavor: 'Bandages, splints and a very firm voice.',
     art: { s: 'castle', L: [glow(150, 130, 70, '#9aff8a', 0.4), fig({ pose: 'stand', w: 'mace', helm: 'hood', x: 130, y: 214, s: 0.86, cloth: '#e8e0c8' }), ['fx', { t: 'heal', x: 210, y: 120, c: '#9aff8a' }], ['obj', { t: 'potion', x: 230, y: 190, col: '#ff5a4a' }]] } };
 
   // #93: one more Concord common ally (the Concord had 4 common allies to the Clans' 7), so the Core set is 154 = 22 x 7
@@ -7500,6 +7570,24 @@ globalThis.RB.WEB_BUILD = true;
     const lvls = (g.boss.level - mode.level) * (win ? 0 : 10);
     return Math.round(base + lvls);
   };
+  // #147: "My deck" in a dungeon. A deck may bring as many of your own cards as your dungeon level allows
+  // (RB.dungeonSwaps). Your own cards are the ones beyond the hero's starter deck and usual quests and locations;
+  // lands are free for everyone, so they never count.
+  RB.dungeonExtra = (heroId, cards, lands) => {
+    const C = RB.CARDS, base = {};
+    for (const id of [...RB.buildDeck(heroId, null, 1), ...RB.defaultLands(heroId)]) base[id] = (base[id] || 0) + 1;
+    let n = 0;
+    for (const id of [...(cards || []), ...(lands || [])]) { if (C[id] && C[id].type === 'land') continue; if (base[id] > 0) base[id]--; else n++; }
+    return n;
+  };
+  RB.dungeonDeckCheck = (heroId, cards, lands, level) => {
+    const allow = RB.dungeonSwaps(level), full = Array.isArray(cards) && cards.length === RB.DECK_SIZE && cards.every(id => RB.CARDS[id] && RB.legalFor(heroId, RB.CARDS[id]));
+    const extra = full ? RB.dungeonExtra(heroId, cards, lands) : 0;
+    return { ok: full && extra <= allow, full, extra, allow,
+      why: !(cards && cards.length) ? `You haven't built a deck for this hero yet. Use Edit deck to make one; until then, the dungeon deck is used.`
+        : !full ? `Your deck for this hero isn't finished (it needs ${RB.DECK_SIZE} cards), so the dungeon deck is used.`
+        : extra > allow ? `Your deck brings ${extra} of your own cards; dungeon level ${level} allows ${allow}. Swap ${extra - allow} back to starter cards or level up. Until then, the dungeon deck is used.` : '' };
+  };
   // starter deck plus up to `swaps` of the best owned cards this hero can use (they replace the weakest starter cards)
   RB.dungeonDeck = (heroId, owned, swaps) => {
     const C = RB.CARDS, deck = RB.buildDeck(heroId, null, 1);
@@ -7612,28 +7700,48 @@ globalThis.RB.WEB_BUILD = true;
       for (const id of RB.defaultLands(hid)) if (C[id].type !== 'land' && !(save.owned[id] > 0)) save.owned[id] = 1; // the hero's starter quests and locations
       save.starterGot.push(hid); changed = true;
     }
+    // #151: starter decks grew by 10 cards; heroes you already have get those cards too (once)
+    if ((save.starterV || 0) < 2) {
+      for (const hid of save.starterGot) { if (!RB.STARTER[hid]) continue; for (const [id, k] of Object.entries(RB.STARTER[hid])) if (C[id] && (save.owned[id] || 0) < k) save.owned[id] = k; }
+      save.starterV = 2; changed = true;
+    }
     return changed;
   };
   U.syncStarters();
   U.save = save;
   // #57: saved decks that held a retired Master Hero card get that hero's Ascended card instead
   if (RB.fixDeck) for (const [hid, ids] of Object.entries(save.decks || {})) if (Array.isArray(ids)) save.decks[hid] = RB.fixDeck(hid, ids);
-  // Nov 10, 2026: quests and locations moved out of the 30 into the ten resource slots (shared with lands). A saved deck
-  // that still holds them has them moved across, and the gaps filled with the best cards you own for that hero.
+  // Saved decks follow the deck rules as they change (save.deckV):
+  //  - quests and locations moved out of the normal cards into the ten resource slots, shared with lands (Nov 10, 2026)
+  //  - #151: decks grew from 30 to 40 normal cards (Nov 10, 2026); a deck that was complete gets 10 more of your best cards
   U.deckMoved = [];
-  for (const [hid, ids] of Object.entries(save.decks || {})) {
-    if (!Array.isArray(ids) || !RB.HEROES[hid] || !ids.some(id => RB.isResCard(C[id]))) continue;
-    const wasFull = ids.length === RB.DECK_SIZE;
-    if (!RB.landsOk(hid, save.lands[hid])) { const want = {}; save.lands[hid] = RB.landsFor(hid, null, ids.filter(id => RB.isResCard(C[id]) && (want[id] = (want[id] || 0) + 1) <= Math.min(RB.maxCopies(C[id]), save.owned[id] || 0))); }
-    const deck = ids.filter(id => !RB.isResCard(C[id])), cnt = {}; deck.forEach(id => cnt[id] = (cnt[id] || 0) + 1);
-    if (wasFull) {
-      const opts = []; for (const d of Object.values(C)) { if (RB.isResCard(d) || !RB.legalFor(hid, d)) continue; if (d.type === 'master' && deck.some(x => C[x].type === 'master')) continue; for (let k = cnt[d.id] || 0; k < Math.min(RB.maxCopies(d), save.owned[d.id] || 0); k++) opts.push({ id: d.id, s: RB.cardScore(d) - k * 0.5 }); }
-      opts.sort((a, b) => b.s - a.s);
-      for (const o of opts) { if (deck.length >= RB.DECK_SIZE) break; if (C[o.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue; deck.push(o.id); }
+  const topUp = (hid, deck) => {
+    const cnt = {}; deck.forEach(id => cnt[id] = (cnt[id] || 0) + 1);
+    const opts = []; for (const d of Object.values(C)) { if (RB.isResCard(d) || !RB.legalFor(hid, d)) continue; for (let k = cnt[d.id] || 0; k < Math.min(RB.maxCopies(d), save.owned[d.id] || 0); k++) opts.push({ id: d.id, s: RB.cardScore(d) - k * 0.5 }); }
+    opts.sort((a, b) => b.s - a.s || (a.id < b.id ? -1 : 1));
+    for (const o of opts) { if (deck.length >= RB.DECK_SIZE) break; if (C[o.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue; deck.push(o.id); }
+    return deck;
+  };
+  if ((save.deckV || 0) < 2) {
+    for (const [hid, ids] of Object.entries(save.decks || {})) {
+      if (!Array.isArray(ids) || !RB.HEROES[hid]) continue;
+      const wasComplete = ids.length === 30, res = ids.filter(id => RB.isResCard(C[id]));
+      if (res.length && !RB.landsOk(hid, save.lands[hid])) { const want = {}; save.lands[hid] = RB.landsFor(hid, null, res.filter(id => (want[id] = (want[id] || 0) + 1) <= Math.min(RB.maxCopies(C[id]), save.owned[id] || 0))); }
+      const deck = ids.filter(id => !RB.isResCard(C[id]));
+      save.decks[hid] = wasComplete ? topUp(hid, deck) : deck;
+      if (wasComplete || res.length) U.deckMoved.push(hid);
     }
-    save.decks[hid] = deck; U.deckMoved.push(hid);
+    for (const d of Array.isArray(save.deckList) ? save.deckList : []) {
+      if (!RB.HEROES[d.hero] || !Array.isArray(d.cards)) continue;
+      const was = d.cards.length === 30, res = d.cards.some(id => RB.isResCard(C[id]));
+      if (!was && !res) continue;
+      d.cards = d.cards.filter(id => !RB.isResCard(C[id])); if (was) topUp(d.hero, d.cards);
+      if (!U.deckMoved.includes(d.hero)) U.deckMoved.push(d.hero);
+      if ((save.deckUse || {})[d.hero] === d.id) save.decks[d.hero] = d.cards.slice(); // the deck that hero plays stays the same as its named copy
+    }
+    save.deckV = 2; save.autoDecks = {};
+    try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { }
   }
-  if (U.deckMoved.length) { save.autoDecks = {}; try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } }
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
   U.persist();
   if (!save.heroicWins) save.heroicWins = {};
@@ -8373,7 +8481,7 @@ globalThis.RB.WEB_BUILD = true;
   /* ---------------- title ---------------- */
   const TITLE_ART = { s: 'volcano', L: [['glow', { x: 150, y: 120, r: 90, c: '#ff6a1a', op: 0.35 }], ['dragon', { x: 196, y: 108, s: 0.62, breath: 1 }], ['fig', { race: 'human', pose: 'heroic', w: 'sword', off: 'shield', helm: 'great', cape: 1, capeCol: '#1a2a5a', x: 70, y: 214, s: 0.5, wGlow: '#fff6c0' }], ['fig', { race: 'orc', pose: 'charge', w: 'axe', x: 106, y: 216, s: 0.45 }], ['fig', { race: 'elf', pose: 'castF', robe: 1, helm: 'hair', glowR: '#c8a0ff', x: 32, y: 214, s: 0.42 }]], p: 'embers', pn: 50 };
   U.title = function () {
-    if (U.deckMoved && U.deckMoved.length) { const n = U.deckMoved.length; U.deckMoved = []; setTimeout(() => U.toast(`${n} saved deck${n > 1 ? 's were' : ' was'} updated: quests and locations now sit with your lands, and the gaps were filled with your best cards.`), 900); }
+    if (U.deckMoved && U.deckMoved.length) { const n = U.deckMoved.length; U.deckMoved = []; setTimeout(() => U.toast(`${n} saved deck${n > 1 ? 's were' : ' was'} updated: decks now hold ${RB.DECK_SIZE} cards plus your 10 lands, quests and locations, and the new spaces were filled with your best cards.`), 900); }
     RB.AUDIO.music('title');
     const wins = Object.values(save.wins).reduce((a, b) => a + b, 0);
     // #17: pick one of the two painted backdrops at random; each has its own text layout
@@ -8408,7 +8516,7 @@ globalThis.RB.WEB_BUILD = true;
         <div class="heropick">${Object.values(H).map(x => { const open = U.heroOpen(x.id); return `<button class="${x.id === s.hero ? 'on' : ''} ${open ? '' : 'locked'}" data-hero="${x.id}" title="${esc(open ? x.name : 'Locked: ' + x.unlock.text)}"><img alt="" src="${U.cardArt(x.id)}">${open ? '' : '<i class="lockicon" aria-hidden="true"></i>'}<span>${open ? esc(x.name.replace(/^Ser /, '').split(' ')[0]) + ' · ' + RB.CLASSES[x.cls].name : 'Locked'}</span></button>`; }).join('')}</div>
         <div class="heroinfo">${heroBlurb(h)}</div>
         <div class="opts"><span class="seg"><button class="${!s.custom && !s.autoD ? 'on' : ''}" data-act="starter">Starter deck</button><button class="${s.autoD ? 'on' : ''}" data-act="autodeck" title="Builds the strongest deck for this hero against this raid from the cards you own">Auto deck</button><button class="${s.custom ? 'on' : ''}" data-act="custom">My deck</button></span><button class="btn small" data-act="edit">Edit deck</button></div>${s.autoD ? `<div class="opts" style="color:var(--muted);font-size:.85rem">Auto deck: tuned for ${esc(R[setup.raid].short)} with ${setup.seats.length} hero${setup.seats.length > 1 ? 'es' : ''}. It's rebuilt when you change the raid or party.</div>` : ''}
-        <div class="opts">${setup.asBoss ? '<span style="color:var(--muted);font-size:.85rem">The AI plays this hero against you.</span>' : `<label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>`}${!deckOk ? '<span class="chip" style="color:#ffb49a">Your deck needs 30 cards — the starter deck will be used</span>' : ''}</div></div>`;
+        <div class="opts">${setup.asBoss ? '<span style="color:var(--muted);font-size:.85rem">The AI plays this hero against you.</span>' : `<label class="toggle"><input type="checkbox" data-act="auto" ${s.auto ? 'checked' : ''}> Let the AI play this hero</label>`}${!deckOk ? `<span class="chip" style="color:#ffb49a">Your deck needs ${RB.DECK_SIZE} cards — the starter deck will be used</span>` : ''}</div></div>`;
     }).join('') + (setup.seats.length < 4 ? `<button class="addseat" data-act="add">+ Add a hero</button>` : '');
     const el = U.show('setup', `<div class="page"><div class="pagehead"><h2>Choose your raid</h2><span class="sp"></span></div>
       <div class="raids">${raids}</div>
@@ -8478,7 +8586,7 @@ globalThis.RB.WEB_BUILD = true;
 
   /* ---------------- auto deck (#23) ---------------- */
   U.autoDeckFor = async function (hid, raidId, partySize) {
-    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0), 'r2'].join('|'); // r2: decks no longer hold quests or locations
+    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0), 'r3'].join('|'); // r3: 40-card decks (#151)
     save.autoDecks = save.autoDecks || {};
     if (save.autoDecks[key]) return save.autoDecks[key];
     const ov = document.createElement('div'); ov.className = 'overlay';
@@ -8545,7 +8653,7 @@ globalThis.RB.WEB_BUILD = true;
       const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2 class="deckttl"><input class="decknamein" maxlength="30" value="${esc(name)}" aria-label="Deck name" title="Click to rename this deck"><small>${esc(h.name)}</small></h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
         <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', master: 'Master heroes', land: `Lands, quests & locations ${lands.length}/${RB.LAND_COUNT}` }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
-        ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its 30 normal cards: any mix of <b>lands, quests and locations</b>. You play one a turn as a resource. Lands are free and do one small thing as they arrive; quests and locations keep their abilities (you can only hold one location at a time). Up to 2 copies of each. Normal cards can only become resources ${RB.SPARE_RES} times a fight.</p>` : ''}
+        ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its ${RB.DECK_SIZE} normal cards: any mix of <b>lands, quests and locations</b>. You play one a turn as a resource. Lands are free and do one small thing as they arrive; quests and locations keep their abilities (you can only hold one location at a time). Up to 2 copies of each. Normal cards can only become resources ${RB.SPARE_RES} times a fight.</p>` : ''}
         <div class="pool">${list.map(d => { const k = (onLands ? lcounts : counts)[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
         <aside class="decklist ${dlMini ? 'mini' : ''}"><h4 data-act="dlmini">${deck.length} / ${RB.DECK_SIZE} cards<span class="dltoggle phone-only">${dlMini ? '▲ Show deck' : '▼ Hide'}</span></h4><div style="font-size:.8rem;color:var(--muted)">Allies ${byType('ally')} · Abilities ${byType('ability')} · Gear ${byType('weapon') + byType('armor') + byType('item')}</div><div class="curve">${curve.map((v, i) => `<div style="height:${(v / maxC) * 100}%"><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div><div style="height:.6rem"></div>${rows || '<p style="color:var(--muted)">' + (U.isPhone() ? 'Tap cards to add them.' : 'Click cards on the left to add them.') + '</p>'}
           <h4 class="landhead" data-f="land" title="Choose your lands, quests and locations">Lands, quests & locations ${lands.length} / ${RB.LAND_COUNT}</h4>${Object.entries(lcounts).map(([id, k]) => `<div class="row" data-rml="${id}" title="Click to remove one"><span class="c">${C[id].type === 'land' ? '◆' : C[id].type === 'quest' ? 'Q' : 'L'}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('')}</aside></div></div>`, drawn);
@@ -8558,14 +8666,14 @@ globalThis.RB.WEB_BUILD = true;
         const f = t.closest('[data-f]'); if (f) { filter = f.dataset.f; return draw(); }
         const rml = t.closest('[data-rml]'); if (rml) { lands.splice(lands.indexOf(rml.dataset.rml), 1); return draw(); }
         const ad = t.closest('[data-add]'); if (ad && RB.isResCard(C[ad.dataset.add])) { const d = C[ad.dataset.add]; if (lands.length >= RB.LAND_COUNT) return U.toast(`All ${RB.LAND_COUNT} resource slots are full. Remove one first (click it in the list).`); if ((lcounts[d.id] || 0) >= Math.min(RB.maxCopies(d), save.owned[d.id] || 0)) return U.toast((lcounts[d.id] || 0) >= RB.maxCopies(d) ? 'That\'s the most copies allowed.' : 'You don\'t own more copies of this card.'); lands.push(d.id); return draw(); }
-        if (ad) { const d = C[ad.dataset.add]; const k = counts[d.id] || 0; if (deck.length >= RB.DECK_SIZE) return U.toast('Your deck already has 30 cards. Remove one first.'); if (k >= Math.min(RB.maxCopies(d), save.owned[d.id] || 0)) return U.toast(k >= RB.maxCopies(d) ? 'That\'s the most copies allowed.' : 'You don\'t own more copies of this card.'); deck.push(d.id); return draw(); }
+        if (ad) { const d = C[ad.dataset.add]; const k = counts[d.id] || 0; if (deck.length >= RB.DECK_SIZE) return U.toast(`Your deck already has ${RB.DECK_SIZE} cards. Remove one first.`); if (k >= Math.min(RB.maxCopies(d), save.owned[d.id] || 0)) return U.toast(k >= RB.maxCopies(d) ? 'That\'s the most copies allowed.' : 'You don\'t own more copies of this card.'); deck.push(d.id); return draw(); }
         const rm = t.closest('[data-rm]'); if (rm) { deck.splice(deck.indexOf(rm.dataset.rm), 1); return draw(); }
         const a = t.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'starter') { deck = RB.buildDeck(hid, save.owned); lands = RB.defaultLands(hid); return draw(); }
         if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); lands = RB.autoSide(hid, setup.raid, save.owned); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
         if (a.dataset.act === 'clear') { deck = []; return draw(); }
         if (a.dataset.act === 'dlmini') { dlMini = !dlMini; return draw(); }
-        if (a.dataset.act === 'done') { entry.name = (name.trim() || DK.heroShort(hid) + '\'s deck').slice(0, 30); entry.cards = deck.slice(); entry.lands = RB.landsOk(hid, lands) ? lands.slice() : RB.defaultLands(hid); DK.sync(entry); U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, quests and locations, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
+        if (a.dataset.act === 'done') { entry.name = (name.trim() || DK.heroShort(hid) + '\'s deck').slice(0, 30); entry.cards = deck.slice(); entry.lands = RB.landsOk(hid, lands) ? lands.slice() : RB.defaultLands(hid); DK.sync(entry); U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly ${RB.DECK_SIZE} to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, quests and locations, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
       };
       hoverPreview(el);
     }
@@ -8588,8 +8696,8 @@ globalThis.RB.WEB_BUILD = true;
         return `<div class="decktile ${inUse ? 'inuse' : ''}" data-deck="${d.id}"><img alt="" src="${U.cardArt(d.hero)}"><div class="dbody">
           <input class="decknamein" maxlength="30" value="${esc(d.name)}" aria-label="Deck name" title="Click to rename">
           <div class="sub">${esc(hh.name)} · ${RB.CLASSES[hh.cls].name}</div>
-          <div class="sub">${ok ? `<span class="okmsg">Ready</span> · 30 cards` : `<span class="warnmsg">Not ready</span> · ${d.cards.length} of 30 cards`} · ${d.lands.length - q} lands, ${q} quests & locations</div>
-          <div class="dacts">${inUse ? `<span class="chip ok">${esc(DK.heroShort(d.hero))} plays this deck</span>` : `<button class="btn small primary" data-dk="use" ${ok ? '' : 'disabled title="Finish the deck first (it needs exactly 30 cards)"'}>Give to ${esc(DK.heroShort(d.hero))}</button>`}<button class="btn small" data-dk="edit">Edit</button><button class="btn small ghost" data-dk="copy">Copy</button><button class="btn small ghost" data-dk="hero">Copy to another hero</button><button class="btn small ghost" data-dk="del">Delete</button></div></div></div>`; };
+          <div class="sub">${ok ? `<span class="okmsg">Ready</span> · ${RB.DECK_SIZE} cards` : `<span class="warnmsg">Not ready</span> · ${d.cards.length} of ${RB.DECK_SIZE} cards`} · ${d.lands.length - q} lands, ${q} quests & locations</div>
+          <div class="dacts">${inUse ? `<span class="chip ok">${esc(DK.heroShort(d.hero))} plays this deck</span>` : `<button class="btn small primary" data-dk="use" ${ok ? '' : `disabled title="Finish the deck first (it needs exactly ${RB.DECK_SIZE} cards)"`}>Give to ${esc(DK.heroShort(d.hero))}</button>`}<button class="btn small" data-dk="edit">Edit</button><button class="btn small ghost" data-dk="copy">Copy</button><button class="btn small ghost" data-dk="hero">Copy to another hero</button><button class="btn small ghost" data-dk="del">Delete</button></div></div></div>`; };
       const byHero = heroes.map(x => [x, list.filter(d => d.hero === x.id)]).filter(([, l]) => l.length);
       const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2>${viewSeg()}<span class="sp"></span><span class="chip">${list.length} deck${list.length === 1 ? '' : 's'}</span></div>
         <p class="lede">Build as many decks as you like, name them, and choose which one each hero plays. A deck belongs to one hero, because a hero's faction and class decide which cards it can hold. The deck a hero plays is the one used when you pick <b>My deck</b> in a raid or online.</p>
@@ -8612,7 +8720,7 @@ globalThis.RB.WEB_BUILD = true;
             if (!pick || !H[pick]) return;
             const cnt = {}, cards = d.cards.filter(id => RB.legalFor(pick, C[id]) && (cnt[id] = (cnt[id] || 0) + 1) <= Math.min(RB.maxCopies(C[id]), save.owned[id] || 0));
             const nd = DK.add(pick, (d.name + ' (' + DK.heroShort(pick) + ')').slice(0, 30), cards, d.lands.filter(id => RB.legalFor(pick, C[id])), false); U.persist();
-            U.toast(cards.length === RB.DECK_SIZE ? `Copied for ${DK.heroShort(pick)}.` : `Copied for ${DK.heroShort(pick)} with ${cards.length} of 30 cards. Add ${RB.DECK_SIZE - cards.length} more to finish it.`);
+            U.toast(cards.length === RB.DECK_SIZE ? `Copied for ${DK.heroShort(pick)}.` : `Copied for ${DK.heroShort(pick)} with ${cards.length} of ${RB.DECK_SIZE} cards. Add ${RB.DECK_SIZE - cards.length} more to finish it.`);
             return cards.length === RB.DECK_SIZE ? drawDecks() : U.deckbuilder(pick, back, nd.id);
           }
           case 'del': { const ok = await U.dialog(`<h3>Delete "${esc(d.name)}"?</h3><p>The deck list is removed. You keep every card.</p><div class="acts"><button class="btn ghost" data-v="no">Keep it</button><button class="btn primary" data-v="yes">Delete</button></div>`, { dismiss: 'no' }); if (ok !== 'yes') return; DK.remove(d.id); U.persist(); return drawDecks(); }
@@ -8748,7 +8856,7 @@ globalThis.RB.WEB_BUILD = true;
         <p class="fg-lead">Well met, raider. This little book was stitched together by the guild's survivors. Read it before you go below, and keep it close once you're there.</p>
         <section><h4>The goal</h4><p>Your party of heroes fights a raid boss. Bring the boss to 0 health to win and earn a treasure pack. If every hero falls, the raid wipes.</p></section>
         <section><h4>Your hero</h4><p>Each hero has health, a faction (Silver Concord or Ember Clans), a race, a class, a specialization and two professions. These traits decide which cards can go in the deck. Every hero also has a unique power you can use once per game.</p></section>
-        <section><h4>Resources</h4><p>Once per turn you may play one card from your hand as a resource. You begin with two. Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its 30 normal cards: any mix of lands, quests and locations. <b>Lands</b> are free and each does one small thing as it arrives (a little healing, a ward, a point of damage). You may also turn any other card face-down into a resource, but only <b>${RB.SPARE_RES} times in a fight</b>, so choose which cards to give up. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, never count against those ${RB.SPARE_RES}, and keep their special abilities. They share the ten resource slots with your lands, so each one you bring means one land fewer.</p>
+        <section><h4>Resources</h4><p>Once per turn you may play one card from your hand as a resource. You begin with two. Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its ${RB.DECK_SIZE} normal cards: any mix of lands, quests and locations. <b>Lands</b> are free and each does one small thing as it arrives (a little healing, a ward, a point of damage). You may also turn any other card face-down into a resource, but only <b>${RB.SPARE_RES} times in a fight</b>, so choose which cards to give up. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, never count against those ${RB.SPARE_RES}, and keep their special abilities. They share the ten resource slots with your lands, so each one you bring means one land fewer.</p>
         ${fgEx(fgU('', '◆ ◆ ◆ ◆', '4 ready') + fgA('spend 2 on your turn') + fgU('', '◆ ◆ ◇ ◇', '2 still ready') + fgA('the boss attacks') + fgU(ca('laststand'), 'Last Stand', 'costs 2 · played as a React', 'ok'), 'End your turn with 2 resources ready and Last Stand is waiting for the boss. Next turn, all 4 ready again.')}</section>
         <section><h4>Your turn</h4><p>Ready everything, draw two cards, then act in any order: play one resource, play cards, attack, use items, complete quests, use your location and use your hero power. Press <b>End turn</b> when you're done, or <b>Auto-play turn</b> to let the AI finish it for you.</p></section>
         <section><h4>Card types</h4><ul><li><b>Allies</b> fight beside you. They can attack the turn after they arrive, unless they have Swift.</li><li><b>Abilities</b> take effect at once. Basic abilities are played on your turn. <b>Instants</b> can also be played when a boss card is revealed, and <b>React</b> cards when their trigger happens.</li><li><b>Weapons</b> add attack. Pay the strike cost each time you use one.</li><li><b>Armor</b> goes in a slot (head, chest, hands, legs, feet or off-hand). When your hero would take damage, exhaust it and pay its cost to block.</li><li><b>Items</b> are rings, potions and trinkets with lasting or one-shot effects.</li><li><b>Quests</b> are resources you can complete for a reward; they then turn face down.</li><li><b>Locations</b> are resources with an ability you can use once per turn. You control one at a time.</li><li><b>Master Heroes</b> replace your hero. Damage and gear carry over, but your original power does not.</li><li><b>Loot cards</b> play like normal cards and hide a scratch-off code for the Vault.</li></ul></section>` },
@@ -9284,7 +9392,8 @@ globalThis.RB.WEB_BUILD = true;
   async function applyNet(c, fromMe) {
     view.busy = true; render();
     try {
-      if (c.t === 'act') { const r = await doAction(c.name, deser(c.args)); if (fromMe && r && r.ok === false && r.why) U.toast(r.why); }
+      if (c.t === 'act') { actsApplied++; const r = await doAction(c.name, deser(c.args)); if (fromMe && r && r.ok === false && r.why) U.toast(r.why); }
+      else if (c.t === 'idle') await idleTurn(c);
       else if (c.t === 'ai' || c.t === 'human') await seatControl(c);
     } catch (err) { console.error(err); U.toast('Sync problem: ' + err.message); }
     view.busy = false; afterAction();
@@ -9295,35 +9404,97 @@ globalThis.RB.WEB_BUILD = true;
     p.auto = true; p.wasAi = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
     if (E.g.phase === 'main' && E.g.turn === p.idx && !E.g.over) await doAction('auto', [p]);
   }
+  // #149: a player who makes no move for 1:30 on their turn has it finished by the AI. Every computer watches the clock and
+  // may send an 'idle' command; it carries the turn and the number of moves made so far, so it is acted on only if the
+  // player still hasn't moved when it arrives (in command order, so every computer agrees). The player stays in control
+  // of their next turn.
+  const idleMs = () => RB.IDLE_MS || 90000;
+  const IDLE_V = {};
+  let actsApplied = 0, promptN = 0, idleIv = null;
+  const idle = { key: null, since: 0, sent: false };
+  const turnKey = () => E.g.round + ':' + E.g.turn + ':' + actsApplied;
+  const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function idleBanner(text) {
+    let el = document.querySelector('.idlewarn');
+    if (!text) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.className = 'idlewarn'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.innerHTML = text;
+  }
+  function idleTick() {
+    if (!net || net.closed || !E || E.g.over) { idleBanner(null); return; }
+    const g = E.g, p = g.players[g.turn];
+    if (net.replaying || g.phase !== 'main' || !p || p.auto || g.cfg.bossPlayer) { idle.key = null; idleBanner(null); return; }
+    const key = turnKey();
+    if (idle.key !== key) { idle.key = key; idle.since = Date.now(); idle.sent = false; }
+    const left = idleMs() - (Date.now() - idle.since);
+    const nm = esc(g.cfg.party[p.idx].name || E.pdef(p).name), me = net.mine(p.idx);
+    if (left <= 30000) idleBanner(me ? `<b>Still there?</b> The AI will finish your turn in <b>${mmss(left)}</b>. Make any move to keep playing.` : `<b>${nm}</b> hasn't moved for a while. The AI will finish their turn in <b>${mmss(left)}</b>.`);
+    else idleBanner(null);
+    if (left <= 0 && !idle.sent) { idle.sent = true; net.send({ t: 'idle', key }); }
+  }
+  async function idleTurn(c) {
+    const g = E.g; if (g.over || g.phase !== 'main' || c.key !== turnKey()) return; // they moved in time, or it's already over
+    const p = g.players[g.turn]; if (!p || p.auto) return;
+    idleBanner(null); U.closePop(); U.hidePreview(); view.mode = null;
+    U.toast(net.mine(p.idx) ? 'You made no move for 1:30, so the AI finished your turn. Your next turn is yours again.' : `${g.cfg.party[p.idx].name} made no move for 1:30, so the AI finished their turn.`);
+    await doAction('auto', [p]);
+  }
+  // close an open question when the AI answers it for an idle player
+  const closeAsk = () => { document.querySelectorAll('.overlay:not(.clear)').forEach(o => o.remove()); U.closePop(); };
+
   // #127: an answer from one seat, in command order. If this is my own prompt and my computer is still replaying the
   // log after a reconnect, ask as soon as the replay has caught up without finding the answer (before, it waited forever).
-  async function netAnswer(seatIdx, askMine) {
+  async function netAnswer(seatIdx, askMine, k) {
     for (;;) {
       if (askMine && net.replaying && await net.liveOrQueued()) { const a = askMine; askMine = null; await a(); }
       const m = await net.next();
-      if (m.c.t === 'ans') return m.c.v;
+      if (m.c.t === 'ans') { if (k != null && m.c.k != null && m.c.k !== k) continue; return m.c.v; } // #149: a late answer to an earlier question is ignored
       if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) { p.auto = true; p.wasAi = true; } if (m.c.seat === seatIdx) return null; }
       if (m.c.t === 'human') { const p = E.g.players[m.c.seat]; if (p) p.auto = false; }
     }
   }
   async function seatAnswer(idx, askFn, waitText) {
+    const k = ++promptN; // #149: every question has a number, the same on every computer
     const q = E.g.players[idx], mine = net.mine(idx) && !q.auto;
-    const askMine = async () => { net.wait(null); net.send({ t: 'ans', v: await askFn() }); };
-    if (mine && net.live()) await askMine(); else net.wait(mine ? 'Getting back in step with the raid…' : waitText);
-    const v = await netAnswer(idx, mine && net.replaying ? askMine : null); net.wait(null);
-    return v;
+    let timer = null, tick = null, done = false;
+    const askMine = async () => {
+      net.wait(null);
+      const idleP = new Promise(res => { timer = setTimeout(() => res(IDLE_V), idleMs()); });
+      const ANSWERED = {};
+      const v = await Promise.race([askFn(), idleP, net.waitAns(k).then(() => ANSWERED)]); clearTimeout(timer);
+      if (v === ANSWERED) { closeAsk(); U.toast('Time ran out on that choice, so the AI made it for you.'); return; } // another computer's clock ran out first
+      if (v === IDLE_V) { closeAsk(); U.toast('Time ran out on that choice, so the AI made it for you.'); net.send({ t: 'ans', v: { idle: 1 }, k }); }
+      else net.send({ t: 'ans', v, k });
+    };
+    if (mine && net.live()) await askMine();
+    else {
+      net.wait(mine ? 'Getting back in step with the raid…' : waitText);
+      if (!mine && !net.replaying) { // after 1:30 the AI answers for them
+        const since = Date.now();
+        tick = setInterval(() => {
+          if (done || net.closed) return clearInterval(tick);
+          const left = idleMs() - (Date.now() - since);
+          if (left <= 30000) net.wait(`${waitText}<small>The AI answers for them in <b>${mmss(left)}</b>.</small>`);
+          if (left <= 0) { clearInterval(tick); if (!net.replaying) net.send({ t: 'ans', v: { idle: 1 }, k }); }
+        }, 1000);
+      }
+    }
+    try { return await netAnswer(idx, mine && net.replaying ? askMine : null, k); }
+    finally { done = true; clearInterval(tick); clearTimeout(timer); net.wait(null); }
   }
+  const idleV = v => v && typeof v === 'object' && v.idle;
   async function netAsk(kind, d) {
     const nm = i => esc(E.g.cfg.party[i].name);
     if (kind === 'scout') {
       const v = await seatAnswer(d.p.idx, () => ask(kind, d, true), `${nm(d.p.idx)} is scouting…`);
-      return v || 'bottom';
+      return v && !idleV(v) ? v : 'bottom';
     }
     if (kind === 'instant') {
       for (const q of d.players) {
         if (q.auto) continue;
         const v = await seatAnswer(q.idx, async () => { const r = await ask('instant', Object.assign({}, d, { players: [q] }), true); return r ? { uid: r.inst.uid, R: r.target ? E.refId(r.target) : null } : null; },
           `Waiting for ${nm(q.idx)} to answer ${esc(d.card.name)}…`);
+        if (idleV(v)) { const c = RB.AI.chooseInstant(E, q, d.card); if (c) return c; continue; } // #149: the AI answers for an idle player
         if (v) { const inst = q.hand.find(c => c.uid === v.uid); if (inst) return { p: q, inst, target: v.R ? findRef(v.R) : null }; }
       }
       return null;
@@ -9335,13 +9506,14 @@ globalThis.RB.WEB_BUILD = true;
         const mineOpts = d.options.filter(o => o.p === q);
         const v = await seatAnswer(idx, async () => { const r = await ask('react', Object.assign({}, d, { options: mineOpts }), true); return r ? { uid: r.inst.uid } : null; },
           `Waiting for ${nm(idx)} to react to ${esc(d.ctx.attacker)}…`);
+        if (idleV(v)) { const o = RB.AI.chooseReact(E, d.ctx, mineOpts); if (o) return o; continue; }
         if (v) { const o = mineOpts.find(x => x.inst.uid === v.uid); if (o) return o; }
       }
       return null;
     }
     if (kind === 'soak') {
       const v = await seatAnswer(d.p.idx, async () => !!(await ask(kind, d, true)), `${nm(d.p.idx)} is deciding whether to step into the circle…`);
-      return v == null ? RB.AI.chooseSoak(E, d.p, d.total, d.heroes) : !!v;
+      return v == null || idleV(v) ? RB.AI.chooseSoak(E, d.p, d.total, d.heroes) : !!v;
     }
     return null;
   }
@@ -9545,6 +9717,8 @@ globalThis.RB.WEB_BUILD = true;
   /* ---------- lifecycle ---------- */
   U.battle = function (cfg, link) {
     cfgLast = cfg; net = link || null;
+    // #149: the idle clock (online only); counters start again with every game
+    actsApplied = 0; promptN = 0; idle.key = null; clearInterval(idleIv); idleIv = net ? setInterval(idleTick, 1000) : null; idleBanner(null);
     root = U.show('battle', '');
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0; view.netSpeed = net ? (+cfg.speed || save.settings.speed || 1) : null;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });
@@ -9697,7 +9871,7 @@ globalThis.RB.WEB_BUILD = true;
       if (S.net && S.net.over && !m.started) { S.net = null; if (!$('#online').classList.contains('hidden')) draw(); }
       if (!S.net) draw(); return;
     }
-    if (m.t === 'start') return startGame(m.cfg);
+    if (m.t === 'start') return startGame(m.cfg, !!m.replay);
     if (m.t === 'cmd') { if (S.net) S.net.push(m); return; }
     if (m.t === 'caughtup') { if (S.net) S.net.catchUp(m.seq); return; }
   }
@@ -9792,7 +9966,7 @@ globalThis.RB.WEB_BUILD = true;
 
   /* ---------- the link handed to the battle screen ---------- */
   function makeNet(cfg) {
-    const queue = [], waiters = [], liveWaiters = [];
+    const queue = [], waiters = [], liveWaiters = [], ansWaiters = [];
     let applied = 0, upTo = -1, handlers = null, started = false, waitEl = null, pumping = false, lastSeq = -1;
     const net = {
       id: S.id, closed: false, replaying: false,
@@ -9804,6 +9978,7 @@ globalThis.RB.WEB_BUILD = true;
         // #70: speed changes are for everyone and don't touch the game, so they apply at once
         if (m.c.t === 'speed') { const v = +m.c.v; if (v > 0 && v <= 1) { cfg.speed = v; if (handlers && handlers.speed) handlers.speed(v); } applied++; check(); return; }
         queue.push(m);
+        if (m.c.t === 'ans' && ansWaiters.length) ansWaiters.filter(w => w.k === m.c.k).forEach(w => { ansWaiters.splice(ansWaiters.indexOf(w), 1); w.res(); });
         if (liveWaiters.length) liveWaiters.splice(0).forEach(r => r(false)); // #127: another replayed command is here
         if (waiters.length) waiters.shift()(queue.shift());
         else pump();
@@ -9813,6 +9988,11 @@ globalThis.RB.WEB_BUILD = true;
       // #127: after a reconnect the log is replayed. 'live' = the replay has caught up and nothing is left to replay
       live() { if (net.replaying && upTo >= 0 && applied >= upTo && !queue.length) { net.replaying = false; U.toast('You\'re back in the raid.'); } return !net.replaying; },
       // true once live, false as soon as another replayed command is waiting (it may be the answer we're looking for)
+      // #145 safety net: catch-up mode that never receives its 'caught up' marker would freeze the raid
+      forceLive() { if (!net.replaying) return; net.replaying = false; if (liveWaiters.length) liveWaiters.splice(0).forEach(r => r(true)); },
+      hasUpTo: () => upTo >= 0,
+      // #149: resolves when an answer to question k arrives (e.g. the AI answered for this player after 1:30)
+      waitAns(k) { return new Promise(res => { if (queue.some(m => m.c.t === 'ans' && m.c.k === k)) return res(); ansWaiters.push({ k, res }); }); },
       liveOrQueued() { return new Promise(res => { if (net.live()) return res(true); if (queue.length) return res(false); liveWaiters.push(res); }); },
       behind: () => queue.length > 2, // #123: a command or two waiting is normal; only hurry when really behind
       attach(h) { handlers = h; },
@@ -9840,14 +10020,17 @@ globalThis.RB.WEB_BUILD = true;
     return net;
   }
 
-  function startGame(cfg) {
+  function startGame(cfg, replay) {
     // every computer builds the identical game from this config
     cfg.party.forEach(s => { s.deck = s.deck.map(id => ({ id, holo: false })); });
     cfg.settings = { autoDefend: true, pauseForInstants: true };
     if (S.net) S.net.closed = true;
     if (S.lobby) S.lobby.started = true; // so the host reopens the lobby after this run
     S.net = makeNet(cfg);
-    if (S.rejoining) S.net.replaying = true;
+    // #145: only a start the server marks as a replay puts this computer into catch-up mode. (Before, any "welcome back"
+    // did, even in the lobby, where no replay ever follows, and the next raid froze at this player's first choice.)
+    const net = S.net;
+    if (replay) { net.replaying = true; setTimeout(() => { if (S.net === net && net.replaying && !net.hasUpTo()) net.forceLive(); }, 10000); }
     S.rejoining = false;
     U.battle(cfg, S.net);
     chatSync();
@@ -9867,6 +10050,7 @@ globalThis.RB.WEB_BUILD = true;
   };
   const isDungeon = L => L && L.mode === 'dungeon';
   const myDungeonLevel = () => RB.dungeonLevel(save.dxp || 0);
+  const myDungeonCheck = hid => RB.dungeonDeckCheck(hid, save.decks[hid], RB.landsFor(hid, save.lands[hid]), myDungeonLevel()); // #147
   function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length); }
   function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
   function draw() {
@@ -9903,7 +10087,7 @@ globalThis.RB.WEB_BUILD = true;
           <h3 class="sec">What to play</h3>${modeSeg}<div class="filters">${raids}</div><div class="filters">${diffs}</div>${scale}
           ${host ? `<button class="btn primary" data-act="start" ${allReady && !L.started ? '' : 'disabled'}>${allReady ? `Start the ${what}` : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the ${what}.</p>`}</div>
         <div><h3 class="sec">Your hero</h3><div class="heropick">${pick}</div>
-          ${D ? `<p class="sub" style="margin-top:.6rem">Dungeon deck: the starter deck plus <b>${RB.dungeonSwaps(myDungeonLevel())}</b> of your own best cards (your dungeon level is ${myDungeonLevel()}).</p>` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
+          ${D ? `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'custom' ? '' : 'on'}" data-deck="starter">Dungeon deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>${(() => { const c = myDungeonCheck(S.mySeat.hero); return S.mySeat.deckMode === 'custom' ? (c.ok ? `<p class="dnote ok">My deck: brings <b>${c.extra}</b> of your own cards (your dungeon level ${myDungeonLevel()} allows ${c.allow}).</p>` : `<p class="dnote warn">${esc(c.why)}</p>`) : `<p class="dnote">Dungeon deck: the starter deck plus your best <b>${RB.dungeonSwaps(myDungeonLevel())}</b> cards (your dungeon level is ${myDungeonLevel()}).</p>`; })()}` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
           <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
     }
     const el = U.show('online', `<div class="page"><div class="pagehead"><h2>Play online</h2><span class="sp"></span></div>
@@ -9916,11 +10100,13 @@ globalThis.RB.WEB_BUILD = true;
     const L = S.lobby; if (!L) return;
     const hid = S.mySeat.hero, n = Math.max(1, L.players.length);
     let deck;
-    if (isDungeon(L)) deck = RB.dungeonDeck(hid, save.owned, RB.dungeonSwaps(myDungeonLevel()));
+    const myD = isDungeon(L) && S.mySeat.deckMode === 'custom' && myDungeonCheck(hid).ok; // #147: my deck, within the dungeon level
+    if (myD) deck = save.decks[hid].slice();
+    else if (isDungeon(L)) deck = RB.dungeonDeck(hid, save.owned, RB.dungeonSwaps(myDungeonLevel()));
     else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
     else deck = RB.buildDeck(hid, save.owned, n);
-    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: myD ? RB.landsFor(hid, save.lands[hid]) : isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
   }
   async function onClick(e) {
     const t = e.target, a = t.closest('[data-act]');
@@ -10281,9 +10467,16 @@ globalThis.RB.WEB_BUILD = true;
     const L = lvl(), T = RB.DXP_LEVELS, cur = dxp();
     if (L >= T.length) return `<div class="dxp"><b>Dungeon level ${L}</b> (max) · ${cur} XP<div class="xpbar"><i style="width:100%"></i></div></div>`;
     const a = T[L - 1], b = T[L], pct = Math.round((cur - a) / (b - a) * 100);
-    return `<div class="dxp"><b>Dungeon level ${L}</b> · ${cur} / ${b} XP to level ${L + 1}<div class="xpbar"><i style="width:${pct}%"></i></div><small>Each level lets <b>3 more of your own cards</b> into your starter deck for dungeon runs. Right now: <b>${RB.dungeonSwaps(L)}</b>.</small></div>`;
+    return `<div class="dxp"><b>Dungeon level ${L}</b> · ${cur} / ${b} XP to level ${L + 1}<div class="xpbar"><i style="width:${pct}%"></i></div><small>Each level lets <b>3 more of your own cards</b> into a dungeon: added to the starter deck for you, or in a deck you built. Right now: <b>${RB.dungeonSwaps(L)}</b>.</small></div>`;
   }
 
+  // #147: a hero can bring "My deck" when it holds no more of your own cards than your dungeon level allows
+  const myCheck = s => RB.dungeonDeckCheck(s.hero, save.decks[s.hero], RB.landsFor(s.hero, save.lands[s.hero]), lvl());
+  const deckNote = s => {
+    if (!s.custom) return `<p class="dnote">Dungeon deck: the starter deck plus your best <b>${RB.dungeonSwaps(lvl())}</b> cards.</p>`;
+    const c = myCheck(s);
+    return c.ok ? `<p class="dnote ok">My deck: brings <b>${c.extra}</b> of your own cards (dungeon level ${lvl()} allows ${c.allow}).</p>` : `<p class="dnote warn">${esc(c.why)}</p>`;
+  };
   U.dungeons = function (keep) {
     RB.AUDIO.music('title');
     const D = RB.DUNGEONS, d = D[st.id], M = RB.DUNGEON_MODES;
@@ -10294,6 +10487,8 @@ globalThis.RB.WEB_BUILD = true;
     // #121: pick heroes from pictures (hover one to see its full card), like the raid screen
     const seats = st.seats.map((s, i) => `<div class="dseat" data-dseat="${i}"><header><img alt="" src="${U.cardArt(s.hero)}"><div><strong>Hero ${i + 1}</strong><small>${esc(RB.HEROES[s.hero].name)}</small></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</header>
       <div class="heropick">${heroes.map(h => { const x = RB.HEROES[h]; return `<button class="${h === s.hero ? 'on' : ''}" data-hero="${h}" title="${esc(x.name)}" aria-label="${esc(x.name)}"><img alt="" src="${U.cardArt(h)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`; }).join('')}</div>
+      <div class="opts"><span class="seg"><button class="${s.custom ? '' : 'on'}" data-ddeck="starter" title="The starter deck plus your best ${RB.dungeonSwaps(lvl())} cards, picked for you">Dungeon deck</button><button class="${s.custom ? 'on' : ''}" data-ddeck="custom" title="The deck you built for this hero, if it fits your dungeon level">My deck</button></span><button class="btn small" data-dedit="${i}">Edit deck</button></div>
+      ${deckNote(s)}
       <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>`).join('');
     const n = st.seats.length, hp = d.hp + d.hpPer * (n - 1), mode = M[st.mode];
     const el = U.show('dungeons', `<div class="page"><div class="pagehead"><h2>Dungeons</h2><span class="sp"></span></div>
@@ -10304,13 +10499,15 @@ globalThis.RB.WEB_BUILD = true;
       <h3 class="sec">Difficulty</h3><div class="difficulty"><span class="seg">${Object.entries(M).map(([k, m]) => `<button class="${k === st.mode ? 'on' : ''}" data-mode="${k}">${m.name}</button>`).join('')}</span><p class="kwhat">${esc(mode.text)}</p></div>
       <h3 class="sec">Your party (up to 3)</h3><div class="dseats">${seats}${n < 3 ? `<button class="btn" data-act="add">+ Add a hero</button>` : ''}</div>
       <div class="bossscale"><b>${esc(d.short)} for ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${d.strike + (n - 1) + mode.level - 1} · starts at level ${mode.level} · ${mode.first ? 'goes first' : 'you go first'}</div>
-      <div class="startbar"><span class="summary">${esc(d.name)} · ${mode.name} · ${n} hero${n > 1 ? 'es' : ''} · decks: starter + ${RB.dungeonSwaps(lvl())} of your cards</span><button class="btn" data-act="online" title="Friends join with a code from their own computer or phone">Play online with friends</button><button class="btn primary big" data-act="go">Enter the dungeon</button></div></div>`, keep);
+      <div class="startbar"><span class="summary">${esc(d.name)} · ${mode.name} · ${n} hero${n > 1 ? 'es' : ''} · decks: ${st.seats.map(s => s.custom && myCheck(s).ok ? 'my deck' : 'dungeon deck').join(', ')}</span><button class="btn" data-act="online" title="Friends join with a code from their own computer or phone">Play online with friends</button><button class="btn primary big" data-act="go">Enter the dungeon</button></div></div>`, keep);
     el.onclick = e => {
       const t = e.target;
       if (t.closest('[data-act=back]')) return U.title();
       const c = t.closest('[data-did]'); if (c) { st.id = c.dataset.did; return U.dungeons(true); }
       const m = t.closest('[data-mode]'); if (m) { st.mode = m.dataset.mode; return U.dungeons(true); }
       const r = t.closest('[data-rm]'); if (r) { st.seats.splice(+r.dataset.rm, 1); return U.dungeons(true); }
+      const dd = t.closest('.dseat [data-ddeck]'); if (dd) { st.seats[+dd.closest('[data-dseat]').dataset.dseat].custom = dd.dataset.ddeck === 'custom'; return U.dungeons(true); }
+      const de = t.closest('[data-dedit]'); if (de) { const s = st.seats[+de.dataset.dedit]; s.custom = true; return U.deckbuilder(s.hero, () => U.dungeons()); }
       const hb = t.closest('.dseat [data-hero]'); if (hb) { st.seats[+hb.closest('[data-dseat]').dataset.dseat].hero = hb.dataset.hero; return U.dungeons(true); }
       if (t.closest('[data-act=add]')) { const used = st.seats.map(s => s.hero); st.seats.push({ hero: heroes.find(h => !used.includes(h)) || heroes[0], auto: true }); return U.dungeons(true); }
       if (t.closest('[data-act=go]')) return U.startDungeon();
@@ -10324,9 +10521,10 @@ globalThis.RB.WEB_BUILD = true;
   U.startDungeon = function () {
     const mode = RB.DUNGEON_MODES[st.mode], swaps = RB.dungeonSwaps(lvl());
     const party = st.seats.map((s, i) => {
-      const ids = RB.dungeonDeck(s.hero, save.owned, swaps);
+      const mine = s.custom && myCheck(s).ok; // #147
+      const ids = mine ? save.decks[s.hero].slice() : RB.dungeonDeck(s.hero, save.owned, swaps);
       const holoLeft = Object.assign({}, save.holo);
-      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: RB.defaultLands(s.hero), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
+      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: mine ? RB.landsFor(s.hero, save.lands[s.hero]) : RB.defaultLands(s.hero), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
     });
     U.battle({ raid: st.id, dungeon: true, difficulty: st.mode, dungeonLevel: mode.level, dungeonFirst: mode.first, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };

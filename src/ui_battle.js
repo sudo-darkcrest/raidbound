@@ -455,7 +455,8 @@
   async function applyNet(c, fromMe) {
     view.busy = true; render();
     try {
-      if (c.t === 'act') { const r = await doAction(c.name, deser(c.args)); if (fromMe && r && r.ok === false && r.why) U.toast(r.why); }
+      if (c.t === 'act') { actsApplied++; const r = await doAction(c.name, deser(c.args)); if (fromMe && r && r.ok === false && r.why) U.toast(r.why); }
+      else if (c.t === 'idle') await idleTurn(c);
       else if (c.t === 'ai' || c.t === 'human') await seatControl(c);
     } catch (err) { console.error(err); U.toast('Sync problem: ' + err.message); }
     view.busy = false; afterAction();
@@ -466,35 +467,97 @@
     p.auto = true; p.wasAi = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
     if (E.g.phase === 'main' && E.g.turn === p.idx && !E.g.over) await doAction('auto', [p]);
   }
+  // #149: a player who makes no move for 1:30 on their turn has it finished by the AI. Every computer watches the clock and
+  // may send an 'idle' command; it carries the turn and the number of moves made so far, so it is acted on only if the
+  // player still hasn't moved when it arrives (in command order, so every computer agrees). The player stays in control
+  // of their next turn.
+  const idleMs = () => RB.IDLE_MS || 90000;
+  const IDLE_V = {};
+  let actsApplied = 0, promptN = 0, idleIv = null;
+  const idle = { key: null, since: 0, sent: false };
+  const turnKey = () => E.g.round + ':' + E.g.turn + ':' + actsApplied;
+  const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function idleBanner(text) {
+    let el = document.querySelector('.idlewarn');
+    if (!text) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.className = 'idlewarn'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.innerHTML = text;
+  }
+  function idleTick() {
+    if (!net || net.closed || !E || E.g.over) { idleBanner(null); return; }
+    const g = E.g, p = g.players[g.turn];
+    if (net.replaying || g.phase !== 'main' || !p || p.auto || g.cfg.bossPlayer) { idle.key = null; idleBanner(null); return; }
+    const key = turnKey();
+    if (idle.key !== key) { idle.key = key; idle.since = Date.now(); idle.sent = false; }
+    const left = idleMs() - (Date.now() - idle.since);
+    const nm = esc(g.cfg.party[p.idx].name || E.pdef(p).name), me = net.mine(p.idx);
+    if (left <= 30000) idleBanner(me ? `<b>Still there?</b> The AI will finish your turn in <b>${mmss(left)}</b>. Make any move to keep playing.` : `<b>${nm}</b> hasn't moved for a while. The AI will finish their turn in <b>${mmss(left)}</b>.`);
+    else idleBanner(null);
+    if (left <= 0 && !idle.sent) { idle.sent = true; net.send({ t: 'idle', key }); }
+  }
+  async function idleTurn(c) {
+    const g = E.g; if (g.over || g.phase !== 'main' || c.key !== turnKey()) return; // they moved in time, or it's already over
+    const p = g.players[g.turn]; if (!p || p.auto) return;
+    idleBanner(null); U.closePop(); U.hidePreview(); view.mode = null;
+    U.toast(net.mine(p.idx) ? 'You made no move for 1:30, so the AI finished your turn. Your next turn is yours again.' : `${g.cfg.party[p.idx].name} made no move for 1:30, so the AI finished their turn.`);
+    await doAction('auto', [p]);
+  }
+  // close an open question when the AI answers it for an idle player
+  const closeAsk = () => { document.querySelectorAll('.overlay:not(.clear)').forEach(o => o.remove()); U.closePop(); };
+
   // #127: an answer from one seat, in command order. If this is my own prompt and my computer is still replaying the
   // log after a reconnect, ask as soon as the replay has caught up without finding the answer (before, it waited forever).
-  async function netAnswer(seatIdx, askMine) {
+  async function netAnswer(seatIdx, askMine, k) {
     for (;;) {
       if (askMine && net.replaying && await net.liveOrQueued()) { const a = askMine; askMine = null; await a(); }
       const m = await net.next();
-      if (m.c.t === 'ans') return m.c.v;
+      if (m.c.t === 'ans') { if (k != null && m.c.k != null && m.c.k !== k) continue; return m.c.v; } // #149: a late answer to an earlier question is ignored
       if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) { p.auto = true; p.wasAi = true; } if (m.c.seat === seatIdx) return null; }
       if (m.c.t === 'human') { const p = E.g.players[m.c.seat]; if (p) p.auto = false; }
     }
   }
   async function seatAnswer(idx, askFn, waitText) {
+    const k = ++promptN; // #149: every question has a number, the same on every computer
     const q = E.g.players[idx], mine = net.mine(idx) && !q.auto;
-    const askMine = async () => { net.wait(null); net.send({ t: 'ans', v: await askFn() }); };
-    if (mine && net.live()) await askMine(); else net.wait(mine ? 'Getting back in step with the raid…' : waitText);
-    const v = await netAnswer(idx, mine && net.replaying ? askMine : null); net.wait(null);
-    return v;
+    let timer = null, tick = null, done = false;
+    const askMine = async () => {
+      net.wait(null);
+      const idleP = new Promise(res => { timer = setTimeout(() => res(IDLE_V), idleMs()); });
+      const ANSWERED = {};
+      const v = await Promise.race([askFn(), idleP, net.waitAns(k).then(() => ANSWERED)]); clearTimeout(timer);
+      if (v === ANSWERED) { closeAsk(); U.toast('Time ran out on that choice, so the AI made it for you.'); return; } // another computer's clock ran out first
+      if (v === IDLE_V) { closeAsk(); U.toast('Time ran out on that choice, so the AI made it for you.'); net.send({ t: 'ans', v: { idle: 1 }, k }); }
+      else net.send({ t: 'ans', v, k });
+    };
+    if (mine && net.live()) await askMine();
+    else {
+      net.wait(mine ? 'Getting back in step with the raid…' : waitText);
+      if (!mine && !net.replaying) { // after 1:30 the AI answers for them
+        const since = Date.now();
+        tick = setInterval(() => {
+          if (done || net.closed) return clearInterval(tick);
+          const left = idleMs() - (Date.now() - since);
+          if (left <= 30000) net.wait(`${waitText}<small>The AI answers for them in <b>${mmss(left)}</b>.</small>`);
+          if (left <= 0) { clearInterval(tick); if (!net.replaying) net.send({ t: 'ans', v: { idle: 1 }, k }); }
+        }, 1000);
+      }
+    }
+    try { return await netAnswer(idx, mine && net.replaying ? askMine : null, k); }
+    finally { done = true; clearInterval(tick); clearTimeout(timer); net.wait(null); }
   }
+  const idleV = v => v && typeof v === 'object' && v.idle;
   async function netAsk(kind, d) {
     const nm = i => esc(E.g.cfg.party[i].name);
     if (kind === 'scout') {
       const v = await seatAnswer(d.p.idx, () => ask(kind, d, true), `${nm(d.p.idx)} is scouting…`);
-      return v || 'bottom';
+      return v && !idleV(v) ? v : 'bottom';
     }
     if (kind === 'instant') {
       for (const q of d.players) {
         if (q.auto) continue;
         const v = await seatAnswer(q.idx, async () => { const r = await ask('instant', Object.assign({}, d, { players: [q] }), true); return r ? { uid: r.inst.uid, R: r.target ? E.refId(r.target) : null } : null; },
           `Waiting for ${nm(q.idx)} to answer ${esc(d.card.name)}…`);
+        if (idleV(v)) { const c = RB.AI.chooseInstant(E, q, d.card); if (c) return c; continue; } // #149: the AI answers for an idle player
         if (v) { const inst = q.hand.find(c => c.uid === v.uid); if (inst) return { p: q, inst, target: v.R ? findRef(v.R) : null }; }
       }
       return null;
@@ -506,13 +569,14 @@
         const mineOpts = d.options.filter(o => o.p === q);
         const v = await seatAnswer(idx, async () => { const r = await ask('react', Object.assign({}, d, { options: mineOpts }), true); return r ? { uid: r.inst.uid } : null; },
           `Waiting for ${nm(idx)} to react to ${esc(d.ctx.attacker)}…`);
+        if (idleV(v)) { const o = RB.AI.chooseReact(E, d.ctx, mineOpts); if (o) return o; continue; }
         if (v) { const o = mineOpts.find(x => x.inst.uid === v.uid); if (o) return o; }
       }
       return null;
     }
     if (kind === 'soak') {
       const v = await seatAnswer(d.p.idx, async () => !!(await ask(kind, d, true)), `${nm(d.p.idx)} is deciding whether to step into the circle…`);
-      return v == null ? RB.AI.chooseSoak(E, d.p, d.total, d.heroes) : !!v;
+      return v == null || idleV(v) ? RB.AI.chooseSoak(E, d.p, d.total, d.heroes) : !!v;
     }
     return null;
   }
@@ -716,6 +780,8 @@
   /* ---------- lifecycle ---------- */
   U.battle = function (cfg, link) {
     cfgLast = cfg; net = link || null;
+    // #149: the idle clock (online only); counters start again with every game
+    actsApplied = 0; promptN = 0; idle.key = null; clearInterval(idleIv); idleIv = net ? setInterval(idleTick, 1000) : null; idleBanner(null);
     root = U.show('battle', '');
     view.mode = null; view.busy = true; view.focus = 0; view.hpGhost = null; view.lock = 0; view.netSpeed = net ? (+cfg.speed || save.settings.speed || 1) : null;
     E = RB.newGame(cfg, { anim, update: schedule, ask, log: () => schedule() });

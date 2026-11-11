@@ -58,7 +58,7 @@
       if (S.net && S.net.over && !m.started) { S.net = null; if (!$('#online').classList.contains('hidden')) draw(); }
       if (!S.net) draw(); return;
     }
-    if (m.t === 'start') return startGame(m.cfg);
+    if (m.t === 'start') return startGame(m.cfg, !!m.replay);
     if (m.t === 'cmd') { if (S.net) S.net.push(m); return; }
     if (m.t === 'caughtup') { if (S.net) S.net.catchUp(m.seq); return; }
   }
@@ -153,7 +153,7 @@
 
   /* ---------- the link handed to the battle screen ---------- */
   function makeNet(cfg) {
-    const queue = [], waiters = [], liveWaiters = [];
+    const queue = [], waiters = [], liveWaiters = [], ansWaiters = [];
     let applied = 0, upTo = -1, handlers = null, started = false, waitEl = null, pumping = false, lastSeq = -1;
     const net = {
       id: S.id, closed: false, replaying: false,
@@ -165,6 +165,7 @@
         // #70: speed changes are for everyone and don't touch the game, so they apply at once
         if (m.c.t === 'speed') { const v = +m.c.v; if (v > 0 && v <= 1) { cfg.speed = v; if (handlers && handlers.speed) handlers.speed(v); } applied++; check(); return; }
         queue.push(m);
+        if (m.c.t === 'ans' && ansWaiters.length) ansWaiters.filter(w => w.k === m.c.k).forEach(w => { ansWaiters.splice(ansWaiters.indexOf(w), 1); w.res(); });
         if (liveWaiters.length) liveWaiters.splice(0).forEach(r => r(false)); // #127: another replayed command is here
         if (waiters.length) waiters.shift()(queue.shift());
         else pump();
@@ -174,6 +175,11 @@
       // #127: after a reconnect the log is replayed. 'live' = the replay has caught up and nothing is left to replay
       live() { if (net.replaying && upTo >= 0 && applied >= upTo && !queue.length) { net.replaying = false; U.toast('You\'re back in the raid.'); } return !net.replaying; },
       // true once live, false as soon as another replayed command is waiting (it may be the answer we're looking for)
+      // #145 safety net: catch-up mode that never receives its 'caught up' marker would freeze the raid
+      forceLive() { if (!net.replaying) return; net.replaying = false; if (liveWaiters.length) liveWaiters.splice(0).forEach(r => r(true)); },
+      hasUpTo: () => upTo >= 0,
+      // #149: resolves when an answer to question k arrives (e.g. the AI answered for this player after 1:30)
+      waitAns(k) { return new Promise(res => { if (queue.some(m => m.c.t === 'ans' && m.c.k === k)) return res(); ansWaiters.push({ k, res }); }); },
       liveOrQueued() { return new Promise(res => { if (net.live()) return res(true); if (queue.length) return res(false); liveWaiters.push(res); }); },
       behind: () => queue.length > 2, // #123: a command or two waiting is normal; only hurry when really behind
       attach(h) { handlers = h; },
@@ -201,14 +207,17 @@
     return net;
   }
 
-  function startGame(cfg) {
+  function startGame(cfg, replay) {
     // every computer builds the identical game from this config
     cfg.party.forEach(s => { s.deck = s.deck.map(id => ({ id, holo: false })); });
     cfg.settings = { autoDefend: true, pauseForInstants: true };
     if (S.net) S.net.closed = true;
     if (S.lobby) S.lobby.started = true; // so the host reopens the lobby after this run
     S.net = makeNet(cfg);
-    if (S.rejoining) S.net.replaying = true;
+    // #145: only a start the server marks as a replay puts this computer into catch-up mode. (Before, any "welcome back"
+    // did, even in the lobby, where no replay ever follows, and the next raid froze at this player's first choice.)
+    const net = S.net;
+    if (replay) { net.replaying = true; setTimeout(() => { if (S.net === net && net.replaying && !net.hasUpTo()) net.forceLive(); }, 10000); }
     S.rejoining = false;
     U.battle(cfg, S.net);
     chatSync();
@@ -228,6 +237,7 @@
   };
   const isDungeon = L => L && L.mode === 'dungeon';
   const myDungeonLevel = () => RB.dungeonLevel(save.dxp || 0);
+  const myDungeonCheck = hid => RB.dungeonDeckCheck(hid, save.decks[hid], RB.landsFor(hid, save.lands[hid]), myDungeonLevel()); // #147
   function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length); }
   function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
   function draw() {
@@ -264,7 +274,7 @@
           <h3 class="sec">What to play</h3>${modeSeg}<div class="filters">${raids}</div><div class="filters">${diffs}</div>${scale}
           ${host ? `<button class="btn primary" data-act="start" ${allReady && !L.started ? '' : 'disabled'}>${allReady ? `Start the ${what}` : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the ${what}.</p>`}</div>
         <div><h3 class="sec">Your hero</h3><div class="heropick">${pick}</div>
-          ${D ? `<p class="sub" style="margin-top:.6rem">Dungeon deck: the starter deck plus <b>${RB.dungeonSwaps(myDungeonLevel())}</b> of your own best cards (your dungeon level is ${myDungeonLevel()}).</p>` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
+          ${D ? `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'custom' ? '' : 'on'}" data-deck="starter">Dungeon deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>${(() => { const c = myDungeonCheck(S.mySeat.hero); return S.mySeat.deckMode === 'custom' ? (c.ok ? `<p class="dnote ok">My deck: brings <b>${c.extra}</b> of your own cards (your dungeon level ${myDungeonLevel()} allows ${c.allow}).</p>` : `<p class="dnote warn">${esc(c.why)}</p>`) : `<p class="dnote">Dungeon deck: the starter deck plus your best <b>${RB.dungeonSwaps(myDungeonLevel())}</b> cards (your dungeon level is ${myDungeonLevel()}).</p>`; })()}` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
           <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
     }
     const el = U.show('online', `<div class="page"><div class="pagehead"><h2>Play online</h2><span class="sp"></span></div>
@@ -277,11 +287,13 @@
     const L = S.lobby; if (!L) return;
     const hid = S.mySeat.hero, n = Math.max(1, L.players.length);
     let deck;
-    if (isDungeon(L)) deck = RB.dungeonDeck(hid, save.owned, RB.dungeonSwaps(myDungeonLevel()));
+    const myD = isDungeon(L) && S.mySeat.deckMode === 'custom' && myDungeonCheck(hid).ok; // #147: my deck, within the dungeon level
+    if (myD) deck = save.decks[hid].slice();
+    else if (isDungeon(L)) deck = RB.dungeonDeck(hid, save.owned, RB.dungeonSwaps(myDungeonLevel()));
     else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
     else deck = RB.buildDeck(hid, save.owned, n);
-    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: myD ? RB.landsFor(hid, save.lands[hid]) : isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
   }
   async function onClick(e) {
     const t = e.target, a = t.closest('[data-act]');

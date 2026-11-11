@@ -43,7 +43,7 @@
 
     /* ---------- setup ---------- */
     cfg.party.forEach((seat, i) => {
-      // #125: every deck carries ten lands on top of its 30 cards (the player's own pick, or the hero's usual ten)
+      // #125: every deck carries ten lands on top of its 40 cards (the player's own pick, or the hero's usual ten)
       const idOf = e => typeof e === 'string' ? e : e.id;
       // (Nov 10: the ten are any mix of lands, quests and locations, and the 30 hold none of them)
       const full = cfg.noLands ? seat.deck : seat.deck.filter(e => !RB.isResCard(C[idOf(e)])).concat(RB.landsFor(seat.hero, seat.lands, seat.deck.map(idOf)));

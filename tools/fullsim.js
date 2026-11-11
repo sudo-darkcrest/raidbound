@@ -4,6 +4,7 @@
 globalThis.RB = {};
 for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
 const RB = globalThis.RB, C = RB.CARDS;
+if (process.env.DANGER != null) RB.AI_DANGER = +process.env.DANGER; if (process.env.DTHREAT != null) RB.AI_THREAT = +process.env.DTHREAT; // #79: 0 turns the AI's danger sense off, for comparison
 const N = +process.argv[2] || 24;
 const ONLY = process.argv[3] || 'all';
 const heroes = Object.keys(RB.HEROES).filter(h => !RB.HEROES[h].master && C[h] === undefined || true);

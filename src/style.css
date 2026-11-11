@@ -525,7 +525,14 @@ body.special-back .cardback::after, .cos.special .swatch::after { display: block
 .netp .sub, #online .sub { font-size: .82rem; color: var(--muted); }
 .netstatus { color: var(--gilt-hi); min-height: 1.2em; }
 .neterr { color: var(--danger); }
-.netwait { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 60; padding: .5rem 1rem; border-radius: 99px; background: rgba(10, 20, 30, .92); border: 1px solid #9ae8ff; color: #d8f4ff; font-size: .95rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .6); }
+/* #146: what the party is waiting for, big enough to read at a glance */
+.netwait, .idlewarn { position: fixed; left: 50%; top: 4.2rem; transform: translateX(-50%); z-index: 87; display: block; max-width: min(92vw, 44rem); padding: .85rem 1.6rem .85rem 3.1rem; border-radius: 14px; background: linear-gradient(rgba(14, 26, 44, .97), rgba(8, 14, 28, .97)); border: 2px solid #9ae8ff; color: #e8f8ff; font-family: var(--f-sc); font-size: 1.35rem; line-height: 1.3; text-align: center; box-shadow: 0 0 0 4px rgba(0, 0, 0, .45), 0 10px 34px rgba(0, 0, 0, .75), 0 0 24px rgba(154, 232, 255, .25); pointer-events: none; animation: chatpop .2s ease; }
+.netwait::before, .idlewarn::before { content: ''; position: absolute; left: 1.1rem; top: 50%; width: 1.1rem; height: 1.1rem; margin-top: -.55rem; border-radius: 50%; border: 3px solid rgba(154, 232, 255, .3); border-top-color: #9ae8ff; animation: netspin 1s linear infinite; }
+.netwait small, .idlewarn small { display: block; margin-top: .2rem; font-family: var(--f-body, inherit); font-size: 1rem; color: #ffe7a0; }
+.idlewarn { top: auto; bottom: 9.5rem; border-color: #ffb43a; color: #fff3dc; box-shadow: 0 0 0 4px rgba(0, 0, 0, .45), 0 10px 34px rgba(0, 0, 0, .75), 0 0 24px rgba(255, 180, 58, .3); }
+.idlewarn::before { border-color: rgba(255, 180, 58, .3); border-top-color: #ffb43a; }
+@keyframes netspin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .netwait::before, .idlewarn::before { animation: none; } }
 /* #32 boss minions: a bit bigger, and their attack/health badges sit inside the card */
 .unit.minion { --uw: clamp(100px, min(9.2vw, 15vh), 148px); }
 .unit.minion .un { padding-bottom: 2.35rem; text-align: center; }
@@ -1083,7 +1090,9 @@ html, body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transp
   .audioset .vrow > :first-child { grid-column: 1 / -1; }
 }
 @media (max-width: 760px), (max-height: 500px) {
-  .netwait { top: 3.4rem; left: .5rem; right: .5rem; transform: none; max-width: none; font-size: .85rem; text-align: center; }
+  .netwait, .idlewarn { left: .5rem; right: .5rem; transform: none; max-width: none; font-size: 1.1rem; padding: .7rem .9rem .7rem 2.6rem; }
+  .netwait { top: 3.4rem; } .idlewarn { bottom: 11rem; }
+  .netwait::before, .idlewarn::before { left: .8rem; }
   .codebar { flex-wrap: wrap; gap: .6rem; }
   .codebar .bigcode { font-size: 2.2rem; }
 }
@@ -1392,3 +1401,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .deckttl .decknamein { font-size: 1.9rem; min-width: min(60vw, 22rem); }
 .deckttl small { font-family: var(--f-sc); font-size: .9rem; color: var(--muted); font-weight: 400; padding-left: .4rem; }
 @media (max-width: 560px) { .deckgrid { grid-template-columns: 1fr; } .decktile > img { width: 64px; height: 48px; } .deckttl .decknamein { font-size: 1.3rem; } .colview { margin-left: .4rem; } }
+/* #147: which deck a hero takes into a dungeon */
+.dseat .opts { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.dnote { margin: .1rem 0 0; font-size: .85rem; color: var(--muted); line-height: 1.35; }
+.dnote.ok { color: #9fe0a8; }
+.dnote.warn { color: #ffb49a; }

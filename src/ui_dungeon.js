@@ -11,9 +11,16 @@
     const L = lvl(), T = RB.DXP_LEVELS, cur = dxp();
     if (L >= T.length) return `<div class="dxp"><b>Dungeon level ${L}</b> (max) · ${cur} XP<div class="xpbar"><i style="width:100%"></i></div></div>`;
     const a = T[L - 1], b = T[L], pct = Math.round((cur - a) / (b - a) * 100);
-    return `<div class="dxp"><b>Dungeon level ${L}</b> · ${cur} / ${b} XP to level ${L + 1}<div class="xpbar"><i style="width:${pct}%"></i></div><small>Each level lets <b>3 more of your own cards</b> into your starter deck for dungeon runs. Right now: <b>${RB.dungeonSwaps(L)}</b>.</small></div>`;
+    return `<div class="dxp"><b>Dungeon level ${L}</b> · ${cur} / ${b} XP to level ${L + 1}<div class="xpbar"><i style="width:${pct}%"></i></div><small>Each level lets <b>3 more of your own cards</b> into a dungeon: added to the starter deck for you, or in a deck you built. Right now: <b>${RB.dungeonSwaps(L)}</b>.</small></div>`;
   }
 
+  // #147: a hero can bring "My deck" when it holds no more of your own cards than your dungeon level allows
+  const myCheck = s => RB.dungeonDeckCheck(s.hero, save.decks[s.hero], RB.landsFor(s.hero, save.lands[s.hero]), lvl());
+  const deckNote = s => {
+    if (!s.custom) return `<p class="dnote">Dungeon deck: the starter deck plus your best <b>${RB.dungeonSwaps(lvl())}</b> cards.</p>`;
+    const c = myCheck(s);
+    return c.ok ? `<p class="dnote ok">My deck: brings <b>${c.extra}</b> of your own cards (dungeon level ${lvl()} allows ${c.allow}).</p>` : `<p class="dnote warn">${esc(c.why)}</p>`;
+  };
   U.dungeons = function (keep) {
     RB.AUDIO.music('title');
     const D = RB.DUNGEONS, d = D[st.id], M = RB.DUNGEON_MODES;
@@ -24,6 +31,8 @@
     // #121: pick heroes from pictures (hover one to see its full card), like the raid screen
     const seats = st.seats.map((s, i) => `<div class="dseat" data-dseat="${i}"><header><img alt="" src="${U.cardArt(s.hero)}"><div><strong>Hero ${i + 1}</strong><small>${esc(RB.HEROES[s.hero].name)}</small></div>${st.seats.length > 1 && i > 0 ? `<button class="btn ghost small" data-rm="${i}" aria-label="Remove hero ${i + 1}">✕</button>` : ''}</header>
       <div class="heropick">${heroes.map(h => { const x = RB.HEROES[h]; return `<button class="${h === s.hero ? 'on' : ''}" data-hero="${h}" title="${esc(x.name)}" aria-label="${esc(x.name)}"><img alt="" src="${U.cardArt(h)}"><span>${esc(x.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[x.cls].name}</span></button>`; }).join('')}</div>
+      <div class="opts"><span class="seg"><button class="${s.custom ? '' : 'on'}" data-ddeck="starter" title="The starter deck plus your best ${RB.dungeonSwaps(lvl())} cards, picked for you">Dungeon deck</button><button class="${s.custom ? 'on' : ''}" data-ddeck="custom" title="The deck you built for this hero, if it fits your dungeon level">My deck</button></span><button class="btn small" data-dedit="${i}">Edit deck</button></div>
+      ${deckNote(s)}
       <label class="toggle"><input type="checkbox" data-auto="${i}" ${s.auto ? 'checked' : ''} ${i === 0 ? 'disabled' : ''}> ${i === 0 ? 'You' : 'AI plays this hero'}</label></div>`).join('');
     const n = st.seats.length, hp = d.hp + d.hpPer * (n - 1), mode = M[st.mode];
     const el = U.show('dungeons', `<div class="page"><div class="pagehead"><h2>Dungeons</h2><span class="sp"></span></div>
@@ -34,13 +43,15 @@
       <h3 class="sec">Difficulty</h3><div class="difficulty"><span class="seg">${Object.entries(M).map(([k, m]) => `<button class="${k === st.mode ? 'on' : ''}" data-mode="${k}">${m.name}</button>`).join('')}</span><p class="kwhat">${esc(mode.text)}</p></div>
       <h3 class="sec">Your party (up to 3)</h3><div class="dseats">${seats}${n < 3 ? `<button class="btn" data-act="add">+ Add a hero</button>` : ''}</div>
       <div class="bossscale"><b>${esc(d.short)} for ${n} hero${n > 1 ? 'es' : ''}:</b> ${hp} health · strikes for ${d.strike + (n - 1) + mode.level - 1} · starts at level ${mode.level} · ${mode.first ? 'goes first' : 'you go first'}</div>
-      <div class="startbar"><span class="summary">${esc(d.name)} · ${mode.name} · ${n} hero${n > 1 ? 'es' : ''} · decks: starter + ${RB.dungeonSwaps(lvl())} of your cards</span><button class="btn" data-act="online" title="Friends join with a code from their own computer or phone">Play online with friends</button><button class="btn primary big" data-act="go">Enter the dungeon</button></div></div>`, keep);
+      <div class="startbar"><span class="summary">${esc(d.name)} · ${mode.name} · ${n} hero${n > 1 ? 'es' : ''} · decks: ${st.seats.map(s => s.custom && myCheck(s).ok ? 'my deck' : 'dungeon deck').join(', ')}</span><button class="btn" data-act="online" title="Friends join with a code from their own computer or phone">Play online with friends</button><button class="btn primary big" data-act="go">Enter the dungeon</button></div></div>`, keep);
     el.onclick = e => {
       const t = e.target;
       if (t.closest('[data-act=back]')) return U.title();
       const c = t.closest('[data-did]'); if (c) { st.id = c.dataset.did; return U.dungeons(true); }
       const m = t.closest('[data-mode]'); if (m) { st.mode = m.dataset.mode; return U.dungeons(true); }
       const r = t.closest('[data-rm]'); if (r) { st.seats.splice(+r.dataset.rm, 1); return U.dungeons(true); }
+      const dd = t.closest('.dseat [data-ddeck]'); if (dd) { st.seats[+dd.closest('[data-dseat]').dataset.dseat].custom = dd.dataset.ddeck === 'custom'; return U.dungeons(true); }
+      const de = t.closest('[data-dedit]'); if (de) { const s = st.seats[+de.dataset.dedit]; s.custom = true; return U.deckbuilder(s.hero, () => U.dungeons()); }
       const hb = t.closest('.dseat [data-hero]'); if (hb) { st.seats[+hb.closest('[data-dseat]').dataset.dseat].hero = hb.dataset.hero; return U.dungeons(true); }
       if (t.closest('[data-act=add]')) { const used = st.seats.map(s => s.hero); st.seats.push({ hero: heroes.find(h => !used.includes(h)) || heroes[0], auto: true }); return U.dungeons(true); }
       if (t.closest('[data-act=go]')) return U.startDungeon();
@@ -54,9 +65,10 @@
   U.startDungeon = function () {
     const mode = RB.DUNGEON_MODES[st.mode], swaps = RB.dungeonSwaps(lvl());
     const party = st.seats.map((s, i) => {
-      const ids = RB.dungeonDeck(s.hero, save.owned, swaps);
+      const mine = s.custom && myCheck(s).ok; // #147
+      const ids = mine ? save.decks[s.hero].slice() : RB.dungeonDeck(s.hero, save.owned, swaps);
       const holoLeft = Object.assign({}, save.holo);
-      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: RB.defaultLands(s.hero), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
+      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: mine ? RB.landsFor(s.hero, save.lands[s.hero]) : RB.defaultLands(s.hero), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
     });
     U.battle({ raid: st.id, dungeon: true, difficulty: st.mode, dungeonLevel: mode.level, dungeonFirst: mode.first, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };

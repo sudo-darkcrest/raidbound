@@ -103,7 +103,7 @@
     art: { s: 'sunken', L: [glow(150, 120, 60, '#5ad8ff', 0.6), ['obj', { t: 'ring', x: 150, y: 120, s: 1.2, gem: '#5ad8ff' }]] } });
 
   /* ======================= +1 core card ======================= */
-  C.fieldmedic = { id: 'fieldmedic', name: 'Field Medic', type: 'ally', cost: 2, atk: 1, hp: 3, race: 'Human', fac: 'neutral', rarity: 'c', set: 'core', target: 'friendlyHero', tags: ['heal'], text: 'When this enters play, heal 3 damage from a friendly hero.', onEnter: async (E, c) => { if (c.target) await E.heal(c.target, 3); }, flavor: 'Bandages, splints and a very firm voice.',
+  C.fieldmedic = { id: 'fieldmedic', name: 'Field Healer', type: 'ally', cost: 2, atk: 1, hp: 3, race: 'Human', fac: 'neutral', rarity: 'c', set: 'core', target: 'friendlyHero', tags: ['heal'], text: 'When this enters play, heal 3 damage from a friendly hero.', onEnter: async (E, c) => { if (c.target) await E.heal(c.target, 3); }, flavor: 'Bandages, splints and a very firm voice.',
     art: { s: 'castle', L: [glow(150, 130, 70, '#9aff8a', 0.4), fig({ pose: 'stand', w: 'mace', helm: 'hood', x: 130, y: 214, s: 0.86, cloth: '#e8e0c8' }), ['fx', { t: 'heal', x: 210, y: 120, c: '#9aff8a' }], ['obj', { t: 'potion', x: 230, y: 190, col: '#ff5a4a' }]] } };
 
   // #93: one more Concord common ally (the Concord had 4 common allies to the Clans' 7), so the Core set is 154 = 22 x 7

@@ -35,6 +35,30 @@
     const o = RB.BOSSCARDS[B.omens[B.omens.length - 1]];
     return !!(o && (o.soak || /strike this turn/.test(o.text || '')));
   }
+  // #79: how much of this hero's health the coming boss turn is likely to take (0 = safe, 1 = all of it), after its
+  // ward and ready armor. The boss strikes the hero with the most threat (damage dealt this round), so a hero who is
+  // already top threat, or alone, expects the strike; minions pick at random among heroes and allies.
+  const DW = () => (RB.AI_DANGER != null ? RB.AI_DANGER : 1);
+  function danger(E, p) {
+    const heroes = E.heroes(), hp = E.heroHp(p);
+    if (!heroes.length || hp <= 0 || !DW()) return 0;
+    const B = E.g.boss, strike = E.strikeNow ? E.strikeNow() : E.raid.strike;
+    const taunt = heroes.find(h => h.hero.taunt);
+    let pS;
+    if (B.stunned) pS = 0;
+    else if (taunt) pS = taunt === p ? 1 : 0;
+    else if (heroes.length === 1) pS = 1;
+    else if (E.raid.dungeon) pS = 1 / heroes.length;
+    else { const top = Math.max(...heroes.map(h => h.threat)); pS = top > 0 && p.threat >= top ? 0.85 : 1 / heroes.length; }
+    const allies = heroes.reduce((n, h) => n + h.allies.length, 0);
+    const mAtk = E.minions().reduce((n, t) => n + E.minAtk(t.m), 0);
+    const mS = taunt ? (taunt === p ? 1 : 0) : E.raid.dungeon ? 1 / heroes.length : 1 / Math.max(1, heroes.length + allies);
+    let block = p.hero.shield || 0;
+    for (const e of Object.values(p.armor)) if (!e.ex) block += C[e.c.id].def * 0.7;
+    const incoming = Math.max(0, strike * pS + mAtk * mS + (dangerSoon(E) ? 4 : 0) - block);
+    return Math.min(1.5, incoming / hp) * DW();
+  }
+  AI.danger = danger;
   // #110: keep enough resources ready on your turn to play a React card (or defensive Instant) when the boss comes for you.
   // Resources ready again at the start of your own turn, so holding one back costs nothing next turn.
   function reactReserve(E, p) {
@@ -53,7 +77,39 @@
   AI.reactReserve = reactReserve;
 
   // score a playable card; returns {s, target}
-  function scoreCard(E, p, inst) {
+  function scoreCard(E, p, inst, dz) {
+    const sc = scoreCard0(E, p, inst);
+    if (sc.s <= 0) return sc;
+    // #79: with friends in the raid, the boss strikes whoever dealt the most damage this round. A hurt hero who would
+    // take the lead with this hit draws the strike on themselves; let a healthier friend lead instead.
+    if (RB.AI_THREAT !== 0 && DW() && C[inst.id].type === 'ability' && sc.target && (sc.target.t === 'boss' || sc.target.t === 'minion') && sc.s < 1000) {
+      const hs = E.heroes(), d0 = C[inst.id];
+      if (hs.length > 1 && !hs.some(h => h.hero.taunt) && !E.raid.dungeon) {
+        const top = Math.max(0, ...hs.filter(h => h !== p).map(h => h.threat)), hit = (d0.dmg || 3) + E.spellPower(p), strike = E.strikeNow ? E.strikeNow() : E.raid.strike;
+        if (p.threat <= top && p.threat + hit > top && E.heroHp(p) <= strike * 1.6 && hs.some(h => h !== p && E.heroHp(h) > E.heroHp(p) + 4)) sc.s -= 5;
+      }
+      if (sc.s <= 0) return sc;
+    }
+    if (!dz) return sc;
+    // #79: when the coming boss turn could hurt badly, defense first; damage that doesn't remove a threat waits
+    const d = C[inst.id], tags = d.tags || [], k = Math.min(1, dz), mine = sc.target && sc.target.t === 'hero' && sc.target.p === p;
+    let s = sc.s;
+    if (d.type === 'armor') s += p.armor[d.slot] ? 2 * k : 8 * k;
+    else if (d.type === 'ally') s += ((d.kw || []).includes('protector') ? 4 : 0) * k;
+    else if (d.type === 'ability') {
+      const t = sc.target;
+      if (tags.includes('heal') || tags.includes('selfheal') || tags.includes('healAll')) s += (mine || tags.includes('selfheal') ? 6 : tags.includes('healAll') ? 3 : 0) * k;
+      else if (tags.includes('shield') && d.speed !== 'instant') s += 5 * k;
+      if (tags.includes('dmg') || tags.includes('dmgRandom') || tags.includes('aoe')) {
+        const kill = t && t.t === 'minion' && (d.dmg || 3) + E.spellPower(p) >= E.hpOf(t);
+        const lethal = t && t.t === 'boss' && sc.s >= 1000;
+        if (kill) s += E.minAtk(t.m) * 1.2 * k;                    // one less attacker on the boss turn
+        else if (!lethal && !tags.includes('aoe') && !(tags.includes('heal') || tags.includes('shield'))) s *= 1 - 0.4 * k;
+      }
+    }
+    return { s, target: sc.target };
+  }
+  function scoreCard0(E, p, inst) {
     const d = C[inst.id];
     const sp = E.spellPower(p);
     const hpPct = E.heroHp(p) / E.heroMax(p);
@@ -173,11 +229,11 @@
       if (s > 0) acts.push({ s, go: () => E.usePower(p, target) });
     }
     // cards
-    const reserve = reactReserve(E, p), avail = E.available(p);
+    const reserve = reactReserve(E, p), avail = E.available(p), dz = danger(E, p);
     for (const inst of p.hand) {
       const d = C[inst.id];
       if (!E.canPlay(p, inst).ok) continue;
-      const sc = scoreCard(E, p, inst);
+      const sc = scoreCard(E, p, inst, dz);
       if (sc.s <= 0) continue;
       if (E.needsTarget(inst) && !sc.target) continue;
       // #110: dipping into the React reserve needs a clearly better play
@@ -445,18 +501,18 @@
     return true;
   };
   RB.maxCopies = d => d.limit || ((d.kw || []).includes('unique') || d.type === 'master' ? 1 : 2); // #136: a card can set its own limit
-  RB.DECK_SIZE = 30;
+  RB.DECK_SIZE = 40; // #151 (Nov 10, 2026): 40 normal cards (was 30), plus the 10 resource cards
   const STARTER = {
-    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, archon: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
-    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
-    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, tempest: 1, battleplans: 2, sentinel: 2, satchel: 1, dawnamulet: 1 },
-    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
-    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, tempest: 1, hedgewitch: 1, bram: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
-    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 2, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1, satchel: 1 },
+    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 2, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 2, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, archon: 1, satchel: 2, dawnamulet: 2, battleplans: 2, bandage: 1, divineshield: 1, bram: 1, squire: 1, fieldmedic: 1 },
+    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, archon: 1, battleplans: 2, lionknight: 2, sentinel: 1, treant: 1, satchel: 2, leatherhood: 1, dawnamulet: 2, bram: 1, battlemage: 1, squire: 1, fieldmedic: 1, rally: 1, volley: 1, companion: 1 },
+    lyssara: { fireball: 2, frostnova: 2, missiles: 2, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, tempest: 1, battleplans: 2, sentinel: 2, satchel: 2, dawnamulet: 2, bram: 1, battlemage: 1, squire: 1, fieldmedic: 1, arcaneblast: 1, rally: 1, icelance: 1 },
+    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 2, bard: 1, satchel: 2, leatherhood: 1, dawnamulet: 2, battleplans: 1, battleshout: 1, bram: 1, taunt: 1, sentinel: 1, earthwarden: 1, revenant: 1 },
+    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 2, warding: 2, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 2, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, tempest: 1, hedgewitch: 1, bram: 1, satchel: 2, dawnamulet: 2, battleplans: 2, bandage: 1, fieldmedic: 1, sentinel: 1, cavebear: 1 },
+    snix: { backstab: 2, ambush: 2, fanknives: 2, recuperate: 2, evasion: 2, kidneyshot: 1, pickpocket: 2, bandage: 2, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1, satchel: 2, leatherhood: 1, battleplans: 1, bram: 1, fieldmedic: 1, sentinel: 1, earthwarden: 1 },
   };
   // fix-sim: the worst-measured cards in these starters were swapped like for like (see tools/cardtest.js)
   RB.STARTER = STARTER;
-  // Resource cards: every deck is 30 normal cards plus RB.LAND_COUNT (10) resource cards, which are any mix of lands,
+  // Resource cards: every deck is RB.DECK_SIZE (40) normal cards plus RB.LAND_COUNT (10) resource cards, which are any mix of lands,
   // quests and locations (the user's rule, Nov 10, 2026). Quests and locations no longer go in the 30.
   // These are the quests and locations each starting hero brings; lands fill the rest of the ten.
   RB.STARTER_RES = {'aldric': ['caravan', 'ancientforge', 'citadel'], 'thorgrim': ['caravan', 'bounty', 'citadel'], 'lyssara': ['caravan', 'moonpetals', 'library'], 'grukka': ['caravan', 'slaybeast', 'encampment'], 'hruna': ['moonpetals', 'caravan', 'encampment'], 'snix': ['bounty', 'encampment']};
@@ -524,7 +580,7 @@
   function shape(heroId) {
     const st = RB.STARTER[heroId], out = {};
     if (st) for (const [id, k] of Object.entries(st)) { const t = C[id].type === 'location' ? 'quest' : C[id].type; out[t] = (out[t] || 0) + k; }
-    else Object.assign(out, { ally: 12, ability: 10, weapon: 2, armor: 3, item: 2, master: 1 });
+    else Object.assign(out, { ally: 16, ability: 14, weapon: 2, armor: 4, item: 3, master: 1 });
     return out;
   }
   const poolFor = (heroId, owned) => Object.values(C).filter(d => !RB.isResCard(d) && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));

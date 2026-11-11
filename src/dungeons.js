@@ -143,6 +143,24 @@
     const lvls = (g.boss.level - mode.level) * (win ? 0 : 10);
     return Math.round(base + lvls);
   };
+  // #147: "My deck" in a dungeon. A deck may bring as many of your own cards as your dungeon level allows
+  // (RB.dungeonSwaps). Your own cards are the ones beyond the hero's starter deck and usual quests and locations;
+  // lands are free for everyone, so they never count.
+  RB.dungeonExtra = (heroId, cards, lands) => {
+    const C = RB.CARDS, base = {};
+    for (const id of [...RB.buildDeck(heroId, null, 1), ...RB.defaultLands(heroId)]) base[id] = (base[id] || 0) + 1;
+    let n = 0;
+    for (const id of [...(cards || []), ...(lands || [])]) { if (C[id] && C[id].type === 'land') continue; if (base[id] > 0) base[id]--; else n++; }
+    return n;
+  };
+  RB.dungeonDeckCheck = (heroId, cards, lands, level) => {
+    const allow = RB.dungeonSwaps(level), full = Array.isArray(cards) && cards.length === RB.DECK_SIZE && cards.every(id => RB.CARDS[id] && RB.legalFor(heroId, RB.CARDS[id]));
+    const extra = full ? RB.dungeonExtra(heroId, cards, lands) : 0;
+    return { ok: full && extra <= allow, full, extra, allow,
+      why: !(cards && cards.length) ? `You haven't built a deck for this hero yet. Use Edit deck to make one; until then, the dungeon deck is used.`
+        : !full ? `Your deck for this hero isn't finished (it needs ${RB.DECK_SIZE} cards), so the dungeon deck is used.`
+        : extra > allow ? `Your deck brings ${extra} of your own cards; dungeon level ${level} allows ${allow}. Swap ${extra - allow} back to starter cards or level up. Until then, the dungeon deck is used.` : '' };
+  };
   // starter deck plus up to `swaps` of the best owned cards this hero can use (they replace the weakest starter cards)
   RB.dungeonDeck = (heroId, owned, swaps) => {
     const C = RB.CARDS, deck = RB.buildDeck(heroId, null, 1);

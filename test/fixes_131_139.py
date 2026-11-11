@@ -39,7 +39,7 @@ async def run(b, vp):
     await pg.fill('.decknamein','Frost and Fire'); await pg.screenshot(path=f'test/f_deckedit_{w}.png')
     await pg.click('#deck [data-act=done]'); await pg.wait_for_timeout(400)
     r = await pg.evaluate("(()=>{const s=RB.UI.save; return {n:s.deckList.length, name:s.deckList[0].name, use:s.deckUse.lyssara===s.deckList[0].id, mirrored:(s.decks.lyssara||[]).length, onDecks: !!document.querySelector('.deckgrid')}})()")
-    check(f'{w} new deck saved, named, in use', r['n']==1 and r['name']=='Frost and Fire' and r['use'] and r['mirrored']==30 and r['onDecks'], str(r))
+    check(f'{w} new deck saved, named, in use', r['n']==1 and r['name']=='Frost and Fire' and r['use'] and r['mirrored']==40 and r['onDecks'], str(r))
     await pg.click('[data-dk=copy]'); await pg.wait_for_timeout(300)
     check(f'{w} copy', await pg.evaluate("RB.UI.save.deckList.length")==2)
     # rename inline second deck, then give it to hero
@@ -83,7 +83,7 @@ async def run(b, vp):
     check(f'{w} pile dialog lists card', await pg.evaluate("document.querySelectorAll('.pilelist li').length")==1)
     await pg.click('.overlay [data-v=ok]')
     # bounty: play as resource, complete 3 times, still one resource
-    r = await pg.evaluate("""(async()=>{const E=RB.UI.currentGame,g=E.g,p=g.players[0]; let c=[...p.hand,...p.deck].find(c=>c.id==='bounty'); if(!c){c={uid:'zz1',id:'bounty'};} if(!p.hand.includes(c)){const i=p.deck.indexOf(c); if(i>=0)p.deck.splice(i,1); p.hand.push(c);} p.resPlayed=false; const n0=p.res.length; await E.playResource(p,c); const r=p.res.find(x=>x.c.id==='bounty'); const out=[p.res.length-n0]; for(let k=0;k<3;k++){g.minionsKilled+=2; const res=await E.completeQuest(p,r); out.push(res.ok, p.res.includes(r), !r.done);} out.push(p.res.filter(x=>x.c.id==='bounty').length, E.available(p)>=0); for(const x of p.res) x.ex=false; out.push(E.available(p)===p.res.length+p.tempRes); return out})()""")
+    r = await pg.evaluate("""(async()=>{const E=RB.UI.currentGame,g=E.g,p=g.players[0]; let c=[...p.hand,...p.deck].find(c=>c.id==='bounty'); if(!c){c={uid:'zz1',id:'bounty'};} if(!p.hand.includes(c)){const i=p.deck.indexOf(c); if(i>=0)p.deck.splice(i,1); p.hand.push(c);} p.resPlayed=false; const n0=p.res.length; await E.playResource(p,c); const r=p.res.find(x=>x.c===c); const out=[p.res.length-n0]; for(let k=0;k<3;k++){g.minionsKilled+=5; const res=await E.completeQuest(p,r); out.push(res.ok, p.res.includes(r), !r.done);} out.push(p.res.filter(x=>x.c===c).length, E.available(p)>=0); for(const x of p.res) x.ex=false; out.push(E.available(p)===p.res.length+p.tempRes); return out})()""")
     check(f'{w} bounty stays one resource', r[0]==1 and all(v is True for v in r[1:10]) and r[10]==1 and r[12] is True, str(r))
     check(f'{w} no errors', not errs, str(errs[:3]))
 async def main():

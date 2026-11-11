@@ -39,7 +39,10 @@ function pushCmd(room, c, from) {
 
 wss.on('connection', ws => {
   let room = null, me = null;
+  ws.isAlive = true; // #145 heartbeat
+  ws.on('pong', () => { ws.isAlive = true; });
   ws.on('message', raw => {
+    ws.isAlive = true;
     let m; try { m = JSON.parse(raw); } catch (e) { return; }
     if (m.t === 'ping') return send(ws, { t: 'pong' });
     if (m.t === 'create') {
@@ -63,7 +66,8 @@ wss.on('connection', ws => {
         send(ws, chatLog(r));
         broadcast(r, lobbyState(r));
         if (r.start) {
-          send(ws, r.start); for (const c of r.cmds) send(ws, c); send(ws, { t: 'caughtup', seq: r.cmds.length });
+          // #145: say that this start is a replay, so the client only waits for a catch-up when one is really coming
+          send(ws, Object.assign({}, r.start, { replay: true })); for (const c of r.cmds) send(ws, c); send(ws, { t: 'caughtup', seq: r.cmds.length });
           if (wasAi) pushCmd(r, { t: 'human', seat: r.players.indexOf(me) }, 'server');
         }
         return;
@@ -83,7 +87,7 @@ wss.on('connection', ws => {
       if (room.start) return;
       if (m.hero) me.hero = String(m.hero);
       if (m.deckMode) me.deckMode = String(m.deckMode);
-      me.deck = Array.isArray(m.deck) ? m.deck.slice(0, 40) : null;
+      me.deck = Array.isArray(m.deck) ? m.deck.slice(0, 60) : null; // #151: decks are 40 cards; room to spare
       me.lands = Array.isArray(m.lands) ? m.lands.slice(0, 10).map(String) : null; // #125: the hero's ten lands (the game checks them)
       me.pet = m.pet || null;
       if (m.name) me.name = String(m.name).slice(0, 24);
@@ -101,13 +105,13 @@ wss.on('connection', ws => {
     // #35: the host can fill empty seats with AI heroes
     if (m.t === 'addbot' && me.id === room.host && !room.start) {
       if (room.players.length >= cap(room)) return send(ws, { t: 'error', why: `The party is full (${cap(room)} heroes).` });
-      room.players.push({ id: 'bot-' + newId(), bot: true, ai: true, ws: null, name: String(m.name || 'AI hero').slice(0, 24), hero: String(m.hero || 'aldric'), deckMode: 'starter', deck: Array.isArray(m.deck) ? m.deck.slice(0, 40) : null });
+      room.players.push({ id: 'bot-' + newId(), bot: true, ai: true, ws: null, name: String(m.name || 'AI hero').slice(0, 24), hero: String(m.hero || 'aldric'), deckMode: 'starter', deck: Array.isArray(m.deck) ? m.deck.slice(0, 60) : null });
       return broadcast(room, lobbyState(room));
     }
     if (m.t === 'botset' && me.id === room.host && !room.start) {
       const b = room.players.find(x => x.id === m.id && x.bot); if (!b) return;
       if (m.hero) b.hero = String(m.hero); if (m.name) b.name = String(m.name).slice(0, 24);
-      if (Array.isArray(m.deck)) b.deck = m.deck.slice(0, 40);
+      if (Array.isArray(m.deck)) b.deck = m.deck.slice(0, 60);
       return broadcast(room, lobbyState(room));
     }
     if (m.t === 'kick' && me.id === room.host && !room.start) {
@@ -168,6 +172,9 @@ wss.on('connection', ws => {
   });
 });
 
+// #145: a phone that falls asleep can lose its connection without the server hearing about it. Ping every socket and
+// drop the ones that don't answer, so a sleeping player isn't mistaken for one who is still here.
+setInterval(() => { for (const ws of wss.clients) { if (ws.isAlive === false) { ws.terminate(); continue; } ws.isAlive = false; try { ws.ping(); } catch (e) { /* closing */ } } }, +process.env.HEARTBEAT_MS || 30000);
 // tidy up rooms nobody has touched for 3 hours
 setInterval(() => { const now = Date.now(); for (const [k, r] of rooms) if (now - r.touched > 3 * 3600e3 && !r.players.some(p => p.ws && p.ws.readyState === 1)) rooms.delete(k); }, 600e3);
 server.listen(PORT, () => console.log('Raidbound lobby listening on ' + PORT));
