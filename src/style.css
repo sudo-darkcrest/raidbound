@@ -1279,7 +1279,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 @media (prefers-reduced-motion: reduce) { .counter.bump { animation: none; } .cfloat { animation-duration: .01s; } }
 
 /* #116 Collection: collected count and bar on each set button */
-.setfilters { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: .45rem; align-items: stretch; }
+.setfilters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .45rem; align-items: stretch; }
+/* 12 set buttons: always full, even rows (12 in one row, 2 rows of 6, 3 of 4, or 4 of 3 on phones) */
+@media (min-width: 1100px) { .setfilters { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 1700px) { .setfilters { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
 .setfilters .setbtn { display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; gap: .22rem; min-width: 0; padding: .45rem .7rem .5rem; text-align: left; line-height: 1.15; }
 .setfilters .setbtn .sn { font-size: .84rem; }
 .setfilters .setbtn .sc { font: 700 .8rem var(--f-body); opacity: .85; }
