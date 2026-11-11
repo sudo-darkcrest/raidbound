@@ -258,7 +258,7 @@ COS = {
 # #97 redo (Nov 8, 2026): the user asked to redo Root Crush, Firebomb Barrage and the Vault cards so they fit together.
 # The Vault set is anchored on a repainted Iron Sentinel (the old painting has the real word "AEGIS" on its chest).
 # #98 done Nov 9, 2026: all 11 repainted (thw_crush, bfw_firebombs, sentinel and the 8 vis_ cards). Put ids back here to ask for another redo.
-REDO = ['heroicstrike']  # vis_lockdown redone Nov 9 (ChatGPT painting, colours matched to the Vault set)
+REDO = []  # heroicstrike repainted Nov 10 (#120, Gemini edit) · vis_lockdown redone Nov 9 (ChatGPT painting, colours matched to the Vault set)
 # #120 (Nov 10, 2026): Valiant Blow's glowing arc is a big crescent in front of the knight that doesn't come from his sword
 # (the blade is still raised). An edit of the current painting: drop the arc, make the blade itself glow.
 REDO_EDIT = {
