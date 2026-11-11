@@ -153,7 +153,7 @@
 
   /* ---------- the link handed to the battle screen ---------- */
   function makeNet(cfg) {
-    const queue = [], waiters = [];
+    const queue = [], waiters = [], liveWaiters = [];
     let applied = 0, upTo = -1, handlers = null, started = false, waitEl = null, pumping = false, lastSeq = -1;
     const net = {
       id: S.id, closed: false, replaying: false,
@@ -165,12 +165,17 @@
         // #70: speed changes are for everyone and don't touch the game, so they apply at once
         if (m.c.t === 'speed') { const v = +m.c.v; if (v > 0 && v <= 1) { cfg.speed = v; if (handlers && handlers.speed) handlers.speed(v); } applied++; check(); return; }
         queue.push(m);
+        if (liveWaiters.length) liveWaiters.splice(0).forEach(r => r(false)); // #127: another replayed command is here
         if (waiters.length) waiters.shift()(queue.shift());
         else pump();
       },
       next() { return new Promise(res => { if (queue.length) { applied++; res(queue.shift()); } else waiters.push(m => { applied++; res(m); }); }); },
-      catchUp(seq) { upTo = seq; check(); },
-      behind: () => queue.length > 0,
+      catchUp(seq) { upTo = seq; check(); if (liveWaiters.length && net.live()) liveWaiters.splice(0).forEach(r => r(true)); },
+      // #127: after a reconnect the log is replayed. 'live' = the replay has caught up and nothing is left to replay
+      live() { if (net.replaying && upTo >= 0 && applied >= upTo && !queue.length) { net.replaying = false; U.toast('You\'re back in the raid.'); } return !net.replaying; },
+      // true once live, false as soon as another replayed command is waiting (it may be the answer we're looking for)
+      liveOrQueued() { return new Promise(res => { if (net.live()) return res(true); if (queue.length) return res(false); liveWaiters.push(res); }); },
+      behind: () => queue.length > 2, // #123: a command or two waiting is normal; only hurry when really behind
       attach(h) { handlers = h; },
       ready() { started = true; pump(); },
       wait(text) {

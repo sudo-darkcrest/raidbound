@@ -48,6 +48,8 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
 - **Online:** one player creates a party and shares a 5-letter code, and friends join from their own computer or phone.
   - **Party chat:** a Chat button in the lobby and during the fight opens quick phrases ("Heal me!", "Save your Instants"…) and a box to type in. A closed chat shows a red count and the newest line for a few seconds. You can mute any player, and someone who drops and rejoins sees the last 50 lines.
 - **Turn chime:** a short chime plays when the turn passes to you, even when the game is in another browser tab (the tab's title flashes too). Switch it off in Settings.
+- **Whose turn:** in online play the turn banner names the player as well as their hero ("Ann · Ser Aldric Dawnward — Ann's turn"), and cards other players play stay on screen long enough to read.
+- **Reconnecting:** if your page drops out and rejoins while the raid is waiting on one of your choices (stepping into a Soak circle, answering a boss card, a React), you're asked again as soon as you're back in step.
   - Raids take up to 4 heroes and dungeons up to 3.
   - The host can fill empty seats with AI heroes.
   - If someone drops out, the AI plays their hero until they come back.

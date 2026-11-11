@@ -269,7 +269,8 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .hand .hc:hover, .hand .hc.open { transform: translateY(-46%) scale(1.12) !important; z-index: 20; margin: 0 calc(var(--hw) * 0.04); }
 .hand .hc.play .card { box-shadow: 0 0 0 2px var(--gilt-hi), 0 0 22px rgba(246, 220, 149, .65), 0 10px 20px rgba(0, 0, 0, .6); }
 .hand .hc .card { transform: translateY(38%); }
-.hand.other .hc { pointer-events: none; }
+.hand.other.hidden .hc { pointer-events: none; }
+.hand.other:not(.hidden) .hc { cursor: zoom-in; } /* #124: your own cards still enlarge when it isn't your turn */
 .turnctl { position: relative; z-index: 30; display: flex; flex-direction: column; gap: .45rem; align-items: stretch; padding-bottom: .4rem; min-width: 10.5rem; max-width: 11rem; }
 .turnctl .btn { text-align: center; }
 .turnctl .hint { font-size: .78rem; color: var(--muted); text-align: center; }
@@ -1342,3 +1343,6 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   .chatdock.open .chatfab { display: none; }
   .chatdock.open .chatpanel { order: 0; width: 100%; height: min(62vh, 30rem); height: min(62dvh, 30rem); border-radius: 14px 14px 0 0; border-width: 1px 0 0; }
 }
+
+/* #127: choices (dialogs) sit above the phone side panel, card sheet and chat, so they can always be answered */
+.overlay:not(.clear) { z-index: 88; }

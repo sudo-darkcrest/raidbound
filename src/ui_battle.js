@@ -212,10 +212,12 @@
     b.style.animationDuration = (ms || 1500) * pace() + 'ms';
     document.body.appendChild(b); setTimeout(() => b.remove(), (ms || 1500) * pace() + 50);
   }
-  function reveal(html, ms, onTop, who) {
+  function reveal(html, ms, onTop, who, steady) {
     const o = document.createElement('div'); o.className = 'overlay clear'; o.innerHTML = `<div class="reveal">${who ? `<div class="who">${esc(who)}</div>` : ''}${html}</div>`;
     document.body.appendChild(o);
-    return wait(ms).then(() => o.remove());
+    // steady (#123): use the chosen game speed, not the online catch-up pace, so a played card can always be read
+    const t = steady ? new Promise(r => setTimeout(r, (net && net.replaying) ? 0 : ms)) : wait(ms);
+    return t.then(() => o.remove());
   }
   // #40: a card someone else played shrinks into their row in the Party panel
   function flyToRoster(id, pi) {
@@ -256,14 +258,14 @@
           view.played = view.played || {}; (view.played[d.p] = view.played[d.p] || []).push({ id: d.id, holo: d.holo });
           const q = E.g.players[d.p], other = !human(q) || q.idx !== viewerIdx();
           const who = other ? (q.auto ? E.pdef(q).name + ' (AI)' : (E.g.cfg.party[q.idx].name && net ? E.g.cfg.party[q.idx].name + ' · ' : '') + E.pdef(q).name) + ' plays' : null;
-          if (speed() > 0.2 || other) { await reveal(U.cardHTML(d.id, { holo: d.holo }), other ? 1700 : 800, null, who); if (other) flyToRoster(d.id, d.p); }
+          if (speed() > 0.2 || other) { await reveal(U.cardHTML(d.id, { holo: d.holo }), other ? 2400 * Math.max(speed(), 0.5) : 1100 * speed(), null, who, true); if (other) flyToRoster(d.id, d.p); }
           break; }
         case 'bossCard': { U.sfx.bossReveal(); if (view.bossRound !== E.g.round) { view.bossRound = E.g.round; view.bossPlayed = []; } view.bossPlayed.push(d.id); await reveal(U.cardHTML(d.id), 2600, null, E.raid.short + ' plays'); break; }
         case 'omen': { U.sfx.bossReveal(); await reveal(U.cardHTML(d.id), 2400, null, 'Omen'); break; }
         case 'phase': U.sfx.phase(E.raid.id); banner(d.name, 'boss', d.text, 2600); await wait(2200); break;
         case 'turn': { const p = E.g.players[d.p];
           if (!p.auto && !net && !E.g.cfg.bossPlayer) { if (localHumans() > 1 && view.lastHuman !== d.p) view.curtain = d.p; view.lastHuman = d.p; }
-          view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (human(p) && !E.g.cfg.bossPlayer) U.turnAlert(); if (E.g.players.length > 1 || E.g.round === 1) { banner(E.g.players.length > 1 ? d.hero : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : 'Your turn') : 'Round ' + E.g.round, 1100); await wait(800); } break; }
+          view.focus = (net || E.g.cfg.bossPlayer) ? (viewerIdx() >= 0 ? viewerIdx() : d.p) : p.auto ? homeFocus() : d.p; view.played = view.played || {}; view.played[d.p] = []; flush(); if (human(p) && !E.g.cfg.bossPlayer) U.turnAlert(); if (E.g.players.length > 1 || E.g.round === 1) { const pn = net && !p.auto && E.g.cfg.party[p.idx] && E.g.cfg.party[p.idx].name; const mineNow = net ? net.mine(p.idx) : human(p); banner(E.g.players.length > 1 ? (pn ? `${pn} · ${d.hero}` : d.hero) : 'Your turn', '', E.g.players.length > 1 ? (p.auto ? 'AI controlled' : net ? (mineNow ? `${pn}, it's your turn!` : `${pn}'s turn`) : 'Your turn') : 'Round ' + E.g.round, net ? 1800 : 1100); await wait(net ? 1100 : 800); } break; }
         case 'bossTurn': if (E.g.cfg.bossPlayer) U.turnAlert(); U.sfx.bossTurn(); banner(d.name + '\'s turn', 'boss', null, 1100); await wait(850); break;
         case 'counter': { // #114: the gauge pulses and shows +1 / -1, so a change never goes unnoticed
           const el = document.querySelector('#battle .bossrow .counter');
@@ -405,7 +407,7 @@
         <p class="small">${esc(name)} has ${Math.max(0, E.heroHp(d.p))} health${d.p.hero.shield ? ` and a ward of ${d.p.hero.shield}` : ''}. Armor and wards still help.</p>
         <div class="soakrows">${rows}</div></div>
         <div class="acts"><button class="btn ghost" data-v="no">Stay out${good ? '' : ' <span class="itag good">Good answer</span>'}</button><button class="btn primary" data-v="yes">Step in${good ? ' <span class="itag good">Good answer</span>' : ''}</button></div>`;
-      const v = await U.dialog(html, { dismiss: good ? 'yes' : 'no' });
+      const v = await U.dialog(html, { cls: 'soakdlg' }); // #127: no dismiss: a stray click can't choose for the player
       return v === 'yes';
     }
     // #100 Cover: a ready Bulwark ally may take the hit instead
@@ -464,26 +466,35 @@
     p.auto = true; p.wasAi = true; U.toast(`${E.g.cfg.party[p.idx].name} lost connection — the AI takes over their hero.`);
     if (E.g.phase === 'main' && E.g.turn === p.idx && !E.g.over) await doAction('auto', [p]);
   }
-  async function netAnswer(seatIdx) {
+  // #127: an answer from one seat, in command order. If this is my own prompt and my computer is still replaying the
+  // log after a reconnect, ask as soon as the replay has caught up without finding the answer (before, it waited forever).
+  async function netAnswer(seatIdx, askMine) {
     for (;;) {
+      if (askMine && net.replaying && await net.liveOrQueued()) { const a = askMine; askMine = null; await a(); }
       const m = await net.next();
       if (m.c.t === 'ans') return m.c.v;
       if (m.c.t === 'ai') { const p = E.g.players[m.c.seat]; if (p) { p.auto = true; p.wasAi = true; } if (m.c.seat === seatIdx) return null; }
       if (m.c.t === 'human') { const p = E.g.players[m.c.seat]; if (p) p.auto = false; }
     }
   }
+  async function seatAnswer(idx, askFn, waitText) {
+    const q = E.g.players[idx], mine = net.mine(idx) && !q.auto;
+    const askMine = async () => { net.wait(null); net.send({ t: 'ans', v: await askFn() }); };
+    if (mine && net.live()) await askMine(); else net.wait(mine ? 'Getting back in step with the raid…' : waitText);
+    const v = await netAnswer(idx, mine && net.replaying ? askMine : null); net.wait(null);
+    return v;
+  }
   async function netAsk(kind, d) {
+    const nm = i => esc(E.g.cfg.party[i].name);
     if (kind === 'scout') {
-      if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v }); }
-      else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is scouting…`);
-      const v = await netAnswer(d.p.idx); net.wait(null); return v || 'bottom';
+      const v = await seatAnswer(d.p.idx, () => ask(kind, d, true), `${nm(d.p.idx)} is scouting…`);
+      return v || 'bottom';
     }
     if (kind === 'instant') {
       for (const q of d.players) {
         if (q.auto) continue;
-        if (net.mine(q.idx) && !net.replaying) { const r = await ask('instant', Object.assign({}, d, { players: [q] }), true); net.send({ t: 'ans', v: r ? { uid: r.inst.uid, R: r.target ? E.refId(r.target) : null } : null }); }
-        else net.wait(`Waiting for ${esc(E.g.cfg.party[q.idx].name)} to answer ${esc(d.card.name)}…`);
-        const v = await netAnswer(q.idx); net.wait(null);
+        const v = await seatAnswer(q.idx, async () => { const r = await ask('instant', Object.assign({}, d, { players: [q] }), true); return r ? { uid: r.inst.uid, R: r.target ? E.refId(r.target) : null } : null; },
+          `Waiting for ${nm(q.idx)} to answer ${esc(d.card.name)}…`);
         if (v) { const inst = q.hand.find(c => c.uid === v.uid); if (inst) return { p: q, inst, target: v.R ? findRef(v.R) : null }; }
       }
       return null;
@@ -493,17 +504,14 @@
       for (const idx of ids) {
         const q = E.g.players[idx]; if (q.auto) continue;
         const mineOpts = d.options.filter(o => o.p === q);
-        if (net.mine(q.idx) && !net.replaying) { const r = await ask('react', Object.assign({}, d, { options: mineOpts }), true); net.send({ t: 'ans', v: r ? { uid: r.inst.uid } : null }); }
-        else net.wait(`Waiting for ${esc(E.g.cfg.party[q.idx].name)} to react to ${esc(d.ctx.attacker)}…`);
-        const v = await netAnswer(q.idx); net.wait(null);
+        const v = await seatAnswer(idx, async () => { const r = await ask('react', Object.assign({}, d, { options: mineOpts }), true); return r ? { uid: r.inst.uid } : null; },
+          `Waiting for ${nm(idx)} to react to ${esc(d.ctx.attacker)}…`);
         if (v) { const o = mineOpts.find(x => x.inst.uid === v.uid); if (o) return o; }
       }
       return null;
     }
     if (kind === 'soak') {
-      if (net.mine(d.p.idx) && !d.p.auto && !net.replaying) { const v = await ask(kind, d, true); net.send({ t: 'ans', v: !!v }); }
-      else net.wait(`${esc(E.g.cfg.party[d.p.idx].name)} is deciding whether to step into the circle…`);
-      const v = await netAnswer(d.p.idx); net.wait(null);
+      const v = await seatAnswer(d.p.idx, async () => !!(await ask(kind, d, true)), `${nm(d.p.idx)} is deciding whether to step into the circle…`);
       return v == null ? RB.AI.chooseSoak(E, d.p, d.total, d.heroes) : !!v;
     }
     return null;
@@ -602,6 +610,7 @@
     const mu = t.closest('.unit.minion'); if (mu) { const m = E.g.boss.minions.find(x => x.uid === mu.dataset.ref); if (m) return show(mu, U.cardHTML(m.id, { atk: E.minAtk(m), hp: E.minMax(m) - m.damage })); }
     if (t.closest('.bosscard')) { showRules(); return true; }
     if (acting) return false;
+    const hcd = t.closest('.hc[data-uid]'); if (hcd) { const q = fp(), inst = q.hand.find(c => c.uid === hcd.dataset.uid); if (inst) return show(hcd, U.cardHTML(inst.id, { holo: inst.holo })); } // #124
     const au = t.closest('.unit[data-kind=ally]'); if (au) { for (const q of E.g.players) { const a = q.allies.find(x => x.uid === au.dataset.ref); if (a) return show(au, allyCard(q, a)); } }
     const hc = t.closest('.herocard'); if (hc) { const q = fp(); return show(hc, q.hero.master ? U.cardHTML(q.hero.master) : U.heroCardHTML(q.heroId)); }
     const gs = t.closest('.gslot[data-card], .rcard[data-card]'); if (gs) return show(gs, U.cardHTML(gs.dataset.card));
