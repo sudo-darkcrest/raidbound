@@ -675,6 +675,9 @@ body.special-back .cardback::after, .cos.special .swatch::after { display: block
 .againhead { display: flex; gap: .8rem; align-items: center; justify-content: center; flex-wrap: wrap; font-family: var(--f-sc); font-size: 1.15rem; color: var(--gold, #f2c76a); }
 .againhead .againcost { color: var(--muted); font-size: .9rem; }
 .packrow.mini { gap: 1.2rem; margin: .8rem 0 .6rem; }
+/* buy another pack: three packs to a row, centred */
+.againbox .packrow.mini { display: grid; grid-template-columns: repeat(3, max-content); justify-content: center; justify-items: center; column-gap: 2rem; row-gap: 1rem; }
+@media (max-width: 600px) { .againbox .packrow.mini { column-gap: .8rem; } .againbox .packrow.mini .tcgpack { zoom: .36; } }
 .packrow.mini .tcgpack { zoom: .46; }
 .packrow.mini .packpick { gap: .3rem; }
 .packrow.mini .tcgpack.broke { filter: grayscale(.85) brightness(.6) drop-shadow(0 10px 12px rgba(0,0,0,.6)); cursor: not-allowed; }
