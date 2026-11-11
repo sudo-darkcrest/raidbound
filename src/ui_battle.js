@@ -593,11 +593,11 @@
     if (r.quest) {
       if (r.done) return U.popover(anchor, d.name, [{ why: 'Completed. It still counts as a resource.' }], card);
       const ok = E.questReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])], card);
+      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p, r) ? `Complete when ${d.condText}.${d.progress ? ` So far: ${d.progress(E, p, r)}.` : ''}` : 'Not enough ready resources.' }]), ...(d.repeat ? [{ why: `Repeatable${r.times ? ` · completed ${r.times} time${r.times > 1 ? 's' : ''}` : ''}.` }] : [])], card);
     }
     if (r.loc) {
       const ok = E.locationReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])], card);
+      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : (d.draws && E.drawBlocked(p)) || 'Not enough ready resources.' }])], card);
     }
   }
   function allyCard(p, a) { return U.cardHTML(a.id, { atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, holo: a.c && a.c.holo }); }

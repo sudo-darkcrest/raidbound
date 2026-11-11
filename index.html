@@ -4478,7 +4478,7 @@ globalThis.RB.WEB_BUILD = true;
 
   // ---------- quests ----------
   add('caravan', { name: 'The Missing Caravan', type: 'quest', cost: 0, qcost: 2, text: 'Play as a resource. Complete (pay 2): draw 2 cards.', reward: async (E, c) => E.draw(c.p, 2), art: { s: 'steppe', L: [['obj', { t: 'scroll', x: 150, y: 130, s: 0.9 }]] } });
-  add('bounty', { name: 'Bounty: Ashfang Marauders', type: 'quest', cost: 0, qcost: 0, cond: (E, p) => E.g.minionsKilled >= 2, condText: 'your party has destroyed 2 minions', text: 'Play as a resource. Complete once you have destroyed 2 minions: draw a card and heal 4 damage from your hero.', reward: async (E, c) => { await E.draw(c.p, 1); await E.heal(E.heroT(c.p), 4); }, art: { s: 'tavern', L: [['obj', { t: 'scroll', x: 150, y: 120, s: 0.85 }], ['obj', { t: 'coin', x: 220, y: 160, s: 0.4 }]] } });
+  add('bounty', { name: 'Bounty: Ashfang Marauders', type: 'quest', cost: 0, qcost: 0, repeat: true, cond: (E, p, r) => E.g.minionsKilled - ((r && r.base) || 0) >= 2, progress: (E, p, r) => Math.min(2, E.g.minionsKilled - ((r && r.base) || 0)) + ' of 2 minions destroyed', condText: 'your party has destroyed 2 more minions', text: 'Play as a resource. Repeatable: each time your party destroys 2 minions, complete this to draw a card and heal 4 damage from your hero. It never turns face down.', reward: async (E, c) => { await E.draw(c.p, 1); await E.heal(E.heroT(c.p), 4); }, art: { s: 'tavern', L: [['obj', { t: 'scroll', x: 150, y: 120, s: 0.85 }], ['obj', { t: 'coin', x: 220, y: 160, s: 0.4 }]] } });
   add('moonpetals', { name: 'Gather Moonpetals', type: 'quest', cost: 0, qcost: 1, text: 'Play as a resource. Complete (pay 1): heal 5 damage from your hero.', reward: async (E, c) => E.heal(E.heroT(c.p), 5), art: { s: 'forest', L: [['fx', { t: 'heal', x: 150, y: 140, c: '#e0d0ff', leaves: 0 }], ['fx', { t: 'sparkle', n: 12, c: '#e6d8ff' }]] } });
   add('ancientforge', { name: 'Rekindle the Ancient Forge', type: 'quest', cost: 0, qcost: 3, rarity: 'u', text: 'Play as a resource. Complete (pay 3): search your deck for a weapon or armor card and put it into your hand.', reward: async (E, c) => E.tutor(c.p, d => d.type === 'weapon' || d.type === 'armor'), art: { s: 'forge', L: [fig({ race: 'dwarf', pose: 'heroic', w: 'hammer', wGlow: '#ff9a3a', x: 150, y: 210, s: 1 })] } });
   add('scout', { name: 'Scout the Enemy Lair', type: 'quest', cost: 0, qcost: 1, text: 'Play as a resource. Complete (pay 1): look at the top card of the boss deck. You may put it on the bottom.', reward: async (E, c) => E.scoutBoss(c.p), art: { s: 'rooftops', L: [fig({ race: 'goblin', pose: 'hunch', helm: 'hood', x: 120, y: 210, s: 1.1, eye: '#ffd060' })] } });
@@ -4489,7 +4489,7 @@ globalThis.RB.WEB_BUILD = true;
   add('citadel', { name: 'Silverhold Citadel', type: 'location', cost: 0, fac: 'concord', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 1/3 Footman with Bulwark.', lrun: async (E, c) => E.summonAlly(c.p, 'footman_t', 1), art: { s: 'castle', L: [['glow', { x: 205, y: 110, r: 50, c: '#ffd27a', op: 0.45 }], ['obj', { t: 'banner', x: 64, y: 128, s: 0.55 }], fig({ pose: 'stand', w: 'polearm', off: 'tower', wA: 0, helm: 'great', plume: false, x: 120, y: 214, s: 0.6, emblem: '#ffd060' })] } });
   add('encampment', { name: 'Bloodrock Encampment', type: 'location', cost: 0, fac: 'clans', rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to summon a 2/2 Grunt with Swift and Bulwark.', lrun: async (E, c) => E.summonAlly(c.p, 'grunt_t', 1), art: { s: 'steppe', L: [['glow', { x: 150, y: 196, r: 40, c: '#ff8a2a', op: 0.7 }], ['obj', { t: 'banner', x: 225, y: 128, s: 0.55, col: '#7a1010', em: '#ffb070', glyph: 'axes' }], fig({ race: 'orc', pose: 'stand', w: 'axe', helm: 'mohawk', x: 110, y: 212, s: 0.62 }), fig({ race: 'orc', pose: 'staff', w: 'polearm', x: 70, y: 214, s: 0.58, flip: 1 })] } });
   add('moonwell', { name: 'Moonwell Sanctum', type: 'location', cost: 0, lcost: 1, ltarget: 'friendlyHero', text: 'Play as a resource. Once per turn: pay 1 to heal 3 damage from a friendly hero.', lrun: async (E, c) => E.heal(c.target, 3), art: { s: 'forest', L: [['fx', { t: 'runes', x: 150, y: 190, r: 70, c: '#d0e0ff' }], ['glow', { x: 150, y: 180, r: 50, c: '#bfd8ff' }]] } });
-  add('library', { name: 'Spire Library of Aethermoor', type: 'location', cost: 0, rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to draw a card.', lrun: async (E, c) => E.draw(c.p, 1), art: { s: 'arcane', L: [['obj', { t: 'tome', x: 150, y: 150, s: 0.7 }]] } });
+  add('library', { name: 'Spire Library of Aethermoor', type: 'location', cost: 0, rarity: 'u', lcost: 2, draws: true, text: 'Play as a resource. Once per turn: pay 2 to draw a card (not while your hand is full).', lrun: async (E, c) => E.draw(c.p, 1), art: { s: 'arcane', L: [['obj', { t: 'tome', x: 150, y: 150, s: 0.7 }]] } });
   add('ashenforge', { name: 'The Ashen Forge', type: 'location', cost: 0, lcost: 1, text: 'Play as a resource. Once per turn: pay 1. Your hero gets +2 ATK this turn.', lrun: async (E, c) => E.tempAtk(c.p, 2), art: { s: 'forge', L: [['obj', { t: 'hammer', x: 200, y: 150, s: 0.45 }]] } });
 
   // ---------- master heroes ----------
@@ -5291,19 +5291,21 @@ globalThis.RB.WEB_BUILD = true;
       H.update();
       return { ok: true };
     }
-    function questReady(p, r) { const d = C[r.c.id]; return r.quest && !r.done && (!d.cond || d.cond(api, p)) && available(p) >= (d.qcost || 0); }
+    function questReady(p, r) { const d = C[r.c.id]; return r.quest && !r.done && (!d.cond || d.cond(api, p, r)) && available(p) >= (d.qcost || 0); }
     async function completeQuest(p, r) {
       if (!isActive(p) || !questReady(p, r)) return { ok: false, why: 'This quest can\'t be completed yet.' };
       const d = C[r.c.id];
       pay(p, d.qcost || 0);
-      r.done = true;
-      log(`${pdef(p).name} completes ${d.name}!`, 'win');
+      // #128: a repeatable quest stays face up and starts counting again from now
+      if (d.repeat) { r.base = g.minionsKilled; r.times = (r.times || 0) + 1; } else r.done = true;
+      log(`${pdef(p).name} completes ${d.name}${r.times > 1 ? ` again (${r.times} times)` : ''}!`, 'win');
       await H.anim('quest', { p: p.idx, id: d.id });
       await d.reward(api, { p });
       H.update();
       return { ok: true };
     }
-    function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost; }
+    const drawBlocked = p => p.hand.length >= 10 ? 'Your hand is full (10 cards), so the card would be thrown away.' : (!p.deck.length && !p.grave.length) ? 'You have no cards left to draw.' : null;
+    function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost && !(C[r.c.id].draws && drawBlocked(p)); }
     async function useLocation(p, r, target) {
       if (!isActive(p) || !locationReady(p, r)) return { ok: false, why: 'The location can\'t be used right now.' };
       const d = C[r.c.id];
@@ -5670,7 +5672,7 @@ globalThis.RB.WEB_BUILD = true;
     /* ---------- helpers exposed to card effects ---------- */
     const api = {
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
-      canPlay, canEquip, needsTarget, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
+      canPlay, canEquip, needsTarget, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
@@ -6450,7 +6452,7 @@ globalThis.RB.WEB_BUILD = true;
     art: { s: 'holy', L: [['fx', { t: 'holy', x: 150, wings: 1, wy: 96 }], fig({ pose: 'pray', robe: 1, helm: 'hair', spectral: 1, x: 150, y: 200, s: 0.8 }), ['fx', { t: 'barrier', x: 150, y: 150 }]] } });
 
   // #36: the old Market picture (a harbor stall full of cards and coin) now belongs to this card
-  add('harbormarket', { name: 'Saltwind Harbor Market', type: 'location', cost: 0, rarity: 'u', lcost: 2, text: 'Play as a resource. Once per turn: pay 2 to draw a card.', lrun: async (E, c) => E.draw(c.p, 1),
+  add('harbormarket', { name: 'Saltwind Harbor Market', type: 'location', cost: 0, rarity: 'u', lcost: 2, draws: true, text: 'Play as a resource. Once per turn: pay 2 to draw a card (not while your hand is full).', lrun: async (E, c) => E.draw(c.p, 1),
     art: { s: 'sea', L: [glow(150, 120, 90, '#ffd27a', 0.45), ['obj', { t: 'chest', x: 150, y: 170, s: 1 }], ['obj', { t: 'coin', x: 90, y: 200, s: 0.45 }], ['obj', { t: 'scroll', x: 230, y: 96, s: 0.5 }]] } });
 
   RB.FRONTIER = Object.values(C).filter(d => d.set === 'frontier').map(d => d.id);
@@ -9111,11 +9113,11 @@ globalThis.RB.WEB_BUILD = true;
     if (r.quest) {
       if (r.done) return U.popover(anchor, d.name, [{ why: 'Completed. It still counts as a resource.' }], card);
       const ok = E.questReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p) ? `Complete when ${d.condText}.` : 'Not enough ready resources.' }])], card);
+      return U.popover(anchor, d.name, [{ label: `Complete quest${d.qcost ? ` (pay ${d.qcost})` : ''}`, disabled: !ok, go: () => doAct('completeQuest', p, r) }, ...(ok ? [] : [{ why: d.cond && !d.cond(E, p, r) ? `Complete when ${d.condText}.${d.progress ? ` So far: ${d.progress(E, p, r)}.` : ''}` : 'Not enough ready resources.' }]), ...(d.repeat ? [{ why: `Repeatable${r.times ? ` · completed ${r.times} time${r.times > 1 ? 's' : ''}` : ''}.` }] : [])], card);
     }
     if (r.loc) {
       const ok = E.locationReady(p, r);
-      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : 'Not enough ready resources.' }])], card);
+      return U.popover(anchor, d.name, [{ label: `Use location (pay ${d.lcost})`, disabled: !ok, go: () => { if (d.ltarget) startTargeting(`${d.name}: choose a target`, E.targetsFor(d.ltarget, p), true, t => doAct('useLocation', p, r, t)); else doAct('useLocation', p, r, null); } }, ...(ok ? [] : [{ why: r.used ? 'Already used this turn.' : (d.draws && E.drawBlocked(p)) || 'Not enough ready resources.' }])], card);
     }
   }
   function allyCard(p, a) { return U.cardHTML(a.id, { atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, holo: a.c && a.c.holo }); }

@@ -517,19 +517,21 @@
       H.update();
       return { ok: true };
     }
-    function questReady(p, r) { const d = C[r.c.id]; return r.quest && !r.done && (!d.cond || d.cond(api, p)) && available(p) >= (d.qcost || 0); }
+    function questReady(p, r) { const d = C[r.c.id]; return r.quest && !r.done && (!d.cond || d.cond(api, p, r)) && available(p) >= (d.qcost || 0); }
     async function completeQuest(p, r) {
       if (!isActive(p) || !questReady(p, r)) return { ok: false, why: 'This quest can\'t be completed yet.' };
       const d = C[r.c.id];
       pay(p, d.qcost || 0);
-      r.done = true;
-      log(`${pdef(p).name} completes ${d.name}!`, 'win');
+      // #128: a repeatable quest stays face up and starts counting again from now
+      if (d.repeat) { r.base = g.minionsKilled; r.times = (r.times || 0) + 1; } else r.done = true;
+      log(`${pdef(p).name} completes ${d.name}${r.times > 1 ? ` again (${r.times} times)` : ''}!`, 'win');
       await H.anim('quest', { p: p.idx, id: d.id });
       await d.reward(api, { p });
       H.update();
       return { ok: true };
     }
-    function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost; }
+    const drawBlocked = p => p.hand.length >= 10 ? 'Your hand is full (10 cards), so the card would be thrown away.' : (!p.deck.length && !p.grave.length) ? 'You have no cards left to draw.' : null;
+    function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost && !(C[r.c.id].draws && drawBlocked(p)); }
     async function useLocation(p, r, target) {
       if (!isActive(p) || !locationReady(p, r)) return { ok: false, why: 'The location can\'t be used right now.' };
       const d = C[r.c.id];
@@ -896,7 +898,7 @@
     /* ---------- helpers exposed to card effects ---------- */
     const api = {
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
-      canPlay, canEquip, needsTarget, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
+      canPlay, canEquip, needsTarget, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, playCard, attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
       start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
