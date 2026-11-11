@@ -20,7 +20,7 @@ The single-file version, `public/Raidbound.html`, has every picture packed insid
   - 86 allies, 91 abilities (basic and instant), 24 weapons, 26 armour pieces, 34 items, 17 quests, 15 locations and 15 Master Heroes (an Ascended version of each hero).
   - The rarest cards are Legendary.
   - Loot cards hide scratch-off codes that unlock cosmetics.
-- **Lands:** 21 land cards (7 Silver Concord, 7 Ember Clans, 7 neutral) are dedicated resources. Every deck carries 10 of them on top of its 30 cards, and each does one small thing as it arrives (heal, ward, a point of damage, a peek at the boss deck). Lands are free and never come from packs. Any other card can still be turned into a resource, but only 3 times in a fight; quests and locations don't count. Choose a hero's lands in the deck editor under Lands.
+- **Lands and resource cards:** a deck is 30 normal cards plus 10 resource cards. The 10 are any mix of lands, quests and locations; the 30 hold none of them. There are 21 land cards (7 Silver Concord, 7 Ember Clans, 7 neutral): each is free, never comes from packs, and does one small thing as it arrives (heal, ward, a point of damage, a peek at the boss deck). A normal card can still be turned into a resource, but only 3 times in a fight. Choose a hero's ten in the deck editor under "Lands, quests & locations".
 - **3 raids:**
   - Crypt of the Hollow King
   - The Molten Spire

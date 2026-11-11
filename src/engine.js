@@ -45,7 +45,8 @@
     cfg.party.forEach((seat, i) => {
       // #125: every deck carries ten lands on top of its 30 cards (the player's own pick, or the hero's usual ten)
       const idOf = e => typeof e === 'string' ? e : e.id;
-      const full = seat.deck.some(e => C[idOf(e)] && C[idOf(e)].type === 'land') || cfg.noLands ? seat.deck : seat.deck.concat(RB.landsFor(seat.hero, seat.lands));
+      // (Nov 10: the ten are any mix of lands, quests and locations, and the 30 hold none of them)
+      const full = cfg.noLands ? seat.deck : seat.deck.filter(e => !RB.isResCard(C[idOf(e)])).concat(RB.landsFor(seat.hero, seat.lands, seat.deck.map(idOf)));
       const deck = shuffle(full.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
         idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,

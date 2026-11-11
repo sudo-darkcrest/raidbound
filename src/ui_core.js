@@ -32,6 +32,7 @@
     for (const hid of Object.keys(RB.HEROES)) {
       if (save.starterGot.includes(hid) || !RB.heroUnlocked(hid, save)) continue;
       for (const [id, k] of Object.entries(RB.STARTER[hid] || {})) if (C[id] && (save.owned[id] || 0) < k) save.owned[id] = k;
+      for (const id of RB.defaultLands(hid)) if (C[id].type !== 'land' && !(save.owned[id] > 0)) save.owned[id] = 1; // the hero's starter quests and locations
       save.starterGot.push(hid); changed = true;
     }
     return changed;
@@ -40,6 +41,22 @@
   U.save = save;
   // #57: saved decks that held a retired Master Hero card get that hero's Ascended card instead
   if (RB.fixDeck) for (const [hid, ids] of Object.entries(save.decks || {})) if (Array.isArray(ids)) save.decks[hid] = RB.fixDeck(hid, ids);
+  // Nov 10, 2026: quests and locations moved out of the 30 into the ten resource slots (shared with lands). A saved deck
+  // that still holds them has them moved across, and the gaps filled with the best cards you own for that hero.
+  U.deckMoved = [];
+  for (const [hid, ids] of Object.entries(save.decks || {})) {
+    if (!Array.isArray(ids) || !RB.HEROES[hid] || !ids.some(id => RB.isResCard(C[id]))) continue;
+    const wasFull = ids.length === RB.DECK_SIZE;
+    if (!RB.landsOk(hid, save.lands[hid])) { const want = {}; save.lands[hid] = RB.landsFor(hid, null, ids.filter(id => RB.isResCard(C[id]) && (want[id] = (want[id] || 0) + 1) <= Math.min(RB.maxCopies(C[id]), save.owned[id] || 0))); }
+    const deck = ids.filter(id => !RB.isResCard(C[id])), cnt = {}; deck.forEach(id => cnt[id] = (cnt[id] || 0) + 1);
+    if (wasFull) {
+      const opts = []; for (const d of Object.values(C)) { if (RB.isResCard(d) || !RB.legalFor(hid, d)) continue; if (d.type === 'master' && deck.some(x => C[x].type === 'master')) continue; for (let k = cnt[d.id] || 0; k < Math.min(RB.maxCopies(d), save.owned[d.id] || 0); k++) opts.push({ id: d.id, s: RB.cardScore(d) - k * 0.5 }); }
+      opts.sort((a, b) => b.s - a.s);
+      for (const o of opts) { if (deck.length >= RB.DECK_SIZE) break; if (C[o.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue; deck.push(o.id); }
+    }
+    save.decks[hid] = deck; U.deckMoved.push(hid);
+  }
+  if (U.deckMoved.length) { save.autoDecks = {}; try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } }
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
   U.persist();
   if (!save.heroicWins) save.heroicWins = {};

@@ -447,15 +447,19 @@
   RB.maxCopies = d => (d.kw || []).includes('unique') || d.type === 'master' ? 1 : 2;
   RB.DECK_SIZE = 30;
   const STARTER = {
-    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, caravan: 1, ancientforge: 1, citadel: 1, archon: 1 },
-    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, caravan: 1, bounty: 1, citadel: 1, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1 },
-    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, caravan: 1, moonpetals: 1, library: 1, tempest: 1, battleplans: 1, sentinel: 2 },
-    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, caravan: 1, slaybeast: 1, encampment: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1 },
-    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, moonpetals: 1, caravan: 1, encampment: 1, tempest: 1, hedgewitch: 1, bram: 1 },
-    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 1, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, bounty: 1, encampment: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1 },
+    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, archon: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
+    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
+    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, tempest: 1, battleplans: 2, sentinel: 2, satchel: 1, dawnamulet: 1 },
+    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
+    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, tempest: 1, hedgewitch: 1, bram: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
+    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 2, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1, satchel: 1 },
   };
   // fix-sim: the worst-measured cards in these starters were swapped like for like (see tools/cardtest.js)
   RB.STARTER = STARTER;
+  // Resource cards: every deck is 30 normal cards plus RB.LAND_COUNT (10) resource cards, which are any mix of lands,
+  // quests and locations (the user's rule, Nov 10, 2026). Quests and locations no longer go in the 30.
+  // These are the quests and locations each starting hero brings; lands fill the rest of the ten.
+  RB.STARTER_RES = {'aldric': ['caravan', 'ancientforge', 'citadel'], 'thorgrim': ['caravan', 'bounty', 'citadel'], 'lyssara': ['caravan', 'moonpetals', 'library'], 'grukka': ['caravan', 'slaybeast', 'encampment'], 'hruna': ['moonpetals', 'caravan', 'encampment'], 'snix': ['bounty', 'encampment']};
   const value = (d) => ({ c: 0, u: 1, r: 2, e: 4 }[d.rarity] || 0) + (d.type === 'weapon' ? d.atk : 0) + (d.type === 'ally' ? (d.atk + d.hp) / 3 : 0);
   // Curated starter deck, upgraded with any owned raid treasure / loot that the hero can use.
   RB.buildDeck = function (heroId, owned, partySize) {
@@ -463,7 +467,7 @@
     for (const [id, k] of Object.entries(STARTER[heroId])) for (let i = 0; i < k; i++) deck.push(id);
     if (partySize > 1 && RB.HEROES[heroId].cls === 'priest') { const i = deck.lastIndexOf('grunt'); if (i >= 0) deck[i] = 'rebirth'; }
     if (owned) {
-      const extras = Object.values(C).filter(d => (d.set !== 'core' && d.set !== 'frontier') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
+      const extras = Object.values(C).filter(d => !RB.isResCard(d) && (d.set !== 'core' && d.set !== 'frontier') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
         .sort((a, b) => RB.cardScore(b) - RB.cardScore(a));
       // fix-sim: only take an owned card when it measures better than the starter card it replaces (rarity is not power)
       for (const d of extras) {
@@ -520,10 +524,10 @@
   function shape(heroId) {
     const st = RB.STARTER[heroId], out = {};
     if (st) for (const [id, k] of Object.entries(st)) { const t = C[id].type === 'location' ? 'quest' : C[id].type; out[t] = (out[t] || 0) + k; }
-    else Object.assign(out, { ally: 11, ability: 9, weapon: 2, armor: 3, item: 2, quest: 2, master: 1 });
+    else Object.assign(out, { ally: 12, ability: 10, weapon: 2, armor: 3, item: 2, master: 1 });
     return out;
   }
-  const poolFor = (heroId, owned) => Object.values(C).filter(d => d.type !== 'land' && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
+  const poolFor = (heroId, owned) => Object.values(C).filter(d => !RB.isResCard(d) && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
   const copiesOf = (d, owned) => Math.min(RB.maxCopies(d), owned ? owned[d.id] || 0 : 2);
   // fast heuristic pick (instant)
   RB.autoDeck = function (heroId, raidId, owned, partySize) {
@@ -533,6 +537,13 @@
     for (const [t, n] of Object.entries(want)) add(pool.filter(d => (d.type === 'location' ? 'quest' : d.type) === t), n);
     if (deck.length < RB.DECK_SIZE) { const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1); add(pool.filter(d => (counts[d.id] || 0) < copiesOf(d, owned)).map(d => d), RB.DECK_SIZE - deck.length); }
     return deck.slice(0, RB.DECK_SIZE);
+  };
+  // The ten resource cards to go with an auto deck: the best location and the two best quests this hero can use
+  // (from the cards owned, or the core set), then the hero's usual lands.
+  RB.autoSide = function (heroId, raidId, owned) {
+    const pool = Object.values(C).filter(d => (d.type === 'quest' || d.type === 'location') && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core')).sort((a, b) => RB.cardScore(b, raidId) - RB.cardScore(a, raidId));
+    const loc = pool.filter(d => d.type === 'location').slice(0, 1), quests = pool.filter(d => d.type === 'quest').slice(0, 2);
+    return RB.fillSide(heroId, loc.concat(quests).map(d => d.id));
   };
   // play test raids and keep swaps that do better (async, yields to the page between games)
   RB.polishDeck = async function (heroId, raidId, deck, owned, partySize, opts) {

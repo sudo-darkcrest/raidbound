@@ -4589,11 +4589,25 @@ globalThis.RB.WEB_BUILD = true;
   land('totemring', 'Tuskfire Totem Ring', 'clans', 'ward2', 'witchdoctor', 'Seven totems, seven ancestors, all of them watching.');
   land('arena', 'Cinderpit Arena', 'clans', 'bossHit', 'warlord', 'Practice on each other. Then go and find something bigger.');
   RB.LANDS = Object.keys(C).filter(k => C[k].type === 'land');
-  // the ten lands a hero's deck gets when the player hasn't chosen any: the seven of the hero's faction and three neutral ones
-  RB.defaultLands = heroId => { const f = RB.HEROES[heroId].fac; return RB.LANDS.filter(k => C[k].fac === f).concat(['land_crossroads', 'land_kingsroad', 'land_watchtower']).slice(0, RB.LAND_COUNT); };
-  // a player's own choice is used only when it is exactly ten legal lands with at most two copies of each
-  RB.landsOk = (heroId, list) => Array.isArray(list) && list.length === RB.LAND_COUNT && list.every(k => C[k] && C[k].type === 'land' && (C[k].fac === 'neutral' || C[k].fac === RB.HEROES[heroId].fac) && list.filter(x => x === k).length <= 2);
-  RB.landsFor = (heroId, list) => RB.landsOk(heroId, list) ? list.slice() : RB.defaultLands(heroId);
+  // Resource cards (Nov 10, 2026): the ten slots hold any mix of lands, quests and locations; the 30 hold none of them.
+  RB.isResCard = d => !!d && (d.type === 'land' || d.type === 'quest' || d.type === 'location');
+  // top a list of resource cards up to ten with the hero's faction lands, then neutral lands (never more than 2 of one)
+  RB.fillSide = (heroId, list) => {
+    const out = (list || []).filter(k => RB.isResCard(C[k])).slice(0, RB.LAND_COUNT), f = RB.HEROES[heroId].fac;
+    const order = RB.LANDS.filter(k => C[k].fac === f).concat(['land_crossroads', 'land_kingsroad', 'land_watchtower'], RB.LANDS.filter(k => C[k].fac === 'neutral'));
+    for (let pass = 0; pass < 2 && out.length < RB.LAND_COUNT; pass++) for (const k of order) { if (out.length >= RB.LAND_COUNT) break; if (out.filter(x => x === k).length <= pass && out.filter(x => x === k).length < 2) out.push(k); }
+    return out;
+  };
+  // the ten a hero brings when the player hasn't chosen: the hero's starter quests and locations, then lands
+  RB.defaultLands = heroId => { if (RB.STARTER_RES && !RB.STARTER_RES[heroId] && RB.autoSide) RB.STARTER_RES[heroId] = RB.autoSide(heroId, null, null).filter(k => C[k].type !== 'land'); return RB.fillSide(heroId, (RB.STARTER_RES && RB.STARTER_RES[heroId]) || []); };
+  // a player's own choice is used only when it is exactly ten legal resource cards within the copy limits
+  RB.landsOk = (heroId, list) => Array.isArray(list) && list.length === RB.LAND_COUNT && list.every(k => RB.isResCard(C[k]) && (!RB.legalFor || RB.legalFor(heroId, C[k])) && list.filter(x => x === k).length <= (RB.maxCopies ? RB.maxCopies(C[k]) : 2));
+  // deckIds: an old-style deck may still hold quests and locations; they move into the ten
+  RB.landsFor = (heroId, list, deckIds) => {
+    if (RB.landsOk(heroId, list)) return list.slice();
+    const moved = (deckIds || []).filter(k => RB.isResCard(C[k]));
+    return moved.length ? RB.fillSide(heroId, moved) : RB.defaultLands(heroId);
+  };
   const addB = (id, o) => { o.id = id; B[id] = o; };
   // Molten Spire
   addB('tailswipe', { name: 'Tail Swipe', kind: 'attack', text: 'Deal 2 damage to each ally.', run: async E => { for (const t of E.allAllies()) await E.dmg(t, 2, { kind: 'boss' }); }, art: { s: 'volcano', L: [['fx', { t: 'whirl', x: 150, y: 170, c: '#ffb070' }], ['dragon', { x: 170, y: 140, s: 0.7, flip: 1 }]] } });
@@ -4877,7 +4891,8 @@ globalThis.RB.WEB_BUILD = true;
     cfg.party.forEach((seat, i) => {
       // #125: every deck carries ten lands on top of its 30 cards (the player's own pick, or the hero's usual ten)
       const idOf = e => typeof e === 'string' ? e : e.id;
-      const full = seat.deck.some(e => C[idOf(e)] && C[idOf(e)].type === 'land') || cfg.noLands ? seat.deck : seat.deck.concat(RB.landsFor(seat.hero, seat.lands));
+      // (Nov 10: the ten are any mix of lands, quests and locations, and the 30 hold none of them)
+      const full = cfg.noLands ? seat.deck : seat.deck.filter(e => !RB.isResCard(C[idOf(e)])).concat(RB.landsFor(seat.hero, seat.lands, seat.deck.map(idOf)));
       const deck = shuffle(full.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
         idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
@@ -6336,15 +6351,19 @@ globalThis.RB.WEB_BUILD = true;
   RB.maxCopies = d => (d.kw || []).includes('unique') || d.type === 'master' ? 1 : 2;
   RB.DECK_SIZE = 30;
   const STARTER = {
-    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, caravan: 1, ancientforge: 1, citadel: 1, archon: 1 },
-    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, caravan: 1, bounty: 1, citadel: 1, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1 },
-    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, caravan: 1, moonpetals: 1, library: 1, tempest: 1, battleplans: 1, sentinel: 2 },
-    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, caravan: 1, slaybeast: 1, encampment: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1 },
-    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, moonpetals: 1, caravan: 1, encampment: 1, tempest: 1, hedgewitch: 1, bram: 1 },
-    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 1, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, bounty: 1, encampment: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1 },
+    aldric: { holystrike: 2, aegis: 2, consecration: 2, reckoning: 1, blessing: 1, challenge: 1, footman: 2, lionknight: 2, elowen: 1, sentinel: 1, battlemage: 2, dawnbreaker: 1, silverblade: 2, breastplate: 1, towershield: 1, ironhelm: 1, forgegauntlets: 1, draught: 1, lantern: 1, archon: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
+    thorgrim: { aimedshot: 2, multishot: 2, rapidfire: 1, huntersmark: 1, feigndeath: 2, crossbowman: 2, thalen: 1, crossbow: 2, longbow: 1, wardenmail: 1, bearhide: 1, rocketboots: 1, sapper: 1, draught: 1, bandage: 2, archon: 1, battleplans: 1, lionknight: 2, sentinel: 1, treant: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
+    lyssara: { fireball: 2, frostnova: 2, missiles: 1, bandage: 2, blizzard: 2, icebarrier: 2, manasurge: 1, footman: 2, lionknight: 2, elowen: 1, emberstaff: 1, sparkwand: 1, moonweave: 1, vestments: 1, sparkring: 1, draught: 1, tempest: 1, battleplans: 2, sentinel: 2, satchel: 1, dawnamulet: 1 },
+    grukka: { mortalstrike: 2, bloodthirst: 2, whirlwind: 1, shieldwall: 2, bandage: 2, grunt: 2, witchdoctor: 2, cleaver: 2, breastplate: 1, towershield: 1, forgegauntlets: 1, warkilt: 1, draught: 1, warlord: 1, hedgewitch: 1, fieldmedic: 2, earthmace: 1, laststand: 1, bard: 1, satchel: 1, leatherhood: 1, dawnamulet: 1 },
+    hruna: { smite: 2, stormlash: 2, ancestralwrath: 2, mend: 2, renewal: 1, warding: 1, witchdoctor: 1, earthwarden: 2, treant: 1, revenant: 1, grunt: 2, earthmace: 2, emberstaff: 1, vestments: 1, poultice: 2, draught: 1, tempest: 1, hedgewitch: 1, bram: 1, satchel: 1, dawnamulet: 1, battleplans: 1 },
+    snix: { backstab: 2, ambush: 2, fanknives: 1, recuperate: 2, evasion: 2, kidneyshot: 1, pickpocket: 1, bandage: 1, tinkerer: 2, grunt: 2, gorza: 1, stiletto: 2, wolfhide: 1, shadowboots: 1, rocketboots: 1, sapper: 2, giantelixir: 1, warlord: 1, hedgewitch: 1, treant: 1, silverblade: 1, satchel: 1 },
   };
   // fix-sim: the worst-measured cards in these starters were swapped like for like (see tools/cardtest.js)
   RB.STARTER = STARTER;
+  // Resource cards: every deck is 30 normal cards plus RB.LAND_COUNT (10) resource cards, which are any mix of lands,
+  // quests and locations (the user's rule, Nov 10, 2026). Quests and locations no longer go in the 30.
+  // These are the quests and locations each starting hero brings; lands fill the rest of the ten.
+  RB.STARTER_RES = {'aldric': ['caravan', 'ancientforge', 'citadel'], 'thorgrim': ['caravan', 'bounty', 'citadel'], 'lyssara': ['caravan', 'moonpetals', 'library'], 'grukka': ['caravan', 'slaybeast', 'encampment'], 'hruna': ['moonpetals', 'caravan', 'encampment'], 'snix': ['bounty', 'encampment']};
   const value = (d) => ({ c: 0, u: 1, r: 2, e: 4 }[d.rarity] || 0) + (d.type === 'weapon' ? d.atk : 0) + (d.type === 'ally' ? (d.atk + d.hp) / 3 : 0);
   // Curated starter deck, upgraded with any owned raid treasure / loot that the hero can use.
   RB.buildDeck = function (heroId, owned, partySize) {
@@ -6352,7 +6371,7 @@ globalThis.RB.WEB_BUILD = true;
     for (const [id, k] of Object.entries(STARTER[heroId])) for (let i = 0; i < k; i++) deck.push(id);
     if (partySize > 1 && RB.HEROES[heroId].cls === 'priest') { const i = deck.lastIndexOf('grunt'); if (i >= 0) deck[i] = 'rebirth'; }
     if (owned) {
-      const extras = Object.values(C).filter(d => (d.set !== 'core' && d.set !== 'frontier') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
+      const extras = Object.values(C).filter(d => !RB.isResCard(d) && (d.set !== 'core' && d.set !== 'frontier') && (owned[d.id] || 0) > 0 && RB.legalFor(heroId, d))
         .sort((a, b) => RB.cardScore(b) - RB.cardScore(a));
       // fix-sim: only take an owned card when it measures better than the starter card it replaces (rarity is not power)
       for (const d of extras) {
@@ -6409,10 +6428,10 @@ globalThis.RB.WEB_BUILD = true;
   function shape(heroId) {
     const st = RB.STARTER[heroId], out = {};
     if (st) for (const [id, k] of Object.entries(st)) { const t = C[id].type === 'location' ? 'quest' : C[id].type; out[t] = (out[t] || 0) + k; }
-    else Object.assign(out, { ally: 11, ability: 9, weapon: 2, armor: 3, item: 2, quest: 2, master: 1 });
+    else Object.assign(out, { ally: 12, ability: 10, weapon: 2, armor: 3, item: 2, master: 1 });
     return out;
   }
-  const poolFor = (heroId, owned) => Object.values(C).filter(d => d.type !== 'land' && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
+  const poolFor = (heroId, owned) => Object.values(C).filter(d => !RB.isResCard(d) && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
   const copiesOf = (d, owned) => Math.min(RB.maxCopies(d), owned ? owned[d.id] || 0 : 2);
   // fast heuristic pick (instant)
   RB.autoDeck = function (heroId, raidId, owned, partySize) {
@@ -6422,6 +6441,13 @@ globalThis.RB.WEB_BUILD = true;
     for (const [t, n] of Object.entries(want)) add(pool.filter(d => (d.type === 'location' ? 'quest' : d.type) === t), n);
     if (deck.length < RB.DECK_SIZE) { const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1); add(pool.filter(d => (counts[d.id] || 0) < copiesOf(d, owned)).map(d => d), RB.DECK_SIZE - deck.length); }
     return deck.slice(0, RB.DECK_SIZE);
+  };
+  // The ten resource cards to go with an auto deck: the best location and the two best quests this hero can use
+  // (from the cards owned, or the core set), then the hero's usual lands.
+  RB.autoSide = function (heroId, raidId, owned) {
+    const pool = Object.values(C).filter(d => (d.type === 'quest' || d.type === 'location') && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core')).sort((a, b) => RB.cardScore(b, raidId) - RB.cardScore(a, raidId));
+    const loc = pool.filter(d => d.type === 'location').slice(0, 1), quests = pool.filter(d => d.type === 'quest').slice(0, 2);
+    return RB.fillSide(heroId, loc.concat(quests).map(d => d.id));
   };
   // play test raids and keep swaps that do better (async, yields to the page between games)
   RB.polishDeck = async function (heroId, raidId, deck, owned, partySize, opts) {
@@ -7435,7 +7461,7 @@ globalThis.RB.WEB_BUILD = true;
     const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1);
     const cands = [];
     for (const d of Object.values(C)) {
-      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0) || d.type === 'master') continue;
+      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0) || d.type === 'master' || RB.isResCard(d)) continue;
       const room = Math.min(RB.maxCopies(d), owned[d.id]) - (counts[d.id] || 0);
       for (let k = 0; k < room; k++) cands.push({ id: d.id, s: RB.cardScore(d) - k * 0.3 });
     }
@@ -7533,6 +7559,7 @@ globalThis.RB.WEB_BUILD = true;
     for (const hid of Object.keys(RB.HEROES)) {
       if (save.starterGot.includes(hid) || !RB.heroUnlocked(hid, save)) continue;
       for (const [id, k] of Object.entries(RB.STARTER[hid] || {})) if (C[id] && (save.owned[id] || 0) < k) save.owned[id] = k;
+      for (const id of RB.defaultLands(hid)) if (C[id].type !== 'land' && !(save.owned[id] > 0)) save.owned[id] = 1; // the hero's starter quests and locations
       save.starterGot.push(hid); changed = true;
     }
     return changed;
@@ -7541,6 +7568,22 @@ globalThis.RB.WEB_BUILD = true;
   U.save = save;
   // #57: saved decks that held a retired Master Hero card get that hero's Ascended card instead
   if (RB.fixDeck) for (const [hid, ids] of Object.entries(save.decks || {})) if (Array.isArray(ids)) save.decks[hid] = RB.fixDeck(hid, ids);
+  // Nov 10, 2026: quests and locations moved out of the 30 into the ten resource slots (shared with lands). A saved deck
+  // that still holds them has them moved across, and the gaps filled with the best cards you own for that hero.
+  U.deckMoved = [];
+  for (const [hid, ids] of Object.entries(save.decks || {})) {
+    if (!Array.isArray(ids) || !RB.HEROES[hid] || !ids.some(id => RB.isResCard(C[id]))) continue;
+    const wasFull = ids.length === RB.DECK_SIZE;
+    if (!RB.landsOk(hid, save.lands[hid])) { const want = {}; save.lands[hid] = RB.landsFor(hid, null, ids.filter(id => RB.isResCard(C[id]) && (want[id] = (want[id] || 0) + 1) <= Math.min(RB.maxCopies(C[id]), save.owned[id] || 0))); }
+    const deck = ids.filter(id => !RB.isResCard(C[id])), cnt = {}; deck.forEach(id => cnt[id] = (cnt[id] || 0) + 1);
+    if (wasFull) {
+      const opts = []; for (const d of Object.values(C)) { if (RB.isResCard(d) || !RB.legalFor(hid, d)) continue; if (d.type === 'master' && deck.some(x => C[x].type === 'master')) continue; for (let k = cnt[d.id] || 0; k < Math.min(RB.maxCopies(d), save.owned[d.id] || 0); k++) opts.push({ id: d.id, s: RB.cardScore(d) - k * 0.5 }); }
+      opts.sort((a, b) => b.s - a.s);
+      for (const o of opts) { if (deck.length >= RB.DECK_SIZE) break; if (C[o.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue; deck.push(o.id); }
+    }
+    save.decks[hid] = deck; U.deckMoved.push(hid);
+  }
+  if (U.deckMoved.length) { save.autoDecks = {}; try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } }
   U.persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { } };
   U.persist();
   if (!save.heroicWins) save.heroicWins = {};
@@ -8280,6 +8323,7 @@ globalThis.RB.WEB_BUILD = true;
   /* ---------------- title ---------------- */
   const TITLE_ART = { s: 'volcano', L: [['glow', { x: 150, y: 120, r: 90, c: '#ff6a1a', op: 0.35 }], ['dragon', { x: 196, y: 108, s: 0.62, breath: 1 }], ['fig', { race: 'human', pose: 'heroic', w: 'sword', off: 'shield', helm: 'great', cape: 1, capeCol: '#1a2a5a', x: 70, y: 214, s: 0.5, wGlow: '#fff6c0' }], ['fig', { race: 'orc', pose: 'charge', w: 'axe', x: 106, y: 216, s: 0.45 }], ['fig', { race: 'elf', pose: 'castF', robe: 1, helm: 'hair', glowR: '#c8a0ff', x: 32, y: 214, s: 0.42 }]], p: 'embers', pn: 50 };
   U.title = function () {
+    if (U.deckMoved && U.deckMoved.length) { const n = U.deckMoved.length; U.deckMoved = []; setTimeout(() => U.toast(`${n} saved deck${n > 1 ? 's were' : ' was'} updated: quests and locations now sit with your lands, and the gaps were filled with your best cards.`), 900); }
     RB.AUDIO.music('title');
     const wins = Object.values(save.wins).reduce((a, b) => a + b, 0);
     // #17: pick one of the two painted backdrops at random; each has its own text layout
@@ -8377,14 +8421,14 @@ globalThis.RB.WEB_BUILD = true;
       const ids = autos[i] ? autos[i].slice() : custom ? save.decks[s.hero].slice() : RB.buildDeck(s.hero, save.owned, setup.seats.length);
       const holoLeft = Object.assign({}, save.holo);
       const deck = ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; });
-      return { hero: s.hero, auto: s.auto, deck, lands: RB.landsFor(s.hero, save.lands[s.hero]), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null };
+      return { hero: s.hero, auto: s.auto, deck, lands: autos[i] ? RB.autoSide(s.hero, setup.raid, save.owned) : custom ? RB.landsFor(s.hero, save.lands[s.hero]) : RB.defaultLands(s.hero), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null };
     });
     U.battle({ raid: setup.raid, difficulty: setup.diff, party, bossPlayer: !!setup.asBoss, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };
 
   /* ---------------- auto deck (#23) ---------------- */
   U.autoDeckFor = async function (hid, raidId, partySize) {
-    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0)].join('|');
+    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0), 'r2'].join('|'); // r2: decks no longer hold quests or locations
     save.autoDecks = save.autoDecks || {};
     if (save.autoDecks[key]) return save.autoDecks[key];
     const ov = document.createElement('div'); ov.className = 'overlay';
@@ -8402,26 +8446,27 @@ globalThis.RB.WEB_BUILD = true;
   U.deckbuilder = function (hid, onDone) {
     const h = H[hid];
     let deck = (save.decks[hid] || RB.buildDeck(hid, save.owned)).slice();
-    let lands = RB.landsFor(hid, save.lands[hid]); // #125: ten lands ride along with the 30 cards
+    let lands = RB.landsFor(hid, save.lands[hid]); // the ten resource cards (lands, quests, locations) that ride along with the 30
     let filter = 'all', q = '', dlMini = false, drawn = false;
     const legalAll = Object.values(C).filter(d => RB.legalFor(hid, d) && (save.owned[d.id] || 0) > 0);
-    const legal = legalAll.filter(d => d.type !== 'land'), legalLands = legalAll.filter(d => d.type === 'land');
-    const types = ['all', 'ally', 'ability', 'weapon', 'armor', 'item', 'quest', 'location', 'master', 'land'];
+    const legal = legalAll.filter(d => !RB.isResCard(d)), legalLands = legalAll.filter(d => RB.isResCard(d)).sort((a, b) => 'land quest location'.indexOf(a.type) - 'land quest location'.indexOf(b.type));
+    const types = ['all', 'ally', 'ability', 'weapon', 'armor', 'item', 'master', 'land'];
     function draw() {
       const counts = deck.reduce((m, id) => (m[id] = (m[id] || 0) + 1, m), {});
       const onLands = filter === 'land', lcounts = lands.reduce((m, id) => (m[id] = (m[id] || 0) + 1, m), {});
-      const list = (onLands ? legalLands : legal).filter(d => (filter === 'all' || d.type === filter) && (!q || (d.name + ' ' + (d.text || '')).toLowerCase().includes(q))).sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
+      const list = (onLands ? legalLands : legal).filter(d => (filter === 'all' || onLands || d.type === filter) && (!q || (d.name + ' ' + (d.text || '')).toLowerCase().includes(q)));
+      if (!onLands) list.sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
       const curve = [0, 1, 2, 3, 4, 5, 6, 7].map(c => deck.filter(id => Math.min(7, C[id].cost) === c && !['quest', 'location'].includes(C[id].type)).length);
       const maxC = Math.max(1, ...curve);
       const rows = Object.entries(counts).sort((a, b) => C[a[0]].cost - C[b[0]].cost).map(([id, k]) => `<div class="row" data-rm="${id}" title="Click to remove one"><span class="c">${['quest', 'location'].includes(C[id].type) ? '·' : C[id].cost}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('');
       const byType = t => deck.filter(id => C[id].type === t).length;
       const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2>${esc(h.name)}'s deck</h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
-        <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', location: 'Locations', master: 'Master heroes', land: `Lands ${lands.length}/${RB.LAND_COUNT}` }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
-        ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} lands</b> on top of its 30 cards. Lands are free: play one a turn as a resource and it does one small thing as it arrives. Up to 2 copies of each. Other cards can only become resources ${RB.SPARE_RES} times a fight (quests and locations don't count).</p>` : ''}
+        <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', master: 'Master heroes', land: `Lands, quests & locations ${lands.length}/${RB.LAND_COUNT}` }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
+        ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its 30 normal cards: any mix of <b>lands, quests and locations</b>. You play one a turn as a resource. Lands are free and do one small thing as they arrive; quests and locations keep their abilities (you can only hold one location at a time). Up to 2 copies of each. Normal cards can only become resources ${RB.SPARE_RES} times a fight.</p>` : ''}
         <div class="pool">${list.map(d => { const k = (onLands ? lcounts : counts)[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
-        <aside class="decklist ${dlMini ? 'mini' : ''}"><h4 data-act="dlmini">${deck.length} / ${RB.DECK_SIZE} cards<span class="dltoggle phone-only">${dlMini ? '▲ Show deck' : '▼ Hide'}</span></h4><div style="font-size:.8rem;color:var(--muted)">Allies ${byType('ally')} · Abilities ${byType('ability')} · Gear ${byType('weapon') + byType('armor') + byType('item')} · Quests & locations ${byType('quest') + byType('location')}</div><div class="curve">${curve.map((v, i) => `<div style="height:${(v / maxC) * 100}%"><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div><div style="height:.6rem"></div>${rows || '<p style="color:var(--muted)">' + (U.isPhone() ? 'Tap cards to add them.' : 'Click cards on the left to add them.') + '</p>'}
-          <h4 class="landhead" data-f="land" title="Choose your lands">Lands ${lands.length} / ${RB.LAND_COUNT}</h4>${Object.entries(lcounts).map(([id, k]) => `<div class="row" data-rml="${id}" title="Click to remove one"><span class="c">◆</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('')}</aside></div></div>`, drawn);
+        <aside class="decklist ${dlMini ? 'mini' : ''}"><h4 data-act="dlmini">${deck.length} / ${RB.DECK_SIZE} cards<span class="dltoggle phone-only">${dlMini ? '▲ Show deck' : '▼ Hide'}</span></h4><div style="font-size:.8rem;color:var(--muted)">Allies ${byType('ally')} · Abilities ${byType('ability')} · Gear ${byType('weapon') + byType('armor') + byType('item')}</div><div class="curve">${curve.map((v, i) => `<div style="height:${(v / maxC) * 100}%"><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div><div style="height:.6rem"></div>${rows || '<p style="color:var(--muted)">' + (U.isPhone() ? 'Tap cards to add them.' : 'Click cards on the left to add them.') + '</p>'}
+          <h4 class="landhead" data-f="land" title="Choose your lands, quests and locations">Lands, quests & locations ${lands.length} / ${RB.LAND_COUNT}</h4>${Object.entries(lcounts).map(([id, k]) => `<div class="row" data-rml="${id}" title="Click to remove one"><span class="c">${C[id].type === 'land' ? '◆' : C[id].type === 'quest' ? 'Q' : 'L'}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('')}</aside></div></div>`, drawn);
       drawn = true;
       const inp = $('input[type=search]', el);
       inp.oninput = () => { q = inp.value.toLowerCase(); const pos = inp.selectionStart; draw(); const n = $('#deck input[type=search]'); n.focus(); n.setSelectionRange(pos, pos); };
@@ -8429,15 +8474,15 @@ globalThis.RB.WEB_BUILD = true;
         const t = e.target;
         const f = t.closest('[data-f]'); if (f) { filter = f.dataset.f; return draw(); }
         const rml = t.closest('[data-rml]'); if (rml) { lands.splice(lands.indexOf(rml.dataset.rml), 1); return draw(); }
-        const ad = t.closest('[data-add]'); if (ad && C[ad.dataset.add].type === 'land') { const d = C[ad.dataset.add]; if (lands.length >= RB.LAND_COUNT) return U.toast(`You already have ${RB.LAND_COUNT} lands. Remove one first (click it in the list).`); if ((lcounts[d.id] || 0) >= 2) return U.toast('That\'s the most copies allowed.'); lands.push(d.id); return draw(); }
+        const ad = t.closest('[data-add]'); if (ad && RB.isResCard(C[ad.dataset.add])) { const d = C[ad.dataset.add]; if (lands.length >= RB.LAND_COUNT) return U.toast(`All ${RB.LAND_COUNT} resource slots are full. Remove one first (click it in the list).`); if ((lcounts[d.id] || 0) >= Math.min(RB.maxCopies(d), save.owned[d.id] || 0)) return U.toast((lcounts[d.id] || 0) >= RB.maxCopies(d) ? 'That\'s the most copies allowed.' : 'You don\'t own more copies of this card.'); lands.push(d.id); return draw(); }
         if (ad) { const d = C[ad.dataset.add]; const k = counts[d.id] || 0; if (deck.length >= RB.DECK_SIZE) return U.toast('Your deck already has 30 cards. Remove one first.'); if (k >= Math.min(RB.maxCopies(d), save.owned[d.id] || 0)) return U.toast(k >= RB.maxCopies(d) ? 'That\'s the most copies allowed.' : 'You don\'t own more copies of this card.'); deck.push(d.id); return draw(); }
         const rm = t.closest('[data-rm]'); if (rm) { deck.splice(deck.indexOf(rm.dataset.rm), 1); return draw(); }
         const a = t.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'starter') { deck = RB.buildDeck(hid, save.owned); lands = RB.defaultLands(hid); return draw(); }
-        if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
+        if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); lands = RB.autoSide(hid, setup.raid, save.owned); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
         if (a.dataset.act === 'clear') { deck = []; return draw(); }
         if (a.dataset.act === 'dlmini') { dlMini = !dlMini; return draw(); }
-        if (a.dataset.act === 'done') { save.decks[hid] = deck; if (RB.landsOk(hid, lands)) save.lands[hid] = lands.slice(); else delete save.lands[hid]; U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
+        if (a.dataset.act === 'done') { save.decks[hid] = deck; if (RB.landsOk(hid, lands)) save.lands[hid] = lands.slice(); else delete save.lands[hid]; U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly 30 to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, quests and locations, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
       };
       hoverPreview(el);
     }
@@ -8579,7 +8624,7 @@ globalThis.RB.WEB_BUILD = true;
         <p class="fg-lead">Well met, raider. This little book was stitched together by the guild's survivors. Read it before you go below, and keep it close once you're there.</p>
         <section><h4>The goal</h4><p>Your party of heroes fights a raid boss. Bring the boss to 0 health to win and earn a treasure pack. If every hero falls, the raid wipes.</p></section>
         <section><h4>Your hero</h4><p>Each hero has health, a faction (Silver Concord or Ember Clans), a race, a class, a specialization and two professions. These traits decide which cards can go in the deck. Every hero also has a unique power you can use once per game.</p></section>
-        <section><h4>Resources</h4><p>Once per turn you may play one card from your hand as a resource. You begin with two. <b>Lands</b> are made for this: every deck carries ${RB.LAND_COUNT} of them on top of its 30 cards, and each does one small thing as it arrives (a little healing, a ward, a point of damage). You may also turn any other card face-down into a resource, but only <b>${RB.SPARE_RES} times in a fight</b>, so choose which cards to give up. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, never count against those ${RB.SPARE_RES}, and keep their special abilities.</p>
+        <section><h4>Resources</h4><p>Once per turn you may play one card from your hand as a resource. You begin with two. Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its 30 normal cards: any mix of lands, quests and locations. <b>Lands</b> are free and each does one small thing as it arrives (a little healing, a ward, a point of damage). You may also turn any other card face-down into a resource, but only <b>${RB.SPARE_RES} times in a fight</b>, so choose which cards to give up. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, never count against those ${RB.SPARE_RES}, and keep their special abilities. They share the ten resource slots with your lands, so each one you bring means one land fewer.</p>
         ${fgEx(fgU('', '◆ ◆ ◆ ◆', '4 ready') + fgA('spend 2 on your turn') + fgU('', '◆ ◆ ◇ ◇', '2 still ready') + fgA('the boss attacks') + fgU(ca('laststand'), 'Last Stand', 'costs 2 · played as a React', 'ok'), 'End your turn with 2 resources ready and Last Stand is waiting for the boss. Next turn, all 4 ready again.')}</section>
         <section><h4>Your turn</h4><p>Ready everything, draw two cards, then act in any order: play one resource, play cards, attack, use items, complete quests, use your location and use your hero power. Press <b>End turn</b> when you're done, or <b>Auto-play turn</b> to let the AI finish it for you.</p></section>
         <section><h4>Card types</h4><ul><li><b>Allies</b> fight beside you. They can attack the turn after they arrive, unless they have Swift.</li><li><b>Abilities</b> take effect at once. Basic abilities are played on your turn. <b>Instants</b> can also be played when a boss card is revealed, and <b>React</b> cards when their trigger happens.</li><li><b>Weapons</b> add attack. Pay the strike cost each time you use one.</li><li><b>Armor</b> goes in a slot (head, chest, hands, legs, feet or off-hand). When your hero would take damage, exhaust it and pay its cost to block.</li><li><b>Items</b> are rings, potions and trinkets with lasting or one-shot effects.</li><li><b>Quests</b> are resources you can complete for a reward; they then turn face down.</li><li><b>Locations</b> are resources with an ability you can use once per turn. You control one at a time.</li><li><b>Master Heroes</b> replace your hero. Damage and gear carry over, but your original power does not.</li><li><b>Loot cards</b> play like normal cards and hide a scratch-off code for the Vault.</li></ul></section>` },
@@ -9743,7 +9788,7 @@ globalThis.RB.WEB_BUILD = true;
     else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
     else deck = RB.buildDeck(hid, save.owned, n);
-    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: RB.landsFor(hid, save.lands[hid]), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
   }
   async function onClick(e) {
     const t = e.target, a = t.closest('[data-act]');
@@ -10136,7 +10181,7 @@ globalThis.RB.WEB_BUILD = true;
     const party = st.seats.map((s, i) => {
       const ids = RB.dungeonDeck(s.hero, save.owned, swaps);
       const holoLeft = Object.assign({}, save.holo);
-      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: RB.landsFor(s.hero, save.lands[s.hero]), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
+      return { hero: s.hero, auto: i === 0 ? false : s.auto, lands: RB.defaultLands(s.hero), name: 'Hero ' + (i + 1), pet: i === 0 && U.ownsCos(save.sel.pet) ? save.sel.pet : null, deck: ids.map(id => { const h = holoLeft[id] > 0; if (h) holoLeft[id]--; return { id, holo: h }; }) };
     });
     U.battle({ raid: st.id, dungeon: true, difficulty: st.mode, dungeonLevel: mode.level, dungeonFirst: mode.first, party, settings: { autoDefend: save.settings.autoDefend, pauseForInstants: save.settings.pauseForInstants } });
   };

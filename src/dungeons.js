@@ -154,7 +154,7 @@
     const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1);
     const cands = [];
     for (const d of Object.values(C)) {
-      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0) || d.type === 'master') continue;
+      if (!RB.legalFor(heroId, d) || !(owned[d.id] > 0) || d.type === 'master' || RB.isResCard(d)) continue;
       const room = Math.min(RB.maxCopies(d), owned[d.id]) - (counts[d.id] || 0);
       for (let k = 0; k < room; k++) cands.push({ id: d.id, s: RB.cardScore(d) - k * 0.3 });
     }

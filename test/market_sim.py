@@ -30,7 +30,7 @@ async def main():
         # ---- a brand-new player: the starting heroes' starter cards and two free Core packs ----
         np = await pg.evaluate("""(() => { const s=RB.UI.save, C=RB.CARDS, start=Object.keys(RB.HEROES).filter(h=>!RB.UNLOCK_HEROES.includes(h)), need={};
           for (const h of start) for (const [id,k] of Object.entries(RB.STARTER[h])) need[id]=Math.max(need[id]||0,k);
-          const missing=Object.entries(need).filter(([id,k])=>(s.owned[id]||0)<k).length, extra=Object.keys(s.owned).filter(id=>!need[id]&&s.owned[id]>0&&RB.CARDS[id].type!=='land').length; /* #125: the 21 free lands don't count */
+          const missing=Object.entries(need).filter(([id,k])=>(s.owned[id]||0)<k).length, extra=Object.keys(s.owned).filter(id=>!need[id]&&s.owned[id]>0&&!RB.isResCard(RB.CARDS[id])).length; /* free lands and each hero's starter quests and locations are counted apart */
           return { free:s.freeCore, missing, extra, copies:Object.values(s.owned).reduce((a,b)=>a+b,0), heroes:(s.starterGot||[]).length }; })()""")
         expect('new player owns exactly the starter cards of the 6 starting heroes', np['missing'] == 0 and np['extra'] == 0 and np['heroes'] == 6, str(np))
         expect('new player has 2 free Core packs', np['free'] == 2, str(np))

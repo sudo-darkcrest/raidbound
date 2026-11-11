@@ -281,7 +281,7 @@
     else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
     else deck = RB.buildDeck(hid, save.owned, n);
-    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: RB.landsFor(hid, save.lands[hid]), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
   }
   async function onClick(e) {
     const t = e.target, a = t.closest('[data-act]');

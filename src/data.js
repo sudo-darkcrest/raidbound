@@ -331,11 +331,25 @@
   land('totemring', 'Tuskfire Totem Ring', 'clans', 'ward2', 'witchdoctor', 'Seven totems, seven ancestors, all of them watching.');
   land('arena', 'Cinderpit Arena', 'clans', 'bossHit', 'warlord', 'Practice on each other. Then go and find something bigger.');
   RB.LANDS = Object.keys(C).filter(k => C[k].type === 'land');
-  // the ten lands a hero's deck gets when the player hasn't chosen any: the seven of the hero's faction and three neutral ones
-  RB.defaultLands = heroId => { const f = RB.HEROES[heroId].fac; return RB.LANDS.filter(k => C[k].fac === f).concat(['land_crossroads', 'land_kingsroad', 'land_watchtower']).slice(0, RB.LAND_COUNT); };
-  // a player's own choice is used only when it is exactly ten legal lands with at most two copies of each
-  RB.landsOk = (heroId, list) => Array.isArray(list) && list.length === RB.LAND_COUNT && list.every(k => C[k] && C[k].type === 'land' && (C[k].fac === 'neutral' || C[k].fac === RB.HEROES[heroId].fac) && list.filter(x => x === k).length <= 2);
-  RB.landsFor = (heroId, list) => RB.landsOk(heroId, list) ? list.slice() : RB.defaultLands(heroId);
+  // Resource cards (Nov 10, 2026): the ten slots hold any mix of lands, quests and locations; the 30 hold none of them.
+  RB.isResCard = d => !!d && (d.type === 'land' || d.type === 'quest' || d.type === 'location');
+  // top a list of resource cards up to ten with the hero's faction lands, then neutral lands (never more than 2 of one)
+  RB.fillSide = (heroId, list) => {
+    const out = (list || []).filter(k => RB.isResCard(C[k])).slice(0, RB.LAND_COUNT), f = RB.HEROES[heroId].fac;
+    const order = RB.LANDS.filter(k => C[k].fac === f).concat(['land_crossroads', 'land_kingsroad', 'land_watchtower'], RB.LANDS.filter(k => C[k].fac === 'neutral'));
+    for (let pass = 0; pass < 2 && out.length < RB.LAND_COUNT; pass++) for (const k of order) { if (out.length >= RB.LAND_COUNT) break; if (out.filter(x => x === k).length <= pass && out.filter(x => x === k).length < 2) out.push(k); }
+    return out;
+  };
+  // the ten a hero brings when the player hasn't chosen: the hero's starter quests and locations, then lands
+  RB.defaultLands = heroId => { if (RB.STARTER_RES && !RB.STARTER_RES[heroId] && RB.autoSide) RB.STARTER_RES[heroId] = RB.autoSide(heroId, null, null).filter(k => C[k].type !== 'land'); return RB.fillSide(heroId, (RB.STARTER_RES && RB.STARTER_RES[heroId]) || []); };
+  // a player's own choice is used only when it is exactly ten legal resource cards within the copy limits
+  RB.landsOk = (heroId, list) => Array.isArray(list) && list.length === RB.LAND_COUNT && list.every(k => RB.isResCard(C[k]) && (!RB.legalFor || RB.legalFor(heroId, C[k])) && list.filter(x => x === k).length <= (RB.maxCopies ? RB.maxCopies(C[k]) : 2));
+  // deckIds: an old-style deck may still hold quests and locations; they move into the ten
+  RB.landsFor = (heroId, list, deckIds) => {
+    if (RB.landsOk(heroId, list)) return list.slice();
+    const moved = (deckIds || []).filter(k => RB.isResCard(C[k]));
+    return moved.length ? RB.fillSide(heroId, moved) : RB.defaultLands(heroId);
+  };
   const addB = (id, o) => { o.id = id; B[id] = o; };
   // Molten Spire
   addB('tailswipe', { name: 'Tail Swipe', kind: 'attack', text: 'Deal 2 damage to each ally.', run: async E => { for (const t of E.allAllies()) await E.dmg(t, 2, { kind: 'boss' }); }, art: { s: 'volcano', L: [['fx', { t: 'whirl', x: 150, y: 170, c: '#ffb070' }], ['dragon', { x: 170, y: 140, s: 0.7, flip: 1 }]] } });
