@@ -427,5 +427,7 @@
  "scatterseeds": "gemini-user",
  "mendingbloom": "2e11f446-a6ed-4121-a520-1fd4ec75f83a",
  "greatwoodpack": "0281f1fc-399a-43e1-829a-46fb1ca51c0a",
- "wildranger": "08d0d112-f805-46f6-b7d8-fe83eca8565c"
+ "wildranger": "08d0d112-f805-46f6-b7d8-fe83eca8565c",
+ "cos_board_tavern": "3d6f5ec8-e813-4bdb-af4b-83c86cff406f",
+ "cos_board_lair": "258eb1ed-64d7-446c-953a-61f200ca0e12"
 }

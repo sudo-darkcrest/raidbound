@@ -96,6 +96,7 @@
     if (k === 'allraids') return 'Defeat all three raid bosses';
     if (k === 'dclear') { const d = RB.DUNGEONS && RB.DUNGEONS[r]; return `Clear the dungeon ${d ? d.name : r}`; }
     if (k === 'dlevel') return `Reach Dungeon level ${r}`;
+    if (k === 'collect') { const n = +r, have = Object.values(C).filter(d => save.owned[d.id] > 0).length; return `Collect ${n} different cards (${Math.min(have, n)}/${n})`; }
     if (k === 'dlegend') return 'Clear any dungeon on Legendary';
     if (k === 'packtotal') { const n = +r, have = Object.values(save.packs || {}).reduce((a, b) => a + b, 0); return `Open ${n} booster packs of any kind (${Math.min(have, n)}/${n})`; }
     if (k === 'card') { const d = C[r], PS = d && RB.PACK_SETS && RB.PACK_SETS[d.set === 'core' ? 'core' : d.pack]; return `Get the card ${d ? d.name : r}${PS ? ` (found in ${PS.name} packs)` : ''}`; }
@@ -108,7 +109,7 @@
     for (const [id, c] of Object.entries(RB.COSMETICS)) {
       if (save.cos.includes(id)) continue;
       const [k, r] = c.get.split(':');
-      const ok = k === 'dclear' ? ((save.dclears || {})[r] || 0) > 0 : k === 'dlevel' ? RB.dungeonLevel(save.dxp || 0) >= +r : k === 'dlegend' ? (save.dlegend || 0) > 0 : k === 'card' ? (save.owned[r] || 0) > 0 : k === 'packtotal' ? Object.values(save.packs || {}).reduce((a, b) => a + b, 0) >= +r : k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
+      const ok = k === 'dclear' ? ((save.dclears || {})[r] || 0) > 0 : k === 'dlevel' ? RB.dungeonLevel(save.dxp || 0) >= +r : k === 'dlegend' ? (save.dlegend || 0) > 0 : k === 'card' ? (save.owned[r] || 0) > 0 : k === 'packtotal' ? Object.values(save.packs || {}).reduce((a, b) => a + b, 0) >= +r : k === 'collect' ? Object.values(C).filter(d => save.owned[d.id] > 0).length >= +r : k === 'packs' ? ((save.packs || {})[r] || 0) >= +c.get.split(':')[2] : k === 'win' ? (save.wins[r] || 0) > 0 : k === 'heroic' ? (save.heroicWins[r] || 0) > 0 : k === 'allraids' ? Object.keys(RB.RAIDS).every(x => (save.wins[x] || 0) > 0) : false;
       if (ok) { save.cos.push(id); got.push(id); }
     }
     if (got.length) U.persist();

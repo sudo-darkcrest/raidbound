@@ -504,6 +504,8 @@
     back_ember: { kind: 'back', name: 'Emberforge', get: 'win:molten', desc: 'Vorthrax\'s crest in molten gold over cracked obsidian.' },
     back_abyss: { kind: 'back', name: 'Abyssal Tide', get: 'win:tide', desc: 'A sea serpent coiled around a pearl, framed in coral and shells.' },
     board_classic: { kind: 'board', name: 'War Table', get: 'default', desc: 'A candlelit oak war table with a map of the realm.' },
+    board_tavern: { kind: 'board', name: 'Tavern Table', get: 'collect:200', desc: 'A worn oak tavern table with tankards, dice, candles and coins at the edges.' },
+    board_lair: { kind: 'board', name: 'Raid Boss Lair', get: 'collect:300', desc: 'Cracked obsidian ringed with glowing sigils, claw marks and broken blades.' },
     board_banners: { kind: 'board', name: 'Hall of Banners', get: 'loot', desc: 'A great hall hung with crimson and gold banners.' },
     board_sky: { kind: 'board', name: 'Skyward', get: 'loot', via: 'pet_kite', desc: 'Above the clouds among floating islands. Comes free with the Paper Wyrm code.' },
     board_treasury: { kind: 'board', name: 'Dragon\'s Hoard', get: 'allraids', desc: 'A cavern of gold, crowns and jewels, with a dragon asleep on the pile.' },
