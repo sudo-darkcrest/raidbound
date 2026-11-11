@@ -369,6 +369,41 @@
     const top = heroes.reduce((a, b) => E.heroHp(b) > E.heroHp(a) ? b : a);
     return p === top || E.heroHp(p) - share > 4;
   };
+  // #129: does one of a player's Instants actually change what this boss card is about to do? Used to decide whether
+  // to pause and ask a real player. Reads the card's text and the table only (no dice), so online games stay in step.
+  // Returns 'hit' (protects against this card), 'minion' (stops minions already on the table) or false.
+  AI.bossCardHits = function (E, bc) {
+    const t = (bc.text || '').toLowerCase(), amt = +((t.match(/(\d+) damage/) || [])[1] || 0);
+    const hs = E.heroes(), out = { heroes: [], allies: [], amt };
+    if (bc.kind === 'event' || (!amt && !/its own hero|destroy the ally/.test(t))) return out; // lasting effects tick later, not now
+    if (/each hero|random hero/.test(t)) out.heroes = hs.slice();
+    else if (/hero with the most health/.test(t)) { const v = Math.max(...hs.map(h => E.heroHp(h))); out.heroes = hs.filter(h => E.heroHp(h) === v); }
+    else if (/hero with the least health/.test(t)) { const v = Math.min(...hs.map(h => E.heroHp(h))); out.heroes = hs.filter(h => E.heroHp(h) === v); }
+    else if (/hero with the most threat/.test(t)) { const tn = hs.filter(h => h.hero.taunt); if (tn.length) out.heroes = tn; else { const v = Math.max(...hs.map(h => h.threat || 0)); out.heroes = hs.filter(h => (h.threat || 0) === v); } }
+    else if (/its own hero/.test(t)) { let best = null, bv = 0; for (const q of hs) for (const a of q.allies) { const v = E.allyAtk(q, a); if (v > bv) { bv = v; best = q; } } if (best) { out.heroes = [best]; out.amt = bv; } }
+    if (/each ally|random ally|ally with/.test(t) && amt) out.allies = E.allAllies();
+    return out;
+  };
+  AI.instantHelps = function (E, p, inst, bc, minionsAsked) {
+    const d = C[inst.id], tags = d.tags || [];
+    if (d.type !== 'ability' || d.speed !== 'instant' || d.cost > E.available(p)) return false;
+    const hit = AI.bossCardHits(E, bc), mine = hit.heroes.includes(p);
+    if (tags.includes('shield')) {
+      if (d.target === 'friendlyHero' ? hit.heroes.some(h => h.hero.shield < hit.amt) : (mine && p.hero.shield < hit.amt)) return 'hit';
+    }
+    if (tags.includes('elusive') && mine && !p.hero.elusive) return 'hit';
+    if (tags.includes('heal')) { // only worth it now if the hit could finish someone
+      const heal = d.heal || 3;
+      if (hit.heroes.some(h => E.heroHp(h) <= hit.amt && E.heroHp(h) + heal > hit.amt)) return 'hit';
+      if (d.target === 'friendly' && hit.allies.some(t => E.hpOf(t) <= hit.amt && E.hpOf(t) + heal > hit.amt)) return 'hit';
+    }
+    if (minionsAsked) return false;
+    const ready = E.minions().filter(t => E.minAtk(t.m) > 0 && !t.m.stunned);
+    if (tags.includes('stunAll') && ready.length >= 2) return 'minion';
+    if (tags.includes('stun') && (ready.some(t => E.minAtk(t.m) >= 3) || (!E.g.boss.stunned && E.heroes().some(h => E.heroHp(h) <= E.strikeNow())))) return 'minion';
+    if (tags.includes('dmg') && ready.some(t => E.hpOf(t) <= (d.dmg || 0))) return 'minion';
+    return false;
+  };
   AI.chooseInstant = function (E, p, bc) {
     const avail = E.available(p);
     const harmful = bc.kind === 'attack' || bc.kind === 'curse';

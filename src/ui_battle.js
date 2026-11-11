@@ -326,7 +326,7 @@
     }
     if (kind === 'instant') {
       const opts = [];
-      d.players.forEach(p => p.hand.forEach(c => { const cd = C[c.id]; if (cd.type === 'ability' && cd.speed === 'instant' && E.available(p) >= cd.cost) opts.push({ p, c }); }));
+      d.players.forEach(p => p.hand.forEach(c => { const cd = C[c.id]; if (cd.type === 'ability' && cd.speed === 'instant' && E.available(p) >= cd.cost && (!d.helpful || d.helpful[c.uid])) opts.push({ p, c }); })); // #129: only the cards that help
       if (!opts.length) return null;
       // #88: say what is coming, who it is likely to hit, how an Instant works, and what each one would do right now
       const bc = d.card, txt = (bc.text || '').toLowerCase(), harmful = bc.kind === 'attack' || bc.kind === 'curse';

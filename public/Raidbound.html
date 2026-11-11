@@ -5384,10 +5384,19 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         if (!responders.length) return;
         g.window = true;
         let choice = null;
-        const humans = responders.filter(p => !p.auto && !cfg.allAuto);
+        // #129: only pause for a player when one of their Instants actually changes this card; list only those cards
+        const helpful = {}; let minionOpt = false;
+        const humans = responders.filter(p => !p.auto && !cfg.allAuto).filter(p => {
+          let any = false;
+          for (const c of p.hand) { const h = RB.AI.instantHelps(api, p, c, card, g.instMinionAsked); if (h) { helpful[c.uid] = h; any = true; if (h === 'minion') minionOpt = true; } }
+          return any;
+        });
         const bots = responders.filter(p => p.auto || cfg.allAuto);
         for (const p of bots) { choice = RB.AI.chooseInstant(api, p, card); if (choice) break; }
-        if (!choice && humans.length && H.ask && g.settings.pauseForInstants) choice = await H.ask('instant', { card, players: humans });
+        if (!choice && humans.length && H.ask && g.settings.pauseForInstants) {
+          if (minionOpt) g.instMinionAsked = true; // stuns for minions on the table are offered once per boss turn
+          choice = await H.ask('instant', { card, players: humans, helpful });
+        }
         if (!choice) { g.window = false; return; }
         const r = await playCard(choice.p, choice.inst, choice.target);
         g.window = false;
@@ -5459,6 +5468,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       log(`— ${raid.short}'s turn —`, 'turn');
       B.minions.forEach(m => { m.ex = false; m.sick = false; });
       B.struck = false; // the boss's own strike is still to come (the AI keeps a Bulwark ally back for it)
+      g.instMinionAsked = false; // #129
       // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
       if (g.round >= (B.enrageAt || RB.ENRAGE_ROUND)) {
         B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
@@ -6171,6 +6181,41 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const share = Math.ceil(total / healthy);
     const top = heroes.reduce((a, b) => E.heroHp(b) > E.heroHp(a) ? b : a);
     return p === top || E.heroHp(p) - share > 4;
+  };
+  // #129: does one of a player's Instants actually change what this boss card is about to do? Used to decide whether
+  // to pause and ask a real player. Reads the card's text and the table only (no dice), so online games stay in step.
+  // Returns 'hit' (protects against this card), 'minion' (stops minions already on the table) or false.
+  AI.bossCardHits = function (E, bc) {
+    const t = (bc.text || '').toLowerCase(), amt = +((t.match(/(\d+) damage/) || [])[1] || 0);
+    const hs = E.heroes(), out = { heroes: [], allies: [], amt };
+    if (bc.kind === 'event' || (!amt && !/its own hero|destroy the ally/.test(t))) return out; // lasting effects tick later, not now
+    if (/each hero|random hero/.test(t)) out.heroes = hs.slice();
+    else if (/hero with the most health/.test(t)) { const v = Math.max(...hs.map(h => E.heroHp(h))); out.heroes = hs.filter(h => E.heroHp(h) === v); }
+    else if (/hero with the least health/.test(t)) { const v = Math.min(...hs.map(h => E.heroHp(h))); out.heroes = hs.filter(h => E.heroHp(h) === v); }
+    else if (/hero with the most threat/.test(t)) { const tn = hs.filter(h => h.hero.taunt); if (tn.length) out.heroes = tn; else { const v = Math.max(...hs.map(h => h.threat || 0)); out.heroes = hs.filter(h => (h.threat || 0) === v); } }
+    else if (/its own hero/.test(t)) { let best = null, bv = 0; for (const q of hs) for (const a of q.allies) { const v = E.allyAtk(q, a); if (v > bv) { bv = v; best = q; } } if (best) { out.heroes = [best]; out.amt = bv; } }
+    if (/each ally|random ally|ally with/.test(t) && amt) out.allies = E.allAllies();
+    return out;
+  };
+  AI.instantHelps = function (E, p, inst, bc, minionsAsked) {
+    const d = C[inst.id], tags = d.tags || [];
+    if (d.type !== 'ability' || d.speed !== 'instant' || d.cost > E.available(p)) return false;
+    const hit = AI.bossCardHits(E, bc), mine = hit.heroes.includes(p);
+    if (tags.includes('shield')) {
+      if (d.target === 'friendlyHero' ? hit.heroes.some(h => h.hero.shield < hit.amt) : (mine && p.hero.shield < hit.amt)) return 'hit';
+    }
+    if (tags.includes('elusive') && mine && !p.hero.elusive) return 'hit';
+    if (tags.includes('heal')) { // only worth it now if the hit could finish someone
+      const heal = d.heal || 3;
+      if (hit.heroes.some(h => E.heroHp(h) <= hit.amt && E.heroHp(h) + heal > hit.amt)) return 'hit';
+      if (d.target === 'friendly' && hit.allies.some(t => E.hpOf(t) <= hit.amt && E.hpOf(t) + heal > hit.amt)) return 'hit';
+    }
+    if (minionsAsked) return false;
+    const ready = E.minions().filter(t => E.minAtk(t.m) > 0 && !t.m.stunned);
+    if (tags.includes('stunAll') && ready.length >= 2) return 'minion';
+    if (tags.includes('stun') && (ready.some(t => E.minAtk(t.m) >= 3) || (!E.g.boss.stunned && E.heroes().some(h => E.heroHp(h) <= E.strikeNow())))) return 'minion';
+    if (tags.includes('dmg') && ready.some(t => E.hpOf(t) <= (d.dmg || 0))) return 'minion';
+    return false;
   };
   AI.chooseInstant = function (E, p, bc) {
     const avail = E.available(p);
@@ -8408,7 +8453,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         <div class="vrow"><label class="toggle"><input type="checkbox" data-k="music" ${s.music !== false ? 'checked' : ''}> Music</label><input type="range" min="0" max="1" step="0.05" value="${s.musicVol ?? 0.5}" data-vol="musicVol" aria-label="Music volume"><span></span></div>
         <label class="toggle" style="margin-top:.4rem"><input type="checkbox" data-k="turnAlert" ${s.turnAlert !== false ? 'checked' : ''}> Chime when it's my turn (also when the game is in another tab)</label></div>
       <label class="toggle"><input type="checkbox" data-k="autoDefend" ${s.autoDefend ? 'checked' : ''}> Defend automatically (use armor, strike back with your weapon and cover with Bulwark allies without asking)</label>
-      <label class="toggle"><input type="checkbox" data-k="pauseForInstants" ${s.pauseForInstants ? 'checked' : ''}> Pause so I can answer the boss: play an Instant when a boss card is revealed, or a React card when an attack is coming</label>
+      <label class="toggle"><input type="checkbox" data-k="pauseForInstants" ${s.pauseForInstants ? 'checked' : ''}> Pause so I can answer the boss: play an Instant when a boss card is revealed, or a React card when an attack is coming (only when one of my cards can actually help)</label>
       <div style="margin-top:1.4rem"><button class="btn ghost small" data-act="reset">Reset all progress</button></div></div></div>`);
     el.oninput = e => { const r = e.target.closest('[data-vol]'); if (r) { s[r.dataset.vol] = +r.value; U.persist(); RB.AUDIO.setVolumes(); } };
     el.onchange = e => { if (e.target.closest('[data-vol=sfxVol]')) U.sfx.hit(3); };
@@ -8471,7 +8516,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         <section><h4>When Cover fails</h4><ul><li>Minions with <b>Ambush</b> strike before a Bulwark can move.</li><li>An <b>Enraged</b> boss's strike goes straight past every Bulwark.</li><li>In dungeons, the marked hero faces the dungeon alone: only their own Bulwark allies can cover them.</li></ul></section>
         <p class="small">Turn on <i>Defend automatically</i> in Settings and the game decides covers, armor and strike-backs for you.</p>` },
       { id: 'react', icon: '⚡', title: 'Instants and React', html: `
-        <section><h4>Instants</h4><p>An <b>Instant</b> can be played on your turn, or the moment the boss reveals a card. It happens first; then the boss card still takes effect. Wards block damage before it lands, Shrouded heroes dodge attacks, and stuns stop minions or the boss's next strike.</p></section>
+        <section><h4>Instants</h4><p>An <b>Instant</b> can be played on your turn, or the moment the boss reveals a card. It happens first; then the boss card still takes effect. Wards block damage before it lands, Shrouded heroes dodge attacks, and stuns stop minions or the boss's next strike. The game only pauses on a boss card when one of your Instants can change it: a ward or dodge against a card that will hurt your hero, a heal that would keep a hero standing, or a stun for minions about to attack (once per boss turn). A summon, a curse or the boss healing won't stop the game.</p></section>
         <section><h4>React</h4><p>Some Instants carry a <b class="kw react">React</b> trigger printed in their text. Besides being played as an Instant, a React card can be played <b>during the boss's turn, the moment its trigger happens</b>, after Cover and before the hit lands.</p>
         <ul>${Object.values(RB.REACT).map(t => `<li><b class="kw react">React</b> — ${esc(t)}</li>`).join('')}</ul>
         ${fgEx(fgU('', 'Grave minion', 'attacks for 5', 'bad') + fgA('React') + fgU(ca('laststand'), 'Last Stand', 'prevent the next 6') + fgA() + fgU(ca('grukka'), 'Grukka', 'takes 0', 'ok'), 'The hit is coming at your hero, so Last Stand can answer it right then — not before, not after.')}
@@ -8845,7 +8890,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     }
     if (kind === 'instant') {
       const opts = [];
-      d.players.forEach(p => p.hand.forEach(c => { const cd = C[c.id]; if (cd.type === 'ability' && cd.speed === 'instant' && E.available(p) >= cd.cost) opts.push({ p, c }); }));
+      d.players.forEach(p => p.hand.forEach(c => { const cd = C[c.id]; if (cd.type === 'ability' && cd.speed === 'instant' && E.available(p) >= cd.cost && (!d.helpful || d.helpful[c.uid])) opts.push({ p, c }); })); // #129: only the cards that help
       if (!opts.length) return null;
       // #88: say what is coming, who it is likely to hit, how an Instant works, and what each one would do right now
       const bc = d.card, txt = (bc.text || '').toLowerCase(), harmful = bc.kind === 'attack' || bc.kind === 'curse';

@@ -611,10 +611,19 @@
         if (!responders.length) return;
         g.window = true;
         let choice = null;
-        const humans = responders.filter(p => !p.auto && !cfg.allAuto);
+        // #129: only pause for a player when one of their Instants actually changes this card; list only those cards
+        const helpful = {}; let minionOpt = false;
+        const humans = responders.filter(p => !p.auto && !cfg.allAuto).filter(p => {
+          let any = false;
+          for (const c of p.hand) { const h = RB.AI.instantHelps(api, p, c, card, g.instMinionAsked); if (h) { helpful[c.uid] = h; any = true; if (h === 'minion') minionOpt = true; } }
+          return any;
+        });
         const bots = responders.filter(p => p.auto || cfg.allAuto);
         for (const p of bots) { choice = RB.AI.chooseInstant(api, p, card); if (choice) break; }
-        if (!choice && humans.length && H.ask && g.settings.pauseForInstants) choice = await H.ask('instant', { card, players: humans });
+        if (!choice && humans.length && H.ask && g.settings.pauseForInstants) {
+          if (minionOpt) g.instMinionAsked = true; // stuns for minions on the table are offered once per boss turn
+          choice = await H.ask('instant', { card, players: humans, helpful });
+        }
         if (!choice) { g.window = false; return; }
         const r = await playCard(choice.p, choice.inst, choice.target);
         g.window = false;
@@ -686,6 +695,7 @@
       log(`— ${raid.short}'s turn —`, 'turn');
       B.minions.forEach(m => { m.ex = false; m.sick = false; });
       B.struck = false; // the boss's own strike is still to come (the AI keeps a Bulwark ally back for it)
+      g.instMinionAsked = false; // #129
       // fix-sim: Enrage. From round ENRAGE the boss hits 1 harder every round, so a fight can never stall forever
       if (g.round >= (B.enrageAt || RB.ENRAGE_ROUND)) {
         B.enrage = (B.enrage || 0) + 1; B.strikeBonus += 1;
