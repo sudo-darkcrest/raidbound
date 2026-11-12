@@ -205,6 +205,19 @@
     return '';
   }
   U.reachBadge = reachBadge;
+  // #156: who can put this card in a deck, in plain words, e.g. "Clans only · Warrior or Paladin"
+  U.usableBy = d => {
+    if (!d || d.type === 'hero') return '';
+    if (d.type === 'master' || d.hero) { const h = RB.HEROES[d.hero]; return (h ? h.name.split(' ')[0].replace(/,$/, '') : 'One hero') + ' only'; }
+    const parts = [], CL = RB.CLASSES, all = Object.keys(CL), orList = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1];
+    if (d.fac && d.fac !== 'neutral') parts.push(RB.FACTIONS[d.fac].short + ' only');
+    let cls = d.cls ? all.filter(k => d.cls.includes(k)) : all;
+    if (d.type === 'weapon' && !d.anyClass) cls = cls.filter(k => CL[k].weapons.includes(d.wtype));
+    if (d.type === 'armor') cls = cls.filter(k => CL[k].armor.includes(d.atype));
+    if (cls.length < all.length) parts.push(orList(cls.map(k => CL[k].name)) + (cls.length === 1 ? ' only' : ''));
+    if (d.prof) parts.push('Needs ' + (RB.PROFS[d.prof] || cap(d.prof)));
+    return parts.length ? parts.join(' · ') : 'Any hero';
+  };
   U.cardHTML = function (id, opts) {
     opts = opts || {};
     const d = C[id] || RB.TOKENS[id] || RB.BOSSCARDS[id];

@@ -1451,6 +1451,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .dnote { margin: .1rem 0 0; font-size: .85rem; color: var(--muted); line-height: 1.35; }
 .dnote.ok { color: #9fe0a8; }
 .dnote.warn { color: #ffb49a; }
+.pool .slot .usable { text-align: center; font-size: .72rem; color: var(--gold, #d8b45a); opacity: .85; margin-top: .1rem; line-height: 1.2; }
+.ruletable { border-collapse: collapse; margin: .4rem 0 .6rem; font-size: .9rem; }
+.ruletable th, .ruletable td { border: 1px solid rgba(255,255,255,.14); padding: .25rem .6rem; text-align: left; }
+.ruletable th { color: var(--gold, #d8b45a); }
 
 </style>
 </head>
@@ -8836,6 +8840,19 @@ globalThis.RB.WEB_BUILD = true;
     return '';
   }
   U.reachBadge = reachBadge;
+  // #156: who can put this card in a deck, in plain words, e.g. "Clans only · Warrior or Paladin"
+  U.usableBy = d => {
+    if (!d || d.type === 'hero') return '';
+    if (d.type === 'master' || d.hero) { const h = RB.HEROES[d.hero]; return (h ? h.name.split(' ')[0].replace(/,$/, '') : 'One hero') + ' only'; }
+    const parts = [], CL = RB.CLASSES, all = Object.keys(CL), orList = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1];
+    if (d.fac && d.fac !== 'neutral') parts.push(RB.FACTIONS[d.fac].short + ' only');
+    let cls = d.cls ? all.filter(k => d.cls.includes(k)) : all;
+    if (d.type === 'weapon' && !d.anyClass) cls = cls.filter(k => CL[k].weapons.includes(d.wtype));
+    if (d.type === 'armor') cls = cls.filter(k => CL[k].armor.includes(d.atype));
+    if (cls.length < all.length) parts.push(orList(cls.map(k => CL[k].name)) + (cls.length === 1 ? ' only' : ''));
+    if (d.prof) parts.push('Needs ' + (RB.PROFS[d.prof] || cap(d.prof)));
+    return parts.length ? parts.join(' · ') : 'Any hero';
+  };
   U.cardHTML = function (id, opts) {
     opts = opts || {};
     const d = C[id] || RB.TOKENS[id] || RB.BOSSCARDS[id];
@@ -9714,7 +9731,7 @@ globalThis.RB.WEB_BUILD = true;
       const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2>${viewSeg()}<span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters setfilters">${Object.entries(sets).map(([k, v]) => setBtn(k, v)).join('')}</div>${setLine}
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
-        <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div></div>`; }).join('')}</div></div>`);
+        <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div><div class="usable">${esc(U.usableBy(d))}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const vw = e.target.closest('[data-view]'); if (vw) { view = vw.dataset.view; return draw(); } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });
@@ -9823,6 +9840,7 @@ globalThis.RB.WEB_BUILD = true;
         <p class="fg-lead">Well met, raider. This little book was stitched together by the guild's survivors. Read it before you go below, and keep it close once you're there.</p>
         <section><h4>The goal</h4><p>Your party of heroes fights a raid boss. Bring the boss to 0 health to win and earn a treasure pack. If every hero falls, the raid wipes.</p></section>
         <section><h4>Your hero</h4><p>Each hero has health, a faction (Silver Concord or Ember Clans), a race, a class, a specialization and two professions. These traits decide which cards can go in the deck. Every hero also has a unique power you can use once per game.</p></section>
+        <section><h4>Who can use which cards</h4><p>A card goes in a hero's deck only if it passes all of these checks. Each card in your Collection shows who can use it, for example <i>Clans only · Warrior or Paladin</i>.</p><ul><li><b>Faction:</b> Silver Concord heroes can't use Ember Clans cards, and Clans heroes can't use Concord cards. <b>Neutral</b> cards work for every hero.</li><li><b>Class:</b> some cards are made for certain classes only.</li><li><b>Weapons and armor</b> depend on the hero's class (a few special weapons work for any class):</li></ul><table class="ruletable"><tr><th>Class</th><th>Weapons</th><th>Armor</th></tr>${Object.values(RB.CLASSES).map(c => `<tr><td><b>${c.name}</b></td><td>${c.weapons.map(w => w[0].toUpperCase() + w.slice(1)).join(', ')}</td><td>${c.armor.map(w => w[0].toUpperCase() + w.slice(1)).join(', ')}</td></tr>`).join('')}</table><ul><li><b>Professions:</b> a few crafted cards need a profession the hero has, like Blacksmithing.</li><li><b>Master Hero</b> cards belong to one hero only.</li><li><b>Copies:</b> up to 2 of a card in a deck, or 1 if it is Unique or a Master Hero.</li></ul></section>
         <section><h4>Resources</h4><p>Once per turn you may play one card from your hand as a resource. You begin with two. Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its ${RB.DECK_SIZE} normal cards: any mix of lands, quests and locations. <b>Lands</b> are free and each does one small thing as it arrives (a little healing, a ward, a point of damage). You may also turn any other card face-down into a resource, but only <b>${RB.SPARE_RES} times in a fight</b>, so choose which cards to give up. To play a card, exhaust resources equal to its cost. <b>All your resources ready again at the start of your turn</b>, so a resource you leave unspent can pay for an Instant or a React card during the boss's turn at no cost to your next turn. Quests and locations are always played as resources, never count against those ${RB.SPARE_RES}, and keep their special abilities. They share the ten resource slots with your lands, so each one you bring means one land fewer.</p>
         ${fgEx(fgU('', '◆ ◆ ◆ ◆', '4 ready') + fgA('spend 2 on your turn') + fgU('', '◆ ◆ ◇ ◇', '2 still ready') + fgA('the boss attacks') + fgU(ca('laststand'), 'Last Stand', 'costs 2 · played as a React', 'ok'), 'End your turn with 2 resources ready and Last Stand is waiting for the boss. Next turn, all 4 ready again.')}</section>
         <section><h4>Your turn</h4><p>Ready everything, draw two cards, then act in any order: play one resource, play cards, attack, use items, complete quests, use your location and use your hero power. Press <b>End turn</b> when you're done, or <b>Auto-play turn</b> to let the AI finish it for you.</p></section>
