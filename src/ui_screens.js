@@ -21,7 +21,7 @@
   const NAV = [['title', 'Home', 'Home'], ['dungeons', 'Dungeons', 'Dungeons'], ['setup', 'Raids', 'Raids'], // #122: Dungeons before Raids
      ['online', 'Play online', 'Online'], ['market', 'Market', 'Market'],
     ['collection', 'Collection', 'Cards'], ['vault', 'The Vault', 'Vault'], ['rules', 'How to play', 'Guide'], ['settings', 'Settings', 'Settings']];
-  const NAV_ON = new Set(['setup', 'dungeons', 'online', 'market', 'collection', 'vault', 'rules', 'settings']);
+  const NAV_ON = new Set(['title', 'setup', 'dungeons', 'online', 'market', 'collection', 'vault', 'rules', 'settings', 'deck', 'end']); // #157: every page but battles
   U.navHTML = function (cur) {
     const free = save.freeCore > 0 ? `<i class="navdot" title="${save.freeCore} free pack${save.freeCore > 1 ? 's' : ''}">${save.freeCore}</i>` : '';
     return `<nav class="topnav" aria-label="Menu"><div class="navin">${NAV.map(([id, full, short]) => `<button class="${id === cur ? 'on' : ''}" data-nav="${id}"${id === cur ? ' aria-current="page"' : ''} title="${full}"><svg viewBox="0 0 24 24" aria-hidden="true">${NI[id]}</svg><span class="nfull">${full}</span><span class="nshort">${short}</span>${id === 'market' ? `<span class="goldchip">${save.gold}</span>${free}` : ''}</button>`).join('')}</div></nav>`;
@@ -43,7 +43,7 @@
     let el = $('#' + name);
     if (!el) { el = document.createElement('div'); el.id = name; el.className = 'screen'; app().appendChild(el); }
     const navOn = NAV_ON.has(name) || !!navCur;
-    if (html != null) el.innerHTML = (navOn ? U.navHTML(navCur || name) : '') + html;
+    if (html != null) el.innerHTML = (navOn ? U.navHTML(navCur || (name === 'deck' ? 'collection' : name)) : '') + html;
     el.classList.remove('hidden');
     if (html != null && navOn) { const on = $('.topnav .on', el); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }
     el.scrollTop = prev;
@@ -210,6 +210,7 @@
     let deck = entry.cards.slice();
     let lands = RB.landsFor(hid, entry.lands); // the ten resource cards (lands, quests, locations) that ride along with the 30
     let filter = 'all', q = '', dlMini = false, drawn = false;
+    let autoRaid = R[setup.raid] ? setup.raid : Object.keys(R)[0], autoParty = Math.min(3, Math.max(1, setup.seats.length)); // #157: what Auto-build builds for
     const legalAll = Object.values(C).filter(d => RB.legalFor(hid, d) && (save.owned[d.id] || 0) > 0);
     const legal = legalAll.filter(d => !RB.isResCard(d)), legalLands = legalAll.filter(d => RB.isResCard(d)).sort((a, b) => 'land quest location'.indexOf(a.type) - 'land quest location'.indexOf(b.type));
     const types = ['all', 'ally', 'ability', 'weapon', 'armor', 'item', 'master', 'land'];
@@ -222,7 +223,7 @@
       const maxC = Math.max(1, ...curve);
       const rows = Object.entries(counts).sort((a, b) => C[a[0]].cost - C[b[0]].cost).map(([id, k]) => `<div class="row" data-rm="${id}" title="Click to remove one"><span class="c">${['quest', 'location'].includes(C[id].type) ? '·' : C[id].cost}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('');
       const byType = t => deck.filter(id => C[id].type === t).length;
-      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2 class="deckttl"><input class="decknamein" maxlength="30" value="${esc(name)}" aria-label="Deck name" title="Click to rename this deck"><small>${esc(h.name)}</small></h2><span class="sp"></span><button class="btn small" data-act="auto" title="Build the strongest deck for ${esc(R[setup.raid].short)} from your cards">Auto-build for ${esc(R[setup.raid].short)}</button><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
+      const el = U.show('deck', `<div class="page"><div class="pagehead"><button class="btn ghost small" data-act="done">← Done</button><h2 class="deckttl"><input class="decknamein" maxlength="30" value="${esc(name)}" aria-label="Deck name" title="Click to rename this deck"><small>${esc(h.name)}</small></h2><span class="sp"></span><span class="autopick" title="Choose what to build for, then press Auto-build"><select data-k="autoRaid" aria-label="Raid to build for">${Object.entries(R).map(([k, r]) => `<option value="${k}" ${k === autoRaid ? 'selected' : ''}>vs ${esc(r.short)}</option>`).join('')}</select><select data-k="autoParty" aria-label="Party size">${[1, 2, 3].map(n => `<option value="${n}" ${n === autoParty ? 'selected' : ''}>${n === 1 ? 'Solo' : 'Party of ' + n}</option>`).join('')}</select><button class="btn small" data-act="auto" title="Build the strongest deck from your cards for the raid and party size you picked">Auto-build</button></span><button class="btn small" data-act="starter">Use the starter deck</button><button class="btn small" data-act="clear">Clear</button></div>
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
         <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', master: 'Master heroes', land: `Lands, quests & locations ${lands.length}/${RB.LAND_COUNT}` }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
         ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its ${RB.DECK_SIZE} normal cards: any mix of <b>lands, quests and locations</b>. You play one a turn as a resource. Lands are free and do one small thing as they arrive; quests and locations keep their abilities (you can only hold one location at a time). Up to 2 copies of each. Normal cards can only become resources ${RB.SPARE_RES} times a fight.</p>` : ''}
@@ -231,6 +232,7 @@
           <h4 class="landhead" data-f="land" title="Choose your lands, quests and locations">Lands, quests & locations ${lands.length} / ${RB.LAND_COUNT}</h4>${Object.entries(lcounts).map(([id, k]) => `<div class="row" data-rml="${id}" title="Click to remove one"><span class="c">${C[id].type === 'land' ? '◆' : C[id].type === 'quest' ? 'Q' : 'L'}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('')}</aside></div></div>`, drawn);
       drawn = true;
       const nin = $('.decknamein', el); nin.oninput = () => { name = nin.value; };
+      el.onchange = e => { const k = e.target.dataset && e.target.dataset.k; if (k === 'autoRaid') autoRaid = e.target.value; else if (k === 'autoParty') autoParty = +e.target.value; };
       const inp = $('input[type=search]', el);
       inp.oninput = () => { q = inp.value.toLowerCase(); const pos = inp.selectionStart; draw(); const n = $('#deck input[type=search]'); n.focus(); n.setSelectionRange(pos, pos); };
       el.onclick = e => {
@@ -242,7 +244,7 @@
         const rm = t.closest('[data-rm]'); if (rm) { deck.splice(deck.indexOf(rm.dataset.rm), 1); return draw(); }
         const a = t.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'starter') { deck = RB.buildDeck(hid, save.owned); lands = RB.defaultLands(hid); return draw(); }
-        if (a.dataset.act === 'auto') { U.autoDeckFor(hid, setup.raid, setup.seats.length).then(d => { deck = d.slice(); lands = RB.autoSide(hid, setup.raid, save.owned); draw(); U.toast('Auto-built for ' + R[setup.raid].short + '. Change anything you like.'); }); return; }
+        if (a.dataset.act === 'auto') { const ar = autoRaid, ap = autoParty; U.autoDeckFor(hid, ar, ap).then(d => { deck = d.slice(); lands = RB.autoSide(hid, ar, save.owned); draw(); U.toast('Auto-built for ' + R[ar].short + (ap > 1 ? ' with a party of ' + ap : ' solo') + '. Change anything you like.'); }); return; }
         if (a.dataset.act === 'clear') { deck = []; return draw(); }
         if (a.dataset.act === 'dlmini') { dlMini = !dlMini; return draw(); }
         if (a.dataset.act === 'done') { entry.name = (name.trim() || DK.heroShort(hid) + '\'s deck').slice(0, 30); entry.cards = deck.slice(); entry.lands = RB.landsOk(hid, lands) ? lands.slice() : RB.defaultLands(hid); DK.sync(entry); U.persist(); if (deck.length !== RB.DECK_SIZE) U.toast(`Saved. Your deck has ${deck.length} cards — it needs exactly ${RB.DECK_SIZE} to be used.`); else if (lands.length !== RB.LAND_COUNT) U.toast(`You picked ${lands.length} lands, quests and locations, not ${RB.LAND_COUNT}, so this hero will use the usual ten.`); (onDone || U.title)(); }
