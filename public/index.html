@@ -161,10 +161,10 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .card.t-token { --tc: #4a4a4a; --tc2: #181818; }
 .card .loottag { position: absolute; z-index: 5; right: 4cqw; top: 39%; font-family: var(--f-sc); font-weight: 800; font-size: 5cqw; color: #2a1406; background: linear-gradient(#ffe7a0, #d49a2a); padding: .4cqw 2.4cqw; border-radius: 1cqw; box-shadow: 0 .6cqw 1.6cqw rgba(0, 0, 0, .6); }
 .card .loottag { display: none; } .card.loot .loottag { display: block; }
-/* #161 Grand Core and Mythic cards wear a small tag like loot cards */
-.card.mythic .loottag, .card.gcore .loottag { display: block; top: 41%; font-size: 4.2cqw; }
-.card.mythic .loottag { color: #f4ecff; background: linear-gradient(#b07aff, #5a2aa8); }
-.card.gcore .loottag { color: #2a1a04; background: linear-gradient(#fff2b8, #e8b84a); }
+/* #161 Grand Core and Mythic cards: a small tag on the bottom-right corner of the picture (same overlap trick as the Volley badge) */
+.card .settag { position: relative; z-index: 2; align-self: flex-end; height: 5.4cqw; line-height: 5.4cqw; margin: -7cqw 1.8cqw 1.6cqw 0; padding: 0 1.8cqw; border-radius: 1cqw; font-family: var(--f-sc); font-weight: 800; font-size: 3.3cqw; letter-spacing: .02em; box-shadow: 0 .4cqw 1.2cqw rgba(0, 0, 0, .6); white-space: nowrap; }
+.card .settag.mythic { color: #f4ecff; background: linear-gradient(#b07aff, #5a2aa8); }
+.card .settag.gcore { color: #2a1a04; background: linear-gradient(#fff2b8, #e8b84a); }
 .card .holofx { display: none; }
 .card.holo .holofx { display: block; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: 6.5cqw; mix-blend-mode: color-dodge; opacity: .55;
   background: linear-gradient(115deg, transparent 20%, rgba(255, 80, 180, .55) 32%, rgba(80, 220, 255, .55) 42%, rgba(255, 240, 120, .55) 52%, rgba(120, 255, 160, .5) 62%, transparent 75%);
@@ -1467,6 +1467,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 #title { padding-top: 3.4rem; }
 #end > .topnav { position: sticky; top: 0; }
 .revealrow { display: flex; justify-content: center; margin: 1.1rem 0 .4rem; }
+/* #161 divider before the Grand Core cards in the Collection */
+.pool .coldiv { grid-column: 1 / -1; display: flex; align-items: baseline; gap: .8rem; margin: .8rem 0 .2rem; padding-top: .6rem; border-top: 1px solid rgba(232, 184, 74, .55); }
+.pool .coldiv span { font-family: var(--f-sc); font-weight: 800; font-size: 1.05rem; color: #f0cf7a; }
+.pool .coldiv small { color: var(--muted); font-size: .85rem; }
 
 </style>
 </head>
@@ -9160,7 +9164,7 @@ globalThis.RB.WEB_BUILD = true;
     const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' || d.type === 'land' ? '' : `<div class="cost">${d.cost}</div>`;
     const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
-    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">${d.loot ? 'Loot' : d.mythic ? 'Mythic' : d.set === 'grandcore' ? 'Grand Core' : ''}</div><div class="holofx"></div></div></div>`;
+    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}${d.mythic ? '<span class="settag mythic">Mythic</span>' : d.set === 'grandcore' ? '<span class="settag gcore">Grand Core</span>' : ''}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
   };
   U.heroCardHTML = function (hid) {
     const h = RB.HEROES[hid];
@@ -10005,7 +10009,8 @@ globalThis.RB.WEB_BUILD = true;
     function draw() {
       if (view === 'decks') return drawDecks();
       const inCol = (d, k) => k === 'all' || d.set === k || d.pack === k || (k === 'core' && d.set === 'grandcore'); // #161: Grand Core cards sit in the Core set
-      const list = Object.values(C).filter(d => inCol(d, set)).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
+      const colRank = d => d.set === 'grandcore' ? 2 : d.set === 'core' ? 1 : 0; // #161: Grand Core cards come last in the Core set, after a divider
+      const list = Object.values(C).filter(d => inCol(d, set)).sort((a, b) => colRank(a) - colRank(b) || a.type.localeCompare(b.type) || a.cost - b.cost);
       const total = Object.values(C).length, have = Object.values(C).filter(d => save.owned[d.id] > 0).length;
       // #62: unscratched or unredeemed codes are shown in full; redeemed ones shrink to a compact list (Loot tab only)
       const lootTile = (l, i) => `<div class="cos"><h4>${esc(C[l.id].name)}</h4><p style="margin:.2rem 0;color:var(--muted);font-size:.9rem">${esc(C[l.id].loot.label)}</p><div class="scratch" data-loot="${i}"><span>${l.code}</span>${l.scratched ? '' : '<canvas></canvas>'}</div><p style="font-size:.85rem;color:var(--muted)">${l.scratched ? 'Enter this code in the Vault.' : 'Scratch the silver panel to reveal your code.'}</p>${l.scratched ? `<button class="btn small" data-redeem="${i}">Redeem now</button>` : ''}</div>`;
@@ -10022,7 +10027,7 @@ globalThis.RB.WEB_BUILD = true;
       const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2>${viewSeg()}<span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters setfilters">${Object.entries(sets).map(([k, v]) => setBtn(k, v)).join('')}</div>${setLine}
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
-        <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'grandcore' ? 'Only in Grand Core Boosters (Market, 20-card Core pack)' : d.mythic ? `Mythic: beat ${esc((R[d.set] || {}).short || 'the boss')} on Mythic` : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div><div class="usable">${esc(U.usableBy(d))}</div></div>`; }).join('')}</div></div>`);
+        <div class="pool colpool">${list.map((d, i) => { const o = save.owned[d.id] || 0; return `${d.set === 'grandcore' && (i === 0 || list[i - 1].set !== 'grandcore') ? '<div class="coldiv"><span>Grand Core</span><small>Special cards found only in the 20-card Grand Core Booster</small></div>' : ''}<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'grandcore' ? 'Only in Grand Core Boosters (Market, 20-card Core pack)' : d.mythic ? `Mythic: beat ${esc((R[d.set] || {}).short || 'the boss')} on Mythic` : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div><div class="usable">${esc(U.usableBy(d))}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const vw = e.target.closest('[data-view]'); if (vw) { view = vw.dataset.view; return draw(); } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });
