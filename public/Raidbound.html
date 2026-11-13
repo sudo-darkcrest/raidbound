@@ -11302,8 +11302,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const r = A.rng(A.hash('raidbound-shop-' + (key || dayKey())));
     const pool = k => RB.packPool(k).filter(d => d.rarity !== 'l');
     const out = [];
-    // #93: eight cards a day (two rows of four): two from each themed set, a rare find and a core card
-    for (const k of RB.BOOSTER_SETS) for (let n = 0; n < 2; n++) { const p = pool(k).filter(d => !out.includes(d.id)); out.push(p[Math.floor(r() * p.length)].id); }
+    // #93/#160: always eight cards a day (two rows of four): six themed cards spread over the booster sets (one per set while there are six), a rare find and a core card
+    const sets = RB.BOOSTER_SETS.slice();
+    for (let i = sets.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [sets[i], sets[j]] = [sets[j], sets[i]]; }
+    for (let n = 0; n < 6; n++) { const k = sets[n % sets.length], p = pool(k).filter(d => !out.includes(d.id)); out.push(p[Math.floor(r() * p.length)].id); }
     const all = RB.FRONTIER.map(id => C[id]).filter(d => d.rarity !== 'l' && !out.includes(d.id) && (d.rarity === 'r' || d.rarity === 'e'));
     out.push(all[Math.floor(r() * all.length)].id);
     const core = RB.CORE_POOL().filter(d => d.rarity === 'u' || d.rarity === 'r');
@@ -11352,7 +11354,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 
     if (tab === 'shop') {
       const st = shopState(), stock = RB.shopStock();
-      body = `<p class="lede">Eight cards for sale today: two from each themed set, a rare find, and a core card. Buy the exact card you want instead of hoping for it in a pack. Each one can be bought once a day. <b>New stock in ${untilMidnight()}.</b></p>
+      body = `<p class="lede">Eight cards for sale today: one from each themed set, a rare find, and a core card. Buy the exact card you want instead of hoping for it in a pack. Each one can be bought once a day. <b>New stock in ${untilMidnight()}.</b></p>
       <div class="shopgrid">${stock.map(id => { const d = C[id], cost = SHOP_PRICE[d.rarity] || 80, bought = st.bought.includes(id), own = save.owned[id] || 0, PS = setOf(d);
         return `<div class="shopitem" style="--sc:${PS ? PS.col : '#d8a84a'}"><div class="shopcard" data-card="${id}">${U.cardHTML(id, {})}</div><div class="sinfo"><span class="rar-${d.rarity}">${RAR[d.rarity]}</span> · ${PS ? PS.name : ''}<br><small>You own ${own}</small></div>
           ${bought ? '<button class="btn small" disabled>Bought today</button>' : `<button class="btn small ${save.gold >= cost ? 'primary' : ''}" data-shop="${id}" ${save.gold >= cost ? '' : 'disabled'}>Buy — ${cost} gold</button>`}</div>`; }).join('')}</div>`;
