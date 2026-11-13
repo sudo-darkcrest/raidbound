@@ -144,6 +144,7 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .card .settag { position: relative; z-index: 2; align-self: flex-end; height: 5.4cqw; line-height: 5.4cqw; margin: -7cqw 1.8cqw 1.6cqw 0; padding: 0 1.8cqw; border-radius: 1cqw; font-family: var(--f-sc); font-weight: 800; font-size: 3.3cqw; letter-spacing: .02em; box-shadow: 0 .4cqw 1.2cqw rgba(0, 0, 0, .6); white-space: nowrap; }
 .card .settag.mythic { color: #f4ecff; background: linear-gradient(#b07aff, #5a2aa8); }
 .card .settag.gcore { color: #2a1a04; background: linear-gradient(#fff2b8, #e8b84a); }
+.card .settag.loot { color: #2a1406; background: linear-gradient(#ffe7a0, #d49a2a); }
 .card .holofx { display: none; }
 .card.holo .holofx { display: block; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: 6.5cqw; mix-blend-mode: color-dodge; opacity: .55;
   background: linear-gradient(115deg, transparent 20%, rgba(255, 80, 180, .55) 32%, rgba(80, 220, 255, .55) 42%, rgba(255, 240, 120, .55) 52%, rgba(120, 255, 160, .5) 62%, transparent 75%);

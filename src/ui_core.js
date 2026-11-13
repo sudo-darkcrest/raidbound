@@ -182,7 +182,7 @@
     if (d.react && RB.REACT[d.react]) h += `<b class="kw react">React</b> — ${RB.REACT[d.react]}. `; // #99
     if (d.text) h += esc(d.text).replace(/\b(Taunt|Bulwark|Swift|Shrouded|Volley|Skyward|Guardian|Ambush|Crushing|Frenzy|Thick Hide|Tend|Soak|Use|Complete|Geared|Grow \d|Bloom|Unearth \d|Plant)\b(?=[: .,])/g, '<b class="kw">$1</b>');
     if (d.loot) h += ` <span class="fl" style="font-style:normal;color:#6a3a08">Scratch-off code inside: ${esc(d.loot.label)}.</span>`;
-    if (d.flavor) h += `<span class="fl">${esc(d.flavor)}</span>`;
+    if (d.flavor && !d.loot) h += `<span class="fl">${esc(d.flavor)}</span>`; // loot cards show their code line instead (room for the text)
     return h;
   }
   U.rulesHTML = rulesHTML;
@@ -238,7 +238,7 @@
     const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' || d.type === 'land' ? '' : `<div class="cost">${d.cost}</div>`;
     const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
-    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}${d.mythic ? '<span class="settag mythic">Mythic</span>' : d.set === 'grandcore' ? '<span class="settag gcore">Grand Core</span>' : ''}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
+    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}${d.loot ? '<span class="settag loot">Loot</span>' : d.mythic ? '<span class="settag mythic">Mythic</span>' : d.set === 'grandcore' ? '<span class="settag gcore">Grand Core</span>' : ''}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="holofx"></div></div></div>`;
   };
   U.heroCardHTML = function (hid) {
     const h = RB.HEROES[hid];
