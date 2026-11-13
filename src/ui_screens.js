@@ -301,10 +301,11 @@
         }
       };
     }
-    const sets = { all: 'All cards', core: 'Core set', grandcore: 'Grand Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', armory: 'The Armory packs', wild: 'Wildbloom packs', sun: 'Sunscorch packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
+    const sets = { all: 'All cards', core: 'Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', armory: 'The Armory packs', wild: 'Wildbloom packs', sun: 'Sunscorch packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
     function draw() {
       if (view === 'decks') return drawDecks();
-      const list = Object.values(C).filter(d => set === 'all' || d.set === set || d.pack === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
+      const inCol = (d, k) => k === 'all' || d.set === k || d.pack === k || (k === 'core' && d.set === 'grandcore'); // #161: Grand Core cards sit in the Core set
+      const list = Object.values(C).filter(d => inCol(d, set)).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
       const total = Object.values(C).length, have = Object.values(C).filter(d => save.owned[d.id] > 0).length;
       // #62: unscratched or unredeemed codes are shown in full; redeemed ones shrink to a compact list (Loot tab only)
       const lootTile = (l, i) => `<div class="cos"><h4>${esc(C[l.id].name)}</h4><p style="margin:.2rem 0;color:var(--muted);font-size:.9rem">${esc(C[l.id].loot.label)}</p><div class="scratch" data-loot="${i}"><span>${l.code}</span>${l.scratched ? '' : '<canvas></canvas>'}</div><p style="font-size:.85rem;color:var(--muted)">${l.scratched ? 'Enter this code in the Vault.' : 'Scratch the silver panel to reveal your code.'}</p>${l.scratched ? `<button class="btn small" data-redeem="${i}">Redeem now</button>` : ''}</div>`;
@@ -312,9 +313,9 @@
       const lootRows = (open.length ? `<div class="cosgrid lootgrid">${open.map(([l, i]) => lootTile(l, i)).join('')}</div>` : '') + (set === 'loot' && used.length ? `<details class="usedloot"><summary>${used.length} redeemed code${used.length > 1 ? 's' : ''}</summary><ul>${used.map(([l]) => `<li><b>${esc(C[l.id].name)}</b> · ${esc(C[l.id].loot.label)} · <code>${l.code}</code> <span class="okmsg">Redeemed ✓</span></li>`).join('')}</ul></details>` : '');
       const showLoot = (set === 'all' && open.length) || (set === 'loot' && save.loot.length);
       // #116: how much of each set you have collected (a card counts once you own at least one copy)
-      const inSet = k => Object.values(C).filter(d => k === 'all' || d.set === k || d.pack === k);
+      const inSet = k => Object.values(C).filter(d => inCol(d, k));
       const prog = k => { const l = inSet(k), h = l.filter(d => save.owned[d.id] > 0).length; return { h, t: l.length, pct: l.length ? Math.round(100 * h / l.length) : 0 }; };
-      const SHORT = { grandcore: 'Grand Core', ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', armory: 'Armory', wild: 'Wildbloom', sun: 'Sunscorch', molten: 'Molten treasure', tide: 'Cathedral treasure' };
+      const SHORT = { ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', armory: 'Armory', wild: 'Wildbloom', sun: 'Sunscorch', molten: 'Molten treasure', tide: 'Cathedral treasure' };
       const setBtn = (k, v) => { const p = prog(k), done = p.t && p.h === p.t;
         return `<button class="btn small setbtn ${set === k ? '' : 'ghost'} ${done ? 'done' : ''}" data-set="${k}" title="${esc(v)}: ${p.h} of ${p.t} collected"><span class="sn">${esc(SHORT[k] || v)}${done ? ' <b class="sdone">&#10003;</b>' : ''}</span><span class="sc">${p.h} / ${p.t}</span><i class="sbar"><b style="width:${p.pct}%"></b></i></button>`; };
       const cur = prog(set), setLine = `<p class="setline">${set === 'all' ? 'You have collected' : `${esc(sets[set])}: you have`} <b>${cur.h} of ${cur.t}</b> cards (${cur.pct}%).${cur.h === cur.t ? ' <b class="sdone">Set complete!</b>' : ` ${cur.t - cur.h} still to find.`}</p>`;
