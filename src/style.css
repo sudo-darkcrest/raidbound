@@ -1464,3 +1464,12 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .slot:hover .zoombtn, .slot .zoombtn:focus-visible { opacity: 1; }
 .slot .zoombtn svg { width: 100%; height: 100%; display: block; }
 @media (hover: none) { .slot .zoombtn { opacity: .9; } }
+/* #164 step through cards in the big view */
+.cardzoom .znav { position: absolute; top: 50%; transform: translateY(-50%); width: 64px; height: 96px; border-radius: 14px; border: 1px solid rgba(232, 184, 74, .55); background: rgba(20, 14, 6, .7); color: #f4e6c4; font-size: 3.2rem; line-height: 1; cursor: pointer; }
+.cardzoom .znav:hover { background: rgba(60, 40, 12, .9); }
+.cardzoom .znav.prev { left: max(16px, calc(50% - var(--zw, 300px) - 110px)); }
+.cardzoom .znav.next { right: max(16px, calc(50% - var(--zw, 300px) - 110px)); }
+.cardzoom .zwrap.sl { animation: zsl .18s ease-out; } .cardzoom .zwrap.sr { animation: zsr .18s ease-out; }
+@keyframes zsl { from { transform: translateX(40px); opacity: .3; } } @keyframes zsr { from { transform: translateX(-40px); opacity: .3; } }
+@media (max-width: 760px) { .cardzoom .znav { width: 42px; height: 70px; font-size: 2.2rem; } .cardzoom .znav.prev { left: 6px; } .cardzoom .znav.next { right: 6px; } }
+@media (prefers-reduced-motion: reduce) { .cardzoom .zwrap.sl, .cardzoom .zwrap.sr { animation: none; } }

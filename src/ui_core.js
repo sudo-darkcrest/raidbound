@@ -266,33 +266,66 @@
   };
   U.hidePreview = () => { if (pv) { pv.remove(); pv = null; } };
   // #163: click a card in the Collection, the Market or a pack (or its magnifier in the deck builder) to see it big
+  // #164: arrows, arrow keys or a swipe step through the other cards on the same screen
   U.zoomCard = function (id, opts) {
     opts = opts || {};
     if (!id || !(RB.CARDS[id] || RB.TOKENS[id])) return;
     U.hidePreview(); U.closeZoom();
+    const list = opts.list && opts.list.length ? opts.list : [{ id, holo: !!opts.holo }];
+    let i = opts.index != null ? opts.index : Math.max(0, list.findIndex(x => x.id === id));
+    const many = list.length > 1;
     const z = document.createElement('div'); z.className = 'cardzoom'; z.setAttribute('role', 'dialog'); z.setAttribute('aria-label', 'Card, shown large');
-    const w = Math.min(520, innerWidth * 0.9, (innerHeight - 70) / 1.4);
-    z.innerHTML = `<div class="zwrap" style="--cw:${Math.round(w)}px">${U.cardHTML(id, { holo: !!opts.holo })}</div><button class="zclose" aria-label="Close">&times;</button><p class="zhint">${U.isPhone() ? 'Tap' : 'Click'} anywhere to close</p>`;
-    z.onclick = () => U.closeZoom();
+    const w = Math.min(520, innerWidth * (many && !U.isPhone() ? 0.7 : 0.9), (innerHeight - 90) / 1.4);
+    z.innerHTML = `<div class="zwrap" style="--cw:${Math.round(w)}px"></div><button class="zclose" aria-label="Close">&times;</button>${many ? '<button class="znav prev" aria-label="Previous card">&#8249;</button><button class="znav next" aria-label="Next card">&#8250;</button>' : ''}<p class="zhint"></p>`;
+    const wrap = z.querySelector('.zwrap'), hint = z.querySelector('.zhint'); z.style.setProperty('--zw', Math.round(w / 2) + 'px');
+    const show = (k, dir) => {
+      i = (k + list.length) % list.length;
+      wrap.innerHTML = U.cardHTML(list[i].id, { holo: !!list[i].holo });
+      wrap.classList.remove('sl', 'sr'); void wrap.offsetWidth; if (dir) wrap.classList.add(dir > 0 ? 'sl' : 'sr');
+      hint.textContent = many ? `${i + 1} of ${list.length} · ${U.isPhone() ? 'swipe for more · tap outside to close' : 'arrow keys or the arrows for more · click outside to close'}` : `${U.isPhone() ? 'Tap' : 'Click'} anywhere to close`;
+    };
+    z._step = d => { if (many) show(i + d, d); };
+    z.onclick = e => { const n = e.target.closest('.znav'); if (n) { z._step(n.classList.contains('next') ? 1 : -1); return; } U.closeZoom(); };
+    // phones: swipe left or right
+    let sx = null, sy = null;
+    z.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+    z.addEventListener('touchend', e => { if (sx == null) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) { e.preventDefault(); z._step(dx < 0 ? 1 : -1); } });
+    show(i);
     document.body.appendChild(z);
     requestAnimationFrame(() => z.classList.add('on'));
   };
   U.closeZoom = () => { const z = document.querySelector('.cardzoom'); if (z) z.remove(); };
   if (typeof document !== 'undefined') {
     const ZOOM_AT = '.colpool .card, .shopcard .card, .flip.on .card, .slot .zoombtn, .sparerow img, .sparerow .sn';
+    // the cards to step through: everything shown in the same grid, in order
+    const siblings = t => {
+      const host = t.closest('.colpool, .pool, .shopgrid, .craftgrid, .packcards, .sparerows'); if (!host) return null;
+      if (host.classList.contains('sparerows')) return [...host.querySelectorAll('.sparerow[data-card]')].map(r => ({ id: r.dataset.card, holo: false }));
+      const sel = host.classList.contains('packcards') ? '.flip.on .card' : '.card';
+      return [...host.querySelectorAll(sel)].filter(c => c.dataset.card).map(c => ({ id: c.dataset.card, holo: c.classList.contains('holo'), el: c }));
+    };
     document.addEventListener('click', e => {
       const t = e.target.closest && e.target.closest(ZOOM_AT); if (!t || document.querySelector('.cardzoom')) return;
-      let id = t.dataset.zoom || t.dataset.card, holo = t.classList.contains('holo');
-      if (!id) { const host = t.closest('[data-card], [data-zoom]'); id = host && (host.dataset.zoom || host.dataset.card); const cd = t.closest('.slot') && t.closest('.slot').querySelector('.card'); if (cd) holo = cd.classList.contains('holo'); }
-      if (t.classList.contains('zoombtn')) { e.stopPropagation(); e.preventDefault(); const cd = t.closest('.slot').querySelector('.card'); if (cd) holo = cd.classList.contains('holo'); }
-      U.zoomCard(id, { holo });
+      let id = t.dataset.zoom || t.dataset.card, holo = t.classList.contains('holo'), cardEl = t.classList.contains('card') ? t : null;
+      if (!id) { const host = t.closest('[data-card], [data-zoom]'); id = host && (host.dataset.zoom || host.dataset.card); }
+      if (t.classList.contains('zoombtn')) { e.stopPropagation(); e.preventDefault(); }
+      if (!cardEl && t.closest('.slot')) cardEl = t.closest('.slot').querySelector('.card');
+      if (cardEl) holo = cardEl.classList.contains('holo');
+      const list = siblings(t) || [];
+      let index = cardEl ? list.findIndex(x => x.el === cardEl) : -1; if (index < 0) index = list.findIndex(x => x.id === id);
+      U.zoomCard(id, { holo, list: list.map(x => ({ id: x.id, holo: x.holo })), index: index < 0 ? null : index });
     }, true);
     // right-click any card in the deck builder or Collection also shows it big
     document.addEventListener('contextmenu', e => {
       const c = e.target.closest && e.target.closest('.pool .card, .shopcard .card'); if (!c) return;
-      e.preventDefault(); U.zoomCard(c.dataset.card, { holo: c.classList.contains('holo') });
+      e.preventDefault(); const host = c.closest('.colpool, .pool, .shopgrid, .craftgrid'); const all = host ? [...host.querySelectorAll('.card')].filter(x => x.dataset.card) : [c];
+      U.zoomCard(c.dataset.card, { holo: c.classList.contains('holo'), list: all.map(x => ({ id: x.dataset.card, holo: x.classList.contains('holo') })), index: all.indexOf(c) });
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.cardzoom')) { e.stopPropagation(); U.closeZoom(); } }, true);
+    document.addEventListener('keydown', e => { const z = document.querySelector('.cardzoom'); if (!z) return;
+      if (e.key === 'Escape') { e.stopPropagation(); U.closeZoom(); }
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); z._step(1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); z._step(-1); } }, true);
   }
   // #121: hovering a hero in any hero picker (raid setup, dungeons, online lobby) shows the full hero card
   if (typeof document !== 'undefined') {
