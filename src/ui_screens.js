@@ -135,7 +135,7 @@
   U.DIFF_TEXT = {
     normal: 'Normal: the recommended way to learn each raid.',
     heroic: 'Heroic: the boss has 30% more health, strikes 1 harder and reveals 1 extra card every turn. Against 2 or more heroes it also strikes extra times. Treasure packs hold an extra holofoil and better odds of a loot card, and you earn 25% more gold.',
-    mythic: 'Mythic: the hardest fight. The boss has 50% more health (and even more for each extra hero), strikes 1 harder, reveals 1 extra card, strikes extra times against parties and becomes Enraged at round 20. Every treasure card is a holofoil, two are raid treasures, loot is more likely, and you earn 50% more gold.',
+    mythic: 'Mythic: the hardest fight. The boss has 50% more health (and even more for each extra hero), strikes 1 harder, reveals 1 extra card, strikes extra times against parties and becomes Enraged at round 20. Every treasure card is a holofoil, two are raid treasures, one is a Mythic card you can only win here, loot is more likely, and you earn 50% more gold.',
   };
   U.mythicOpen = raidId => ((save.heroicWins || {})[raidId] || 0) > 0;
   U.diffBadges = raidId => {
@@ -301,7 +301,7 @@
         }
       };
     }
-    const sets = { all: 'All cards', core: 'Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', armory: 'The Armory packs', wild: 'Wildbloom packs', sun: 'Sunscorch packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
+    const sets = { all: 'All cards', core: 'Core set', grandcore: 'Grand Core set', ember: 'Emberfall packs', frost: 'Frostwing packs', void: 'Voidshade packs', armory: 'The Armory packs', wild: 'Wildbloom packs', sun: 'Sunscorch packs', crypt: 'Crypt treasure', molten: 'Molten Spire treasure', tide: 'Sunken Cathedral treasure', loot: 'Loot cards' };
     function draw() {
       if (view === 'decks') return drawDecks();
       const list = Object.values(C).filter(d => set === 'all' || d.set === set || d.pack === set).sort((a, b) => (a.set === 'core') - (b.set === 'core') || a.type.localeCompare(b.type) || a.cost - b.cost);
@@ -314,14 +314,14 @@
       // #116: how much of each set you have collected (a card counts once you own at least one copy)
       const inSet = k => Object.values(C).filter(d => k === 'all' || d.set === k || d.pack === k);
       const prog = k => { const l = inSet(k), h = l.filter(d => save.owned[d.id] > 0).length; return { h, t: l.length, pct: l.length ? Math.round(100 * h / l.length) : 0 }; };
-      const SHORT = { ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', armory: 'Armory', wild: 'Wildbloom', sun: 'Sunscorch', molten: 'Molten treasure', tide: 'Cathedral treasure' };
+      const SHORT = { grandcore: 'Grand Core', ember: 'Emberfall', frost: 'Frostwing', void: 'Voidshade', armory: 'Armory', wild: 'Wildbloom', sun: 'Sunscorch', molten: 'Molten treasure', tide: 'Cathedral treasure' };
       const setBtn = (k, v) => { const p = prog(k), done = p.t && p.h === p.t;
         return `<button class="btn small setbtn ${set === k ? '' : 'ghost'} ${done ? 'done' : ''}" data-set="${k}" title="${esc(v)}: ${p.h} of ${p.t} collected"><span class="sn">${esc(SHORT[k] || v)}${done ? ' <b class="sdone">&#10003;</b>' : ''}</span><span class="sc">${p.h} / ${p.t}</span><i class="sbar"><b style="width:${p.pct}%"></b></i></button>`; };
       const cur = prog(set), setLine = `<p class="setline">${set === 'all' ? 'You have collected' : `${esc(sets[set])}: you have`} <b>${cur.h} of ${cur.t}</b> cards (${cur.pct}%).${cur.h === cur.t ? ' <b class="sdone">Set complete!</b>' : ` ${cur.t - cur.h} still to find.`}</p>`;
       const el = U.show('collection', `<div class="page"><div class="pagehead"><h2>Collection</h2>${viewSeg()}<span class="sp"></span><span class="chip">${have} / ${total} cards discovered</span></div>
         <div class="filters setfilters">${Object.entries(sets).map(([k, v]) => setBtn(k, v)).join('')}</div>${setLine}
         ${showLoot ? `<h3 class="sec">Your loot codes</h3>${lootRows}<h3 class="sec">Cards</h3>` : ''}
-        <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div><div class="usable">${esc(U.usableBy(d))}</div></div>`; }).join('')}</div></div>`);
+        <div class="pool colpool">${list.map(d => { const o = save.owned[d.id] || 0; return `<div class="slot cardslot ${o ? '' : 'dim'}">${o > 0 ? `<span class="count">${o}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${o ? `Own ${o}${save.holo[d.id] ? ` · ${save.holo[d.id]} holofoil` : ''}` : (d.type === 'master' ? `Comes with ${esc(((RB.HEROES[d.hero] || {}).name || 'its hero').split(',')[0])} when you can play them` : d.set === 'core' ? 'Found in Raidbound Core packs (Market)' : d.set === 'grandcore' ? 'Only in Grand Core Boosters (Market, 20-card Core pack)' : d.mythic ? `Mythic: beat ${esc((R[d.set] || {}).short || 'the boss')} on Mythic` : d.set === 'frontier' ? `Found in ${RB.PACK_SETS[d.pack] ? RB.PACK_SETS[d.pack].name : 'Frontier'} booster packs (Market)` : d.set === 'loot' ? 'Rare drop from treasure packs' : 'Win it from ' + (Object.values(R).find(r => r.treasure.includes(d.id)) || { name: 'a raid' }).name)}</div><div class="usable">${esc(U.usableBy(d))}</div></div>`; }).join('')}</div></div>`);
       el.onclick = e => { const rd = e.target.closest('[data-redeem]'); if (rd) { const l = save.loot[+rd.dataset.redeem]; U.vault(); const inp = $('#code'); if (inp) { inp.value = l.code; document.querySelector('#vault [data-act=redeem]').click(); } return; } const vw = e.target.closest('[data-view]'); if (vw) { view = vw.dataset.view; return draw(); } const s = e.target.closest('[data-set]'); if (s) { set = s.dataset.set; draw(); } if (e.target.closest('[data-act=back]')) U.title(); };
       hoverPreview(el);
       $$('.scratch[data-loot]', el).forEach(box => { const cv = $('canvas', box); if (cv) U.scratchable(cv, () => { save.loot[+box.dataset.loot].scratched = true; U.persist(); setTimeout(draw, 600); }); });

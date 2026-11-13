@@ -1,7 +1,7 @@
 // Empirical card power: swap each card into starter decks (like-for-like type) and measure the win-rate change.
 // node tools/cardtest.js N part parts   -> writes /tmp/m/cardtest_<part>.json
 globalThis.RB = {};
-for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
+for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'grandcore', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
 const RB = globalThis.RB, C = RB.CARDS;
 const N = +process.argv[2] || 40, part = +process.argv[3] || 0, parts = +process.argv[4] || 1;
 const HEROES = Object.keys(RB.STARTER); // the six with curated starters (others are built from these)

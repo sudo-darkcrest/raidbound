@@ -140,6 +140,10 @@ h3.sec { font-family: var(--f-display); font-weight: 500; font-size: 1.7rem; col
 .card.t-token { --tc: #4a4a4a; --tc2: #181818; }
 .card .loottag { position: absolute; z-index: 5; right: 4cqw; top: 39%; font-family: var(--f-sc); font-weight: 800; font-size: 5cqw; color: #2a1406; background: linear-gradient(#ffe7a0, #d49a2a); padding: .4cqw 2.4cqw; border-radius: 1cqw; box-shadow: 0 .6cqw 1.6cqw rgba(0, 0, 0, .6); }
 .card .loottag { display: none; } .card.loot .loottag { display: block; }
+/* #161 Grand Core and Mythic cards wear a small tag like loot cards */
+.card.mythic .loottag, .card.gcore .loottag { display: block; top: 41%; font-size: 4.2cqw; }
+.card.mythic .loottag { color: #f4ecff; background: linear-gradient(#b07aff, #5a2aa8); }
+.card.gcore .loottag { color: #2a1a04; background: linear-gradient(#fff2b8, #e8b84a); }
 .card .holofx { display: none; }
 .card.holo .holofx { display: block; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: 6.5cqw; mix-blend-mode: color-dodge; opacity: .55;
   background: linear-gradient(115deg, transparent 20%, rgba(255, 80, 180, .55) 32%, rgba(80, 220, 255, .55) 42%, rgba(255, 240, 120, .55) 52%, rgba(120, 255, 160, .5) 62%, transparent 75%);

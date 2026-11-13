@@ -1,7 +1,7 @@
 // #78 buff search: for each weak card, try a ladder of small buffs and keep the gentlest one that brings it up to the
 // middle of the pack. Same measurement as tools/cardtest.js. node tools/bufftest.js N part parts -> /tmp/m/buff_<part>.json
 globalThis.RB = {};
-for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
+for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'grandcore', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
 const RB = globalThis.RB, C = RB.CARDS, TK = RB.TOKENS;
 const N = +process.argv[2] || 40, part = +process.argv[3] || 0, parts = +process.argv[4] || 1;
 const TARGET = +(process.argv[5] || -8);

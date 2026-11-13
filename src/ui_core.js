@@ -228,6 +228,7 @@
     if (d.speed === 'instant') cls.push('instant');
     if (opts.holo) cls.push('holo');
     if (d.loot) cls.push('loot');
+    if (d.mythic) cls.push('mythic'); else if (d.set === 'grandcore') cls.push('gcore'); // #161
     const long = d.name.length > 19;
     let stats = '';
     if (d.type === 'ally' || isTok && d.atk != null) stats = `<div class="stat atk">${opts.atk != null ? opts.atk : d.atk}</div><div class="stat hp">${opts.hp != null ? opts.hp : d.hp}</div>`;
@@ -237,7 +238,7 @@
     const cost = isBoss || isTok || d.type === 'quest' || d.type === 'location' || d.type === 'land' ? '' : `<div class="cost">${d.cost}</div>`;
     const type = isBoss ? (d.omen ? `Omen — ${d.soak ? 'Soak' : 'Boss turn'}` : `Boss ${cap(d.kind)}${d.turns ? ' — Event' : ''}`) : isTok ? (d.type === 'ally' ? 'Ally token' : 'Raid minion') : U.typeLine(d);
     const text = isBoss || isTok ? `${(d.kw || []).map(k => `<b class="kw">${RB.KEYWORDS[k][0]}.</b>`).join(' ')} ${esc(d.text || '')}` : rulesHTML(d);
-    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">Loot</div><div class="holofx"></div></div></div>`;
+    return `<div class="${cls.join(' ')}" data-card="${id}"><div class="cf">${cost}<div class="cin"><div class="cname${long ? ' long' : ''}">${esc(d.name)}</div><img class="cart" alt="" loading="lazy" decoding="async" src="${U.cardArt(id)}">${reachBadge(d)}<div class="ctype"><span>${type}</span><span class="icons">${isBoss || isTok ? '' : icons(d)}</span></div><div class="ctext">${text}</div></div>${stats}<div class="rar"></div><div class="loottag">${d.loot ? 'Loot' : d.mythic ? 'Mythic' : d.set === 'grandcore' ? 'Grand Core' : ''}</div><div class="holofx"></div></div></div>`;
   };
   U.heroCardHTML = function (hid) {
     const h = RB.HEROES[hid];

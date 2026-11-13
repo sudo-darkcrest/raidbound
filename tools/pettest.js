@@ -2,7 +2,7 @@
 // Plays solo Heroic raids (starter decks, AI hero) with each companion and without, on the same seeds, plus a few dungeons and
 // boss-mode games. Reports: did the bonus fire (raid log), win rate change, and any errors or bad state.
 globalThis.RB = {};
-for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
+for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'grandcore', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
 const RB = globalThis.RB;
 const N = +process.argv[2] || 60;
 const heroes = ['aldric', 'thorgrim', 'lyssara', 'grukka', 'hruna', 'snix'];

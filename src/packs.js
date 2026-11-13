@@ -98,7 +98,7 @@
   RB.PACK_SETS.core = { name: 'Raidbound Core', short: 'Core', theme: 'The heart of every deck', blurb: 'Soldiers, spells, gear and quests for every class. The cards your starter decks are built from, and more of them.', col: '#f0d48a' };
   RB.CORE_PACK_PRICE = 75;
   // #95: Core packs come in 5, 10 and 20 cards (the 20 is a small bulk discount). Themed boosters are always 5.
-  RB.CORE_SIZES = [[5, 75], [10, 150], [20, 275]];
+  RB.CORE_SIZES = [[5, 75], [10, 150], [20, 300]]; // #161: the 20-card pack is the Grand Core booster (300 gold, 5 Grand Core cards inside)
   RB.packPrice = (style, size) => style === 'core' ? ((RB.CORE_SIZES.find(s => s[0] === (size || 5)) || RB.CORE_SIZES[0])[1]) : RB.PACK_PRICE;
   RB.CORE_POOL = () => Object.values(C).filter(d => d.set === 'core' && d.type !== 'master' && d.type !== 'land'); // #125: lands are free to everyone, so never in packs, the shop or the Workshop
   RB.packPool = style => style === 'core' ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'frontier' && d.pack === style);
@@ -115,10 +115,19 @@
       out.push({ id: of((x => x < 0.04 ? 'r' : x < 0.38 ? 'u' : 'c')(rand())), holo: rand() < 0.08 });
       for (let i = 0; i < 3; i++) out.push({ id: of((x => x < 0.03 ? 'r' : x < 0.22 ? 'u' : 'c')(rand())), holo: rand() < 0.06 });
     }
+    // #161 Grand Core booster: five of the 20 cards (the mostly-common slots) are Grand Core cards
+    if (size === 20 && RB.GRAND_CORE && RB.GRAND_CORE().length) for (const i of [4, 9, 14, 18, 19]) out[i] = RB.rollGrandCore(rand);
     out.style = 'core'; out.size = size;
     return out;
   };
 
+  // #161 one Grand Core card: about 45% uncommon, 40% rare, 12% epic, 3% legendary
+  RB.rollGrandCore = rand => {
+    rand = rand || Math.random;
+    const pool = RB.GRAND_CORE(), x = rand(), want = x < 0.03 ? 'l' : x < 0.15 ? 'e' : x < 0.55 ? 'r' : 'u';
+    let l = pool.filter(d => d.rarity === want); if (!l.length) l = pool;
+    return { id: l[Math.floor(rand() * l.length)].id, holo: rand() < 0.25, gc: true };
+  };
   /* ---------- booster roll: five cards, mostly from the wrapper's own set ---------- */
   RB.rollBooster = (rand, style, size) => {
     rand = rand || Math.random;

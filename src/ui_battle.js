@@ -106,10 +106,11 @@
     for (const sd of p.seeds) { const d = C[sd.id] || RB.TOKENS[sd.id]; gear += `<div class="gslot has seed" data-act="seed" data-sid="${sd.uid}" data-card="${sd.id}" title="${esc(d.name)}: ${esc(d.text || '')}"><img alt="" src="${U.cardArt(sd.id)}"><span class="gn"><b>${esc(d.name)}</b>Blooms in ${sd.pips} turn${sd.pips === 1 ? '' : 's'}</span><span class="gv pips">${'●'.repeat(Math.max(0, sd.pips))}</span></div>`; }
     // Sunscorch: cards in the discard pile that can be Unearthed right now
     if (canAct) for (const c of E.unearthable(p)) { const d = C[c.id]; gear += `<div class="gslot has unearth can" data-act="unearth" data-uid="${c.uid}" data-card="${c.id}" title="Unearth: play ${esc(d.name)} again from your discard pile. It leaves the game afterwards."><img alt="" src="${U.cardArt(c.id)}"><span class="gn"><b>Unearth ${esc(d.name)}</b>From your discard pile</span><span class="gv">${E.unearthCost(p, d)}◆</span></div>`; }
-    const resOrder = p.res.map((r, i) => i).sort((a, b) => ((p.res[a].quest || p.res[a].loc) ? 1 : 0) - ((p.res[b].quest || p.res[b].loc) ? 1 : 0));
+    const resOrder = p.res.map((r, i) => i).sort((a, b) => ((p.res[a].quest || p.res[a].loc || p.res[a].kin) ? 1 : 0) - ((p.res[b].quest || p.res[b].loc || p.res[b].kin) ? 1 : 0));
     const resCards = resOrder.map(i => { const r = p.res[i];
       const d = C[r.c.id];
       if (r.quest || r.loc) { const can = canAct && (r.quest ? E.questReady(p, r) : E.locationReady(p, r)); return `<div class="rcard ${r.ex ? 'ex' : ''}" data-act="res" data-ri="${i}" data-card="${r.c.id}"><div class="mini ${r.loc ? 'loc' : ''} ${r.done ? 'done' : ''} ${can ? 'can' : ''}" title="${esc(d.name)}"><img alt="" src="${U.cardArt(r.c.id)}"><span class="q">${r.done ? 'Completed' : esc(d.name)}</span></div></div>`; }
+      if (r.kin && !r.kinUsed) return `<div class="rcard ${r.ex ? 'ex' : ''}" data-act="res" data-ri="${i}" data-card="${r.c.id}"><div class="mini" title="${esc(d.name)}: saves your hero once"><img alt="" src="${U.cardArt(r.c.id)}"><span class="q">${esc(d.name)}</span></div></div>`; // #161
       return `<div class="rcard ${r.ex ? 'ex' : ''}" title="${r.ex ? 'Exhausted resource' : 'Ready resource'}"><div class="cardback"></div></div>`;
     }).join('') + (p.tempRes ? `<div class="rcard"><div class="temp" title="Extra resources this turn">+${p.tempRes}</div></div>` : '');
     const allies = p.allies.map(a => {
@@ -663,6 +664,7 @@
   }
   function resAction(p, r, anchor) {
     const d = C[r.c.id], card = { card: U.cardHTML(r.c.id) };
+    if (r.kin) return U.popover(anchor, d.name, [{ why: r.kinUsed ? 'Its promise is kept. It is a normal resource now.' : 'Face up: the first time your hero would be defeated, they survive with half their starting health. It still counts as a resource.' }], card); // #161
     if (r.quest) {
       if (r.done) return U.popover(anchor, d.name, [{ why: 'Completed. It still counts as a resource.' }], card);
       const ok = E.questReady(p, r);

@@ -101,11 +101,12 @@
     const geared = p => !!p && !!p.weapon && Object.keys(p.armor).length >= 2;
     const gearSum = (p, key) => gear(p).reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
     const strikeCost = p => p.weapon ? Math.max(0, (C[p.weapon.c.id].strike || 0) - (geared(p) ? gearSum(p, 'gearedStrike') : 0)) : 0;
-    const weaponAtk = p => p.weapon ? C[p.weapon.c.id].atk + (p.weapon.atkB || 0) + (geared(p) ? (C[p.weapon.c.id].gearedAtk || 0) : 0) + (deep(p) ? (C[p.weapon.c.id].deepAtk || 0) : 0) + itemSum(p, 'wpnAtk') : 0;
+    const weaponAtk = p => p.weapon ? C[p.weapon.c.id].atk + (p.weapon.atkB || 0) + (geared(p) ? (C[p.weapon.c.id].gearedAtk || 0) : 0) + (deep(p) ? (C[p.weapon.c.id].deepAtk || 0) : 0) + itemSum(p, 'wpnAtk') + (g.boss && g.boss.enrage ? (C[p.weapon.c.id].enrageAtk || 0) : 0) : 0;
     const heroAtk = p => p.hero.tempAtk + (p.hero.permAtk || 0) + gear(p).reduce((s, e) => s + (C[e.c.id].heroAtk || 0), 0) + (geared(p) ? gearSum(p, 'gearedHeroAtk') : 0) + (p.hero.master ? (C[p.hero.master].heroAtk || 0) : 0);
     const allyDef = a => def(a.id);
-    const allyAtk = (p, a) => { const d = allyDef(a); return Math.max(0, (d.atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk') + (geared(p) ? itemSum(p, 'gearedAllyAtk') + (d.gearedBuff || 0) : 0) + (hasKw(d, 'longrange') ? itemSum(p, 'volleyAllyAtk') : 0) + (d.atkPerArmor ? Math.min(d.atkPerArmor, Object.keys(p.armor).length) : 0) + (hasKw(d, 'frenzy') ? a.damage : 0)); };
-    const allyMax = (p, a) => (allyDef(a).hp || 1) + a.hpB + itemSum(p, 'allyHp') + (geared(p) ? (allyDef(a).gearedBuff || 0) : 0);
+    const allyAtk = (p, a) => { const d = allyDef(a); return Math.max(0, (d.atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk') + (geared(p) ? itemSum(p, 'gearedAllyAtk') + (d.gearedBuff || 0) : 0) + (hasKw(d, 'longrange') ? itemSum(p, 'volleyAllyAtk') : 0) + (d.atkPerArmor ? Math.min(d.atkPerArmor, Object.keys(p.armor).length) : 0) + (hasKw(d, 'frenzy') ? a.damage : 0) + p.allies.reduce((s, x) => s + (x !== a ? (allyDef(x).auraAtk || 0) : 0), 0)); };
+    const allyMax = (p, a) => (allyDef(a).hp || 1) + a.hpB + itemSum(p, 'allyHp') + (geared(p) ? (allyDef(a).gearedBuff || 0) : 0)
+      + (hasKw(allyDef(a), 'protector') ? gearSum(p, 'bulwarkHp') : 0) + (allyDef(a).race === 'Beast' ? p.res.filter(r => r.loc).reduce((s, r) => s + (C[r.c.id].beastHp || 0), 0) : 0); // #161
     // Sunscorch: a card played again with Unearth (or for free from the discard pile) leaves the game afterwards
     const bury = (p, c) => { if (!c) return; if (c.gone) p.exile.push(c); else p.grave.push(c); };
     const unearthCost = (p, d) => Math.max(0, (d.unearth || 0) - gearSum(p, 'unearthOff'));
@@ -154,6 +155,7 @@
         case 'friendly': return friendlyChars();
         case 'friendlyHero': return alive().map(T.hero);
         case 'ally': return allAllies();
+        case 'myAlly': return p ? p.allies.filter(a => !a.ex && !a.frozen).map(a => T.ally(p, a)) : []; // #161 Highmoor Coliseum
         case 'deadHero': return g.players.filter(q => q.hero.dead).map(T.hero);
         default: return [];
       }
@@ -161,7 +163,7 @@
     // #102: while the boss is in the air only Volley attacks reach it (abilities still can)
     function volleyAttack(p, who) {
       if (!p || who == null) return false;
-      if (who === 'hero') return !!(p.weapon && !p.weapon.ex && available(p) >= strikeCost(p) && hasKw(C[p.weapon.c.id], 'longrange'));
+      if (who === 'hero') return !!(p.weapon && !p.weapon.ex && available(p) >= strikeCost(p) && (hasKw(C[p.weapon.c.id], 'longrange') || hasKw(C[p.weapon.c.id], 'skyward')));
       return allyKw(p, who, 'longrange') || allyKw(p, who, 'skyward'); // #112 Skyward reaches a flier too
     }
     function attackTargets(p, who) {
@@ -190,6 +192,7 @@
         if (n > 0) n = await useArmor(p, n);
       }
       if (target.t === 'ally' && allyDef(target.a).armorAlly) n = Math.max(0, n - allyDef(target.a).armorAlly);
+      if (target.t === 'ally' && target.a.ward > 0 && n > 0) { const ab = Math.min(target.a.ward, n); target.a.ward -= ab; n -= ab; log(`${allyDef(target.a).name}'s ward absorbs ${ab}.`, 'def'); } // #161 Phalanx
       // #103 Thick Hide; #102 the Leviathan Maw shields Nethys (half damage while it lives)
       if (n > 0 && ((target.t === 'minion' && hasKw(minDef(target.m), 'thickhide')) || (target.t === 'ally' && hasKw(allyDef(target.a), 'thickhide')))) n -= 1;
       if (n > 0 && target.t === 'boss' && raid.halvedBy && g.boss.minions.some(m => m.id === raid.halvedBy)) n = Math.ceil(n / 2);
@@ -225,7 +228,7 @@
         const d = C[e.c.id];
         if (available(p) < d.use) continue;
         pay(p, d.use); e.ex = true;
-        const red = Math.min(n, d.def + (geared(p) ? (d.gearedDef || 0) : 0) + (deep(p) ? (d.deepDef || 0) : 0)); n -= red;
+        const red = Math.min(n, d.def + (geared(p) ? (d.gearedDef || 0) : 0) + (deep(p) ? (d.deepDef || 0) : 0) + (g.curAtt && g.curAtt.t === 'boss' ? (d.bossDef || 0) : 0)); n -= red;
         log(`${d.name} blocks ${red}.`, 'def');
         await H.anim('armor', { ref: 'hero' + p.idx, amount: red, name: d.name });
         if (d.blockDraw) { log(`${d.name}: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
@@ -268,6 +271,7 @@
         await H.anim('death', { ref: t.m.uid });
         H.update();
         if (d.onDeath) await d.onDeath(api, { m: t.m });
+        for (const q of alive()) for (const e of [...q.items]) { const ed = C[e.c.id]; if (ed.onMinionDeath && !g.over) await ed.onMinionDeath(api, q); } // #161 Signet of the Grave Lord
         return;
       }
       if (t.t === 'ally') {
@@ -298,6 +302,28 @@
           p.hero.damage = heroMax(p) - 5;
           log(`${C[shard.c.id].cheatMsg || 'The Phylactery Shard shatters'} — ${pdef(p).name} refuses to die!`, 'def');
           await H.anim('heal', { ref: 'hero' + p.idx, amount: 5 }); H.update();
+          return;
+        }
+        // #161 Phoenix Plume: an item that saves any friendly hero, once
+        const plumeP = alive().find(q => q.items.some(e => C[e.c.id].cheatAny));
+        if (plumeP) {
+          const e = plumeP.items.find(x => C[x.c.id].cheatAny);
+          plumeP.items.splice(plumeP.items.indexOf(e), 1); plumeP.exile.push(e.c);
+          p.hero.damage = heroMax(p) - 1;
+          log(`The ${C[e.c.id].name} bursts into flame — ${pdef(p).name} rises again!`, 'def');
+          await H.anim('banner', { text: 'Reborn in flame!', kind: 'def' }); H.update();
+          await heal(T.hero(p), 6, { p: plumeP });
+          return;
+        }
+        // #161 Kindred Spirit played as a resource stays face up and saves its hero once, at half starting health
+        const kin = p.res.find(r => r.kin && !r.kinUsed);
+        if (kin) {
+          kin.kinUsed = true;
+          const start = p.hero.master ? C[p.hero.master].hp : HEROES[p.heroId].hp;
+          p.hero.damage = Math.max(0, heroMax(p) - Math.ceil(start / 2));
+          log(`Kindred Spirit stands over ${pdef(p).name} — they rise with ${heroHp(p)} health!`, 'def');
+          await H.anim('banner', { text: 'A kindred spirit answers', kind: 'def' });
+          await H.anim('heal', { ref: 'hero' + p.idx, amount: heroHp(p) }); H.update();
           return;
         }
         p.hero.dead = true; p.hero.shield = 0;
@@ -439,6 +465,7 @@
       }
       { const k = costOf(p, d); if (available(p) < k) return { ok: false, why: `Needs ${k} resource${k === 1 ? '' : 's'} (you have ${available(p)}).` }; }
       if (hasKw(d, 'unique') && d.type === 'ally' && p.allies.some(a => a.id === d.id)) return { ok: false, why: 'Unique: you already have one in play.' };
+      if (d.reactOnly && !(g.react && reactMatch(d, p, g.react))) return { ok: false, why: `Play this ${RB.REACT[d.react]}.` }; // #161
       if ((d.type === 'weapon' || d.type === 'armor') && !canEquip(p, d)) return { ok: false, why: `${RB.CLASSES[HEROES[p.heroId].cls].name}s can't use ${d.type === 'weapon' ? d.wtype + 's' : d.atype + ' armor'}.` };
       if (d.type === 'master' && p.hero.master) return { ok: false, why: 'You are already a Master Hero.' };
       if (d.target && d.target !== 'none') {
@@ -487,7 +514,7 @@
         p.res.push({ c: inst, ex: false, quest: true, done: false, mk: g.minionsKilled });
         log(`${pdef(p).name} takes up the quest: ${d.name}.`, 'play');
       } else {
-        p.res.push({ c: inst, ex: false });
+        p.res.push(d.kinRes ? { c: inst, ex: false, kin: true } : { c: inst, ex: false }); // #161 Kindred Spirit stays face up
         p.spareRes++;
         log(`${pdef(p).name} plays a card as a resource (${p.spareRes} of ${RB.SPARE_RES} that aren't lands).`, '');
       }
@@ -686,6 +713,7 @@
         log(`${allyDef(a).name} tends ${nameOf(t)}.`, 'def'); await heal(t, 1 + itemSum(p, 'tendPlus')); if (g.over) return;
       }
       for (const e of [...p.items]) { const d = C[e.c.id]; if (d.start) await d.start(api, p); if (g.over) return; }
+      for (const e of [p.weapon, ...Object.values(p.armor)].filter(Boolean)) { const d = C[e.c.id]; if (d.start && !p.hero.dead) await d.start(api, p); if (g.over) return; } // #161
       // Wildbloom: seeds lose a pip each turn (more with Bloomcaller Druids and Oriel), and bloom at zero
       if (p.seeds.length && !p.hero.dead) { await growSeeds(p, 1 + p.allies.reduce((s, a) => s + (allyDef(a).extraGrow || 0), 0), true); if (g.over) return; }
       for (const ev of [...g.boss.events]) { const d = BC[ev.id]; if (d.heroStart) await d.heroStart(api, p); if (g.over) return; }
@@ -710,7 +738,7 @@
       if (g.over) return;
       let guard = 0;
       while (guard++ < 6) {
-        const responders = alive().filter(p => p.hand.some(c => C[c.id].type === 'ability' && C[c.id].speed === 'instant' && available(p) >= C[c.id].cost));
+        const responders = alive().filter(p => p.hand.some(c => C[c.id].type === 'ability' && C[c.id].speed === 'instant' && !C[c.id].reactOnly && available(p) >= C[c.id].cost));
         if (!responders.length) return;
         g.window = true;
         let choice = null;
@@ -742,6 +770,7 @@
       if (d.react === 'friendHero') return ctx.defT.t === 'hero';
       if (d.react === 'friend') return ctx.defT.t === 'hero' || ctx.defT.t === 'ally';
       if (d.react === 'strike') return !!ctx.isBoss;
+      if (d.react === 'minion') return !ctx.isBoss && !!ctx.attT; // #161
       return false;
     }
     function reactTarget(d, ctx) {
@@ -929,13 +958,17 @@
           cv.a.ex = true; defT = cv;
           if (cv.p !== targetT.p) { cv.p.threat += atkVal * 2; log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}! The boss marks ${pdef(cv.p).name} as a threat.`, 'def'); }
           else log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}!`, 'def');
+          if (allyDef(cv.a).onCover && !g.over) await allyDef(cv.a).onCover(api, { p: cv.p, a: cv.a, att: isBoss ? T.boss() : T.minion(attackerRef) }); // #161
+          if (g.over || (!isBoss && !g.boss.minions.includes(attackerRef))) return;
         }
       }
       log(`${attackerName} attacks ${nameOf(defT)}.`, 'boss');
       await H.anim('attack', { from: attackerRef === 'boss' ? 'boss' : attackerRef.uid || attackerRef, to: refId(defT), enemy: true });
       // #99 React: answer the attack before it lands
-      await reactWindow({ attacker: attackerName, atk: atkVal, defT, isBoss: !!isBoss, attackerDef, attT: isBoss ? T.boss() : T.minion(attackerRef) });
+      const rctx = { attacker: attackerName, atk: atkVal, defT, isBoss: !!isBoss, attackerDef, attT: isBoss ? T.boss() : T.minion(attackerRef) };
+      await reactWindow(rctx);
       if (g.over || !isAlive(defT)) return;
+      if (rctx.cancel || (!isBoss && !g.boss.minions.includes(attackerRef))) { if (rctx.cancel) await H.anim('banner', { text: 'Attack cancelled', kind: 'def' }); return; } // #161 Siren's Lament / a React that kills the attacker
       if (defT.t === 'hero' && shrouded(defT.p)) { log(`${pdef(defT.p).name} slips into the shadows — the attack misses!`, 'def'); await H.anim('banner', { text: 'Missed!', kind: 'def' }); return; }
       // defender's counter-damage
       let back = 0;

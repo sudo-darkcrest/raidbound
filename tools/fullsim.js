@@ -2,7 +2,7 @@
 // Raids (all sizes, normal/heroic, starter vs full-collection auto decks), boss mode, dungeons (all modes, sizes, swap levels).
 // Flags: errors, stalled games (>60 rounds), NaN/negative state, gold and XP per game and per round.
 globalThis.RB = {};
-for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
+for (const f of ['art_core', 'art_fig', 'art_obj', 'art_hero', 'data', 'engine', 'ai', 'cardpower', 'frontier', 'packs', 'expansion', 'treasure', 'armory', 'wildbloom', 'sunscorch', 'grandcore', 'skins', 'masters', 'dungeons']) require('../src/' + f + '.js');
 const RB = globalThis.RB, C = RB.CARDS;
 if (process.env.DANGER != null) RB.AI_DANGER = +process.env.DANGER; if (process.env.DTHREAT != null) RB.AI_THREAT = +process.env.DTHREAT; // #79: 0 turns the AI's danger sense off, for comparison
 const N = +process.argv[2] || 24;

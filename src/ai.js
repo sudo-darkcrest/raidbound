@@ -420,7 +420,8 @@
     for (const o of opts) {
       const cd = C[o.inst.id], tags = cd.tags || [];
       let s = 0;
-      if (tags.includes('shield') && cd.react !== 'strike') {
+      if (cd.aiReact) s = cd.aiReact(E, ctx, o, lenient); // #161 a card can judge its own React
+      else if (tags.includes('shield') && cd.react !== 'strike') {
         const blk = cd.shield || 6;
         if (hero && left >= (lenient ? 2 : 3)) s = Math.min(blk, left) * 1.2 + (left >= hp ? 20 : 0) + (E.heroHp(hero) <= 16 ? 3 : 0) - cd.cost * 0.4;
       } else if (cd.react === 'strike') {
@@ -462,7 +463,7 @@
   };
   AI.instantHelps = function (E, p, inst, bc, minionsAsked) {
     const d = C[inst.id], tags = d.tags || [];
-    if (d.type !== 'ability' || d.speed !== 'instant' || d.cost > E.available(p)) return false;
+    if (d.type !== 'ability' || d.speed !== 'instant' || d.reactOnly || d.cost > E.available(p)) return false;
     const hit = AI.bossCardHits(E, bc), mine = hit.heroes.includes(p);
     if (tags.includes('shield')) {
       if (d.target === 'friendlyHero' ? hit.heroes.some(h => h.hero.shield < hit.amt) : (mine && p.hero.shield < hit.amt)) return 'hit';
@@ -485,7 +486,7 @@
     const harmful = bc.kind === 'attack' || bc.kind === 'curse';
     for (const inst of p.hand) {
       const d = C[inst.id];
-      if (d.type !== 'ability' || d.speed !== 'instant' || d.cost > avail) continue;
+      if (d.type !== 'ability' || d.speed !== 'instant' || d.reactOnly || d.cost > avail) continue;
       const tags = d.tags || [];
       if (tags.includes('shield') && harmful) {
         if (d.target === 'friendlyHero') { const t = E.heroes().filter(h => h.hero.shield === 0 && E.heroHp(h) <= 16).sort((a, b) => E.heroHp(a) - E.heroHp(b))[0]; if (t) return { p, inst, target: E.T.hero(t) }; }

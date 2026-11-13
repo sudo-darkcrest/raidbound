@@ -21,6 +21,13 @@
     if (Math.random() < (myth ? 0.6 : heroic ? 0.4 : 0.25)) out.push({ id: pick(Object.values(C).filter(d => d.set === 'loot')).id, holo: true, loot: true });
     else out.push({ id: pick(coms).id, holo: Math.random() < 0.1 });
     if (heroic) { const plain = out.find(x => !x.holo); if (plain) plain.holo = true; }
+    // #161: every Mythic win also holds one of that boss's 7 Mythic cards (rare 50%, epic 38%, legendary 12%), favouring the ones you own fewest of
+    if (myth && raid.mythic && raid.mythic.length) {
+      const x = Math.random(), want = x < 0.12 ? 'l' : x < 0.5 ? 'e' : 'r';
+      let l = raid.mythic.filter(id => C[id].rarity === want); if (!l.length) l = raid.mythic.slice();
+      const low = Math.min(...l.map(id => save.owned[id] || 0)); l = l.filter(id => (save.owned[id] || 0) === low);
+      out[3] = { id: pick(l), holo: true, mythic: true };
+    }
     if (myth) out.forEach(x => { x.holo = true; });
     return out;
   };
@@ -54,13 +61,13 @@
     U.sfx.treasure();
     packEl.classList.add('tear');
     setTimeout(() => {
-      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)${PS ? `;color:${PS.col}` : ''}">${booster ? `${PS.name} ${size > 5 ? `${size}-card pack` : 'booster'}` : 'Treasure'}</h2><p class="tagline">${PS ? `${esc(PS.theme)} · ` : ''}${U.isPhone() ? 'Tap' : 'Click'} each card to reveal it.</p>
+      const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)${PS ? `;color:${PS.col}` : ''}">${booster ? (style === 'core' && size === 20 ? 'Grand Core Booster' : `${PS.name} ${size > 5 ? `${size}-card pack` : 'booster'}`) : (heroic === 'mythic' ? 'Mythic Treasure' : 'Treasure')}</h2><p class="tagline">${PS ? `${esc(PS.theme)} · ` : ''}${U.isPhone() ? 'Tap' : 'Click'} each card to reveal it.</p>
         <div class="packcards${cards.length > 5 ? ' many' : ''}${cards.length > 10 ? ' lots' : ''}">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${Math.min(i, 12) * 0.08}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
         <div class="revealrow"><button class="btn primary" data-act="all">Reveal all</button></div>
         <div id="lootnote"></div>
         ${booster ? (() => { const pr = RB.packPrice(style, size), free = style === 'core' && size === 5 && save.freeCore > 0, sz = size > 5 ? ` ${size}-card` : '';
           return `<div class="againbox"><div class="againhead"><b>Open another pack?</b><span class="goldchip">${save.gold} gold</span><span class="againcost">Core ${RB.CORE_SIZES.map(s => `${s[0]} cards ${s[1]}`).join(' · ')} gold · themed ${RB.PACK_PRICE} gold</span></div>
-          ${(() => { const mini = o => { const k = o.style, p = RB.packPrice(k, o.size), fr = k === 'core' && o.size === 5 && save.freeCore > 0; return `<div class="packpick">${U.packHTML({ theme: k, art: o.art, act: 'buyagain', set: (RB.PACK_SETS[k].short || RB.PACK_SETS[k].name) + ' Set', count: `${o.size} random cards`, cls: (o.size > 5 ? 'sz' + o.size + ' ' : '') + (fr || save.gold >= p ? '' : 'broke'), data: `data-style="${k}" data-size="${o.size}"`, label: fr ? `Open a free ${o.name} pack` : `Buy another ${o.name} pack for ${p} gold` })}<div class="pname">${o.short}${k === style && o.size === size ? ' <small>(again)</small>' : ''}${fr ? ' <small class="okmsg">free</small>' : ''}</div></div>`; }; return ['core', 'themed'].map(g => `<div class="packrow mini">${RB.packOffers().filter(o => (o.style === 'core') === (g === 'core')).map(mini).join('')}</div>`).join(''); })()}
+          ${(() => { const mini = o => { const k = o.style, p = RB.packPrice(k, o.size), fr = k === 'core' && o.size === 5 && save.freeCore > 0; return `<div class="packpick">${U.packHTML({ theme: k, art: o.art, act: 'buyagain', set: k === 'core' && o.size === 20 ? 'Grand Core' : (RB.PACK_SETS[k].short || RB.PACK_SETS[k].name) + ' Set', count: `${o.size} random cards`, cls: (o.size > 5 ? 'sz' + o.size + ' ' : '') + (fr || save.gold >= p ? '' : 'broke'), data: `data-style="${k}" data-size="${o.size}"`, label: fr ? `Open a free ${o.name} pack` : `Buy another ${o.name} pack for ${p} gold` })}<div class="pname">${o.short}${k === style && o.size === size ? ' <small>(again)</small>' : ''}${fr ? ' <small class="okmsg">free</small>' : ''}</div></div>`; }; return ['core', 'themed'].map(g => `<div class="packrow mini">${RB.packOffers().filter(o => (o.style === 'core') === (g === 'core')).map(mini).join('')}</div>`).join(''); })()}
           ${free ? `<button class="btn primary" data-act="buyagain">Open your free ${PS.name} pack (${save.freeCore} left)</button>` : save.gold >= pr ? `<button class="btn primary" data-act="buyagain" data-size="${size}">Another ${PS.name}${sz} pack — ${pr} gold</button>` : `<p class="tagline" style="margin:.6rem 0 0">You need ${pr - save.gold} more gold for another ${PS.name}${sz} pack. Go raid!</p>`}</div>`; })() : ''}
         <div class="menu" style="flex-direction:row;justify-content:center;margin-top:1.6rem">${booster || fromMarket ? `<button class="btn primary" data-act="market">Back to the Market</button>` : `<button class="btn primary" data-act="again">${opts && opts.online ? 'Back to the party lobby' : 'Raid again'}</button>`}<button class="btn" data-act="col">View collection</button><button class="btn ghost" data-act="title">Title</button></div></div>`, false, booster || fromMarket ? 'market' : null);
       packBusy = false;
@@ -107,7 +114,7 @@
   RB.CORE_ART = { 5: 'pack_core', 10: 'pack_core10', 20: 'pack_core20' };
   RB.CORE_COL = { 10: '#ff9a4a', 20: '#9ad86a' };
   RB.packOffers = () => [
-    ...RB.CORE_SIZES.map(([n]) => ({ style: 'core', size: n, art: RB.CORE_ART[n] || 'pack_core', col: RB.CORE_COL[n], name: n > 5 ? `Core ${n}-Card Pack` : 'Raidbound Core', short: `Core ${n}` })),
+    ...RB.CORE_SIZES.map(([n]) => ({ style: 'core', size: n, art: RB.CORE_ART[n] || 'pack_core', col: RB.CORE_COL[n], name: n === 20 ? 'Grand Core Booster' : n > 5 ? `Core ${n}-Card Pack` : 'Raidbound Core', short: n === 20 ? 'Grand Core' : `Core ${n}` })),
     ...Object.entries(RB.PACK_STYLES).filter(([k]) => k !== 'core').map(([k, v]) => ({ style: k, size: 5, art: v.art, name: v.name, short: v.name })),
   ];
   U.packHTML = function (o) {
