@@ -1441,3 +1441,4 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 #title > .topnav { position: absolute; top: 0; left: 0; right: 0; width: 100%; }
 #title { padding-top: 3.4rem; }
 #end > .topnav { position: sticky; top: 0; }
+.revealrow { display: flex; justify-content: center; margin: 1.1rem 0 .4rem; }
