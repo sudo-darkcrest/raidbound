@@ -481,5 +481,13 @@
  "my_hourglass": "74a5d346-cfa1-4c79-90a3-b60a2e12a920",
  "my_trident": "1ec988a1-8f28-4f46-a461-a3cac42e3a7d",
  "my_coralguard": "1fc41840-f31c-42c2-8c7c-19865373c4cd",
- "gcpinning": "gemini-user"
+ "gcpinning": "gemini-user",
+ "gcseraph": "83b4126c-cbe2-4921-b6e7-ae5bd4fdf000",
+ "gcsapper": "c53b5d00-6747-4277-81b3-ab6b42d70408",
+ "gcstormgiant": "6dbd1bcc-779d-414f-abb2-933c157de681",
+ "gcrunesmith": "f7fac889-8018-4fba-9fa0-442abdd8864d",
+ "gcassassin": "0bde7b47-a120-4aa0-ab2c-e713bbb39752",
+ "gcpackleader": "99358ac3-1517-49d2-8d15-7d7a4908258b",
+ "gclancer": "0863b1a9-e4fd-427f-9aa6-968a2e4827c2",
+ "gctreasurer": "2818343c-686c-42bf-b3ce-ce286f161fb5"
 }
