@@ -1471,6 +1471,20 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .pool .coldiv { grid-column: 1 / -1; display: flex; align-items: baseline; gap: .8rem; margin: .8rem 0 .2rem; padding-top: .6rem; border-top: 1px solid rgba(232, 184, 74, .55); }
 .pool .coldiv span { font-family: var(--f-sc); font-weight: 800; font-size: 1.05rem; color: #f0cf7a; }
 .pool .coldiv small { color: var(--muted); font-size: .85rem; }
+/* #163 click a card to see it big */
+.cardzoom { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; background: rgba(6, 4, 2, .82); backdrop-filter: blur(3px); opacity: 0; transition: opacity .15s; cursor: zoom-out; }
+.cardzoom.on { opacity: 1; }
+.cardzoom .zwrap { width: var(--cw); transform: scale(.94); transition: transform .18s; filter: drop-shadow(0 24px 40px rgba(0, 0, 0, .8)); }
+.cardzoom.on .zwrap { transform: none; }
+.cardzoom .zwrap .card { --cw: 100%; width: 100%; }
+.cardzoom .zclose { position: absolute; top: 14px; right: 18px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(232, 184, 74, .6); background: rgba(20, 14, 6, .85); color: #f4e6c4; font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.cardzoom .zhint { margin: 0; color: var(--muted); font-size: .85rem; }
+.colpool .card, .shopcard .card, .flip.on .card { cursor: zoom-in; }
+.slot { position: relative; }
+.slot .zoombtn { position: absolute; z-index: 6; top: 22%; right: 4%; width: 30px; height: 30px; padding: 5px; border-radius: 50%; border: 1px solid rgba(232, 184, 74, .7); background: rgba(14, 10, 4, .8); color: #f4e6c4; cursor: zoom-in; opacity: 0; transition: opacity .15s; }
+.slot:hover .zoombtn, .slot .zoombtn:focus-visible { opacity: 1; }
+.slot .zoombtn svg { width: 100%; height: 100%; display: block; }
+@media (hover: none) { .slot .zoombtn { opacity: .9; } }
 
 </style>
 </head>
@@ -9190,6 +9204,35 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     pv.style.left = x + 'px'; pv.style.top = Math.max(8, y) + 'px';
   };
   U.hidePreview = () => { if (pv) { pv.remove(); pv = null; } };
+  // #163: click a card in the Collection, the Market or a pack (or its magnifier in the deck builder) to see it big
+  U.zoomCard = function (id, opts) {
+    opts = opts || {};
+    if (!id || !(RB.CARDS[id] || RB.TOKENS[id])) return;
+    U.hidePreview(); U.closeZoom();
+    const z = document.createElement('div'); z.className = 'cardzoom'; z.setAttribute('role', 'dialog'); z.setAttribute('aria-label', 'Card, shown large');
+    const w = Math.min(520, innerWidth * 0.9, (innerHeight - 70) / 1.4);
+    z.innerHTML = `<div class="zwrap" style="--cw:${Math.round(w)}px">${U.cardHTML(id, { holo: !!opts.holo })}</div><button class="zclose" aria-label="Close">&times;</button><p class="zhint">${U.isPhone() ? 'Tap' : 'Click'} anywhere to close</p>`;
+    z.onclick = () => U.closeZoom();
+    document.body.appendChild(z);
+    requestAnimationFrame(() => z.classList.add('on'));
+  };
+  U.closeZoom = () => { const z = document.querySelector('.cardzoom'); if (z) z.remove(); };
+  if (typeof document !== 'undefined') {
+    const ZOOM_AT = '.colpool .card, .shopcard .card, .flip.on .card, .slot .zoombtn, .sparerow img, .sparerow .sn';
+    document.addEventListener('click', e => {
+      const t = e.target.closest && e.target.closest(ZOOM_AT); if (!t || document.querySelector('.cardzoom')) return;
+      let id = t.dataset.zoom || t.dataset.card, holo = t.classList.contains('holo');
+      if (!id) { const host = t.closest('[data-card], [data-zoom]'); id = host && (host.dataset.zoom || host.dataset.card); const cd = t.closest('.slot') && t.closest('.slot').querySelector('.card'); if (cd) holo = cd.classList.contains('holo'); }
+      if (t.classList.contains('zoombtn')) { e.stopPropagation(); e.preventDefault(); const cd = t.closest('.slot').querySelector('.card'); if (cd) holo = cd.classList.contains('holo'); }
+      U.zoomCard(id, { holo });
+    }, true);
+    // right-click any card in the deck builder or Collection also shows it big
+    document.addEventListener('contextmenu', e => {
+      const c = e.target.closest && e.target.closest('.pool .card, .shopcard .card'); if (!c) return;
+      e.preventDefault(); U.zoomCard(c.dataset.card, { holo: c.classList.contains('holo') });
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.cardzoom')) { e.stopPropagation(); U.closeZoom(); } }, true);
+  }
   // #121: hovering a hero in any hero picker (raid setup, dungeons, online lobby) shows the full hero card
   if (typeof document !== 'undefined') {
     const canHover = () => typeof matchMedia === 'undefined' || matchMedia('(hover: hover)').matches;
@@ -9930,7 +9973,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         <p class="lede">${esc(RB.FACTIONS[h.fac].name)} · ${h.race} ${RB.CLASSES[h.cls].name} · ${RB.PROFS[h.profs[0]]}, ${RB.PROFS[h.profs[1]]}. Only cards this hero can use are shown. Armor: ${RB.CLASSES[h.cls].armor.join(', ')}. Weapons: ${RB.CLASSES[h.cls].weapons.join(', ')}. Up to 2 copies of a card (1 if Unique or a Master Hero).</p>
         <div class="dbgrid"><div><div class="filters">${types.map(t => `<button class="btn small ${filter === t ? '' : 'ghost'}" data-f="${t}">${{ all: 'All', ally: 'Allies', ability: 'Abilities', weapon: 'Weapons', armor: 'Armor', item: 'Items', quest: 'Quests', master: 'Master heroes', land: `Lands, quests & locations ${lands.length}/${RB.LAND_COUNT}` }[t]}</button>`).join('')}<input type="search" placeholder="Search cards" value="${esc(q)}" aria-label="Search cards"></div>
         ${onLands ? `<p class="sub landnote">Every deck carries <b>${RB.LAND_COUNT} resource cards</b> on top of its ${RB.DECK_SIZE} normal cards: any mix of <b>lands, quests and locations</b>. You play one a turn as a resource. Lands are free and do one small thing as they arrive; quests and locations keep their abilities (you can only hold one location at a time). Up to 2 copies of each. Normal cards can only become resources ${RB.SPARE_RES} times a fight.</p>` : ''}
-        <div class="pool">${list.map(d => { const k = (onLands ? lcounts : counts)[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
+        <div class="pool">${list.map(d => { const k = (onLands ? lcounts : counts)[d.id] || 0, max = Math.min(RB.maxCopies(d), save.owned[d.id] || 0); return `<div class="slot ${k >= max ? 'dim' : ''}" data-add="${d.id}">${k ? `<span class="count">${k}</span>` : ''}<button class="zoombtn" data-zoom="${d.id}" title="Show this card bigger" aria-label="Show ${esc(d.name)} bigger"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M14.5 14.5 L20 20" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></button>${U.cardHTML(d.id, { holo: (save.holo[d.id] || 0) > 0 })}<div class="owned">${k}/${max} in deck · own ${save.owned[d.id]}</div></div>`; }).join('')}</div></div>
         <aside class="decklist ${dlMini ? 'mini' : ''}"><h4 data-act="dlmini">${deck.length} / ${RB.DECK_SIZE} cards<span class="dltoggle phone-only">${dlMini ? '▲ Show deck' : '▼ Hide'}</span></h4><div style="font-size:.8rem;color:var(--muted)">Allies ${byType('ally')} · Abilities ${byType('ability')} · Gear ${byType('weapon') + byType('armor') + byType('item')}</div><div class="curve">${curve.map((v, i) => `<div style="height:${(v / maxC) * 100}%"><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div><div style="height:.6rem"></div>${rows || '<p style="color:var(--muted)">' + (U.isPhone() ? 'Tap cards to add them.' : 'Click cards on the left to add them.') + '</p>'}
           <h4 class="landhead" data-f="land" title="Choose your lands, quests and locations">Lands, quests & locations ${lands.length} / ${RB.LAND_COUNT}</h4>${Object.entries(lcounts).map(([id, k]) => `<div class="row" data-rml="${id}" title="Click to remove one"><span class="c">${C[id].type === 'land' ? '◆' : C[id].type === 'quest' ? 'Q' : 'L'}</span><span class="n">${esc(C[id].name)}</span><span class="x">×${k}</span></div>`).join('')}</aside></div></div>`, drawn);
       drawn = true;

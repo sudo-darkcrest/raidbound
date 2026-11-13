@@ -265,6 +265,35 @@
     pv.style.left = x + 'px'; pv.style.top = Math.max(8, y) + 'px';
   };
   U.hidePreview = () => { if (pv) { pv.remove(); pv = null; } };
+  // #163: click a card in the Collection, the Market or a pack (or its magnifier in the deck builder) to see it big
+  U.zoomCard = function (id, opts) {
+    opts = opts || {};
+    if (!id || !(RB.CARDS[id] || RB.TOKENS[id])) return;
+    U.hidePreview(); U.closeZoom();
+    const z = document.createElement('div'); z.className = 'cardzoom'; z.setAttribute('role', 'dialog'); z.setAttribute('aria-label', 'Card, shown large');
+    const w = Math.min(520, innerWidth * 0.9, (innerHeight - 70) / 1.4);
+    z.innerHTML = `<div class="zwrap" style="--cw:${Math.round(w)}px">${U.cardHTML(id, { holo: !!opts.holo })}</div><button class="zclose" aria-label="Close">&times;</button><p class="zhint">${U.isPhone() ? 'Tap' : 'Click'} anywhere to close</p>`;
+    z.onclick = () => U.closeZoom();
+    document.body.appendChild(z);
+    requestAnimationFrame(() => z.classList.add('on'));
+  };
+  U.closeZoom = () => { const z = document.querySelector('.cardzoom'); if (z) z.remove(); };
+  if (typeof document !== 'undefined') {
+    const ZOOM_AT = '.colpool .card, .shopcard .card, .flip.on .card, .slot .zoombtn, .sparerow img, .sparerow .sn';
+    document.addEventListener('click', e => {
+      const t = e.target.closest && e.target.closest(ZOOM_AT); if (!t || document.querySelector('.cardzoom')) return;
+      let id = t.dataset.zoom || t.dataset.card, holo = t.classList.contains('holo');
+      if (!id) { const host = t.closest('[data-card], [data-zoom]'); id = host && (host.dataset.zoom || host.dataset.card); const cd = t.closest('.slot') && t.closest('.slot').querySelector('.card'); if (cd) holo = cd.classList.contains('holo'); }
+      if (t.classList.contains('zoombtn')) { e.stopPropagation(); e.preventDefault(); const cd = t.closest('.slot').querySelector('.card'); if (cd) holo = cd.classList.contains('holo'); }
+      U.zoomCard(id, { holo });
+    }, true);
+    // right-click any card in the deck builder or Collection also shows it big
+    document.addEventListener('contextmenu', e => {
+      const c = e.target.closest && e.target.closest('.pool .card, .shopcard .card'); if (!c) return;
+      e.preventDefault(); U.zoomCard(c.dataset.card, { holo: c.classList.contains('holo') });
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.cardzoom')) { e.stopPropagation(); U.closeZoom(); } }, true);
+  }
   // #121: hovering a hero in any hero picker (raid setup, dungeons, online lobby) shows the full hero card
   if (typeof document !== 'undefined') {
     const canHover = () => typeof matchMedia === 'undefined' || matchMedia('(hover: hover)').matches;

@@ -1450,3 +1450,17 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .pool .coldiv { grid-column: 1 / -1; display: flex; align-items: baseline; gap: .8rem; margin: .8rem 0 .2rem; padding-top: .6rem; border-top: 1px solid rgba(232, 184, 74, .55); }
 .pool .coldiv span { font-family: var(--f-sc); font-weight: 800; font-size: 1.05rem; color: #f0cf7a; }
 .pool .coldiv small { color: var(--muted); font-size: .85rem; }
+/* #163 click a card to see it big */
+.cardzoom { position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; background: rgba(6, 4, 2, .82); backdrop-filter: blur(3px); opacity: 0; transition: opacity .15s; cursor: zoom-out; }
+.cardzoom.on { opacity: 1; }
+.cardzoom .zwrap { width: var(--cw); transform: scale(.94); transition: transform .18s; filter: drop-shadow(0 24px 40px rgba(0, 0, 0, .8)); }
+.cardzoom.on .zwrap { transform: none; }
+.cardzoom .zwrap .card { --cw: 100%; width: 100%; }
+.cardzoom .zclose { position: absolute; top: 14px; right: 18px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(232, 184, 74, .6); background: rgba(20, 14, 6, .85); color: #f4e6c4; font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.cardzoom .zhint { margin: 0; color: var(--muted); font-size: .85rem; }
+.colpool .card, .shopcard .card, .flip.on .card { cursor: zoom-in; }
+.slot { position: relative; }
+.slot .zoombtn { position: absolute; z-index: 6; top: 22%; right: 4%; width: 30px; height: 30px; padding: 5px; border-radius: 50%; border: 1px solid rgba(232, 184, 74, .7); background: rgba(14, 10, 4, .8); color: #f4e6c4; cursor: zoom-in; opacity: 0; transition: opacity .15s; }
+.slot:hover .zoombtn, .slot .zoombtn:focus-visible { opacity: 1; }
+.slot .zoombtn svg { width: 100%; height: 100%; display: block; }
+@media (hover: none) { .slot .zoombtn { opacity: .9; } }
