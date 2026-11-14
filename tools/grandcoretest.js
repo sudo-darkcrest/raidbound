@@ -20,7 +20,7 @@ const addMinion = async (E, id) => { await E.summonMinion(id, 1); return E.minio
   const gc = RB.GRAND_CORE();
   ok(gc.length === 49, 'Grand Core has 49 cards');
   const r = k => gc.filter(d => d.rarity === k).length;
-  ok(r('u') === 20 && r('r') === 19 && r('e') === 9 && r('l') === 1, 'Grand Core rarity 20/19/9/1');
+  ok(r('u') === 20 && r('r') === 19 && r('e') === 8 && r('l') === 2, 'Grand Core rarity 20/19/8/2');
   for (const id of ['crypt', 'molten', 'tide']) ok(RB.RAIDS[id].mythic.length === 7 && RB.RAIDS[id].mythic.every(m => !RB.RAIDS[id].treasure.includes(m)), id + ': 7 Mythic cards, none in normal treasure');
   ok(['my_deathblade', 'my_drake', 'my_leviathan'].every(id => RB.maxCopies(C[id]) === 1), 'Mythic legendaries are Unique (1 per deck)');
   ok(!RB.CORE_POOL().some(d => d.set === 'grandcore'), 'Grand Core cards are not in the normal Core pool');
@@ -51,9 +51,9 @@ const addMinion = async (E, id) => { await E.summonMinion(id, 1); return E.minio
   ok(E.allyMax(p, gol) === 9, 'Bastion Greaves: Bulwark ally +1 health');
   await E.playCard(p, give(p, 'gclagan')); refresh(E);
   const gw = p.allies.find(a => a.id === 'tok_gwinny');
-  ok(!!gw && E.allyMax(p, gw) === 4, 'Lady Lagan summons Gwinny (1/3 Bulwark, +1 health from Greaves)');
+  ok(!!gw && E.allyMax(p, gw) === 7, 'Lady Lagan summons Gwinny (1/6 Bulwark, +1 health from Greaves)');
   p.res.push({ c: inst('gcmolly'), ex: false, loc: true, used: false });
-  ok(E.allyMax(p, gw) === 5, 'Shrine of Molly: Beast allies +1 health');
+  ok(E.allyMax(p, gw) === 8, 'Shrine of Molly: Beast allies +1 health');
   ok(!E.canPlay(p, give(p, 'gclagan')).ok, 'Lady Lagan is Unique in play');
   const m1 = await addMinion(E, 'thrall'); const hp0 = E.hpOf(m1);
   E.g.turn = 0; await E.endHeroTurn(); // boss turn, then back to us: Lagan shoots at the start of the turn

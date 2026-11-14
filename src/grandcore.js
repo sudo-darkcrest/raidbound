@@ -27,7 +27,7 @@
 
   /* ---------- tokens ---------- */
   TK.tok_garrisonsoldier = { id: 'tok_garrisonsoldier', name: 'Garrison Soldier', type: 'ally', atk: 3, hp: 3, kw: ['protector'], race: 'Human', art: art('frost', '#e8f0ff') };
-  TK.tok_gwinny = { id: 'tok_gwinny', name: 'Gwinny', type: 'ally', atk: 1, hp: 3, kw: ['protector'], race: 'Beast', text: 'Lady Lagan\'s corgi. Small, loud and very brave.', art: art('steppe', '#ffd8a0') };
+  TK.tok_gwinny = { id: 'tok_gwinny', name: 'Gwinny', type: 'ally', atk: 1, hp: 6, kw: ['protector'], race: 'Beast', text: 'Lady Lagan\'s corgi. Small, loud and very brave.', art: art('steppe', '#ffd8a0') };
 
   /* =================== Grand Core: allies =================== */
   add('gcgolem', { name: 'Vaultwarden Golem', type: 'ally', cost: 5, atk: 3, hp: 8, kw: ['protector', 'thickhide'], race: 'Construct', flavor: 'It has never once asked who you are. It only checks the key.' });
@@ -50,11 +50,11 @@
   add('gcminotaur', { name: 'Minotaur Pit Champion', type: 'ally', cost: 5, atk: 6, hp: 5, kw: ['frenzy'], race: 'Minotaur', flavor: 'The crowd chants his name. He has forgotten it.' });
   add('gcsapper', { name: 'Goblin Sapper Crew', type: 'ally', cost: 2, atk: 2, hp: 2, race: 'Goblin', tags: ['aoeMinion'],
     text: 'When this is destroyed, deal 2 damage to each enemy minion.', onDeath: async (E, c) => { E.log('The Sapper Crew\'s keg goes off!', 'dmg'); await minionsDmg(E, c.p, 2); }, flavor: '"Is the fuse supposed to be this short?"' });
-  add('gcseraph', { name: 'Seraph of the Last Dawn', type: 'ally', cost: 6, atk: 5, hp: 6, kw: ['unique', 'skyward'], race: 'Spirit', rarity: 'e', tags: ['summon'],
+  add('gcseraph', { name: 'Seraph of the Last Dawn', type: 'ally', cost: 6, atk: 5, hp: 6, kw: ['unique', 'skyward'], race: 'Spirit', rarity: 'l', tags: ['summon'],
     text: 'When this enters play, return an ally from your discard pile to play (it leaves the game when it next falls).', onEnter: async (E, c) => reviveAlly(E, c.p, false, 'gcseraph') });
   add('gcolsen', { name: 'The Olsen Clan', type: 'ally', cost: 5, atk: 5, hp: 6, kw: ['ferocity', 'frenzy'], race: 'Human', rarity: 'r', text: 'The whole family fights as one.', flavor: 'Pa swings, Ma shoots, and the boys argue about who got the last one.' });
-  add('gclagan', { name: 'Lady Lagan', type: 'ally', cost: 5, atk: 5, hp: 4, kw: ['unique', 'longrange'], race: 'Human', rarity: 'l', tags: ['summon', 'dmgRandom'],
-    text: 'When this enters play, summon Gwinny, her 1/3 corgi with Bulwark. At the start of your turn, deal 2 damage to a random enemy minion.',
+  add('gclagan', { name: 'Lady Lagan', type: 'ally', cost: 5, atk: 5, hp: 6, kw: ['unique', 'longrange'], race: 'Human', rarity: 'l', tags: ['summon', 'dmgRandom'],
+    text: 'When this enters play, summon Gwinny, her 1/6 corgi with Bulwark. At the start of your turn, deal 2 damage to a random enemy minion.',
     onEnter: async (E, c) => E.summonAlly(c.p, 'tok_gwinny', 1),
     start: async (E, p) => { const t = pick(E, E.minions()); if (t) { E.log('Lady Lagan fires a single shot.', 'dmg'); await E.dmg(t, 2, { p, kind: 'effect' }); } }, });
   add('gckindred', { name: 'Kindred Spirit', type: 'ally', cost: 6, atk: 3, hp: 9, kw: ['unique'], race: 'Spirit', rarity: 'e', tags: ['healAll'], kinRes: true,

@@ -104,14 +104,14 @@
   RB.packPool = style => style === 'core' ? RB.CORE_POOL() : Object.values(C).filter(d => d.set === 'frontier' && d.pack === style);
   RB.BOOSTER_SETS = ['ember', 'frost', 'void'];
 
-  // five core cards: one uncommon or better, then mostly commons (a 10 or 20-card pack is that roll 2 or 4 times)
+  // five core cards: one uncommon or better (2% of the time a legendary), then mostly commons (a 10 or 20-card pack is that roll 2 or 4 times)
   RB.rollCore = (rand, size) => {
     rand = rand || Math.random; size = [5, 10, 20].includes(size) ? size : 5;
     const pool = RB.CORE_POOL(), pk = a => a[Math.floor(rand() * a.length)];
     const of = r => pk(pool.filter(d => d.rarity === r)).id;
     const out = [];
     for (let k = 0; k < size / 5; k++) {
-      out.push({ id: of(rand() < 0.3 ? 'r' : 'u'), holo: rand() < 0.15 });
+      out.push({ id: of((x => x < 0.02 ? 'l' : x < 0.3 ? 'r' : 'u')(rand())), holo: rand() < 0.15 });
       out.push({ id: of((x => x < 0.04 ? 'r' : x < 0.38 ? 'u' : 'c')(rand())), holo: rand() < 0.08 });
       for (let i = 0; i < 3; i++) out.push({ id: of((x => x < 0.03 ? 'r' : x < 0.22 ? 'u' : 'c')(rand())), holo: rand() < 0.06 });
     }
