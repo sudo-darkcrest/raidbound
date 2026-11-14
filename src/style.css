@@ -1474,3 +1474,73 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 @keyframes zsl { from { transform: translateX(40px); opacity: .3; } } @keyframes zsr { from { transform: translateX(-40px); opacity: .3; } }
 @media (max-width: 760px) { .cardzoom .znav { width: 42px; height: 70px; font-size: 2.2rem; } .cardzoom .znav.prev { left: 6px; } .cardzoom .znav.next { right: 6px; } }
 @media (prefers-reduced-motion: reduce) { .cardzoom .zwrap.sl, .cardzoom .zwrap.sr { animation: none; } }
+
+/* ---------- #PvP: the enemy team where the boss stands (duels) or under the boss (races) ---------- */
+.teamtag { font-size: .62rem; padding: 0 .3rem; border-radius: 3px; vertical-align: middle; font-family: var(--f-sc); letter-spacing: .04em; }
+.teamtag.t0, .bbname em.team.t0 { background: rgba(212, 166, 74, .22); color: #ffe2a0; border: 1px solid rgba(212, 166, 74, .6); }
+.teamtag.t1, .bbname em.team.t1 { background: rgba(170, 190, 220, .18); color: #e4ecf8; border: 1px solid rgba(180, 200, 230, .55); }
+.bbname .teams { font-style: normal; display: inline-flex; gap: .45rem; align-items: center; }
+.bbname em.team { font-size: .8rem; text-shadow: none; }
+.rmember.foe { border-color: rgba(200, 80, 70, .35); }
+.rmember.foe .rbar i { background: linear-gradient(90deg, #8a5a1a, #e0a050); }
+.bossarea.arena { justify-content: flex-start; }
+.rivals { flex: 1; min-height: 0; display: flex; gap: 1.4rem; justify-content: center; align-items: center; align-content: center; flex-wrap: wrap; overflow: auto; padding: .3rem .2rem .5rem; }
+.rival { display: flex; align-items: center; gap: .8rem; padding: .45rem .7rem; border-radius: 10px; background: linear-gradient(180deg, rgba(40, 14, 10, .55), rgba(10, 4, 4, .45)); border: 1px solid rgba(200, 90, 70, .35); min-width: 0; max-width: 100%; }
+.rival.t1 { background: linear-gradient(180deg, rgba(24, 30, 48, .6), rgba(8, 10, 18, .45)); border-color: rgba(160, 180, 220, .35); }
+.rival.active { box-shadow: 0 0 0 1px var(--gilt), 0 0 18px rgba(212, 166, 74, .35); }
+.rival.dead { opacity: .5; filter: grayscale(.7); }
+.rivalhero { position: relative; flex: 0 0 auto; width: clamp(130px, 14vw, 230px); aspect-ratio: 300/220; border-radius: 8px; overflow: visible; border: 2px solid #b8873a; background: #000; box-shadow: 0 8px 22px rgba(0, 0, 0, .65); cursor: pointer; }
+.rivalhero > img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+.rivalhero .hn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1rem .45rem .3rem; background: linear-gradient(transparent, rgba(6, 2, 2, .92)); border-radius: 0 0 6px 6px; text-align: center; line-height: 1.05; }
+.rivalhero .hn b { display: block; font-family: var(--f-sc); font-size: .82rem; color: #ffe6c8; text-shadow: 0 1px 0 #000; }
+.rivalhero .hn .rpl { display: block; font-size: .66rem; color: #9ad8ff; }
+.rivalhero .rvbar { display: block; height: .35rem; margin-top: .2rem; border-radius: 2px; background: #2a0a0a; overflow: hidden; }
+.rivalhero .rvbar i { display: block; height: 100%; background: linear-gradient(90deg, #b0182e, #ff6a5a); }
+.rivalhero .hhp, .rivalhero .hatk { position: absolute; top: -.5rem; width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-weight: 900; font-size: 1rem; color: #fff; text-shadow: 0 1px 0 #000; border: 2px solid #000; z-index: 2; }
+.rivalhero .hhp { right: -.5rem; background: radial-gradient(circle at 35% 30%, #ff8a7a, #a01020); }
+.rivalhero .hhp.low { animation: tpulse 1s infinite; }
+.rivalhero .hatk { left: -.5rem; background: radial-gradient(circle at 35% 30%, #ffd88a, #a0601a); }
+.rivalhero .shield { position: absolute; top: 1.6rem; right: -.6rem; padding: .05rem .35rem; border-radius: 4px; font-size: .72rem; background: #1e4a6a; color: #cfefff; border: 1px solid #000; z-index: 2; }
+.rivalhero .tags { position: absolute; top: .3rem; left: 50%; transform: translateX(-50%); display: flex; gap: .2rem; z-index: 2; }
+.rivalhero .tags span { font-size: .6rem; padding: 0 .25rem; border-radius: 3px; background: rgba(0, 0, 0, .7); color: #ffd27a; border: 1px solid rgba(255, 210, 122, .5); white-space: nowrap; }
+.rivalhero.targetable { animation: tpulse 1s infinite; box-shadow: 0 0 0 3px #ff5a3a, 0 0 22px rgba(255, 90, 58, .7); }
+.rivalmeta { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; font-size: .74rem; color: var(--muted); }
+.rivalmeta .rhand i { display: inline-block; width: .45rem; height: .65rem; margin-right: 1px; border-radius: 1px; background: linear-gradient(#5a3a1a, #2a1a0a); border: 1px solid #8a6a3a; }
+.rivalmeta .rhand b { margin-left: .25rem; color: var(--vellum); }
+.rivalmeta .rgears { display: flex; flex-wrap: wrap; gap: .2rem; max-width: 7rem; }
+.rivalmeta img.rgear { width: 1.6rem; height: 1.2rem; object-fit: cover; border-radius: 2px; border: 1px solid var(--gilt-lo); cursor: help; }
+.minions.rallies { padding: .5rem .1rem .6rem; gap: .5rem; flex-wrap: wrap; overflow: visible; max-width: min(46vw, 640px); }
+.minions.rallies .unit { flex: 0 0 auto; }
+.unit.foe { --uc: #a04a3a; }
+.rivals.race { flex: 0 0 auto; align-items: center; gap: .8rem; padding: .2rem .2rem .3rem; border-top: 1px solid rgba(212, 166, 74, .2); }
+.rivals.race .rvlabel { display: flex; flex-direction: column; font-family: var(--f-sc); color: #ffd8b0; font-size: .85rem; max-width: 12rem; }
+.rivals.race .rvlabel small { font-family: var(--f-body, inherit); font-size: .7rem; color: var(--muted); }
+.rivals.race .rival { padding: .2rem .4rem; gap: .45rem; }
+.rivals.race .rivalhero { width: clamp(72px, 6vw, 96px); }
+.rivals.race .rivalhero .hn { padding: .5rem .2rem .15rem; }
+.rivals.race .rivalhero .hn b { font-size: .62rem; }
+.rivals.race .rivalhero .hhp, .rivals.race .rivalhero .hatk { width: 1.45rem; height: 1.45rem; font-size: .78rem; top: -.35rem; }
+.rivals.race .minions.rallies { padding: .25rem .1rem .3rem; }
+.rivals.race .minions.rallies .unit { --uw: clamp(50px, 4vw, 66px); width: var(--uw); }
+.rivals.race .minions.rallies .unit .un { display: none; }
+.bossarea.racing .bosscard { min-height: 100px; }
+.bossarea.racing { gap: .3rem; }
+@media (max-width: 700px) {
+  .rivals { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: .35rem; padding: .15rem 0 .3rem; }
+  .rival { flex-wrap: nowrap; gap: .4rem; padding: .25rem .35rem; }
+  .rivalhero, .rivals.race .rivalhero { width: 92px; }
+  .rivalhero .hn { padding: .5rem .2rem .15rem; } .rivalhero .hn b { font-size: .6rem; }
+  .rivalhero .hhp, .rivalhero .hatk { width: 1.4rem; height: 1.4rem; font-size: .75rem; top: -.3rem; }
+  .rivalhero .shield { top: 1.1rem; font-size: .62rem; }
+  .rivalmeta { display: none; }
+  .minions.rallies { max-width: none; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding: .3rem .1rem; }
+  .minions.rallies .unit, .rivals.race .minions.rallies .unit { --uw: 54px; width: var(--uw); }
+  .minions.rallies .unit .un { display: none; }
+  .rivals.race .rvlabel { display: none; }
+}
+.netp.team.t0 { border-left: 3px solid rgba(212, 166, 74, .8); }
+.netp.team.t1 { border-left: 3px solid rgba(180, 200, 230, .8); }
+.netp .teamtag { margin-left: .2rem; }
+.netp [data-team] { margin-left: .3rem; padding: .05rem .4rem; font-size: .7rem; }
+.filters .seg.pvpseg { margin-left: .5rem; }
+.filters .seg.pvpseg button { color: #ffd8b0; }

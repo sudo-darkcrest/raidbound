@@ -18,10 +18,24 @@
     heroic: { name: 'Heroic', hp: 1.3, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, partyStrikes: [0, 0.5, 0.5, 1] },
     mythic: { name: 'Mythic', hp: 1.5, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, enrage: 20, partyHp: 1.2, partyStrikes: [0, 0.5, 1, 1] },
   };
+  // Player vs player (1v1, 2v2) and the boss race (two teams of two against a raid boss and each other)
+  RB.PVP_FATIGUE = 12;
+  RB.PVP_FATIGUE_STEP = 2; // fatigue: 2, then 4, then 6… // duels: from this round each hero takes growing damage at the start of their turn, so no duel stalls forever
+  RB.TEAM_NAMES = ['Gold', 'Silver'];
+  RB.RACE_HP_SEATS = 1; // the race's boss has the health it would have against this many heroes
+  RB.RACE_ENRAGE = 18; // the race's boss enrages earlier, so a race can't drag on
+  RB.RACE_ATK_SEATS = 2; // ...and strikes and plays cards as if facing this many
+  RB.ARENA = { id: 'arena', name: 'the Arena', boss: 'The Arena', short: 'Arena', hp: 1, hpPer: 0, deck: [], strike: 0, retaliation: 0, phases: [], arena: true,
+    rules: [{ name: 'Player vs player', text: 'Two teams fight until every hero on one side has fallen. Attacks go at enemy heroes and allies; Bulwark allies can cover their teammates and React cards still answer attacks. Cards that hit minions hit enemy allies instead, and cards that hit the boss hit an enemy hero.' },
+      { name: 'Arena fatigue', text: 'From round 12 each hero loses 2 health at the start of their turn, then 4, then 6, and so on. Wards and armor can\'t stop it, so every duel ends.' },
+      { name: 'Dampening', text: 'All healing in the Arena is halved (rounded up).' },
+      { name: 'Going second', text: 'Heroes on the team that goes second draw an extra card and get +1 resource on their first turn.' },
+      { name: 'Raid-only cards', text: 'Mythic raid cards do nothing in the Arena. They can still be played as resources.' }] };
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
-    const baseRaid = RB.RAIDS[cfg.raid] || (RB.DUNGEONS || {})[cfg.raid];
+    const PV = cfg.pvp === 'duel' || cfg.pvp === 'race' ? cfg.pvp : null, DUEL = PV === 'duel', RACE = PV === 'race', TEAMS = !!PV;
+    const baseRaid = DUEL ? RB.ARENA : RB.RAIDS[cfg.raid] || (RB.DUNGEONS || {})[cfg.raid];
     // #92: a dungeon with stages is a gauntlet (two under-bosses, then the main boss, in one fight). The game keeps its own
     // copy of the dungeon so the current boss's name, art, strike and retaliation can change mid-fight.
     const raid = baseRaid && baseRaid.stages ? Object.assign({}, baseRaid, {
@@ -34,7 +48,7 @@
     const g = {
       raid, cfg, round: 1, partyFury: 0, drawPerTurn: cfg.drawPerTurn || 2, turn: 0, phase: 'setup', over: null, log: [], minionsKilled: 0, window: false,
       settings: Object.assign({ autoDefend: true, pauseForInstants: true }, cfg.settings || {}),
-      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0, healed: 0 },
+      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0, healed: 0 }, pvp: PV, winTeam: null,
     };
     const H = {
       anim: hooks.anim || noop, update: hooks.update || (() => { }), ask: hooks.ask || null,
@@ -49,29 +63,31 @@
       const full = cfg.noLands ? seat.deck : seat.deck.filter(e => !RB.isResCard(C[idOf(e)])).concat(RB.landsFor(seat.hero, seat.lands, seat.deck.map(idOf)));
       const deck = shuffle(full.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
-        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
+        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer, team: TEAMS ? (seat.team != null ? +seat.team : i % 2) : 0,
         hero: { master: null, damage: 0, shield: 0, tempAtk: 0, ex: false, elusive: false, taunt: false, powerUsed: false, dead: false, pet: seat.pet || null },
         deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [], seeds: [], exile: [], blooms: 0, unearthed: 0,
         resPlayed: false, spareRes: 0, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
       });
     });
     // #90: companion perks (one tiny bonus per hero; never in boss mode). petUsed marks once-per-fight perks.
-    const perk = p => (!cfg.bossPlayer && p.hero.pet && RB.PET_PERKS && RB.PET_PERKS[p.hero.pet]) || null;
+    const perk = p => (!cfg.bossPlayer && !TEAMS && p.hero.pet && RB.PET_PERKS && RB.PET_PERKS[p.hero.pet]) || null;
     const perkIs = (p, k) => { const q = perk(p); return q && q.k === k ? q : null; };
     const petName = p => (RB.COSMETICS && RB.COSMETICS[p.hero.pet] ? RB.COSMETICS[p.hero.pet].name : 'Companion');
     g.players.forEach(p => { p.hero.petUsed = false; p.hero.petN = 0; p.hero.petRes = 0; const q = perk(p); if (q && q.k === 'maxhp') p.hero.hpB = q.n; });
     const openHand = p => 7 + ((perkIs(p, 'hand') || {}).n || 0);
     const n = g.players.length;
-    g.partyFury = n >= 2 ? 1 : 0;
+    g.partyFury = !DUEL && n >= 2 ? 1 : 0;
     const heroic = cfg.difficulty === 'heroic';
     // dungeons keep their old rule (their 'heroic' mode adds 30% health and +1 strike); raids read RB.RAID_DIFFS
     const DF = D ? { hp: heroic ? 1.3 : 1, strike: heroic ? 1 : 0, cards: 0, counter: heroic ? 1 : 0 } : (RB.RAID_DIFFS[cfg.difficulty] || RB.RAID_DIFFS.normal);
-    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1) * (DF.partyHp || 1)) * DF.hp * (cfg.bossPlayer ? 1.15 : 1));
+    // #PvP race: the boss has the health it would have against one team (each team only spends part of its effort on it)
+    const nHp = RACE ? Math.min(n, RB.RACE_HP_SEATS || 2) : n;
+    const maxHp = Math.round((raid.hp + raid.hpPer * (nHp - 1) * (DF.partyHp || 1)) * DF.hp * (cfg.bossPlayer ? 1.15 : 1));
     const bdeck = [];
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
       maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: raid.counter ? (DF.counter || 0) : 0,
-      cardsPerTurn: 1 + (DF.cards || 0), strikeBonus: (DF.strike || 0) + (n - 1), enrageAt: DF.enrage || RB.ENRAGE_ROUND, partyStrikes: DF.partyStrikes || null, stunned: false, mark: null, phasesDone: [], lastCard: null,
+      cardsPerTurn: 1 + (DF.cards || 0), strikeBonus: (DF.strike || 0) + ((RACE ? Math.min(n, RB.RACE_ATK_SEATS || 2) : n) - 1), enrageAt: RACE ? Math.min(DF.enrage || RB.ENRAGE_ROUND, RB.RACE_ENRAGE || 18) : DF.enrage || RB.ENRAGE_ROUND, partyStrikes: DF.partyStrikes || null, stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
       // #101 Omens: each raid's own deck of signature events, one per boss turn, the next three shown to the party
       omens: raid.omens && !D ? shuffle(raid.omens.slice(), rnd) : [], omenGrave: [], tempStrike: 0,
@@ -92,7 +108,16 @@
     const pdef = p => p.hero.master ? C[p.hero.master] : HEROES[p.heroId];
     const heroMax = p => (p.hero.master ? C[p.hero.master].hp : HEROES[p.heroId].hp) + (p.hero.hpB || 0) + p.items.reduce((s, e) => s + (C[e.c.id].maxHp || 0), 0);
     const heroHp = p => heroMax(p) - p.hero.damage;
-    const alive = () => g.players.filter(p => !p.hero.dead);
+    // #PvP: whose eyes an effect sees with. Cards and powers say "each enemy" or "each friendly hero"; with two teams that
+    // depends on who played them. Outside team games (and during the boss's own turn) everyone is one party.
+    const povStack = [];
+    const pov = () => povStack.length ? povStack[povStack.length - 1] : (g.phase === 'boss' || g.phase === 'setup') ? null : g.players[g.turn] || null;
+    async function asP(p, fn) { if (!TEAMS || !p) return fn(); povStack.push(p); try { return await fn(); } finally { povStack.pop(); } }
+    const allAlive = () => g.players.filter(p => !p.hero.dead);
+    const mates = p => allAlive().filter(q => q.team === p.team);
+    const foesOf = p => allAlive().filter(q => q.team !== p.team);
+    const alive = () => { if (!TEAMS) return allAlive(); const v = pov(); return v ? mates(v) : allAlive(); };
+    const ownerOf = a => g.players.find(q => q.allies.includes(a)) || null;
     const gear = p => [p.weapon, ...Object.values(p.armor), ...p.items].filter(Boolean);
     const deep = p => p.grave.length >= 10; // Sunscorch: 10 or more cards in your discard pile
     const spellPower = p => gear(p).reduce((s, e) => s + (C[e.c.id].spell || 0) + (deep(p) ? (C[e.c.id].spellDeep || 0) : 0), 0) + (p.hero.master ? (C[p.hero.master].spell || 0) : 0);
@@ -114,18 +139,22 @@
     const costOf = (p, d) => { let c = d.cost || 0; if (d.type === 'ability' && !p.abTurn) c -= gearSum(p, 'firstAbilityOff'); if ((d.type === 'weapon' || d.type === 'armor') && p.quickChange) c -= p.quickChange; return Math.max(0, c); };
     const hasKw = (d, k) => (d.kw || []).includes(k);
     const allyKw = (p, a, k) => hasKw(allyDef(a), k) || (k === 'ferocity' && p.hero.master && C[p.hero.master].allyFerocity);
-    const minDef = m => TK[m.id];
-    const minAtk = m => Math.max(0, (minDef(m).atk || 0) + m.atkB + (hasKw(minDef(m), 'frenzy') ? m.damage : 0)); // #103 Frenzy
-    const minMax = m => minDef(m).hp + m.hpB;
+    // (#PvP: in team games a card's "minion" can be an enemy player's ally, so these also accept an ally)
+    const isAllyObj = m => TEAMS && !g.boss.minions.includes(m) && !!ownerOf(m);
+    const minDef = m => isAllyObj(m) ? def(m.id) : TK[m.id];
+    const minAtk = m => { if (isAllyObj(m)) return allyAtk(ownerOf(m), m); return Math.max(0, (minDef(m).atk || 0) + m.atkB + (hasKw(minDef(m), 'frenzy') ? m.damage : 0)); }; // #103 Frenzy
+    const minMax = m => { if (isAllyObj(m)) return allyMax(ownerOf(m), m); return minDef(m).hp + m.hpB; };
     const bossHp = () => g.boss.maxHp - g.boss.damage;
     const guardians = () => g.boss.minions.filter(m => hasKw(minDef(m), 'guardian'));
     const available = p => p.res.filter(r => !r.ex).length + p.tempRes;
     const isActive = p => g.phase === 'main' && g.players[g.turn] === p;
     // a Shrouded hero can't be attacked — until the boss is Enraged: then it sees through the shadows (no fight can stall forever)
     const shrouded = p => p.hero.elusive && !(g.boss && g.boss.enrage);
+    const teamName = k => RB.TEAM_NAMES[k] || ('Team ' + (k + 1));
 
     const T = {
       boss: () => ({ t: 'boss' }), minion: m => ({ t: 'minion', m }), hero: p => ({ t: 'hero', p }), ally: (p, a) => ({ t: 'ally', p, a }),
+      foeAlly: (p, a) => ({ t: 'ally', p, a, m: a }), // an enemy player's ally, standing in for a card's minion
     };
     const same = (a, b) => a && b && a.t === b.t && (a.t === 'boss' || (a.t === 'minion' && a.m === b.m) || (a.t === 'hero' && a.p === b.p) || (a.t === 'ally' && a.a === b.a));
     const refId = t => t.t === 'boss' ? 'boss' : t.t === 'minion' ? t.m.uid : t.t === 'hero' ? 'hero' + t.p.idx : t.a.uid;
@@ -134,9 +163,13 @@
     const maxHpOf = t => t.t === 'boss' ? g.boss.maxHp : t.t === 'minion' ? minMax(t.m) : t.t === 'hero' ? heroMax(t.p) : allyMax(t.p, t.a);
     const isAlive = t => t.t === 'boss' ? !g.over : t.t === 'minion' ? g.boss.minions.includes(t.m) : t.t === 'hero' ? !t.p.hero.dead : t.p.allies.includes(t.a);
 
-    const enemies = () => [T.boss(), ...g.boss.minions.map(T.minion)];
-    const minions = () => g.boss.minions.map(T.minion);
-    const allAllies = () => g.players.flatMap(p => p.allies.map(a => T.ally(p, a)));
+    const bossSide = () => DUEL ? [] : [T.boss(), ...g.boss.minions.map(T.minion)];
+    const foeAllies = p => foesOf(p).flatMap(q => q.allies.map(a => T.foeAlly(q, a)));
+    const enemies = () => { const v = TEAMS && pov(); return v ? [...bossSide(), ...foesOf(v).map(T.hero), ...foeAllies(v)] : bossSide(); };
+    const minions = () => { const v = TEAMS && pov(); return [...(DUEL ? [] : g.boss.minions.map(T.minion)), ...(v ? foeAllies(v) : [])]; };
+    const allAllies = () => { const v = TEAMS && pov(); return (v ? mates(v) : g.players).flatMap(p => p.allies.map(a => T.ally(p, a))); };
+    // a card that hits "the boss": in a duel it hits the weakest enemy hero instead
+    const bossTarget = () => { if (!DUEL) return T.boss(); const v = pov(); const fs = v ? foesOf(v) : allAlive(); if (!fs.length) return T.hero(g.players[0]); return T.hero(fs.reduce((a, b) => heroHp(b) < heroHp(a) ? b : a)); };
     const friendlyChars = () => [...alive().map(T.hero), ...allAllies()];
     const pick = arr => arr.length ? arr[Math.floor(rnd() * arr.length)] : null;
 
@@ -148,15 +181,16 @@
     const counterReset = () => { const C0 = raid.counter; if (C0 && C0.resetText) log(C0.resetText, 'def'); };
 
     /* ---------- target validation ---------- */
+    function withP(p, fn) { povStack.push(p); try { return fn(); } finally { povStack.pop(); } }
     function targetsFor(kind, p) {
       switch (kind) {
-        case 'enemy': return enemies();
-        case 'minion': return minions();
-        case 'friendly': return friendlyChars();
-        case 'friendlyHero': return alive().map(T.hero);
-        case 'ally': return allAllies();
+        case 'enemy': return p && TEAMS ? withP(p, enemies) : enemies();
+        case 'minion': return p && TEAMS ? withP(p, minions) : minions();
+        case 'friendly': return p && TEAMS ? withP(p, friendlyChars) : friendlyChars();
+        case 'friendlyHero': return (p && TEAMS ? mates(p) : alive()).map(T.hero);
+        case 'ally': return p && TEAMS ? withP(p, allAllies) : allAllies();
         case 'myAlly': return p ? p.allies.filter(a => !a.ex && !a.frozen).map(a => T.ally(p, a)) : []; // #161 Highmoor Coliseum
-        case 'deadHero': return g.players.filter(q => q.hero.dead).map(T.hero);
+        case 'deadHero': { const me = p || (TEAMS ? pov() : null); return g.players.filter(q => q.hero.dead && (!me || q.team === me.team)).map(T.hero); }
         default: return [];
       }
     }
@@ -167,8 +201,15 @@
       return allyKw(p, who, 'longrange') || allyKw(p, who, 'skyward'); // #112 Skyward reaches a flier too
     }
     function attackTargets(p, who) {
-      const ts = g.boss.minions.filter(m => !hasKw(minDef(m), 'elusive')).map(T.minion);
-      if (!guardians().length && (!g.boss.flying || who == null || volleyAttack(p, who))) ts.unshift(T.boss());
+      const ts = DUEL ? [] : g.boss.minions.filter(m => !hasKw(minDef(m), 'elusive')).map(T.minion);
+      if (!DUEL && !guardians().length && (!g.boss.flying || who == null || volleyAttack(p, who))) ts.unshift(T.boss());
+      // #PvP: enemy heroes and their allies. A Taunting enemy hero must be dealt with first; Shrouded heroes and Elusive allies can't be attacked.
+      const me = TEAMS ? (p || pov()) : null;
+      if (me) {
+        const fs = foesOf(me), taunts = fs.filter(q => q.hero.taunt && !shrouded(q));
+        if (taunts.length) ts.push(...taunts.map(T.hero));
+        else ts.push(...fs.filter(q => !shrouded(q)).map(T.hero), ...fs.flatMap(q => q.allies.filter(a => !allyKw(q, a, 'elusive')).map(a => T.ally(q, a))));
+      }
       return ts;
     }
 
@@ -179,6 +220,7 @@
       let n = amount;
       if ((src.kind === 'spell' || src.kind === 'power') && src.p) n += spellPower(src.p);
       if (target.t === 'boss' && g.boss.mark) n += g.boss.mark.amount;
+      if (TEAMS && target.t === 'hero' && g.boss.mark && g.boss.mark.team != null && g.boss.mark.team !== target.p.team) n += g.boss.mark.amount; // #PvP Hunter's Mark
       if (target.t === 'boss' && (src.kind === 'hero' || src.kind === 'ally')) { const st = stageNow(); if (st && st.rule && st.rule.armor && n > 0) n = Math.max(1, n - st.rule.armor); }
       if (src.kind === 'minion' || src.strike) n += g.partyFury;
       if (target.t === 'hero') {
@@ -206,6 +248,7 @@
         src.p.threat += n; src.p.stats.dmg += n; g.stats.dmgDealt += n;
         if (target.t === 'boss') src.p.stats.bossDmg += n;
       }
+      if (TEAMS && src.p && (target.t === 'hero' || target.t === 'ally') && target.p.team !== src.p.team) { src.p.stats.dmg += n; g.stats.dmgDealt += n; }
       if (target.t === 'hero' || target.t === 'ally') g.stats.dmgTaken += n;
       if (target.t === 'hero' || target.t === 'boss') log(`${nameOf(target)} takes ${n} damage${target.t === 'hero' ? ` (${Math.max(0, hpOf(target))} left)` : ''}.`, target.t === 'hero' ? 'hurt' : 'dmg');
       await H.anim('dmg', { ref: refId(target), amount: n, kind: src.kind });
@@ -232,7 +275,7 @@
         log(`${d.name} blocks ${red}.`, 'def');
         await H.anim('armor', { ref: 'hero' + p.idx, amount: red, name: d.name });
         if (d.blockDraw) { log(`${d.name}: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
-        if (d.onBlock && !g.over) await d.onBlock(api, p, g.curAtt);
+        if (d.onBlock && !g.over) await asP(p, () => d.onBlock(api, p, g.curAtt));
         if (n <= 0) break;
       }
       return n;
@@ -240,6 +283,8 @@
     async function heal(target, amount, src) {
       if (!target || !isAlive(target) || g.over) return 0;
       { const hp = (src && src.p) || ((g.phase === 'main' || g.phase === 'start') && (target.t === 'hero' || target.t === 'ally') ? g.players[g.turn] : null); if (hp && amount > 0) amount += itemSum(hp, 'healPlus'); }
+      // #PvP Dampening (as in arena fights): healing in a duel is halved, rounded up, so fights can't stall on heals
+      if (DUEL && amount > 0) amount = Math.ceil(amount * (RB.PVP_DAMPEN != null ? RB.PVP_DAMPEN : 0.5));
       let cur = target.t === 'boss' ? g.boss.damage : target.t === 'minion' ? target.m.damage : target.t === 'hero' ? target.p.hero.damage : target.a.damage;
       const h = Math.min(cur, amount);
       if (h <= 0) return 0;
@@ -261,7 +306,10 @@
       if (hpOf(t) > 0) return;
       if (t.t === 'boss') {
         if (raid.stages && g.boss.stage < raid.stages.length - 1) { await nextStage(); return; }
-        g.over = 'win'; log(`${raid.boss} has fallen!`, 'win'); await H.anim('bossDeath', {}); H.update(); return;
+        g.over = 'win';
+        if (RACE) { const k = src && src.p ? src.p : pov() || g.players[g.turn]; g.winTeam = k ? k.team : 0; log(`${raid.boss} has fallen! The ${teamName(g.winTeam)} team lands the killing blow and wins the race!`, 'win'); }
+        else log(`${raid.boss} has fallen!`, 'win');
+        await H.anim('bossDeath', {}); H.update(); return;
       }
       if (t.t === 'minion') {
         const d = minDef(t.m);
@@ -271,7 +319,7 @@
         await H.anim('death', { ref: t.m.uid });
         H.update();
         if (d.onDeath) await d.onDeath(api, { m: t.m });
-        for (const q of alive()) for (const e of [...q.items]) { const ed = C[e.c.id]; if (ed.onMinionDeath && !g.over) await ed.onMinionDeath(api, q); } // #161 Signet of the Grave Lord
+        for (const q of allAlive()) for (const e of [...q.items]) { const ed = C[e.c.id]; if (ed.onMinionDeath && !g.over) await asP(q, () => ed.onMinionDeath(api, q)); } // #161 Signet of the Grave Lord
         return;
       }
       if (t.t === 'ally') {
@@ -281,7 +329,9 @@
         log(`${d.name} falls.`, 'loss');
         await H.anim('death', { ref: a.uid });
         H.update();
-        if (d.onDeath) await d.onDeath(api, { p, a });
+        // #PvP: an enemy player's ally counts as a slain minion for the killer's quests and "when a minion dies" gear
+        if (TEAMS && src && src.p && src.p.team !== p.team) { g.minionsKilled++; for (const q of foesOf(p)) for (const e of [...q.items]) { const ed = C[e.c.id]; if (ed.onMinionDeath && !g.over) await asP(q, () => ed.onMinionDeath(api, q)); } }
+        if (d.onDeath) await asP(p, () => d.onDeath(api, { p, a }));
         if (raid.onAllyDeath) await raid.onAllyDeath(api, p, a);
         if (perkIs(p, 'allyDraw') && !p.hero.petUsed && !p.hero.dead) { p.hero.petUsed = true; log(`${petName(p)} gathers the fallen soul: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
         return;
@@ -305,7 +355,7 @@
           return;
         }
         // #161 Phoenix Plume: an item that saves any friendly hero, once
-        const plumeP = alive().find(q => q.items.some(e => C[e.c.id].cheatAny));
+        const plumeP = (TEAMS ? mates(p) : alive()).find(q => q.items.some(e => C[e.c.id].cheatAny));
         if (plumeP) {
           const e = plumeP.items.find(x => C[x.c.id].cheatAny);
           plumeP.items.splice(plumeP.items.indexOf(e), 1); plumeP.exile.push(e.c);
@@ -332,7 +382,11 @@
         log(`${pdef(p).name} has been defeated!`, 'loss');
         await H.anim('heroDeath', { ref: 'hero' + p.idx });
         H.update();
-        if (!alive().length) { g.over = 'lose'; log('The raid has wiped.', 'loss'); H.update(); }
+        if (TEAMS) {
+          const left = [0, 1].filter(k => allAlive().some(q => q.team === k));
+          if (left.length === 1) { g.over = 'win'; g.winTeam = left[0]; log(`Every ${teamName(1 - left[0])} hero has fallen. The ${teamName(left[0])} team wins!`, 'win'); await H.anim('banner', { text: `${teamName(left[0])} team wins!`, kind: 'win' }); H.update(); }
+          else if (!left.length) { g.over = 'lose'; g.winTeam = null; log('Every hero has fallen. Nobody wins.', 'loss'); H.update(); }
+        } else if (!alive().length) { g.over = 'lose'; log('The raid has wiped.', 'loss'); H.update(); }
       }
     }
     // #92: an under-boss falls; its equipment goes with it, the dungeon levels up and the next boss steps in
@@ -458,10 +512,11 @@
       if (g.over) return { ok: false, why: 'The raid is over.' };
       if (p.hero.dead) return { ok: false, why: 'Your hero has been defeated.' };
       if (d.type === 'quest' || d.type === 'location' || d.type === 'land') return { ok: false, why: 'Play this card as a resource.' };
+      if (DUEL && d.mythic) return { ok: false, why: 'Mythic raid cards do nothing in the Arena. You can still play it as a resource.' };
       const myTurn = isActive(p);
       if (!myTurn) {
         const inst = d.type === 'ability' && d.speed === 'instant';
-        if (!(inst && (g.window || (g.react && reactMatch(d, p, g.react))))) return { ok: false, why: d.speed === 'instant' ? (d.react ? `Instants can be played on your turn or in response to a boss card. This one can also React ${RB.REACT[d.react]}.` : 'Instants can be played on your turn or in response to a boss card.') : 'You can only play this on your turn.' };
+        if (!(inst && (g.window || (g.react && reactMatch(d, p, g.react))))) return { ok: false, why: d.speed === 'instant' && TEAMS && !d.react ? 'Instants can be played on your turn.' : d.speed === 'instant' ? (d.react ? `Instants can be played on your turn or in response to a boss card. This one can also React ${RB.REACT[d.react]}.` : 'Instants can be played on your turn or in response to a boss card.') : 'You can only play this on your turn.' };
       }
       { const k = costOf(p, d); if (available(p) < k) return { ok: false, why: `Needs ${k} resource${k === 1 ? '' : 's'} (you have ${available(p)}).` }; }
       if (hasKw(d, 'unique') && d.type === 'ally' && p.allies.some(a => a.id === d.id)) return { ok: false, why: 'Unique: you already have one in play.' };
@@ -491,7 +546,8 @@
     function needsTarget(inst) { const d = C[inst.id]; return d.target && d.target !== 'none' && targetsFor(d.target).length ? d.target : null; }
 
     /* ---------- actions ---------- */
-    async function playResource(p, inst) {
+    async function playResource(p, inst) { return asP(p, () => playResource0(p, inst)); }
+    async function playResource0(p, inst) {
       if (!isActive(p) || p.resPlayed) return false;
       const i = p.hand.indexOf(inst); if (i < 0) return false;
       if (!canResource(p, inst)) return false; // #125: only three cards that aren't lands, quests or locations per fight
@@ -535,7 +591,8 @@
     // #125: lands, quests and locations can always become resources; any other card only RB.SPARE_RES times a fight
     function spareLeft(p) { return Math.max(0, RB.SPARE_RES - (p.spareRes || 0)); }
     function canResource(p, inst) { const t = C[inst.id].type; return t === 'land' || t === 'quest' || t === 'location' || cfg.noLands || spareLeft(p) > 0; }
-    async function playCard(p, inst, target, opts) {
+    async function playCard(p, inst, target, opts) { return asP(p, () => playCard0(p, inst, target, opts)); }
+    async function playCard0(p, inst, target, opts) {
       opts = opts || {};
       const ok = opts.unearth ? canUnearth(p, inst) : opts.free ? { ok: !g.over && !p.hero.dead } : canPlay(p, inst);
       if (!ok.ok) return ok;
@@ -609,7 +666,8 @@
       const a = who; return p.allies.includes(a) && !a.ex && !a.sick && !a.frozen && allyAtk(p, a) > 0;
     }
     function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? weaponAtk(p) : 0); }
-    async function attack(p, who, target) {
+    async function attack(p, who, target) { return asP(p, () => attack0(p, who, target)); }
+    async function attack0(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
       if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley and Skyward attacks can reach him.` : 'Invalid target.' };
       let atk, longrange = false, attackerT, onAttack = null, wname = '', ironHide = 0;
@@ -624,6 +682,7 @@
       } else {
         atk = allyAtk(p, who); who.ex = true; longrange = allyKw(p, who, 'longrange'); attackerT = T.ally(p, who); if (allyDef(who).onAttack) { const ad = allyDef(who), me = who; onAttack = (E, c) => ad.onAttack(E, Object.assign({ a: me }, c)); }
       }
+      if (target.t === 'hero' || target.t === 'ally') { await pvpHit(p, who, attackerT, target, atk, longrange, onAttack, wname, ironHide); H.update(); return { ok: true }; }
       log(`${nameOf(attackerT)} attacks ${nameOf(target)}${wname}.`, 'atk');
       await H.anim('attack', { from: refId(attackerT), to: refId(target) });
       const back = Math.max(0, (longrange ? 0 : target.t === 'boss' ? raid.retaliation + (g.boss.retalBonus || 0) : minAtk(target.m)) - ironHide);
@@ -633,7 +692,50 @@
       H.update();
       return { ok: true };
     }
-    async function usePower(p, target) {
+    // #PvP: a hero or ally attacks an enemy player's hero or ally. The defenders' Bulwark allies may cover, their React
+    // cards may answer, and the defender hits back (an ally with its ATK, a hero with its weapon's strike back).
+    async function pvpHit(p, who, attackerT, target, atk, longrange, onAttack, wname, ironHide) {
+      let defT = target;
+      const attDef = who === 'hero' ? null : allyDef(who), aName = nameOf(attackerT);
+      const cv = await chooseCover(target, atk, aName, attDef, false);
+      if (cv) {
+        cv.a.ex = true; defT = cv;
+        log(`${allyDef(cv.a).name} covers ${nameOf(target)}!`, 'def');
+        if (allyDef(cv.a).onCover && !g.over) await asP(cv.p, () => allyDef(cv.a).onCover(api, { p: cv.p, a: cv.a, att: attackerT }));
+        if (g.over || !isAlive(attackerT)) return;
+      }
+      log(`${aName} attacks ${nameOf(defT)}${wname}.`, 'atk');
+      await H.anim('attack', { from: refId(attackerT), to: refId(defT) });
+      const rctx = { attacker: aName, atk, defT, isBoss: who === 'hero', attackerDef: attDef, attT: attackerT, pvp: true };
+      await reactWindow(rctx);
+      if (g.over || !isAlive(defT)) return;
+      if (rctx.cancel || !isAlive(attackerT)) { if (rctx.cancel) await H.anim('banner', { text: 'Attack cancelled', kind: 'def' }); return; }
+      if (defT.t === 'hero' && shrouded(defT.p)) { log(`${pdef(defT.p).name} slips into the shadows — the attack misses!`, 'def'); await H.anim('banner', { text: 'Missed!', kind: 'def' }); return; }
+      let back = 0;
+      if (!longrange) {
+        if (defT.t === 'ally') back = allyAtk(defT.p, defT.a) + (allyDef(defT.a).thorns || 0);
+        else {
+          const q = defT.p;
+          if (q.weapon && !q.weapon.ex && available(q) >= strikeCost(q)) {
+            let yes;
+            if (g.settings.autoDefend || q.auto || cfg.allAuto || !H.ask) yes = RB.AI.chooseStrikeBack(api, q);
+            else yes = await H.ask('strikeBack', { p: q, attacker: aName });
+            if (yes) { back = heroAttackValue(q, true); pay(q, strikeCost(q)); q.weapon.ex = true; log(`${pdef(q).name} strikes back with ${C[q.weapon.c.id].name}.`, 'def'); }
+          } else if (heroAtk(q) > 0) back = heroAtk(q);
+        }
+        back = Math.max(0, back - ironHide);
+      }
+      const before = defT.t === 'ally' ? hpOf(defT) : 0;
+      const dealt = await dmg(defT, atk, { p, kind: who === 'hero' ? 'hero' : 'ally' });
+      if (defT.t === 'ally' && attDef && hasKw(attDef, 'crushing') && dealt > before && !defT.p.hero.dead && !g.over) {
+        const over = dealt - before; log(`${aName} crushes through: ${over} damage carries on to ${pdef(defT.p).name}.`, 'atk');
+        await dmg(T.hero(defT.p), over, { p, kind: 'effect' });
+      }
+      if (back > 0 && !g.over && isAlive(attackerT)) await dmg(attackerT, back, { p: defT.p, kind: defT.t === 'hero' ? 'hero' : 'ally' });
+      if (onAttack && !g.over) await onAttack(api, { p, defender: defT });
+    }
+    async function usePower(p, target) { return asP(p, () => usePower0(p, target)); }
+    async function usePower0(p, target) {
       const hd = HEROES[p.heroId];
       if (!isActive(p) || p.hero.powerUsed || p.hero.master || p.hero.dead) return { ok: false, why: 'Your hero power has already been used.' };
       const pw = hd.power;
@@ -646,7 +748,8 @@
       return { ok: true };
     }
     function questReady(p, r) { const d = C[r.c.id]; return r.quest && !r.done && (!d.cond || d.cond(api, p, r)) && available(p) >= (d.qcost || 0); }
-    async function completeQuest(p, r) {
+    async function completeQuest(p, r) { return asP(p, () => completeQuest0(p, r)); }
+    async function completeQuest0(p, r) {
       if (!isActive(p) || !questReady(p, r)) return { ok: false, why: 'This quest can\'t be completed yet.' };
       const d = C[r.c.id];
       pay(p, d.qcost || 0);
@@ -660,7 +763,8 @@
     }
     const drawBlocked = p => p.hand.length >= 10 ? 'Your hand is full (10 cards), so the card would be thrown away.' : (!p.deck.length && !p.grave.length) ? 'You have no cards left to draw.' : null;
     function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost && !(C[r.c.id].draws && drawBlocked(p)) && (!C[r.c.id].lready || C[r.c.id].lready(api, p)); }
-    async function useLocation(p, r, target) {
+    async function useLocation(p, r, target) { return asP(p, () => useLocation0(p, r, target)); }
+    async function useLocation0(p, r, target) {
       if (!isActive(p) || !locationReady(p, r)) return { ok: false, why: 'The location can\'t be used right now.' };
       const d = C[r.c.id];
       if (d.ltarget && (!target || !targetsFor(d.ltarget, p).some(t => same(t, target)))) return { ok: false, why: 'Choose a target.' };
@@ -671,7 +775,8 @@
       return { ok: true };
     }
     function itemReady(p, e) { const d = C[e.c.id]; return d.use && !e.ex && available(p) >= d.use.cost && (!d.use.ready || d.use.ready(api, p)) && (d.use.target === 'none' || !d.use.target || targetsFor(d.use.target, p).length); }
-    async function useItem(p, e, target) {
+    async function useItem(p, e, target) { return asP(p, () => useItem0(p, e, target)); }
+    async function useItem0(p, e, target) {
       const d = C[e.c.id];
       if (!isActive(p) || !itemReady(p, e)) return { ok: false, why: 'This item can\'t be used right now.' };
       if (d.use.target && d.use.target !== 'none' && (!target || !targetsFor(d.use.target, p).some(t => same(t, target)))) return { ok: false, why: 'Choose a target.' };
@@ -699,7 +804,12 @@
       H.update();
       await H.anim('turn', { p: p.idx, name: p.name, hero: pdef(p).name });
       log(`— ${pdef(p).name}'s turn (round ${g.round}) —`, 'turn');
+      // #PvP: going second is a disadvantage, so the second team's heroes draw an extra card on their first turn
+      if (TEAMS && g.round === 1 && p.team !== g.players[0].team && RB.PVP_SECOND_BONUS !== 0) { log(`${pdef(p).name} goes second: draws an extra card and gets +1 resource this turn.`, 'def'); await draw(p, 1); p.tempRes += 1; }
+      if (p.hero.stunNext) { p.hero.stunNext = false; p.hero.ex = true; log(`${pdef(p).name} is stunned and can't attack this turn.`, 'loss'); }
       await draw(p, g.drawPerTurn);
+      // Arena fatigue goes straight past wards and armor (otherwise a well-armored hero could hold out forever)
+      if (DUEL && g.round >= RB.PVP_FATIGUE && !p.hero.dead) { const k = (g.round - RB.PVP_FATIGUE + 1) * (RB.PVP_FATIGUE_STEP || 2); p.hero.damage += k; log(`Arena fatigue: ${pdef(p).name} loses ${k} health (${Math.max(0, heroHp(p))} left).`, 'boss'); await H.anim('dmg', { ref: 'hero' + p.idx, amount: k, kind: 'effect' }); H.update(); await checkDeath(T.hero(p), {}); if (g.over) return; if (p.hero.dead) return endHeroTurn(); }
       if (p.hero.petRes) { p.tempRes += p.hero.petRes; log(`${petName(p)} brings a tailwind: +${p.hero.petRes} resource this turn.`, 'def'); p.hero.petRes = 0; H.update(); }
       { const q = perkIs(p, 'trickle'); if (q && p.hero.petN < q.n && p.hero.damage > 0) { p.hero.petN++; await heal(T.hero(p), 1); } }
       if (p.hero.master && C[p.hero.master].mstart) await C[p.hero.master].mstart(api, p);
@@ -730,15 +840,23 @@
       g.stats.turns++;
       let nxt = g.turn + 1;
       while (nxt < g.players.length && g.players[nxt].hero.dead) nxt++;
-      if (nxt >= g.players.length) { await bossTurn(); return; }
+      if (nxt >= g.players.length) { if (DUEL) await roundEnd(); else await bossTurn(); return; }
       g.turn = nxt;
+      await startHeroTurn();
+    }
+    // #PvP duels have no boss turn: the round simply starts again with the first hero still standing
+    async function roundEnd() {
+      g.players.forEach(p => p.threat = 0);
+      g.round++;
+      g.turn = g.players.findIndex(p => !p.hero.dead);
+      H.update();
       await startHeroTurn();
     }
     async function reactionWindow(card) {
       if (g.over) return;
       let guard = 0;
       while (guard++ < 6) {
-        const responders = alive().filter(p => p.hand.some(c => C[c.id].type === 'ability' && C[c.id].speed === 'instant' && !C[c.id].reactOnly && available(p) >= C[c.id].cost));
+        const responders = allAlive().filter(p => p.hand.some(c => C[c.id].type === 'ability' && C[c.id].speed === 'instant' && !C[c.id].reactOnly && available(p) >= C[c.id].cost));
         if (!responders.length) return;
         g.window = true;
         let choice = null;
@@ -781,7 +899,8 @@
     }
     function reactOptions(ctx, who) {
       const out = [];
-      for (const p of (who || alive())) for (const c of p.hand) {
+      who = who || (TEAMS && ctx.defT && ctx.defT.p ? mates(ctx.defT.p) : alive());
+      for (const p of who) for (const c of p.hand) {
         const d = C[c.id];
         if (d.type !== 'ability' || d.speed !== 'instant' || !reactMatch(d, p, ctx) || available(p) < d.cost) continue;
         const target = reactTarget(d, ctx);
@@ -789,7 +908,7 @@
         out.push({ p, inst: c, target });
       }
       // Sunscorch: a React Instant in the discard pile can be Unearthed when its trigger happens
-      for (const p of (who || alive())) for (const c of p.grave) {
+      for (const p of who) for (const c of p.grave) {
         const d = C[c.id];
         if (!d.unearth || d.type !== 'ability' || d.speed !== 'instant' || !reactMatch(d, p, ctx) || available(p) < unearthCost(p, d)) continue;
         if (out.some(o => o.p === p && o.inst.id === c.id)) continue;
@@ -799,7 +918,8 @@
       }
       return out;
     }
-    async function reactWindow(ctx) {
+    async function reactWindow(ctx) { if (TEAMS && ctx.defT && ctx.defT.p) return asP(ctx.defT.p, () => reactWindow0(ctx)); return reactWindow0(ctx); }
+    async function reactWindow0(ctx) {
       if (g.over || !isAlive(ctx.defT)) return;
       const opts = reactOptions(ctx);
       if (!opts.length) return;
@@ -859,7 +979,7 @@
       }
       // #101: omens come every boss turn for 3–4 heroes, every other boss turn for 2, every third for a solo hero
       if (B.omens.length && api.omenDue(g.round)) { await revealOmen(); if (g.over) return; }
-      const k = D ? flipCount() : B.cardsPerTurn + Math.max(0, alive().length - 1);
+      const k = D ? flipCount() : B.cardsPerTurn + Math.max(0, (RACE ? Math.min(alive().length, RB.RACE_ATK_SEATS || 2) : alive().length) - 1); // (#PvP race: the boss acts as against one team)
       if (D) log(`${raid.short} is level ${B.level}: flips ${k} card${k > 1 ? 's' : ''}.`, 'boss');
       const drawBoss = () => { if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); } return B.deck.pop(); };
       if (cfg.bossPlayer && H.ask) {
@@ -930,7 +1050,7 @@
       if (attackerDef && hasKw(attackerDef, 'ambush')) return [];
       const out = [];
       // dungeons: the boss's mark means the marked hero faces it with only their own Bulwark allies
-      for (const q of (D ? [targetT.p] : alive())) for (const a of q.allies) {
+      for (const q of (D ? [targetT.p] : TEAMS ? mates(targetT.p) : alive())) for (const a of q.allies) {
         if (!allyKw(q, a, 'protector') || a.ex || a.frozen) continue;
         if (targetT.t === 'ally' && targetT.a === a) continue;
         out.push(T.ally(q, a));
@@ -958,7 +1078,7 @@
           cv.a.ex = true; defT = cv;
           if (cv.p !== targetT.p) { cv.p.threat += atkVal * 2; log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}! The boss marks ${pdef(cv.p).name} as a threat.`, 'def'); }
           else log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}!`, 'def');
-          if (allyDef(cv.a).onCover && !g.over) await allyDef(cv.a).onCover(api, { p: cv.p, a: cv.a, att: isBoss ? T.boss() : T.minion(attackerRef) }); // #161
+          if (allyDef(cv.a).onCover && !g.over) await asP(cv.p, () => allyDef(cv.a).onCover(api, { p: cv.p, a: cv.a, att: isBoss ? T.boss() : T.minion(attackerRef) })); // #161
           if (g.over || (!isBoss && !g.boss.minions.includes(attackerRef))) return;
         }
       }
@@ -1057,7 +1177,7 @@
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
       canPlay, canEquip, needsTarget, geared, strikeCost, weaponAtk, costOf, deep, unearthCost, canUnearth, unearthable, plantSeed, growSeeds, bloomAll, bury, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, canResource, spareLeft, discardCard, playCard, unearth: (p, inst, target) => playCard(p, inst, target, { unearth: true }), attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
-      start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
+      start: async () => { log(DUEL ? `The duel in the Arena begins: ${teamName(0)} against ${teamName(1)}.` : RACE ? `The race on ${raid.name} begins: ${teamName(0)} against ${teamName(1)}, and ${raid.short} against everyone.` : D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
         { const st = stageNow(); if (st) { log(`${st.boss} blocks the way.${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss'); if (st.rule && st.rule.onEnter) await st.rule.onEnter(api); H.update(); } }
         for (const p of g.players) { const q = perk(p); if (!q) continue;
@@ -1068,6 +1188,10 @@
         }
         if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
       flipCount, markedHero, stageNow, attackTargets, volleyAttack, coverOptions, reactOptions, reactMatch,
+      // #PvP
+      pvp: PV, duel: DUEL, race: RACE, teams: TEAMS, teamName, mates, foesOf, allAlive, pov,
+      allTargets: () => [...(DUEL ? [] : [T.boss(), ...g.boss.minions.map(T.minion)]), ...g.players.map(T.hero), ...g.players.flatMap(q => q.allies.map(a => T.ally(q, a)))],
+      kwOf: t => t.t === 'minion' ? (minDef(t.m).kw || []) : t.t === 'ally' ? (allyDef(t.a).kw || []) : [],
       omenEvery: () => { const k = g.players.length; return k >= 3 ? 1 : k === 2 ? 2 : 3; },
       omenDue: r => r > 1 && (r - 1) % api.omenEvery() === 0,
       // the round whose boss turn brings the next omen (for the battle screen)
@@ -1078,12 +1202,13 @@
       aoe: (list, amount, cap) => {
         const CAP = cap || RB.AOE_CAP; // cap 4 when the same card also hits the boss or a chosen target
         if (!list || list.length <= CAP) return list;
-        const n = amount || 0, boss = list.filter(t => t.t === 'boss'), mins = list.filter(t => t.t === 'minion');
+        // (#PvP: enemy heroes are always hit, like the boss; enemy allies are ranked like minions)
+        const n = amount || 0, boss = list.filter(t => t.t === 'boss' || t.t === 'hero'), mins = list.filter(t => t.t === 'minion' || t.t === 'ally');
         const score = t => {
-          const d = minDef(t.m), hp = hpOf(t), real = n - (hasKw(d, 'thickhide') ? 1 : 0);
-          let s = minAtk(t.m) * 5 - hp * 0.2;
+          const d = t.t === 'ally' ? allyDef(t.a) : minDef(t.m), hp = hpOf(t), real = n - (hasKw(d, 'thickhide') ? 1 : 0);
+          let s = (t.t === 'ally' ? allyAtk(t.p, t.a) : minAtk(t.m)) * 5 - hp * 0.2;
           if (hasKw(d, 'guardian')) s += 1000;
-          if (raid.halvedBy && t.m.id === raid.halvedBy) s += 900;
+          if (raid.halvedBy && t.m && t.m.id === raid.halvedBy) s += 900;
           if (n && hp <= real) s += 500;
           return s;
         };
@@ -1119,7 +1244,7 @@
       // effect helpers
       dmg, heal, draw,
       enemies, minions, allAllies, friendlyChars, heroes: alive,
-      bossT: T.boss, heroT: T.hero,
+      bossT: bossTarget, heroT: T.hero,
       randomEnemy: () => pick(enemies()),
       randomHero: () => pick(alive()),
       randomAlly: () => pick(allAllies()),
@@ -1140,8 +1265,9 @@
       mill: (p, k) => { for (let i = 0; i < k && p.deck.length; i++) { const c = p.deck.pop(); p.grave.push(c); log(`${C[c.id].name} goes to ${pdef(p).name}'s discard pile.`, ''); } H.update(); },
       // a sensible target for a card played by an effect (no player choice): strongest threat for damage, most hurt friend for help
       autoTarget: (p, d) => { if (!d.target || d.target === 'none') return null; const ts = targetsFor(d.target, p); if (!ts.length) return null;
-        if (d.target === 'enemy' || d.target === 'minion') { const kill = ts.filter(t => t.t === 'minion' && hpOf(t) <= (d.dmg || 3)); return (kill.length ? kill : ts).reduce((a, b) => (b.t === 'minion' ? minAtk(b.m) : 0) > (a.t === 'minion' ? minAtk(a.m) : 0) ? b : a); }
+        if (d.target === 'enemy' || d.target === 'minion') { const at = t => t.t === 'minion' ? minAtk(t.m) : t.t === 'ally' ? allyAtk(t.p, t.a) : 0; const kill = ts.filter(t => (t.t === 'minion' || t.t === 'ally' || t.t === 'hero') && hpOf(t) <= (d.dmg || 3)); return (kill.length ? kill : ts).reduce((a, b) => at(b) > at(a) ? b : a); }
         if (d.target === 'ally') { const mine = ts.filter(t => t.p === p); return (mine.length ? mine : ts)[0]; }
+        if (d.target === 'deadHero') return ts[0];
         return ts.reduce((a, b) => (maxHpOf(b) - hpOf(b)) > (maxHpOf(a) - hpOf(a)) ? b : a); },
       // Queen Asheera / Find the Lost City: play the best card from the discard pile for free; it then leaves the game
       replayFromGrave: async (p, ok) => {
@@ -1164,8 +1290,11 @@
       readyHero: p => { p.hero.ex = false; if (p.weapon) p.weapon.ex = false; },
       readyAllies: p => { p.allies.forEach(a => { a.ex = false; a.frozen = false; }); H.update(); },
       gainRes: (p, k) => { p.tempRes += k; H.update(); },
-      mark: (p, k) => { g.boss.mark = { amount: k, by: p.idx }; log(`${raid.short} is marked: +${k} damage taken until ${pdef(p).name}'s next turn.`, 'def'); H.update(); },
-      stun: t => { if (t.t === 'boss') g.boss.stunned = true; else if (t.t === 'minion') t.m.stunned = true; log(`${nameOf(t)} is stunned.`, 'def'); H.update(); },
+      mark: (p, k) => { g.boss.mark = { amount: k, by: p.idx, team: TEAMS ? p.team : null }; log(DUEL ? `The ${teamName(1 - p.team)} heroes are marked: +${k} damage taken until ${pdef(p).name}'s next turn.` : `${raid.short} is marked: +${k} damage taken until ${pdef(p).name}'s next turn.`, 'def'); H.update(); },
+      stun: t => { if (t.t === 'boss') g.boss.stunned = true; else if (t.t === 'minion') t.m.stunned = true;
+        else if (t.t === 'hero') t.p.hero.stunNext = true; // #PvP: a stunned hero can't attack on their next turn
+        else if (t.t === 'ally') { t.a.frozen = true; t.a.ex = true; } // #PvP: a stunned ally sits out its next turn
+        log(`${nameOf(t)} is stunned.`, 'def'); H.update(); },
       buffAlly: (t, a, h) => { if (t.t !== 'ally') return; t.a.atkB += a; t.a.hpB += h; H.update(); },
       transform: async (t, id) => { if (t.t !== 'minion') return; const old = minDef(t.m).name; t.m.id = id; t.m.damage = 0; t.m.atkB = 0; t.m.hpB = 0; log(`${old} is transformed into a ${TK[id].name}!`, 'def'); await H.anim('summon', { ref: t.m.uid }); H.update(); },
       revive: async (p, hp) => { if (!p.hero.dead) return; p.hero.dead = false; p.hero.damage = heroMax(p) - hp; log(`${pdef(p).name} returns to the fight!`, 'win'); await H.anim('heal', { ref: 'hero' + p.idx, amount: hp }); H.update(); },
@@ -1191,7 +1320,7 @@
       destroyAlly: async t => { if (t.t !== 'ally') return; t.a.damage = allyMax(t.p, t.a) + 99; await checkDeath(t, {}); },
       destroyArmor: async p => { const slots = Object.keys(p.armor); if (!slots.length) return; const s = slots[Math.floor(rnd() * slots.length)]; const e = p.armor[s]; delete p.armor[s]; p.grave.push(e.c); log(`${C[e.c.id].name} melts away!`, 'loss'); H.update(); },
       freeze: t => { if (t.t !== 'ally') return; t.a.frozen = true; t.a.ex = true; log(`${allyDef(t.a).name} is frozen solid.`, 'loss'); H.update(); },
-      exhaustAllies: () => { allAllies().forEach(t => t.a.ex = true); log('Ink clouds the water — every ally is exhausted.', 'loss'); H.update(); },
+      exhaustAllies: () => { g.players.flatMap(p => p.allies).forEach(a => a.ex = true); log('Ink clouds the water — every ally is exhausted.', 'loss'); H.update(); },
       tutor: async (p, f) => { const i = p.deck.findIndex(c => f(C[c.id])); if (i < 0) { log('Nothing suitable was found.', ''); return; } const c = p.deck.splice(i, 1)[0]; p.hand.push(c); shuffle(p.deck, rnd); log(`${pdef(p).name} finds ${C[c.id].name}.`, 'play'); H.update(); },
       recoverAlly: async p => { const i = p.grave.map(c => C[c.id]).findIndex(d => d.type === 'ally'); if (i < 0) { log('No fallen ally to recover.', ''); return; } const c = p.grave.splice(i, 1)[0]; p.hand.push(c); log(`${C[c.id].name} returns to ${pdef(p).name}'s hand.`, 'play'); H.update(); },
       scoutBoss: async p => {

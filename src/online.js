@@ -236,9 +236,14 @@
     if (!S.ws && S.code && S.id && !S.lobby) { S.autoJoin = true; connect({ t: 'join', code: S.code, id: S.id }).catch(e => { S.autoJoin = false; forget(); S.err = e.message; draw(); }); }
   };
   const isDungeon = L => L && L.mode === 'dungeon';
+  // #PvP lobby modes
+  const PVPM = { duel1: { name: '1v1', size: 2, what: '1v1 duel' }, duel2: { name: '2v2', size: 4, what: '2v2 duel' }, race: { name: '2v2 vs Boss', size: 4, what: 'boss race' } };
+  const isPvp = L => !!(L && PVPM[L.mode]);
+  const isDuel = L => !!(L && (L.mode === 'duel1' || L.mode === 'duel2'));
+  const TEAMN = k => (RB.TEAM_NAMES && RB.TEAM_NAMES[k]) || ('Team ' + (k + 1));
   const myDungeonLevel = () => RB.dungeonLevel(save.dxp || 0);
   const myDungeonCheck = hid => RB.dungeonDeckCheck(hid, save.decks[hid], RB.landsFor(hid, save.lands[hid]), myDungeonLevel()); // #147
-  function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length); }
+  function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : isPvp(L) ? RB.buildDeck(hid, null, 2) : RB.buildDeck(hid, null, L.players.length); }
   function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
   function draw() {
     chatSync();
@@ -246,7 +251,7 @@
     const L = S.lobby;
     let body;
     if (!L) {
-      body = `<p class="lede">Play together with friends on their own computers or phones. One of you creates a party and shares the code; everyone else types it in. Each player controls their own hero. Raids take up to 4 heroes, dungeons up to 3 — and the host can fill empty seats with AI heroes.</p>${S.wantMode ? `<p class="newvault">You'll host a <b>dungeon run</b>: ${esc(RB.DUNGEONS[S.wantMode.id].name)} on ${esc(RB.DUNGEON_MODES[S.wantMode.diff].name)}. You can change it in the lobby.</p>` : ''}
+      body = `<p class="lede">Play together with friends on their own computers or phones. One of you creates a party and shares the code; everyone else types it in. Each player controls their own hero. Raids take up to 4 heroes, dungeons up to 3. You can also fight each other: a <b>1v1</b> or <b>2v2</b> duel in the Arena, or <b>2v2 vs Boss</b>, a race to bring down a raid boss first. The host can fill empty seats with AI heroes.</p>${S.wantMode ? `<p class="newvault">You'll host a <b>dungeon run</b>: ${esc(RB.DUNGEONS[S.wantMode.id].name)} on ${esc(RB.DUNGEON_MODES[S.wantMode.diff].name)}. You can change it in the lobby.</p>` : ''}
         <div class="netform"><label>Your name <input id="netname" maxlength="24" value="${esc(S.name)}"></label></div>
         <div class="netcols"><div class="netbox"><h3 class="sec">Host a game</h3><p>Get a code to share with your friends. You choose a raid or a dungeon in the lobby.</p><button class="btn primary" data-act="create">Create a party</button></div>
         <div class="netbox"><h3 class="sec">Join a game</h3><p>Type the code your friend shared.</p><input id="netcode" class="codein" maxlength="5" placeholder="ABCDE" value="${esc(S.joinCode || '')}"><button class="btn primary" data-act="join">Join</button></div></div>`;
@@ -255,24 +260,30 @@
       const link = location.protocol.startsWith('http') ? `${location.origin}${location.pathname}?join=${L.code}` : '';
       const rows = L.players.map(p => { const h = H[p.hero] || H.aldric;
         const botPick = p.bot && host ? `<select class="botpick" data-bot="${p.id}" aria-label="AI hero">${heroesOpen().map(x => `<option value="${x.id}" ${x.id === p.hero ? 'selected' : ''}>${esc(x.name)} · ${RB.CLASSES[x.cls].name}</option>`).join('')}</select>` : '';
-        return `<div class="netp ${p.id === S.id ? 'me' : ''} ${p.bot ? 'bot' : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.bot ? ' <span class="chip">AI</span>' : ''}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.bot ? 'Starter deck · played by the AI' : p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div>${botPick}<div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online || p.bot ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('')
-        + (host && L.players.length < (L.max || 4) ? `<button class="addseat small" data-act="addbot">+ Add an AI hero to an empty seat</button>` : '');
+        const half = (PVPM[L.mode] || {}).size / 2, other = 1 - (p.team || 0), room = L.players.filter(x => (x.team || 0) === other).length < half;
+        const teamUI = isPvp(L) ? ` <span class="teamtag t${p.team || 0}">${esc(TEAMN(p.team || 0))}</span>${(p.id === S.id || (host && p.bot)) && room ? ` <button class="btn small ghost" data-team="${other}" data-who="${p.id}" title="Move ${p.id === S.id ? 'yourself' : 'this AI hero'} to the ${esc(TEAMN(other))} team">→ ${esc(TEAMN(other))}</button>` : ''}` : '';
+        return `<div class="netp ${p.id === S.id ? 'me' : ''} ${p.bot ? 'bot' : ''} ${isPvp(L) ? 'team t' + (p.team || 0) : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.bot ? ' <span class="chip">AI</span>' : ''}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}${teamUI}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.bot ? 'Starter deck · played by the AI' : p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div>${botPick}<div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online || p.bot ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('')
+        + (host && L.players.length < (L.max || 4) ? (isPvp(L) ? [0, 1].filter(k => L.players.filter(x => (x.team || 0) === k).length < L.max / 2).map(k => `<button class="addseat small" data-act="addbot" data-bteam="${k}">+ Add an AI hero to the ${esc(TEAMN(k))} team</button>`).join('') : `<button class="addseat small" data-act="addbot">+ Add an AI hero to an empty seat</button>`) : '');
       const pick = heroesOpen().map(h => `<button class="${h.id === S.mySeat.hero ? 'on' : ''}" data-hero="${h.id}" title="${esc(h.name)}"><img alt="" src="${U.cardArt(h.id)}"><span>${esc(h.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[h.cls].name}</span></button>`).join('');
-      const D = isDungeon(L), dis = host ? '' : 'disabled';
-      const raids = (D ? Object.values(RB.DUNGEONS) : Object.values(R)).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${dis}>${esc(D ? r.name : r.short)}</button>`).join('');
-      const diffs = D ? Object.entries(RB.DUNGEON_MODES).map(([k, mm]) => `<button class="btn small ${L.diff === k ? '' : 'ghost'}" data-diff="${k}" ${dis} title="${esc(mm.text)}">${mm.name}</button>`).join('')
+      const D = isDungeon(L), P = isPvp(L), DU = isDuel(L), dis = host ? '' : 'disabled';
+      const raids = DU ? '' : (D ? Object.values(RB.DUNGEONS) : Object.values(R)).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${dis}>${esc(D ? r.name : r.short)}</button>`).join('');
+      const diffs = DU ? '' : D ? Object.entries(RB.DUNGEON_MODES).map(([k, mm]) => `<button class="btn small ${L.diff === k ? '' : 'ghost'}" data-diff="${k}" ${dis} title="${esc(mm.text)}">${mm.name}</button>`).join('')
         : `<button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${dis}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${dis}>Heroic</button><button class="btn small ${L.diff === 'mythic' ? '' : 'ghost'}" data-diff="mythic" ${host && U.mythicOpen(L.raid) ? '' : 'disabled'} title="${U.mythicOpen(L.raid) || !host ? 'The hardest way to raid' : 'Beat this raid on Heroic to unlock Mythic'}">Mythic</button>`;
       const dd = D && RB.DUNGEONS[L.raid], dm = D && (RB.DUNGEON_MODES[L.diff] || RB.DUNGEON_MODES.novice);
-      const scale = D && dd ? `<div class="bossscale"><b>${esc(dd.short)} for ${L.players.length} hero${L.players.length > 1 ? 'es' : ''}:</b> ${dd.hp + dd.hpPer * (L.players.length - 1)} health · starts at level ${dm.level} · ${dm.first ? 'goes first' : 'you go first'}</div>` : U.bossScale(L.raid, L.players.length, L.diff);
-      const modeSeg = `<div class="filters"><span class="seg"><button class="${D ? '' : 'on'}" data-mode="raid" ${dis}>Raid</button><button class="${D ? 'on' : ''}" data-mode="dungeon" ${dis || (L.players.length > 3 ? 'disabled title="Dungeons take up to 3 heroes"' : '')}>Dungeon</button></span></div>`;
-      const allReady = L.players.every(p => p.ready);
-      const what = D ? 'dungeon run' : 'raid';
+      const scale = DU ? `<div class="bossscale"><b>The Arena:</b> ${L.mode === 'duel1' ? 'one hero against one' : 'two heroes against two'}. Defeat every enemy hero to win. Healing is halved, and from round ${RB.PVP_FATIGUE || 12} every hero tires. The team that goes second draws an extra card and gets +1 resource on its first turn.</div>`
+        : L.mode === 'race' ? `<div class="bossscale"><b>Boss race:</b> two teams of two race to defeat ${esc((R[L.raid] || {}).short || 'the boss')}. The team that lands the killing blow wins, and so does a team whose rivals all fall. The boss attacks both teams; you can attack the rivals too.</div>`
+        : D && dd ? `<div class="bossscale"><b>${esc(dd.short)} for ${L.players.length} hero${L.players.length > 1 ? 'es' : ''}:</b> ${dd.hp + dd.hpPer * (L.players.length - 1)} health · starts at level ${dm.level} · ${dm.first ? 'goes first' : 'you go first'}</div>` : U.bossScale(L.raid, L.players.length, L.diff);
+      const modeSeg = `<div class="filters"><span class="seg"><button class="${L.mode === 'raid' || !L.mode ? 'on' : ''}" data-mode="raid" ${dis}>Raid</button><button class="${D ? 'on' : ''}" data-mode="dungeon" ${dis || (L.players.length > 3 ? 'disabled title="Dungeons take up to 3 heroes"' : '')}>Dungeon</button></span>
+        <span class="seg pvpseg" title="Player vs player"><button class="${L.mode === 'duel1' ? 'on' : ''}" data-mode="duel1" ${dis || (L.players.length > 2 ? 'disabled title="A 1v1 duel takes 2 heroes"' : '')}>⚔ 1v1</button><button class="${L.mode === 'duel2' ? 'on' : ''}" data-mode="duel2" ${dis}>⚔ 2v2</button><button class="${L.mode === 'race' ? 'on' : ''}" data-mode="race" ${dis}>⚔ 2v2 vs Boss</button></span></div>`;
+      const teamsOk = !P || [0, 1].every(k => L.players.filter(x => (x.team || 0) === k).length === L.max / 2);
+      const allReady = L.players.every(p => p.ready) && teamsOk;
+      const what = P ? PVPM[L.mode].what : D ? 'dungeon run' : 'raid';
       body = `<div class="codebar"><div><div class="sub">Party code</div><div class="bigcode">${L.code}</div></div><button class="btn" data-act="copy">Copy code</button>${link ? `<button class="btn ghost" data-act="copylink">Copy invite link</button>` : ''}<span class="sp"></span><button class="btn ghost small" data-act="leave">Leave lobby</button></div>
         <p class="lede">Send the code to your friends. When everyone has picked a hero, the host starts the ${what}.</p>
         ${L.started ? `<p class="newvault">The last run has finished. ${host ? 'Opening the lobby for the next one…' : 'Waiting for the host to open the lobby again.'}</p>` : ''}
-        <div class="netcols"><div><h3 class="sec">Party (${L.players.length}/${L.max || 4})</h3><div class="netplayers">${rows}</div>
+        <div class="netcols"><div><h3 class="sec">${P ? 'Teams' : 'Party'} (${L.players.length}/${L.max || 4})</h3><div class="netplayers">${rows}</div>
           <h3 class="sec">What to play</h3>${modeSeg}<div class="filters">${raids}</div><div class="filters">${diffs}</div>${scale}
-          ${host ? `<button class="btn primary" data-act="start" ${allReady && !L.started ? '' : 'disabled'}>${allReady ? `Start the ${what}` : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the ${what}.</p>`}</div>
+          ${host ? `<button class="btn primary" data-act="start" ${allReady && !L.started ? '' : 'disabled'}>${allReady ? `Start the ${what}` : !teamsOk ? `Each team needs ${L.max / 2} hero${L.max > 2 ? 'es' : ''} (add AI heroes to fill)` : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the ${what}.</p>`}</div>
         <div><h3 class="sec">Your hero</h3><div class="heropick">${pick}</div>
           ${D ? `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'custom' ? '' : 'on'}" data-deck="starter">Dungeon deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>${(() => { const c = myDungeonCheck(S.mySeat.hero); return S.mySeat.deckMode === 'custom' ? (c.ok ? `<p class="dnote ok">My deck: brings <b>${c.extra}</b> of your own cards (your dungeon level ${myDungeonLevel()} allows ${c.allow}).</p>` : `<p class="dnote warn">${esc(c.why)}</p>`) : `<p class="dnote">Dungeon deck: the starter deck plus your best <b>${RB.dungeonSwaps(myDungeonLevel())}</b> cards (your dungeon level is ${myDungeonLevel()}).</p>`; })()}` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
           <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
@@ -290,17 +301,21 @@
     const myD = isDungeon(L) && S.mySeat.deckMode === 'custom' && myDungeonCheck(hid).ok; // #147: my deck, within the dungeon level
     if (myD) deck = save.decks[hid].slice();
     else if (isDungeon(L)) deck = RB.dungeonDeck(hid, save.owned, RB.dungeonSwaps(myDungeonLevel()));
-    else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
+    else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, isDuel(L) ? 'crypt' : L.raid, isPvp(L) ? 2 : n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
-    else deck = RB.buildDeck(hid, save.owned, n);
-    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: myD ? RB.landsFor(hid, save.lands[hid]) : isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
+    else deck = RB.buildDeck(hid, save.owned, isPvp(L) ? 2 : n);
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: myD ? RB.landsFor(hid, save.lands[hid]) : isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, isDuel(L) ? 'crypt' : L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
   }
   async function onClick(e) {
     const t = e.target, a = t.closest('[data-act]');
     const nameIn = $('#netname'); if (nameIn) { S.name = nameIn.value.trim() || 'Adventurer'; save.netName = S.name; U.persist(); }
     const hb = t.closest('[data-hero]'); if (hb) { S.mySeat.hero = hb.dataset.hero; draw(); return sendSeat(); }
     const db = t.closest('[data-deck]'); if (db) { S.mySeat.deckMode = db.dataset.deck; draw(); return sendSeat(); }
-    const mb = t.closest('[data-mode]'); if (mb && S.lobby && S.lobby.host === S.id) { const toD = mb.dataset.mode === 'dungeon'; if (toD === isDungeon(S.lobby)) return; return sendRaw(toD ? { t: 'settings', mode: 'dungeon', raid: (U.dungeonState && U.dungeonState.id) || 'thornwood', diff: (U.dungeonState && U.dungeonState.mode) || 'novice' } : { t: 'settings', mode: 'raid', raid: 'crypt', diff: 'normal' }); }
+    const mb = t.closest('[data-mode]'); if (mb && S.lobby && S.lobby.host === S.id) { const want = mb.dataset.mode, L0 = S.lobby; if (want === L0.mode) return;
+      if (want === 'dungeon') return sendRaw({ t: 'settings', mode: 'dungeon', raid: (U.dungeonState && U.dungeonState.id) || 'thornwood', diff: (U.dungeonState && U.dungeonState.mode) || 'novice' });
+      const raidId = R[L0.raid] ? L0.raid : 'crypt', diff = L0.diff === 'heroic' || L0.diff === 'mythic' ? L0.diff : 'normal';
+      return sendRaw({ t: 'settings', mode: want, raid: raidId, diff: want === 'race' && diff === 'mythic' && !U.mythicOpen(raidId) ? 'normal' : diff }); }
+    const tb = t.closest('[data-team]'); if (tb && S.lobby) return sendRaw({ t: 'team', team: +tb.dataset.team, id: tb.dataset.who });
     const rb = t.closest('[data-raid]'); if (rb) { const L0 = S.lobby || {}; sendRaw(Object.assign({ t: 'settings', raid: rb.dataset.raid }, !isDungeon(L0) && L0.diff === 'mythic' && !U.mythicOpen(rb.dataset.raid) ? { diff: 'heroic' } : {})); setTimeout(sendSeat, 300); return; }
     const df = t.closest('[data-diff]'); if (df) return sendRaw({ t: 'settings', diff: df.dataset.diff });
     const kb = t.closest('[data-kick]'); if (kb) return sendRaw({ t: 'kick', id: kb.dataset.kick });
@@ -320,7 +335,7 @@
       case 'addbot': {
         const L = S.lobby, used = L.players.map(p => p.hero);
         const hid = (heroesOpen().find(h => !used.includes(h.id)) || H.aldric).id;
-        return sendRaw({ t: 'addbot', hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length + 1) });
+        return sendRaw({ t: 'addbot', hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : isPvp(L) ? RB.buildDeck(hid, null, 2) : RB.buildDeck(hid, null, L.players.length + 1), team: a.dataset.bteam != null ? +a.dataset.bteam : undefined });
       }
     }
   }

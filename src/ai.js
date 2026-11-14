@@ -5,12 +5,15 @@
 
   function enemyValue(E, t, dmg) {
     const shieldId = E.raid.halvedBy, shielded = shieldId && E.g.boss.minions.some(m => m.id === shieldId); // #102 the Maw halves Nethys's damage
-    if (t.t === 'boss') { const hp = E.bossHp(), B = E.g.boss, d2 = shielded ? Math.ceil(dmg / 2) : dmg; return hp <= d2 ? 1000 : d2 * 1.05 + (B.flying ? (B.ground + dmg >= B.groundMax ? 8 : dmg * 0.4) : 0); }
-    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), kw = d.kw || [], guard = kw.includes('guardian') || d.id === shieldId;
+    if (t.t === 'boss') { const hp = E.bossHp(), B = E.g.boss, d2 = shielded ? Math.ceil(dmg / 2) : dmg; return hp <= d2 ? (E.race ? 3000 : 1000) : d2 * (E.race ? RB.AI_RACE_BOSS || 1.6 : 1.05) + (B.flying ? (B.ground + dmg >= B.groundMax ? 8 : dmg * 0.4) : 0); } // (#PvP: in a race the boss is the prize)
+    // #PvP: an enemy hero. Finishing one is the best thing a turn can do; otherwise every point of damage counts
+    if (t.t === 'hero') { const hp = E.hpOf(t) + (t.p.hero.shield || 0); if (dmg >= hp) return 1500; return E.race ? dmg * (RB.AI_RACE_HERO || 0.6) + (hp <= 12 ? 2 : 0) : dmg * 1.6 + (hp - dmg <= 10 ? 4 : 0); } // a race is won on the boss
+    const ally = t.t === 'ally', hp = E.hpOf(t), d = ally ? E.allyDef(t.a) : E.minDef(t.m), atk = ally ? E.allyAtk(t.p, t.a) : E.minAtk(t.m), kw = d.kw || [], guard = kw.includes('guardian') || kw.includes(ally ? 'protector' : 'guardian') || d.id === shieldId;
     // #110: Thick Hide soaks 1 of every hit; Ambush and Crushing minions are worth killing first; chipping a Frenzy minion only makes it angrier
     const eff = Math.max(0, dmg - (kw.includes('thickhide') ? 1 : 0));
-    if (eff >= hp) return 10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3 + (kw.includes('ambush') ? 3 : 0) + (kw.includes('crushing') ? 2 : 0);
-    return eff * 0.55 + (guard ? 4 : 0) - (kw.includes('frenzy') && eff > 0 ? 1.5 : 0);
+    const w = ally && E.race ? (RB.AI_RACE_ALLY || 0.5) : 1; // racing teams don't waste much on each other's allies
+    if (eff >= hp) return w * (10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3 + (kw.includes('ambush') ? 3 : 0) + (kw.includes('crushing') ? 2 : 0));
+    return w * (eff * 0.55 + (guard ? 4 : 0) - (kw.includes('frenzy') && eff > 0 ? 1.5 : 0));
   }
   function bestEnemy(E, p, dmg, list) {
     let best = null, bs = -1;
@@ -42,6 +45,13 @@
   function danger(E, p) {
     const heroes = E.heroes(), hp = E.heroHp(p);
     if (!heroes.length || hp <= 0 || !DW()) return 0;
+    // #PvP: what the enemy team could swing at us before our next turn, shared among our heroes and allies
+    let foeHit = 0;
+    if (E.teams) {
+      for (const q of E.foesOf(p)) { foeHit += E.heroAtk(q) + (q.weapon ? E.weaponAtk(q) : 0); for (const a of q.allies) foeHit += E.allyAtk(q, a); }
+      foeHit /= Math.max(1, heroes.length + heroes.reduce((n, h) => n + h.allies.length, 0) * 0.5);
+      if (E.duel) { let blk = p.hero.shield || 0; for (const e of Object.values(p.armor)) if (!e.ex) blk += C[e.c.id].def * 0.7; return Math.min(1.5, Math.max(0, foeHit - blk) / hp) * DW(); }
+    }
     const B = E.g.boss, strike = E.strikeNow ? E.strikeNow() : E.raid.strike;
     const taunt = heroes.find(h => h.hero.taunt);
     let pS;
@@ -51,11 +61,11 @@
     else if (E.raid.dungeon) pS = 1 / heroes.length;
     else { const top = Math.max(...heroes.map(h => h.threat)); pS = top > 0 && p.threat >= top ? 0.85 : 1 / heroes.length; }
     const allies = heroes.reduce((n, h) => n + h.allies.length, 0);
-    const mAtk = E.minions().reduce((n, t) => n + E.minAtk(t.m), 0);
+    const mAtk = E.minions().filter(t => t.t === 'minion').reduce((n, t) => n + E.minAtk(t.m), 0);
     const mS = taunt ? (taunt === p ? 1 : 0) : E.raid.dungeon ? 1 / heroes.length : 1 / Math.max(1, heroes.length + allies);
     let block = p.hero.shield || 0;
     for (const e of Object.values(p.armor)) if (!e.ex) block += C[e.c.id].def * 0.7;
-    const incoming = Math.max(0, strike * pS + mAtk * mS + (dangerSoon(E) ? 4 : 0) - block);
+    const incoming = Math.max(0, strike * pS + mAtk * mS + (dangerSoon(E) ? 4 : 0) + foeHit - block);
     return Math.min(1.5, incoming / hp) * DW();
   }
   AI.danger = danger;
@@ -159,7 +169,7 @@
         }
         if (tags.includes('aoe') || tags.includes('aoeMinion')) {
           const dmg = (d.dmg || 2) + sp; let s = 0;
-          for (const t of E.aoe(tags.includes('aoeMinion') ? E.minions() : E.enemies(), dmg)) s += t.t === 'boss' ? dmg : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
+          for (const t of E.aoe(tags.includes('aoeMinion') ? E.minions() : E.enemies(), dmg)) s += t.t === 'boss' ? dmg : t.t === 'hero' ? dmg * 1.25 + (dmg >= E.hpOf(t) ? 40 : 0) : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
           if (d.id === 'whirlwind') s += 2 + sp;
           return { s: s + (tags.includes('draw') ? 4 : 0) };
         }
@@ -220,9 +230,9 @@
     const hd = RB.HEROES[p.heroId];
     if (!p.hero.powerUsed && !p.hero.master) {
       const pw = hd.power, tags = pw.tags || [];
-      const bossPct = E.bossHp() / E.g.boss.maxHp;
+      const bossPct = E.duel ? 0.4 : E.bossHp() / E.g.boss.maxHp; // (#PvP: a duel has no boss; use powers freely)
       let s = -1, target = null;
-      if (tags.includes('dmg')) { const b = bestEnemy(E, p, (pw.dmg || 8) + E.spellPower(p)); target = b.t; s = (bossPct < 0.45 || E.g.round >= 6 || (b.t && b.t.t === 'minion' && b.s > 20)) ? 25 : -1; }
+      if (tags.includes('dmg')) { const b = bestEnemy(E, p, (pw.dmg || 8) + E.spellPower(p)); target = b.t; s = (bossPct < 0.45 || E.g.round >= 6 || (b.t && (b.t.t === 'minion' || b.t.t === 'ally') && b.s > 20) || (b.t && b.t.t === 'hero' && b.s >= 1000)) ? 25 : -1; }
       else if (tags.includes('aoe')) { const n = Math.min(RB.AOE_CAP || 5, E.enemies().length); s = (n >= 3 || E.g.round >= 6) ? 18 + n * 4 : -1; }
       else if (tags.includes('heal')) { target = mostWoundedFriendly(E, 'friendly'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 10 ? 30 : -1; }
       else if (tags.includes('healAll')) { let tot = 0; for (const t of E.friendlyChars()) tot += Math.min(6, E.maxHpOf(t) - E.hpOf(t)); s = tot >= 14 ? 30 : -1; }
@@ -292,9 +302,11 @@
         const raisesMinion = who !== 'hero' && E.raid.onAllyDeath && !who.token;
         const allyWorth = who === 'hero' ? 0 : 6 + atk * 1.5 + E.allyMax(p, who) * 0.4;
         for (const t of targets) {
-          const back = lr ? 0 : t.t === 'boss' ? E.raid.retaliation : E.minAtk(t.m);
+          const backOf = () => { if (lr) return 0; if (t.t === 'boss') return E.raid.retaliation; if (t.t === 'minion') return E.minAtk(t.m); if (t.t === 'ally') return E.allyAtk(t.p, t.a) + (E.allyDef(t.a).thorns || 0);
+            const q = t.p; return q.weapon && !q.weapon.ex && E.available(q) >= E.strikeCost(q) ? E.heroAttackValue(q, true) : E.heroAtk(q); }; // #PvP
+          const back = backOf();
           const dies = back >= myHp;
-          const kills = t.t === 'minion' ? atk >= E.hpOf(t) : atk >= E.bossHp();
+          const kills = t.t === 'boss' ? atk >= E.bossHp() : atk >= E.hpOf(t);
           let s = enemyValue(E, t, atk) - back * (who === 'hero' ? 0.9 : 0.45);
           if (dies && who === 'hero') s -= 999;
           if (dies && who !== 'hero') {
@@ -495,7 +507,7 @@
       if (tags.includes('elusive') && harmful && E.heroHp(p) <= 9) return { p, inst, target: null };
       if (tags.includes('heal')) { const t = E.heroes().filter(h => E.heroHp(h) <= 9).sort((a, b) => E.heroHp(a) - E.heroHp(b))[0]; if (t) return { p, inst, target: E.T.hero(t) }; }
       if (tags.includes('stunAll') && E.minions().filter(t => E.minAtk(t.m) > 0).length >= 2) return { p, inst, target: null };
-      if (tags.includes('stun')) { const m = E.minions().filter(t => E.minAtk(t.m) >= 3).sort((a, b) => E.minAtk(b.m) - E.minAtk(a.m))[0]; if (m) return { p, inst, target: m }; if (E.heroes().some(h => E.heroHp(h) <= 8)) return { p, inst, target: E.T.boss() }; }
+      if (tags.includes('stun')) { const m = E.minions().filter(t => t.t === 'minion' && E.minAtk(t.m) >= 3).sort((a, b) => E.minAtk(b.m) - E.minAtk(a.m))[0]; if (m) return { p, inst, target: m }; if (E.heroes().some(h => E.heroHp(h) <= 8)) return { p, inst, target: E.T.boss() }; }
     }
     return null;
   };

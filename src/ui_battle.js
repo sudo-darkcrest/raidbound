@@ -42,6 +42,27 @@
       <div class="un">${esc(o.name)}</div><div class="ua ${o.buffA ? 'buff' : ''}">${o.atk}</div><div class="uh ${o.hp < o.max ? 'hurt' : o.buffH ? 'buff' : ''}">${o.hp}</div></div>`;
   }
   const facColor = { concord: '#5a7ad0', clans: '#c0482a', neutral: '#9a7a44' };
+  // #PvP: which team this screen belongs to (the viewer's, else whoever is acting)
+  function myTeam() { const g = E.g, v = viewerIdx(); return v >= 0 ? g.players[v].team : (g.players[g.turn] || g.players[0]).team; }
+  const teamCls = k => 't' + k;
+  // the enemy team's heroes and allies, shown where the boss usually stands (duels) or under the boss (races)
+  function rivalsHTML(tcls, compact) {
+    const g = E.g, mine = myTeam();
+    return g.players.filter(q => q.team !== mine).map(q => {
+      const qd = E.pdef(q), hp = Math.max(0, E.heroHp(q)), mx = E.heroMax(q), atk = E.heroAtk(q) + (q.weapon && !q.weapon.ex ? E.weaponAtk(q) : 0);
+      const tags = [q.hero.taunt && 'Taunt', q.hero.elusive && 'Shrouded', q.hero.stunNext && 'Stunned', q.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
+      const gear = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
+      const units = q.allies.map(a => { const d = E.allyDef(a); return unitHTML('ally', { ref: a.uid, p: q.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(q, a), hp: E.allyMax(q, a) - a.damage, max: E.allyMax(q, a), kws: d.kw || [], buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: ['foe', a.ex ? 'ex' : '', a.frozen ? 'frozen' : '', tcls(a.uid)] }); }).join('');
+      const who = net && g.cfg.party[q.idx].name ? `<small class="rpl">${esc(g.cfg.party[q.idx].name)}${q.auto ? ' · AI' : ''}</small>` : q.auto ? '<small class="rpl">AI</small>' : '';
+      return `<div class="rival ${teamCls(q.team)} ${q.hero.dead ? 'dead' : ''} ${g.players[g.turn] === q && g.phase !== 'boss' ? 'active' : ''}">
+        <div class="rivalhero${q.hero.dead ? '' : tcls('hero' + q.idx)}" data-ref="hero${q.idx}" data-rival="${q.idx}" tabindex="0" aria-label="${esc(qd.name)}, enemy hero, ${hp} health">
+          <img alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="tags">${tags}</div>
+          ${atk > 0 && !q.hero.dead ? `<div class="hatk" title="Attack">${atk}</div>` : ''}<div class="hhp ${hp <= 8 ? 'low' : ''}">${hp}</div>${q.hero.shield ? `<div class="shield" title="Ward: prevents the next ${q.hero.shield} damage">◈ ${q.hero.shield}</div>` : ''}
+          <div class="hn"><b>${esc(qd.name)}</b>${who}<span class="rvbar"><i style="width:${hp / mx * 100}%"></i></span></div></div>
+        ${compact ? '' : `<div class="rivalmeta"><span class="rhand" title="${q.hand.length} cards in hand">${'<i></i>'.repeat(Math.min(q.hand.length, 10))}<b>${q.hand.length}</b></span>${gear ? `<span class="rgears">${gear}</span>` : ''}</div>`}
+        <div class="minions rallies">${units || `<span class="empty">${q.hero.dead ? 'Fallen.' : 'No allies.'}</span>`}</div></div>`;
+    }).join('');
+  }
 
   function render() {
     if (!E || !root) return;
@@ -122,7 +143,7 @@
     const showHand = seesHand(p);
     const hand = !showHand ? p.hand.map((c, i) => `<div class="hc back" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)"><div class="cardback"></div></div>`).join('') : p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; const hd2 = C[c.id] || {}, hk = hd2.kw || [], handReach = airborne && (hd2.type === 'ally' || hd2.type === 'weapon') && (hk.includes('longrange') || hk.includes('skyward'));
       return `<div class="hc ${playable ? 'play' : ''}${handReach ? ' reach' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
-    const status = g.over ? '' : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
+    const status = g.over ? '' : E.teams && !human(active) && g.phase !== 'boss' && active.team !== myTeam() ? `${esc(net && !active.auto ? (E.g.cfg.party[active.idx].name || E.pdef(active).name) : E.pdef(active).name)} (${esc(E.teamName(active.team))} team) is taking a turn…` : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
     // roster
     const vIdx = viewerIdx();
     const roster = g.players.map(q => {
@@ -131,10 +152,10 @@
       const gearIcons = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
       const backs = `<span class="rhand" title="${q.hand.length} cards in hand${q.idx === vIdx ? '' : ' (hidden)'}">${'<i></i>'.repeat(Math.min(q.hand.length, 10))}<b>${q.hand.length}</b></span>`;
       const played = ((view.played || {})[q.idx] || []).map(c => `<img class="rplay ${c.holo ? 'holo' : ''}" alt="" src="${U.cardArt(c.id)}" data-card="${c.id}">`).join('');
-      const tag = (q.idx === vIdx ? ' <span class="youtag">You</span>' : q.auto ? ' <span class="aitag">AI</span>' : '') + (raid.dungeon && g.boss.marked === q.idx && g.phase === 'boss' ? ' <span class="marktag">🎯 Marked</span>' : '');
+      const tag = (E.teams ? ` <span class="teamtag ${teamCls(q.team)}" title="${esc(E.teamName(q.team))} team">${esc(E.teamName(q.team))}</span>` : '') + (q.idx === vIdx ? ' <span class="youtag">You</span>' : q.auto ? ' <span class="aitag">AI</span>' : '') + (raid.dungeon && g.boss.marked === q.idx && g.phase === 'boss' ? ' <span class="marktag">🎯 Marked</span>' : '');
       const who = net && E.g.cfg.party[q.idx].name ? `<div class="rplayer">${esc(E.g.cfg.party[q.idx].name)}</div>` : '';
-      return `<div class="rmember ${q === active && g.phase !== 'boss' ? 'active' : ''} ${q.hero.dead ? 'dead' : ''} ${q === p ? 'viewing' : ''}" data-focus="${q.idx}" title="Click to look at ${esc(qd.name)}'s side of the table"><img class="herochip${q === p ? '' : tcls('hero' + q.idx)}" ${q === p ? '' : `data-ref="hero${q.idx}"`} alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="rbody"><div class="rn">${esc(qd.name)}${tag}</div>${who}<div class="rbar"><i style="width:${pct}%"></i><span>${Math.max(0, E.heroHp(q))}/${E.heroMax(q)}</span></div>
-        <div class="rmeta">${backs}${q.hero.shield ? `<span class="rward">◈ ${q.hero.shield}</span>` : ''}<span>threat ${q.threat}</span>${gearIcons ? `<span class="rgears">${gearIcons}</span>` : ''}</div>
+      return `<div class="rmember ${E.teams ? (q.team === myTeam() ? 'mate' : 'foe') : ''} ${q === active && g.phase !== 'boss' ? 'active' : ''} ${q.hero.dead ? 'dead' : ''} ${q === p ? 'viewing' : ''}" data-focus="${q.idx}" title="Click to look at ${esc(qd.name)}'s side of the table"><img class="herochip${q === p ? '' : tcls('hero' + q.idx)}" ${q === p ? '' : `data-ref="hero${q.idx}"`} alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="rbody"><div class="rn">${esc(qd.name)}${tag}</div>${who}<div class="rbar"><i style="width:${pct}%"></i><span>${Math.max(0, E.heroHp(q))}/${E.heroMax(q)}</span></div>
+        <div class="rmeta">${backs}${q.hero.shield ? `<span class="rward">◈ ${q.hero.shield}</span>` : ''}${E.duel ? '' : `<span>threat ${q.threat}</span>`}${gearIcons ? `<span class="rgears">${gearIcons}</span>` : ''}</div>
         ${chips ? `<div class="rchips">${chips}</div>` : ''}${played ? `<div class="rplayed"><small>Played this turn</small>${played}</div>` : ''}</div></div>`;
     }).join('');
     const logHTML = g.log.slice(-120).map(e => `<div class="${e.cls}">${esc(e.msg)}</div>`).join('');
@@ -142,10 +163,14 @@
     morph(root, `<div class="table">
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${!raid.dungeon && RB.RAID_DIFFS[g.cfg.difficulty] && g.cfg.difficulty !== 'normal' ? ' · ' + RB.RAID_DIFFS[g.cfg.difficulty].name : g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button>${net && U.chatBtnHTML ? U.chatBtnHTML() : ''}<button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
-        <span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
-        <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
-      <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
-        <div class="bossbar ${barFx}">
+        ${E.duel ? '' : `<span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>`}
+        <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">${E.teams ? 'Leave match' : 'Leave raid'}</button></div>
+      ${E.duel ? `<div class="bossarea arena" style="--bt:#d4a64a">
+        <div class="bossbar"><div class="bbname"><i class="orn"></i><b>The Arena</b><span class="teams"><em class="team ${teamCls(myTeam())}">${esc(E.teamName(myTeam()))} (you)</em> vs <em class="team ${teamCls(1 - myTeam())}">${esc(E.teamName(1 - myTeam()))}</em></span><i class="orn r"></i></div>
+          <div class="bossrow"><span class="chip" title="${esc(RB.ARENA.rules.find(r => r.name === 'Dampening').text)}">✚ Healing halved</span><span class="chip ${g.round >= RB.PVP_FATIGUE ? 'hot' : ''}" title="${esc(RB.ARENA.rules.find(r => r.name === 'Arena fatigue').text)}">⌛ ${g.round >= RB.PVP_FATIGUE ? `Fatigue: ${(g.round - RB.PVP_FATIGUE + 1) * (RB.PVP_FATIGUE_STEP || 2)} a turn` : `Fatigue from round ${RB.PVP_FATIGUE}`}</span>${B.mark && B.mark.team != null ? `<span class="evt" style="background:rgba(120,60,10,.5)"><b>Marked</b> +${B.mark.amount} damage to the ${esc(E.teamName(1 - B.mark.team))} heroes</span>` : ''}</div></div>
+        <div class="rivals">${rivalsHTML(tcls, false)}</div>
+      </div>` : `<div class="bossarea ${raid.id}${E.race ? ' racing' : ''}" style="--bt:${raid.theme || '#ff7a4a'}">`}
+        ${E.duel ? '' : `<div class="bossbar ${barFx}">
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : g.cfg.difficulty === 'mythic' ? '<em class="mythic">Mythic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
@@ -157,8 +182,9 @@
           <div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, raid.stages ? 'stage:' + raid.id + '-' + B.stage : 'raid:' + raid.id)}"><div class="bframe"></div><div class="bn"><b>${esc(raid.short)}</b><span>${B.minions.length ? `${B.minions.length} minion${B.minions.length > 1 ? 's' : ''} at its side` : 'Stands alone'}</span></div></div>
           <div class="minions right" style="--mn:${minR.length}">${minR.join('')}</div>
         </div>
+        ${E.race ? `<div class="rivals race"><span class="rvlabel"><b>Rival team</b> · ${esc(E.teamName(1 - myTeam()))}<small>Land the killing blow on ${esc(raid.short)} to win, or defeat both rivals.</small></span>${rivalsHTML(tcls, true)}</div>` : ''}
         ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
-      </div>
+      </div>`}
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
         <div class="restray"><span class="lbl" title="Lands, quests and locations can always be played as resources. Any other card: only ${RB.SPARE_RES} times a fight.">Resources<small class="spare">${E.g.cfg.noLands ? '' : `spare cards ${E.spareLeft(p)}/${RB.SPARE_RES}`}</small></span><button class="pilechip" data-act="piles" title="Cards left in this hero's deck, and cards in the discard pile. ${U.isPhone() ? 'Tap' : 'Click'} to see the discard pile."><span>Deck <b>${p.deck.length}</b></span><span>Discard <b>${p.grave.length}</b></span></button><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
@@ -167,7 +193,7 @@
         <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button>${raid.bail && !g.cfg.bossPlayer ? `<button class="btn bailbtn" data-act="bail" ${canAct && E.canBail(p) ? '' : 'disabled'} title="Pay ${raid.bail.cost} resource to lower the ${esc(raid.counter.name)} by 1. Once per turn.">🪣 Bail water (${raid.bail.cost}◆)</button>` : ''}<div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
-    <div class="side"><div class="roster"><h5>Party<button class="btn small ghost narrow-only drawerx" data-act="drawer">✕ Close</button></h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
+    <div class="side"><div class="roster"><h5>${E.teams ? 'Heroes' : 'Party'}<button class="btn small ghost narrow-only drawerx" data-act="drawer">✕ Close</button></h5>${roster}</div><div class="logbox"><h5>${E.teams ? 'Battle log' : 'Raid log'}</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
     root.classList.toggle('drawer', !!view.drawer);
     const lb = $('.logbox', root); if (lb) lb.scrollTop = lb.scrollHeight;
     const hEl = $('.hand', root);
@@ -441,7 +467,7 @@
   }
   const ser = args => args.map(a => a == null ? null : typeof a === 'string' ? { S: a } : (a.hand && a.hero) ? { P: a.idx } : a.t ? { R: E.refId(a) } : (a.c && a.c.uid && !a.id) ? { C: a.c.uid } : a.uid ? { U: a.uid } : null);
   function findRef(ref) {
-    const g = E.g, all = [...E.enemies(), ...g.players.map(q => E.heroT(q)), ...g.players.flatMap(q => q.allies.map(a => E.T.ally(q, a)))];
+    const all = E.allTargets();
     return all.find(t => E.refId(t) === ref) || null;
   }
   function deser(list) {
@@ -684,6 +710,7 @@
     const rg = t.closest('.rgear, .rplay'); if (rg) return show(rg, U.cardHTML(rg.dataset.card));
     const mu = t.closest('.unit.minion'); if (mu) { const m = E.g.boss.minions.find(x => x.uid === mu.dataset.ref); if (m) return show(mu, U.cardHTML(m.id, { atk: E.minAtk(m), hp: E.minMax(m) - m.damage })); }
     if (t.closest('.bosscard')) { showRules(); return true; }
+    const rv = t.closest('[data-rival]'); if (rv && !view.mode) { const q = E.g.players[+rv.dataset.rival]; return show(rv, q.hero.master ? U.cardHTML(q.hero.master) : U.heroCardHTML(q.heroId)); }
     if (acting) return false;
     const hcd = t.closest('.hc[data-uid]'); if (hcd) { const q = fp(), inst = q.hand.find(c => c.uid === hcd.dataset.uid); if (inst) return show(hcd, U.cardHTML(inst.id, { holo: inst.holo })); } // #124
     const au = t.closest('.unit[data-kind=ally]'); if (au) { for (const q of E.g.players) { const a = q.allies.find(x => x.uid === au.dataset.ref); if (a) return show(au, allyCard(q, a)); } }
@@ -704,8 +731,9 @@
   // #104: the Rules button opens this raid's rules plus the Field Guide chapters that matter mid-fight
   function showRules() {
     const help = U.isPhone() ? 'Tap a card in your hand to see it big and play it. Tap an ally or your hero to attack. Glowing cards and units are ready to use. Tap the boss, a minion or any gear to see its card.' : 'Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.';
-    const here = { id: 'here', icon: '🗺', title: E.raid.dungeon ? 'This dungeon' : 'This raid', html: `<section><h4>${esc(E.raid.name)}</h4><ul>${E.raid.rules.map(r => `<li><b>${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul></section><p class="small">${help}</p>` };
-    const chs = [here].concat(U.guideChapters(['bossturn', 'threat', 'react'].concat(E.raid.dungeon ? [] : ['omens'], ['keywords'])));
+    const raceRules = E.race ? [{ name: 'Boss race', text: `Two teams race to defeat ${E.raid.short}. The team that lands the killing blow wins, and so does a team whose rivals have all fallen. The boss attacks both teams, and you can attack the rival team's heroes and allies too.` }, { name: 'Going second', text: RB.ARENA.rules.find(r => r.name === 'Going second').text }] : [];
+    const here = { id: 'here', icon: '🗺', title: E.duel ? 'The Arena' : E.raid.dungeon ? 'This dungeon' : 'This raid', html: `<section><h4>${esc(E.duel ? 'The Arena' : E.raid.name)}</h4><ul>${raceRules.concat(E.raid.rules).map(r => `<li><b>${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul></section><p class="small">${help}</p>` };
+    const chs = [here].concat(U.guideChapters(E.duel ? ['pvp', 'react', 'keywords'] : (E.race ? ['pvp'] : []).concat(['bossturn', 'threat', 'react'], E.raid.dungeon ? [] : ['omens'], ['keywords'])));
     return U.dialog(`${U.guideHTML(chs, 'here')}<div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok', cls: 'wide guidedlg', onMount: o => U.guideWire(o) });
   }
   function onClick(e) {
@@ -780,6 +808,7 @@
       if (m) return U.preview(U.cardHTML(m.id, { atk: E.minAtk(m), hp: E.minMax(m) - m.damage }), u);
       for (const p of E.g.players) { const a = p.allies.find(x => x.uid === ref); if (a) return U.preview(U.cardHTML(a.id, { atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, holo: a.c && a.c.holo }), u); }
     }
+    const rv = t.closest('[data-rival]'); if (rv) { const q = E.g.players[+rv.dataset.rival]; return U.preview(q.hero.master ? U.cardHTML(q.hero.master) : U.heroCardHTML(q.heroId), rv); }
     const hcard = t.closest('.herocard'); if (hcard) { const p = fp(); return U.preview(p.hero.master ? U.cardHTML(p.hero.master) : U.heroCardHTML(p.heroId), hcard); }
     const gs = t.closest('[data-card]'); if (gs && !gs.classList.contains('card')) return U.preview(U.cardHTML(gs.dataset.card), gs);
     const ev = t.closest('[data-bc]'); if (ev) return U.preview(U.cardHTML(ev.dataset.bc), ev);
@@ -812,7 +841,7 @@
     E.start().then(() => { view.busy = false; afterAction(); if (net) net.ready(); }).catch(err => { console.error(err); view.busy = false; U.toast('Error: ' + err.message); });
   };
   async function leave() {
-    const v = await U.dialog('<h3>Leave the raid?</h3><p>Your progress in this fight will be lost.</p><div class="acts"><button class="btn ghost" data-v="no">Keep fighting</button><button class="btn primary" data-v="yes">Leave</button></div>', { dismiss: 'no' });
+    const v = await U.dialog(`<h3>${E.teams ? 'Leave the match?' : 'Leave the raid?'}</h3><p>Your progress in this fight will be lost.${E.teams && net ? ' The AI takes over your hero.' : ''}</p><div class="acts"><button class="btn ghost" data-v="no">Keep fighting</button><button class="btn primary" data-v="yes">Leave</button></div>`, { dismiss: 'no' });
     if (v === 'yes') { E.g.over = 'abandon'; E = null; if (net) { net.leave(); net = null; return U.title(); } U.setup(); }
   }
   function endScreen() {
@@ -820,6 +849,7 @@
     if (g.over === 'abandon') return;
     const raid = g.raid;
     if (g.cfg.bossPlayer) return bossEndScreen();
+    if (g.pvp) return pvpEndScreen();
     if (raid.dungeon) return U.dungeonEnd(g, win, cfgLast, E);
     // #119: a party played entirely by the AI earns nothing: no gold, no treasure pack, no win, no unlocks
     if ((g.cfg.party || []).length && g.cfg.party.every(s => s && s.auto)) {
@@ -851,6 +881,36 @@
       if (a.dataset.act === 'title') return U.title();
     };
     el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'open') e.target.click(); };
+  }
+  // #PvP: which team won, a little gold (more against real players), no treasure packs
+  function pvpEndScreen() {
+    const g = E.g, raid = g.raid, mine = myTeam(), win = g.winTeam != null && g.winTeam === mine, nobody = g.winTeam == null;
+    const allAi = (g.cfg.party || []).every(s => s && s.auto);
+    const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some((s, i) => s && !s.auto && s.owner && g.players[i] && g.players[i].team !== mine && !g.players[i].wasAi));
+    const killBlow = E.race && g.boss.damage >= g.boss.maxHp;
+    let parts = [];
+    if (!allAi) {
+      parts = vsHumans ? [['Result', win ? 70 : 25]] : [['Result', win ? 30 : 10], ['Against AI opponents', 0]];
+      if (E.race && killBlow && win) parts.push([`Killing blow on ${raid.short}`, vsHumans ? 40 : 20]);
+      const slain = g.players.filter(q => q.team !== mine && q.hero.dead).length; if (slain) parts.push(['Rival heroes defeated', slain * (vsHumans ? 10 : 5)]);
+    }
+    const total = parts.reduce((t, x) => t + x[1], 0);
+    if (total) { save.gold = (save.gold || 0) + total; save.pvpWins = (save.pvpWins || 0) + (win ? 1 : 0); U.persist(); }
+    if (win) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
+    const title = nobody ? 'Nobody wins' : win ? 'Victory' : 'Defeat';
+    const line = nobody ? 'Every hero has fallen.' : E.race ? (killBlow ? `The ${esc(E.teamName(g.winTeam))} team landed the killing blow on ${esc(raid.boss)}.` : `The ${esc(E.teamName(1 - g.winTeam))} team was wiped out.`) : `The ${esc(E.teamName(g.winTeam))} team holds the Arena.`;
+    const mineStats = g.players.filter(q => q.team === mine), dealt = mineStats.reduce((t, q) => t + q.stats.dmg, 0);
+    const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${dealt}</b>damage by your team</div><div><b>${g.players.filter(q => q.team !== mine && q.hero.dead).length}/${g.players.filter(q => q.team !== mine).length}</b>rivals defeated</div>${E.race ? `<div><b>${Math.max(0, E.bossHp())}</b>boss health left</div>` : ''}</div>`;
+    const goldBox = allAi ? `<div class="goldbox"><div class="gtitle">No rewards</div><div class="gnote">The AI played every hero, so this match pays nothing.</div></div>`
+      : `<div class="goldbox"><div class="gtitle">+${total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${parts.map(([k, v]) => v ? `<span>${esc(k)} <b>+${v}</b></span>` : `<span class="gnote">${esc(k)}</span>`).join('')}</div></div>`;
+    const el = U.show('end', `<div class="endscreen ${win ? '' : 'lose'}"><h2>${title}</h2><p class="tagline">${line}</p>${stats}${goldBox}
+      <div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">${cfgLast.online ? 'Back to the lobby' : 'Play again'}</button><button class="btn" data-act="market">Market</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+    el.onclick = e => {
+      const a = e.target.closest('[data-act]'); if (!a) return;
+      if (a.dataset.act === 'retry') return cfgLast.online ? U.online() : U.battle(JSON.parse(JSON.stringify(cfgLast)));
+      if (a.dataset.act === 'market') return U.market();
+      if (a.dataset.act === 'title') return U.title();
+    };
   }
   function bossEndScreen() {
     const g = E.g, raid = g.raid, bossWon = g.over === 'lose';

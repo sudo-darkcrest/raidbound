@@ -1496,6 +1496,76 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 @media (max-width: 760px) { .cardzoom .znav { width: 42px; height: 70px; font-size: 2.2rem; } .cardzoom .znav.prev { left: 6px; } .cardzoom .znav.next { right: 6px; } }
 @media (prefers-reduced-motion: reduce) { .cardzoom .zwrap.sl, .cardzoom .zwrap.sr { animation: none; } }
 
+/* ---------- #PvP: the enemy team where the boss stands (duels) or under the boss (races) ---------- */
+.teamtag { font-size: .62rem; padding: 0 .3rem; border-radius: 3px; vertical-align: middle; font-family: var(--f-sc); letter-spacing: .04em; }
+.teamtag.t0, .bbname em.team.t0 { background: rgba(212, 166, 74, .22); color: #ffe2a0; border: 1px solid rgba(212, 166, 74, .6); }
+.teamtag.t1, .bbname em.team.t1 { background: rgba(170, 190, 220, .18); color: #e4ecf8; border: 1px solid rgba(180, 200, 230, .55); }
+.bbname .teams { font-style: normal; display: inline-flex; gap: .45rem; align-items: center; }
+.bbname em.team { font-size: .8rem; text-shadow: none; }
+.rmember.foe { border-color: rgba(200, 80, 70, .35); }
+.rmember.foe .rbar i { background: linear-gradient(90deg, #8a5a1a, #e0a050); }
+.bossarea.arena { justify-content: flex-start; }
+.rivals { flex: 1; min-height: 0; display: flex; gap: 1.4rem; justify-content: center; align-items: center; align-content: center; flex-wrap: wrap; overflow: auto; padding: .3rem .2rem .5rem; }
+.rival { display: flex; align-items: center; gap: .8rem; padding: .45rem .7rem; border-radius: 10px; background: linear-gradient(180deg, rgba(40, 14, 10, .55), rgba(10, 4, 4, .45)); border: 1px solid rgba(200, 90, 70, .35); min-width: 0; max-width: 100%; }
+.rival.t1 { background: linear-gradient(180deg, rgba(24, 30, 48, .6), rgba(8, 10, 18, .45)); border-color: rgba(160, 180, 220, .35); }
+.rival.active { box-shadow: 0 0 0 1px var(--gilt), 0 0 18px rgba(212, 166, 74, .35); }
+.rival.dead { opacity: .5; filter: grayscale(.7); }
+.rivalhero { position: relative; flex: 0 0 auto; width: clamp(130px, 14vw, 230px); aspect-ratio: 300/220; border-radius: 8px; overflow: visible; border: 2px solid #b8873a; background: #000; box-shadow: 0 8px 22px rgba(0, 0, 0, .65); cursor: pointer; }
+.rivalhero > img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+.rivalhero .hn { position: absolute; left: 0; right: 0; bottom: 0; padding: 1rem .45rem .3rem; background: linear-gradient(transparent, rgba(6, 2, 2, .92)); border-radius: 0 0 6px 6px; text-align: center; line-height: 1.05; }
+.rivalhero .hn b { display: block; font-family: var(--f-sc); font-size: .82rem; color: #ffe6c8; text-shadow: 0 1px 0 #000; }
+.rivalhero .hn .rpl { display: block; font-size: .66rem; color: #9ad8ff; }
+.rivalhero .rvbar { display: block; height: .35rem; margin-top: .2rem; border-radius: 2px; background: #2a0a0a; overflow: hidden; }
+.rivalhero .rvbar i { display: block; height: 100%; background: linear-gradient(90deg, #b0182e, #ff6a5a); }
+.rivalhero .hhp, .rivalhero .hatk { position: absolute; top: -.5rem; width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-weight: 900; font-size: 1rem; color: #fff; text-shadow: 0 1px 0 #000; border: 2px solid #000; z-index: 2; }
+.rivalhero .hhp { right: -.5rem; background: radial-gradient(circle at 35% 30%, #ff8a7a, #a01020); }
+.rivalhero .hhp.low { animation: tpulse 1s infinite; }
+.rivalhero .hatk { left: -.5rem; background: radial-gradient(circle at 35% 30%, #ffd88a, #a0601a); }
+.rivalhero .shield { position: absolute; top: 1.6rem; right: -.6rem; padding: .05rem .35rem; border-radius: 4px; font-size: .72rem; background: #1e4a6a; color: #cfefff; border: 1px solid #000; z-index: 2; }
+.rivalhero .tags { position: absolute; top: .3rem; left: 50%; transform: translateX(-50%); display: flex; gap: .2rem; z-index: 2; }
+.rivalhero .tags span { font-size: .6rem; padding: 0 .25rem; border-radius: 3px; background: rgba(0, 0, 0, .7); color: #ffd27a; border: 1px solid rgba(255, 210, 122, .5); white-space: nowrap; }
+.rivalhero.targetable { animation: tpulse 1s infinite; box-shadow: 0 0 0 3px #ff5a3a, 0 0 22px rgba(255, 90, 58, .7); }
+.rivalmeta { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; font-size: .74rem; color: var(--muted); }
+.rivalmeta .rhand i { display: inline-block; width: .45rem; height: .65rem; margin-right: 1px; border-radius: 1px; background: linear-gradient(#5a3a1a, #2a1a0a); border: 1px solid #8a6a3a; }
+.rivalmeta .rhand b { margin-left: .25rem; color: var(--vellum); }
+.rivalmeta .rgears { display: flex; flex-wrap: wrap; gap: .2rem; max-width: 7rem; }
+.rivalmeta img.rgear { width: 1.6rem; height: 1.2rem; object-fit: cover; border-radius: 2px; border: 1px solid var(--gilt-lo); cursor: help; }
+.minions.rallies { padding: .5rem .1rem .6rem; gap: .5rem; flex-wrap: wrap; overflow: visible; max-width: min(46vw, 640px); }
+.minions.rallies .unit { flex: 0 0 auto; }
+.unit.foe { --uc: #a04a3a; }
+.rivals.race { flex: 0 0 auto; align-items: center; gap: .8rem; padding: .2rem .2rem .3rem; border-top: 1px solid rgba(212, 166, 74, .2); }
+.rivals.race .rvlabel { display: flex; flex-direction: column; font-family: var(--f-sc); color: #ffd8b0; font-size: .85rem; max-width: 12rem; }
+.rivals.race .rvlabel small { font-family: var(--f-body, inherit); font-size: .7rem; color: var(--muted); }
+.rivals.race .rival { padding: .2rem .4rem; gap: .45rem; }
+.rivals.race .rivalhero { width: clamp(72px, 6vw, 96px); }
+.rivals.race .rivalhero .hn { padding: .5rem .2rem .15rem; }
+.rivals.race .rivalhero .hn b { font-size: .62rem; }
+.rivals.race .rivalhero .hhp, .rivals.race .rivalhero .hatk { width: 1.45rem; height: 1.45rem; font-size: .78rem; top: -.35rem; }
+.rivals.race .minions.rallies { padding: .25rem .1rem .3rem; }
+.rivals.race .minions.rallies .unit { --uw: clamp(50px, 4vw, 66px); width: var(--uw); }
+.rivals.race .minions.rallies .unit .un { display: none; }
+.bossarea.racing .bosscard { min-height: 100px; }
+.bossarea.racing { gap: .3rem; }
+@media (max-width: 700px) {
+  .rivals { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: .35rem; padding: .15rem 0 .3rem; }
+  .rival { flex-wrap: nowrap; gap: .4rem; padding: .25rem .35rem; }
+  .rivalhero, .rivals.race .rivalhero { width: 92px; }
+  .rivalhero .hn { padding: .5rem .2rem .15rem; } .rivalhero .hn b { font-size: .6rem; }
+  .rivalhero .hhp, .rivalhero .hatk { width: 1.4rem; height: 1.4rem; font-size: .75rem; top: -.3rem; }
+  .rivalhero .shield { top: 1.1rem; font-size: .62rem; }
+  .rivalmeta { display: none; }
+  .minions.rallies { max-width: none; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding: .3rem .1rem; }
+  .minions.rallies .unit, .rivals.race .minions.rallies .unit { --uw: 54px; width: var(--uw); }
+  .minions.rallies .unit .un { display: none; }
+  .rivals.race .rvlabel { display: none; }
+}
+.netp.team.t0 { border-left: 3px solid rgba(212, 166, 74, .8); }
+.netp.team.t1 { border-left: 3px solid rgba(180, 200, 230, .8); }
+.netp .teamtag { margin-left: .2rem; }
+.netp [data-team] { margin-left: .3rem; padding: .05rem .4rem; font-size: .7rem; }
+.filters .seg.pvpseg { margin-left: .5rem; }
+.filters .seg.pvpseg button { color: #ffd8b0; }
+
 </style>
 </head>
 <body>
@@ -5348,10 +5418,24 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     heroic: { name: 'Heroic', hp: 1.3, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, partyStrikes: [0, 0.5, 0.5, 1] },
     mythic: { name: 'Mythic', hp: 1.5, strike: 1, cards: RB.HEROIC_EXTRA_CARDS, counter: 1, enrage: 20, partyHp: 1.2, partyStrikes: [0, 0.5, 1, 1] },
   };
+  // Player vs player (1v1, 2v2) and the boss race (two teams of two against a raid boss and each other)
+  RB.PVP_FATIGUE = 12;
+  RB.PVP_FATIGUE_STEP = 2; // fatigue: 2, then 4, then 6… // duels: from this round each hero takes growing damage at the start of their turn, so no duel stalls forever
+  RB.TEAM_NAMES = ['Gold', 'Silver'];
+  RB.RACE_HP_SEATS = 1; // the race's boss has the health it would have against this many heroes
+  RB.RACE_ENRAGE = 18; // the race's boss enrages earlier, so a race can't drag on
+  RB.RACE_ATK_SEATS = 2; // ...and strikes and plays cards as if facing this many
+  RB.ARENA = { id: 'arena', name: 'the Arena', boss: 'The Arena', short: 'Arena', hp: 1, hpPer: 0, deck: [], strike: 0, retaliation: 0, phases: [], arena: true,
+    rules: [{ name: 'Player vs player', text: 'Two teams fight until every hero on one side has fallen. Attacks go at enemy heroes and allies; Bulwark allies can cover their teammates and React cards still answer attacks. Cards that hit minions hit enemy allies instead, and cards that hit the boss hit an enemy hero.' },
+      { name: 'Arena fatigue', text: 'From round 12 each hero loses 2 health at the start of their turn, then 4, then 6, and so on. Wards and armor can\'t stop it, so every duel ends.' },
+      { name: 'Dampening', text: 'All healing in the Arena is halved (rounded up).' },
+      { name: 'Going second', text: 'Heroes on the team that goes second draw an extra card and get +1 resource on their first turn.' },
+      { name: 'Raid-only cards', text: 'Mythic raid cards do nothing in the Arena. They can still be played as resources.' }] };
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
-    const baseRaid = RB.RAIDS[cfg.raid] || (RB.DUNGEONS || {})[cfg.raid];
+    const PV = cfg.pvp === 'duel' || cfg.pvp === 'race' ? cfg.pvp : null, DUEL = PV === 'duel', RACE = PV === 'race', TEAMS = !!PV;
+    const baseRaid = DUEL ? RB.ARENA : RB.RAIDS[cfg.raid] || (RB.DUNGEONS || {})[cfg.raid];
     // #92: a dungeon with stages is a gauntlet (two under-bosses, then the main boss, in one fight). The game keeps its own
     // copy of the dungeon so the current boss's name, art, strike and retaliation can change mid-fight.
     const raid = baseRaid && baseRaid.stages ? Object.assign({}, baseRaid, {
@@ -5364,7 +5448,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const g = {
       raid, cfg, round: 1, partyFury: 0, drawPerTurn: cfg.drawPerTurn || 2, turn: 0, phase: 'setup', over: null, log: [], minionsKilled: 0, window: false,
       settings: Object.assign({ autoDefend: true, pauseForInstants: true }, cfg.settings || {}),
-      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0, healed: 0 },
+      players: [], boss: null, stats: { cardsPlayed: 0, dmgDealt: 0, dmgTaken: 0, turns: 0, healed: 0 }, pvp: PV, winTeam: null,
     };
     const H = {
       anim: hooks.anim || noop, update: hooks.update || (() => { }), ask: hooks.ask || null,
@@ -5379,29 +5463,31 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       const full = cfg.noLands ? seat.deck : seat.deck.filter(e => !RB.isResCard(C[idOf(e)])).concat(RB.landsFor(seat.hero, seat.lands, seat.deck.map(idOf)));
       const deck = shuffle(full.map(e => (typeof e === 'string' ? { uid: uid(), id: e } : { uid: uid(), id: e.id, holo: e.holo })), rnd);
       g.players.push({
-        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer,
+        idx: i, name: seat.name || ('Player ' + (i + 1)), heroId: seat.hero, auto: !!seat.auto || !!cfg.bossPlayer, team: TEAMS ? (seat.team != null ? +seat.team : i % 2) : 0,
         hero: { master: null, damage: 0, shield: 0, tempAtk: 0, ex: false, elusive: false, taunt: false, powerUsed: false, dead: false, pet: seat.pet || null },
         deck, hand: [], grave: [], res: [], allies: [], weapon: null, armor: {}, items: [], seeds: [], exile: [], blooms: 0, unearthed: 0,
         resPlayed: false, spareRes: 0, tempRes: 0, threat: 0, stats: { dmg: 0, bossDmg: 0, healed: 0 },
       });
     });
     // #90: companion perks (one tiny bonus per hero; never in boss mode). petUsed marks once-per-fight perks.
-    const perk = p => (!cfg.bossPlayer && p.hero.pet && RB.PET_PERKS && RB.PET_PERKS[p.hero.pet]) || null;
+    const perk = p => (!cfg.bossPlayer && !TEAMS && p.hero.pet && RB.PET_PERKS && RB.PET_PERKS[p.hero.pet]) || null;
     const perkIs = (p, k) => { const q = perk(p); return q && q.k === k ? q : null; };
     const petName = p => (RB.COSMETICS && RB.COSMETICS[p.hero.pet] ? RB.COSMETICS[p.hero.pet].name : 'Companion');
     g.players.forEach(p => { p.hero.petUsed = false; p.hero.petN = 0; p.hero.petRes = 0; const q = perk(p); if (q && q.k === 'maxhp') p.hero.hpB = q.n; });
     const openHand = p => 7 + ((perkIs(p, 'hand') || {}).n || 0);
     const n = g.players.length;
-    g.partyFury = n >= 2 ? 1 : 0;
+    g.partyFury = !DUEL && n >= 2 ? 1 : 0;
     const heroic = cfg.difficulty === 'heroic';
     // dungeons keep their old rule (their 'heroic' mode adds 30% health and +1 strike); raids read RB.RAID_DIFFS
     const DF = D ? { hp: heroic ? 1.3 : 1, strike: heroic ? 1 : 0, cards: 0, counter: heroic ? 1 : 0 } : (RB.RAID_DIFFS[cfg.difficulty] || RB.RAID_DIFFS.normal);
-    const maxHp = Math.round((raid.hp + raid.hpPer * (n - 1) * (DF.partyHp || 1)) * DF.hp * (cfg.bossPlayer ? 1.15 : 1));
+    // #PvP race: the boss has the health it would have against one team (each team only spends part of its effort on it)
+    const nHp = RACE ? Math.min(n, RB.RACE_HP_SEATS || 2) : n;
+    const maxHp = Math.round((raid.hp + raid.hpPer * (nHp - 1) * (DF.partyHp || 1)) * DF.hp * (cfg.bossPlayer ? 1.15 : 1));
     const bdeck = [];
     raid.deck.forEach(([id, k]) => { for (let i = 0; i < k; i++) bdeck.push(id); });
     g.boss = {
       maxHp, damage: 0, deck: shuffle(bdeck, rnd), grave: [], minions: [], events: [], counter: raid.counter ? (DF.counter || 0) : 0,
-      cardsPerTurn: 1 + (DF.cards || 0), strikeBonus: (DF.strike || 0) + (n - 1), enrageAt: DF.enrage || RB.ENRAGE_ROUND, partyStrikes: DF.partyStrikes || null, stunned: false, mark: null, phasesDone: [], lastCard: null,
+      cardsPerTurn: 1 + (DF.cards || 0), strikeBonus: (DF.strike || 0) + ((RACE ? Math.min(n, RB.RACE_ATK_SEATS || 2) : n) - 1), enrageAt: RACE ? Math.min(DF.enrage || RB.ENRAGE_ROUND, RB.RACE_ENRAGE || 18) : DF.enrage || RB.ENRAGE_ROUND, partyStrikes: DF.partyStrikes || null, stunned: false, mark: null, phasesDone: [], lastCard: null,
       level: D ? (cfg.dungeonLevel || 1) : 0, marked: null, turnsTaken: 0, equip: [],
       // #101 Omens: each raid's own deck of signature events, one per boss turn, the next three shown to the party
       omens: raid.omens && !D ? shuffle(raid.omens.slice(), rnd) : [], omenGrave: [], tempStrike: 0,
@@ -5422,7 +5508,16 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const pdef = p => p.hero.master ? C[p.hero.master] : HEROES[p.heroId];
     const heroMax = p => (p.hero.master ? C[p.hero.master].hp : HEROES[p.heroId].hp) + (p.hero.hpB || 0) + p.items.reduce((s, e) => s + (C[e.c.id].maxHp || 0), 0);
     const heroHp = p => heroMax(p) - p.hero.damage;
-    const alive = () => g.players.filter(p => !p.hero.dead);
+    // #PvP: whose eyes an effect sees with. Cards and powers say "each enemy" or "each friendly hero"; with two teams that
+    // depends on who played them. Outside team games (and during the boss's own turn) everyone is one party.
+    const povStack = [];
+    const pov = () => povStack.length ? povStack[povStack.length - 1] : (g.phase === 'boss' || g.phase === 'setup') ? null : g.players[g.turn] || null;
+    async function asP(p, fn) { if (!TEAMS || !p) return fn(); povStack.push(p); try { return await fn(); } finally { povStack.pop(); } }
+    const allAlive = () => g.players.filter(p => !p.hero.dead);
+    const mates = p => allAlive().filter(q => q.team === p.team);
+    const foesOf = p => allAlive().filter(q => q.team !== p.team);
+    const alive = () => { if (!TEAMS) return allAlive(); const v = pov(); return v ? mates(v) : allAlive(); };
+    const ownerOf = a => g.players.find(q => q.allies.includes(a)) || null;
     const gear = p => [p.weapon, ...Object.values(p.armor), ...p.items].filter(Boolean);
     const deep = p => p.grave.length >= 10; // Sunscorch: 10 or more cards in your discard pile
     const spellPower = p => gear(p).reduce((s, e) => s + (C[e.c.id].spell || 0) + (deep(p) ? (C[e.c.id].spellDeep || 0) : 0), 0) + (p.hero.master ? (C[p.hero.master].spell || 0) : 0);
@@ -5444,18 +5539,22 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const costOf = (p, d) => { let c = d.cost || 0; if (d.type === 'ability' && !p.abTurn) c -= gearSum(p, 'firstAbilityOff'); if ((d.type === 'weapon' || d.type === 'armor') && p.quickChange) c -= p.quickChange; return Math.max(0, c); };
     const hasKw = (d, k) => (d.kw || []).includes(k);
     const allyKw = (p, a, k) => hasKw(allyDef(a), k) || (k === 'ferocity' && p.hero.master && C[p.hero.master].allyFerocity);
-    const minDef = m => TK[m.id];
-    const minAtk = m => Math.max(0, (minDef(m).atk || 0) + m.atkB + (hasKw(minDef(m), 'frenzy') ? m.damage : 0)); // #103 Frenzy
-    const minMax = m => minDef(m).hp + m.hpB;
+    // (#PvP: in team games a card's "minion" can be an enemy player's ally, so these also accept an ally)
+    const isAllyObj = m => TEAMS && !g.boss.minions.includes(m) && !!ownerOf(m);
+    const minDef = m => isAllyObj(m) ? def(m.id) : TK[m.id];
+    const minAtk = m => { if (isAllyObj(m)) return allyAtk(ownerOf(m), m); return Math.max(0, (minDef(m).atk || 0) + m.atkB + (hasKw(minDef(m), 'frenzy') ? m.damage : 0)); }; // #103 Frenzy
+    const minMax = m => { if (isAllyObj(m)) return allyMax(ownerOf(m), m); return minDef(m).hp + m.hpB; };
     const bossHp = () => g.boss.maxHp - g.boss.damage;
     const guardians = () => g.boss.minions.filter(m => hasKw(minDef(m), 'guardian'));
     const available = p => p.res.filter(r => !r.ex).length + p.tempRes;
     const isActive = p => g.phase === 'main' && g.players[g.turn] === p;
     // a Shrouded hero can't be attacked — until the boss is Enraged: then it sees through the shadows (no fight can stall forever)
     const shrouded = p => p.hero.elusive && !(g.boss && g.boss.enrage);
+    const teamName = k => RB.TEAM_NAMES[k] || ('Team ' + (k + 1));
 
     const T = {
       boss: () => ({ t: 'boss' }), minion: m => ({ t: 'minion', m }), hero: p => ({ t: 'hero', p }), ally: (p, a) => ({ t: 'ally', p, a }),
+      foeAlly: (p, a) => ({ t: 'ally', p, a, m: a }), // an enemy player's ally, standing in for a card's minion
     };
     const same = (a, b) => a && b && a.t === b.t && (a.t === 'boss' || (a.t === 'minion' && a.m === b.m) || (a.t === 'hero' && a.p === b.p) || (a.t === 'ally' && a.a === b.a));
     const refId = t => t.t === 'boss' ? 'boss' : t.t === 'minion' ? t.m.uid : t.t === 'hero' ? 'hero' + t.p.idx : t.a.uid;
@@ -5464,9 +5563,13 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const maxHpOf = t => t.t === 'boss' ? g.boss.maxHp : t.t === 'minion' ? minMax(t.m) : t.t === 'hero' ? heroMax(t.p) : allyMax(t.p, t.a);
     const isAlive = t => t.t === 'boss' ? !g.over : t.t === 'minion' ? g.boss.minions.includes(t.m) : t.t === 'hero' ? !t.p.hero.dead : t.p.allies.includes(t.a);
 
-    const enemies = () => [T.boss(), ...g.boss.minions.map(T.minion)];
-    const minions = () => g.boss.minions.map(T.minion);
-    const allAllies = () => g.players.flatMap(p => p.allies.map(a => T.ally(p, a)));
+    const bossSide = () => DUEL ? [] : [T.boss(), ...g.boss.minions.map(T.minion)];
+    const foeAllies = p => foesOf(p).flatMap(q => q.allies.map(a => T.foeAlly(q, a)));
+    const enemies = () => { const v = TEAMS && pov(); return v ? [...bossSide(), ...foesOf(v).map(T.hero), ...foeAllies(v)] : bossSide(); };
+    const minions = () => { const v = TEAMS && pov(); return [...(DUEL ? [] : g.boss.minions.map(T.minion)), ...(v ? foeAllies(v) : [])]; };
+    const allAllies = () => { const v = TEAMS && pov(); return (v ? mates(v) : g.players).flatMap(p => p.allies.map(a => T.ally(p, a))); };
+    // a card that hits "the boss": in a duel it hits the weakest enemy hero instead
+    const bossTarget = () => { if (!DUEL) return T.boss(); const v = pov(); const fs = v ? foesOf(v) : allAlive(); if (!fs.length) return T.hero(g.players[0]); return T.hero(fs.reduce((a, b) => heroHp(b) < heroHp(a) ? b : a)); };
     const friendlyChars = () => [...alive().map(T.hero), ...allAllies()];
     const pick = arr => arr.length ? arr[Math.floor(rnd() * arr.length)] : null;
 
@@ -5478,15 +5581,16 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const counterReset = () => { const C0 = raid.counter; if (C0 && C0.resetText) log(C0.resetText, 'def'); };
 
     /* ---------- target validation ---------- */
+    function withP(p, fn) { povStack.push(p); try { return fn(); } finally { povStack.pop(); } }
     function targetsFor(kind, p) {
       switch (kind) {
-        case 'enemy': return enemies();
-        case 'minion': return minions();
-        case 'friendly': return friendlyChars();
-        case 'friendlyHero': return alive().map(T.hero);
-        case 'ally': return allAllies();
+        case 'enemy': return p && TEAMS ? withP(p, enemies) : enemies();
+        case 'minion': return p && TEAMS ? withP(p, minions) : minions();
+        case 'friendly': return p && TEAMS ? withP(p, friendlyChars) : friendlyChars();
+        case 'friendlyHero': return (p && TEAMS ? mates(p) : alive()).map(T.hero);
+        case 'ally': return p && TEAMS ? withP(p, allAllies) : allAllies();
         case 'myAlly': return p ? p.allies.filter(a => !a.ex && !a.frozen).map(a => T.ally(p, a)) : []; // #161 Highmoor Coliseum
-        case 'deadHero': return g.players.filter(q => q.hero.dead).map(T.hero);
+        case 'deadHero': { const me = p || (TEAMS ? pov() : null); return g.players.filter(q => q.hero.dead && (!me || q.team === me.team)).map(T.hero); }
         default: return [];
       }
     }
@@ -5497,8 +5601,15 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       return allyKw(p, who, 'longrange') || allyKw(p, who, 'skyward'); // #112 Skyward reaches a flier too
     }
     function attackTargets(p, who) {
-      const ts = g.boss.minions.filter(m => !hasKw(minDef(m), 'elusive')).map(T.minion);
-      if (!guardians().length && (!g.boss.flying || who == null || volleyAttack(p, who))) ts.unshift(T.boss());
+      const ts = DUEL ? [] : g.boss.minions.filter(m => !hasKw(minDef(m), 'elusive')).map(T.minion);
+      if (!DUEL && !guardians().length && (!g.boss.flying || who == null || volleyAttack(p, who))) ts.unshift(T.boss());
+      // #PvP: enemy heroes and their allies. A Taunting enemy hero must be dealt with first; Shrouded heroes and Elusive allies can't be attacked.
+      const me = TEAMS ? (p || pov()) : null;
+      if (me) {
+        const fs = foesOf(me), taunts = fs.filter(q => q.hero.taunt && !shrouded(q));
+        if (taunts.length) ts.push(...taunts.map(T.hero));
+        else ts.push(...fs.filter(q => !shrouded(q)).map(T.hero), ...fs.flatMap(q => q.allies.filter(a => !allyKw(q, a, 'elusive')).map(a => T.ally(q, a))));
+      }
       return ts;
     }
 
@@ -5509,6 +5620,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       let n = amount;
       if ((src.kind === 'spell' || src.kind === 'power') && src.p) n += spellPower(src.p);
       if (target.t === 'boss' && g.boss.mark) n += g.boss.mark.amount;
+      if (TEAMS && target.t === 'hero' && g.boss.mark && g.boss.mark.team != null && g.boss.mark.team !== target.p.team) n += g.boss.mark.amount; // #PvP Hunter's Mark
       if (target.t === 'boss' && (src.kind === 'hero' || src.kind === 'ally')) { const st = stageNow(); if (st && st.rule && st.rule.armor && n > 0) n = Math.max(1, n - st.rule.armor); }
       if (src.kind === 'minion' || src.strike) n += g.partyFury;
       if (target.t === 'hero') {
@@ -5536,6 +5648,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         src.p.threat += n; src.p.stats.dmg += n; g.stats.dmgDealt += n;
         if (target.t === 'boss') src.p.stats.bossDmg += n;
       }
+      if (TEAMS && src.p && (target.t === 'hero' || target.t === 'ally') && target.p.team !== src.p.team) { src.p.stats.dmg += n; g.stats.dmgDealt += n; }
       if (target.t === 'hero' || target.t === 'ally') g.stats.dmgTaken += n;
       if (target.t === 'hero' || target.t === 'boss') log(`${nameOf(target)} takes ${n} damage${target.t === 'hero' ? ` (${Math.max(0, hpOf(target))} left)` : ''}.`, target.t === 'hero' ? 'hurt' : 'dmg');
       await H.anim('dmg', { ref: refId(target), amount: n, kind: src.kind });
@@ -5562,7 +5675,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         log(`${d.name} blocks ${red}.`, 'def');
         await H.anim('armor', { ref: 'hero' + p.idx, amount: red, name: d.name });
         if (d.blockDraw) { log(`${d.name}: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
-        if (d.onBlock && !g.over) await d.onBlock(api, p, g.curAtt);
+        if (d.onBlock && !g.over) await asP(p, () => d.onBlock(api, p, g.curAtt));
         if (n <= 0) break;
       }
       return n;
@@ -5570,6 +5683,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     async function heal(target, amount, src) {
       if (!target || !isAlive(target) || g.over) return 0;
       { const hp = (src && src.p) || ((g.phase === 'main' || g.phase === 'start') && (target.t === 'hero' || target.t === 'ally') ? g.players[g.turn] : null); if (hp && amount > 0) amount += itemSum(hp, 'healPlus'); }
+      // #PvP Dampening (as in arena fights): healing in a duel is halved, rounded up, so fights can't stall on heals
+      if (DUEL && amount > 0) amount = Math.ceil(amount * (RB.PVP_DAMPEN != null ? RB.PVP_DAMPEN : 0.5));
       let cur = target.t === 'boss' ? g.boss.damage : target.t === 'minion' ? target.m.damage : target.t === 'hero' ? target.p.hero.damage : target.a.damage;
       const h = Math.min(cur, amount);
       if (h <= 0) return 0;
@@ -5591,7 +5706,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       if (hpOf(t) > 0) return;
       if (t.t === 'boss') {
         if (raid.stages && g.boss.stage < raid.stages.length - 1) { await nextStage(); return; }
-        g.over = 'win'; log(`${raid.boss} has fallen!`, 'win'); await H.anim('bossDeath', {}); H.update(); return;
+        g.over = 'win';
+        if (RACE) { const k = src && src.p ? src.p : pov() || g.players[g.turn]; g.winTeam = k ? k.team : 0; log(`${raid.boss} has fallen! The ${teamName(g.winTeam)} team lands the killing blow and wins the race!`, 'win'); }
+        else log(`${raid.boss} has fallen!`, 'win');
+        await H.anim('bossDeath', {}); H.update(); return;
       }
       if (t.t === 'minion') {
         const d = minDef(t.m);
@@ -5601,7 +5719,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         await H.anim('death', { ref: t.m.uid });
         H.update();
         if (d.onDeath) await d.onDeath(api, { m: t.m });
-        for (const q of alive()) for (const e of [...q.items]) { const ed = C[e.c.id]; if (ed.onMinionDeath && !g.over) await ed.onMinionDeath(api, q); } // #161 Signet of the Grave Lord
+        for (const q of allAlive()) for (const e of [...q.items]) { const ed = C[e.c.id]; if (ed.onMinionDeath && !g.over) await asP(q, () => ed.onMinionDeath(api, q)); } // #161 Signet of the Grave Lord
         return;
       }
       if (t.t === 'ally') {
@@ -5611,7 +5729,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         log(`${d.name} falls.`, 'loss');
         await H.anim('death', { ref: a.uid });
         H.update();
-        if (d.onDeath) await d.onDeath(api, { p, a });
+        // #PvP: an enemy player's ally counts as a slain minion for the killer's quests and "when a minion dies" gear
+        if (TEAMS && src && src.p && src.p.team !== p.team) { g.minionsKilled++; for (const q of foesOf(p)) for (const e of [...q.items]) { const ed = C[e.c.id]; if (ed.onMinionDeath && !g.over) await asP(q, () => ed.onMinionDeath(api, q)); } }
+        if (d.onDeath) await asP(p, () => d.onDeath(api, { p, a }));
         if (raid.onAllyDeath) await raid.onAllyDeath(api, p, a);
         if (perkIs(p, 'allyDraw') && !p.hero.petUsed && !p.hero.dead) { p.hero.petUsed = true; log(`${petName(p)} gathers the fallen soul: ${pdef(p).name} draws a card.`, 'def'); await draw(p, 1); }
         return;
@@ -5635,7 +5755,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
           return;
         }
         // #161 Phoenix Plume: an item that saves any friendly hero, once
-        const plumeP = alive().find(q => q.items.some(e => C[e.c.id].cheatAny));
+        const plumeP = (TEAMS ? mates(p) : alive()).find(q => q.items.some(e => C[e.c.id].cheatAny));
         if (plumeP) {
           const e = plumeP.items.find(x => C[x.c.id].cheatAny);
           plumeP.items.splice(plumeP.items.indexOf(e), 1); plumeP.exile.push(e.c);
@@ -5662,7 +5782,11 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         log(`${pdef(p).name} has been defeated!`, 'loss');
         await H.anim('heroDeath', { ref: 'hero' + p.idx });
         H.update();
-        if (!alive().length) { g.over = 'lose'; log('The raid has wiped.', 'loss'); H.update(); }
+        if (TEAMS) {
+          const left = [0, 1].filter(k => allAlive().some(q => q.team === k));
+          if (left.length === 1) { g.over = 'win'; g.winTeam = left[0]; log(`Every ${teamName(1 - left[0])} hero has fallen. The ${teamName(left[0])} team wins!`, 'win'); await H.anim('banner', { text: `${teamName(left[0])} team wins!`, kind: 'win' }); H.update(); }
+          else if (!left.length) { g.over = 'lose'; g.winTeam = null; log('Every hero has fallen. Nobody wins.', 'loss'); H.update(); }
+        } else if (!alive().length) { g.over = 'lose'; log('The raid has wiped.', 'loss'); H.update(); }
       }
     }
     // #92: an under-boss falls; its equipment goes with it, the dungeon levels up and the next boss steps in
@@ -5788,10 +5912,11 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       if (g.over) return { ok: false, why: 'The raid is over.' };
       if (p.hero.dead) return { ok: false, why: 'Your hero has been defeated.' };
       if (d.type === 'quest' || d.type === 'location' || d.type === 'land') return { ok: false, why: 'Play this card as a resource.' };
+      if (DUEL && d.mythic) return { ok: false, why: 'Mythic raid cards do nothing in the Arena. You can still play it as a resource.' };
       const myTurn = isActive(p);
       if (!myTurn) {
         const inst = d.type === 'ability' && d.speed === 'instant';
-        if (!(inst && (g.window || (g.react && reactMatch(d, p, g.react))))) return { ok: false, why: d.speed === 'instant' ? (d.react ? `Instants can be played on your turn or in response to a boss card. This one can also React ${RB.REACT[d.react]}.` : 'Instants can be played on your turn or in response to a boss card.') : 'You can only play this on your turn.' };
+        if (!(inst && (g.window || (g.react && reactMatch(d, p, g.react))))) return { ok: false, why: d.speed === 'instant' && TEAMS && !d.react ? 'Instants can be played on your turn.' : d.speed === 'instant' ? (d.react ? `Instants can be played on your turn or in response to a boss card. This one can also React ${RB.REACT[d.react]}.` : 'Instants can be played on your turn or in response to a boss card.') : 'You can only play this on your turn.' };
       }
       { const k = costOf(p, d); if (available(p) < k) return { ok: false, why: `Needs ${k} resource${k === 1 ? '' : 's'} (you have ${available(p)}).` }; }
       if (hasKw(d, 'unique') && d.type === 'ally' && p.allies.some(a => a.id === d.id)) return { ok: false, why: 'Unique: you already have one in play.' };
@@ -5821,7 +5946,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     function needsTarget(inst) { const d = C[inst.id]; return d.target && d.target !== 'none' && targetsFor(d.target).length ? d.target : null; }
 
     /* ---------- actions ---------- */
-    async function playResource(p, inst) {
+    async function playResource(p, inst) { return asP(p, () => playResource0(p, inst)); }
+    async function playResource0(p, inst) {
       if (!isActive(p) || p.resPlayed) return false;
       const i = p.hand.indexOf(inst); if (i < 0) return false;
       if (!canResource(p, inst)) return false; // #125: only three cards that aren't lands, quests or locations per fight
@@ -5865,7 +5991,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     // #125: lands, quests and locations can always become resources; any other card only RB.SPARE_RES times a fight
     function spareLeft(p) { return Math.max(0, RB.SPARE_RES - (p.spareRes || 0)); }
     function canResource(p, inst) { const t = C[inst.id].type; return t === 'land' || t === 'quest' || t === 'location' || cfg.noLands || spareLeft(p) > 0; }
-    async function playCard(p, inst, target, opts) {
+    async function playCard(p, inst, target, opts) { return asP(p, () => playCard0(p, inst, target, opts)); }
+    async function playCard0(p, inst, target, opts) {
       opts = opts || {};
       const ok = opts.unearth ? canUnearth(p, inst) : opts.free ? { ok: !g.over && !p.hero.dead } : canPlay(p, inst);
       if (!ok.ok) return ok;
@@ -5939,7 +6066,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       const a = who; return p.allies.includes(a) && !a.ex && !a.sick && !a.frozen && allyAtk(p, a) > 0;
     }
     function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? weaponAtk(p) : 0); }
-    async function attack(p, who, target) {
+    async function attack(p, who, target) { return asP(p, () => attack0(p, who, target)); }
+    async function attack0(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
       if (!attackTargets(p, who).some(t => same(t, target))) return { ok: false, why: guardians().length && target.t === 'boss' ? 'A Guardian protects the boss — defeat it first.' : g.boss.flying && target.t === 'boss' ? `${raid.short} is in the air — only Volley and Skyward attacks can reach him.` : 'Invalid target.' };
       let atk, longrange = false, attackerT, onAttack = null, wname = '', ironHide = 0;
@@ -5954,6 +6082,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       } else {
         atk = allyAtk(p, who); who.ex = true; longrange = allyKw(p, who, 'longrange'); attackerT = T.ally(p, who); if (allyDef(who).onAttack) { const ad = allyDef(who), me = who; onAttack = (E, c) => ad.onAttack(E, Object.assign({ a: me }, c)); }
       }
+      if (target.t === 'hero' || target.t === 'ally') { await pvpHit(p, who, attackerT, target, atk, longrange, onAttack, wname, ironHide); H.update(); return { ok: true }; }
       log(`${nameOf(attackerT)} attacks ${nameOf(target)}${wname}.`, 'atk');
       await H.anim('attack', { from: refId(attackerT), to: refId(target) });
       const back = Math.max(0, (longrange ? 0 : target.t === 'boss' ? raid.retaliation + (g.boss.retalBonus || 0) : minAtk(target.m)) - ironHide);
@@ -5963,7 +6092,50 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       H.update();
       return { ok: true };
     }
-    async function usePower(p, target) {
+    // #PvP: a hero or ally attacks an enemy player's hero or ally. The defenders' Bulwark allies may cover, their React
+    // cards may answer, and the defender hits back (an ally with its ATK, a hero with its weapon's strike back).
+    async function pvpHit(p, who, attackerT, target, atk, longrange, onAttack, wname, ironHide) {
+      let defT = target;
+      const attDef = who === 'hero' ? null : allyDef(who), aName = nameOf(attackerT);
+      const cv = await chooseCover(target, atk, aName, attDef, false);
+      if (cv) {
+        cv.a.ex = true; defT = cv;
+        log(`${allyDef(cv.a).name} covers ${nameOf(target)}!`, 'def');
+        if (allyDef(cv.a).onCover && !g.over) await asP(cv.p, () => allyDef(cv.a).onCover(api, { p: cv.p, a: cv.a, att: attackerT }));
+        if (g.over || !isAlive(attackerT)) return;
+      }
+      log(`${aName} attacks ${nameOf(defT)}${wname}.`, 'atk');
+      await H.anim('attack', { from: refId(attackerT), to: refId(defT) });
+      const rctx = { attacker: aName, atk, defT, isBoss: who === 'hero', attackerDef: attDef, attT: attackerT, pvp: true };
+      await reactWindow(rctx);
+      if (g.over || !isAlive(defT)) return;
+      if (rctx.cancel || !isAlive(attackerT)) { if (rctx.cancel) await H.anim('banner', { text: 'Attack cancelled', kind: 'def' }); return; }
+      if (defT.t === 'hero' && shrouded(defT.p)) { log(`${pdef(defT.p).name} slips into the shadows — the attack misses!`, 'def'); await H.anim('banner', { text: 'Missed!', kind: 'def' }); return; }
+      let back = 0;
+      if (!longrange) {
+        if (defT.t === 'ally') back = allyAtk(defT.p, defT.a) + (allyDef(defT.a).thorns || 0);
+        else {
+          const q = defT.p;
+          if (q.weapon && !q.weapon.ex && available(q) >= strikeCost(q)) {
+            let yes;
+            if (g.settings.autoDefend || q.auto || cfg.allAuto || !H.ask) yes = RB.AI.chooseStrikeBack(api, q);
+            else yes = await H.ask('strikeBack', { p: q, attacker: aName });
+            if (yes) { back = heroAttackValue(q, true); pay(q, strikeCost(q)); q.weapon.ex = true; log(`${pdef(q).name} strikes back with ${C[q.weapon.c.id].name}.`, 'def'); }
+          } else if (heroAtk(q) > 0) back = heroAtk(q);
+        }
+        back = Math.max(0, back - ironHide);
+      }
+      const before = defT.t === 'ally' ? hpOf(defT) : 0;
+      const dealt = await dmg(defT, atk, { p, kind: who === 'hero' ? 'hero' : 'ally' });
+      if (defT.t === 'ally' && attDef && hasKw(attDef, 'crushing') && dealt > before && !defT.p.hero.dead && !g.over) {
+        const over = dealt - before; log(`${aName} crushes through: ${over} damage carries on to ${pdef(defT.p).name}.`, 'atk');
+        await dmg(T.hero(defT.p), over, { p, kind: 'effect' });
+      }
+      if (back > 0 && !g.over && isAlive(attackerT)) await dmg(attackerT, back, { p: defT.p, kind: defT.t === 'hero' ? 'hero' : 'ally' });
+      if (onAttack && !g.over) await onAttack(api, { p, defender: defT });
+    }
+    async function usePower(p, target) { return asP(p, () => usePower0(p, target)); }
+    async function usePower0(p, target) {
       const hd = HEROES[p.heroId];
       if (!isActive(p) || p.hero.powerUsed || p.hero.master || p.hero.dead) return { ok: false, why: 'Your hero power has already been used.' };
       const pw = hd.power;
@@ -5976,7 +6148,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       return { ok: true };
     }
     function questReady(p, r) { const d = C[r.c.id]; return r.quest && !r.done && (!d.cond || d.cond(api, p, r)) && available(p) >= (d.qcost || 0); }
-    async function completeQuest(p, r) {
+    async function completeQuest(p, r) { return asP(p, () => completeQuest0(p, r)); }
+    async function completeQuest0(p, r) {
       if (!isActive(p) || !questReady(p, r)) return { ok: false, why: 'This quest can\'t be completed yet.' };
       const d = C[r.c.id];
       pay(p, d.qcost || 0);
@@ -5990,7 +6163,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     }
     const drawBlocked = p => p.hand.length >= 10 ? 'Your hand is full (10 cards), so the card would be thrown away.' : (!p.deck.length && !p.grave.length) ? 'You have no cards left to draw.' : null;
     function locationReady(p, r) { return r && r.loc && !r.used && available(p) >= C[r.c.id].lcost && !(C[r.c.id].draws && drawBlocked(p)) && (!C[r.c.id].lready || C[r.c.id].lready(api, p)); }
-    async function useLocation(p, r, target) {
+    async function useLocation(p, r, target) { return asP(p, () => useLocation0(p, r, target)); }
+    async function useLocation0(p, r, target) {
       if (!isActive(p) || !locationReady(p, r)) return { ok: false, why: 'The location can\'t be used right now.' };
       const d = C[r.c.id];
       if (d.ltarget && (!target || !targetsFor(d.ltarget, p).some(t => same(t, target)))) return { ok: false, why: 'Choose a target.' };
@@ -6001,7 +6175,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       return { ok: true };
     }
     function itemReady(p, e) { const d = C[e.c.id]; return d.use && !e.ex && available(p) >= d.use.cost && (!d.use.ready || d.use.ready(api, p)) && (d.use.target === 'none' || !d.use.target || targetsFor(d.use.target, p).length); }
-    async function useItem(p, e, target) {
+    async function useItem(p, e, target) { return asP(p, () => useItem0(p, e, target)); }
+    async function useItem0(p, e, target) {
       const d = C[e.c.id];
       if (!isActive(p) || !itemReady(p, e)) return { ok: false, why: 'This item can\'t be used right now.' };
       if (d.use.target && d.use.target !== 'none' && (!target || !targetsFor(d.use.target, p).some(t => same(t, target)))) return { ok: false, why: 'Choose a target.' };
@@ -6029,7 +6204,12 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       H.update();
       await H.anim('turn', { p: p.idx, name: p.name, hero: pdef(p).name });
       log(`— ${pdef(p).name}'s turn (round ${g.round}) —`, 'turn');
+      // #PvP: going second is a disadvantage, so the second team's heroes draw an extra card on their first turn
+      if (TEAMS && g.round === 1 && p.team !== g.players[0].team && RB.PVP_SECOND_BONUS !== 0) { log(`${pdef(p).name} goes second: draws an extra card and gets +1 resource this turn.`, 'def'); await draw(p, 1); p.tempRes += 1; }
+      if (p.hero.stunNext) { p.hero.stunNext = false; p.hero.ex = true; log(`${pdef(p).name} is stunned and can't attack this turn.`, 'loss'); }
       await draw(p, g.drawPerTurn);
+      // Arena fatigue goes straight past wards and armor (otherwise a well-armored hero could hold out forever)
+      if (DUEL && g.round >= RB.PVP_FATIGUE && !p.hero.dead) { const k = (g.round - RB.PVP_FATIGUE + 1) * (RB.PVP_FATIGUE_STEP || 2); p.hero.damage += k; log(`Arena fatigue: ${pdef(p).name} loses ${k} health (${Math.max(0, heroHp(p))} left).`, 'boss'); await H.anim('dmg', { ref: 'hero' + p.idx, amount: k, kind: 'effect' }); H.update(); await checkDeath(T.hero(p), {}); if (g.over) return; if (p.hero.dead) return endHeroTurn(); }
       if (p.hero.petRes) { p.tempRes += p.hero.petRes; log(`${petName(p)} brings a tailwind: +${p.hero.petRes} resource this turn.`, 'def'); p.hero.petRes = 0; H.update(); }
       { const q = perkIs(p, 'trickle'); if (q && p.hero.petN < q.n && p.hero.damage > 0) { p.hero.petN++; await heal(T.hero(p), 1); } }
       if (p.hero.master && C[p.hero.master].mstart) await C[p.hero.master].mstart(api, p);
@@ -6060,15 +6240,23 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       g.stats.turns++;
       let nxt = g.turn + 1;
       while (nxt < g.players.length && g.players[nxt].hero.dead) nxt++;
-      if (nxt >= g.players.length) { await bossTurn(); return; }
+      if (nxt >= g.players.length) { if (DUEL) await roundEnd(); else await bossTurn(); return; }
       g.turn = nxt;
+      await startHeroTurn();
+    }
+    // #PvP duels have no boss turn: the round simply starts again with the first hero still standing
+    async function roundEnd() {
+      g.players.forEach(p => p.threat = 0);
+      g.round++;
+      g.turn = g.players.findIndex(p => !p.hero.dead);
+      H.update();
       await startHeroTurn();
     }
     async function reactionWindow(card) {
       if (g.over) return;
       let guard = 0;
       while (guard++ < 6) {
-        const responders = alive().filter(p => p.hand.some(c => C[c.id].type === 'ability' && C[c.id].speed === 'instant' && !C[c.id].reactOnly && available(p) >= C[c.id].cost));
+        const responders = allAlive().filter(p => p.hand.some(c => C[c.id].type === 'ability' && C[c.id].speed === 'instant' && !C[c.id].reactOnly && available(p) >= C[c.id].cost));
         if (!responders.length) return;
         g.window = true;
         let choice = null;
@@ -6111,7 +6299,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     }
     function reactOptions(ctx, who) {
       const out = [];
-      for (const p of (who || alive())) for (const c of p.hand) {
+      who = who || (TEAMS && ctx.defT && ctx.defT.p ? mates(ctx.defT.p) : alive());
+      for (const p of who) for (const c of p.hand) {
         const d = C[c.id];
         if (d.type !== 'ability' || d.speed !== 'instant' || !reactMatch(d, p, ctx) || available(p) < d.cost) continue;
         const target = reactTarget(d, ctx);
@@ -6119,7 +6308,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         out.push({ p, inst: c, target });
       }
       // Sunscorch: a React Instant in the discard pile can be Unearthed when its trigger happens
-      for (const p of (who || alive())) for (const c of p.grave) {
+      for (const p of who) for (const c of p.grave) {
         const d = C[c.id];
         if (!d.unearth || d.type !== 'ability' || d.speed !== 'instant' || !reactMatch(d, p, ctx) || available(p) < unearthCost(p, d)) continue;
         if (out.some(o => o.p === p && o.inst.id === c.id)) continue;
@@ -6129,7 +6318,8 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       }
       return out;
     }
-    async function reactWindow(ctx) {
+    async function reactWindow(ctx) { if (TEAMS && ctx.defT && ctx.defT.p) return asP(ctx.defT.p, () => reactWindow0(ctx)); return reactWindow0(ctx); }
+    async function reactWindow0(ctx) {
       if (g.over || !isAlive(ctx.defT)) return;
       const opts = reactOptions(ctx);
       if (!opts.length) return;
@@ -6189,7 +6379,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       }
       // #101: omens come every boss turn for 3–4 heroes, every other boss turn for 2, every third for a solo hero
       if (B.omens.length && api.omenDue(g.round)) { await revealOmen(); if (g.over) return; }
-      const k = D ? flipCount() : B.cardsPerTurn + Math.max(0, alive().length - 1);
+      const k = D ? flipCount() : B.cardsPerTurn + Math.max(0, (RACE ? Math.min(alive().length, RB.RACE_ATK_SEATS || 2) : alive().length) - 1); // (#PvP race: the boss acts as against one team)
       if (D) log(`${raid.short} is level ${B.level}: flips ${k} card${k > 1 ? 's' : ''}.`, 'boss');
       const drawBoss = () => { if (!B.deck.length) { B.deck = shuffle(B.grave.splice(0), rnd); log(`${raid.short}'s deck is reshuffled.`, 'boss'); } return B.deck.pop(); };
       if (cfg.bossPlayer && H.ask) {
@@ -6260,7 +6450,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       if (attackerDef && hasKw(attackerDef, 'ambush')) return [];
       const out = [];
       // dungeons: the boss's mark means the marked hero faces it with only their own Bulwark allies
-      for (const q of (D ? [targetT.p] : alive())) for (const a of q.allies) {
+      for (const q of (D ? [targetT.p] : TEAMS ? mates(targetT.p) : alive())) for (const a of q.allies) {
         if (!allyKw(q, a, 'protector') || a.ex || a.frozen) continue;
         if (targetT.t === 'ally' && targetT.a === a) continue;
         out.push(T.ally(q, a));
@@ -6288,7 +6478,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
           cv.a.ex = true; defT = cv;
           if (cv.p !== targetT.p) { cv.p.threat += atkVal * 2; log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}! The boss marks ${pdef(cv.p).name} as a threat.`, 'def'); }
           else log(`${allyDef(cv.a).name} covers ${nameOf(targetT)}!`, 'def');
-          if (allyDef(cv.a).onCover && !g.over) await allyDef(cv.a).onCover(api, { p: cv.p, a: cv.a, att: isBoss ? T.boss() : T.minion(attackerRef) }); // #161
+          if (allyDef(cv.a).onCover && !g.over) await asP(cv.p, () => allyDef(cv.a).onCover(api, { p: cv.p, a: cv.a, att: isBoss ? T.boss() : T.minion(attackerRef) })); // #161
           if (g.over || (!isBoss && !g.boss.minions.includes(attackerRef))) return;
         }
       }
@@ -6387,7 +6577,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       g, raid, T, rnd, log, same, refId, nameOf, hpOf, maxHpOf, isAlive, pdef, heroMax, heroHp, heroAtk, allyAtk, allyMax, allyDef, allyKw, minDef, minAtk, minMax, bossHp, available, spellPower, guardians,
       canPlay, canEquip, needsTarget, geared, strikeCost, weaponAtk, costOf, deep, unearthCost, canUnearth, unearthable, plantSeed, growSeeds, bloomAll, bury, drawBlocked, targetsFor, attackTargets, canAttackWith, heroAttackValue, questReady, locationReady, itemReady, isActive, gear,
       playResource, canResource, spareLeft, discardCard, playCard, unearth: (p, inst, target) => playCard(p, inst, target, { unearth: true }), attack, usePower, completeQuest, useLocation, useItem, endHeroTurn,
-      start: async () => { log(D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
+      start: async () => { log(DUEL ? `The duel in the Arena begins: ${teamName(0)} against ${teamName(1)}.` : RACE ? `The race on ${raid.name} begins: ${teamName(0)} against ${teamName(1)}, and ${raid.short} against everyone.` : D ? `The party enters ${raid.name}.` : `The raid on ${raid.name} begins.`, 'turn'); for (const p of g.players) { for (let i = 0; i < 2 && p.deck.length; i++) p.res.push({ c: p.deck.pop(), ex: false }); await draw(p, openHand(p)); } log('Each hero begins with 2 resources from the war chest.', '');
         if (raid.setup) await raid.setup(api); H.update(); g.turn = 0;
         { const st = stageNow(); if (st) { log(`${st.boss} blocks the way.${st.rule ? ` ${st.rule.name}: ${st.rule.text}` : ''}`, 'boss'); if (st.rule && st.rule.onEnter) await st.rule.onEnter(api); H.update(); } }
         for (const p of g.players) { const q = perk(p); if (!q) continue;
@@ -6398,6 +6588,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         }
         if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
       flipCount, markedHero, stageNow, attackTargets, volleyAttack, coverOptions, reactOptions, reactMatch,
+      // #PvP
+      pvp: PV, duel: DUEL, race: RACE, teams: TEAMS, teamName, mates, foesOf, allAlive, pov,
+      allTargets: () => [...(DUEL ? [] : [T.boss(), ...g.boss.minions.map(T.minion)]), ...g.players.map(T.hero), ...g.players.flatMap(q => q.allies.map(a => T.ally(q, a)))],
+      kwOf: t => t.t === 'minion' ? (minDef(t.m).kw || []) : t.t === 'ally' ? (allyDef(t.a).kw || []) : [],
       omenEvery: () => { const k = g.players.length; return k >= 3 ? 1 : k === 2 ? 2 : 3; },
       omenDue: r => r > 1 && (r - 1) % api.omenEvery() === 0,
       // the round whose boss turn brings the next omen (for the battle screen)
@@ -6408,12 +6602,13 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       aoe: (list, amount, cap) => {
         const CAP = cap || RB.AOE_CAP; // cap 4 when the same card also hits the boss or a chosen target
         if (!list || list.length <= CAP) return list;
-        const n = amount || 0, boss = list.filter(t => t.t === 'boss'), mins = list.filter(t => t.t === 'minion');
+        // (#PvP: enemy heroes are always hit, like the boss; enemy allies are ranked like minions)
+        const n = amount || 0, boss = list.filter(t => t.t === 'boss' || t.t === 'hero'), mins = list.filter(t => t.t === 'minion' || t.t === 'ally');
         const score = t => {
-          const d = minDef(t.m), hp = hpOf(t), real = n - (hasKw(d, 'thickhide') ? 1 : 0);
-          let s = minAtk(t.m) * 5 - hp * 0.2;
+          const d = t.t === 'ally' ? allyDef(t.a) : minDef(t.m), hp = hpOf(t), real = n - (hasKw(d, 'thickhide') ? 1 : 0);
+          let s = (t.t === 'ally' ? allyAtk(t.p, t.a) : minAtk(t.m)) * 5 - hp * 0.2;
           if (hasKw(d, 'guardian')) s += 1000;
-          if (raid.halvedBy && t.m.id === raid.halvedBy) s += 900;
+          if (raid.halvedBy && t.m && t.m.id === raid.halvedBy) s += 900;
           if (n && hp <= real) s += 500;
           return s;
         };
@@ -6449,7 +6644,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       // effect helpers
       dmg, heal, draw,
       enemies, minions, allAllies, friendlyChars, heroes: alive,
-      bossT: T.boss, heroT: T.hero,
+      bossT: bossTarget, heroT: T.hero,
       randomEnemy: () => pick(enemies()),
       randomHero: () => pick(alive()),
       randomAlly: () => pick(allAllies()),
@@ -6470,8 +6665,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       mill: (p, k) => { for (let i = 0; i < k && p.deck.length; i++) { const c = p.deck.pop(); p.grave.push(c); log(`${C[c.id].name} goes to ${pdef(p).name}'s discard pile.`, ''); } H.update(); },
       // a sensible target for a card played by an effect (no player choice): strongest threat for damage, most hurt friend for help
       autoTarget: (p, d) => { if (!d.target || d.target === 'none') return null; const ts = targetsFor(d.target, p); if (!ts.length) return null;
-        if (d.target === 'enemy' || d.target === 'minion') { const kill = ts.filter(t => t.t === 'minion' && hpOf(t) <= (d.dmg || 3)); return (kill.length ? kill : ts).reduce((a, b) => (b.t === 'minion' ? minAtk(b.m) : 0) > (a.t === 'minion' ? minAtk(a.m) : 0) ? b : a); }
+        if (d.target === 'enemy' || d.target === 'minion') { const at = t => t.t === 'minion' ? minAtk(t.m) : t.t === 'ally' ? allyAtk(t.p, t.a) : 0; const kill = ts.filter(t => (t.t === 'minion' || t.t === 'ally' || t.t === 'hero') && hpOf(t) <= (d.dmg || 3)); return (kill.length ? kill : ts).reduce((a, b) => at(b) > at(a) ? b : a); }
         if (d.target === 'ally') { const mine = ts.filter(t => t.p === p); return (mine.length ? mine : ts)[0]; }
+        if (d.target === 'deadHero') return ts[0];
         return ts.reduce((a, b) => (maxHpOf(b) - hpOf(b)) > (maxHpOf(a) - hpOf(a)) ? b : a); },
       // Queen Asheera / Find the Lost City: play the best card from the discard pile for free; it then leaves the game
       replayFromGrave: async (p, ok) => {
@@ -6494,8 +6690,11 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       readyHero: p => { p.hero.ex = false; if (p.weapon) p.weapon.ex = false; },
       readyAllies: p => { p.allies.forEach(a => { a.ex = false; a.frozen = false; }); H.update(); },
       gainRes: (p, k) => { p.tempRes += k; H.update(); },
-      mark: (p, k) => { g.boss.mark = { amount: k, by: p.idx }; log(`${raid.short} is marked: +${k} damage taken until ${pdef(p).name}'s next turn.`, 'def'); H.update(); },
-      stun: t => { if (t.t === 'boss') g.boss.stunned = true; else if (t.t === 'minion') t.m.stunned = true; log(`${nameOf(t)} is stunned.`, 'def'); H.update(); },
+      mark: (p, k) => { g.boss.mark = { amount: k, by: p.idx, team: TEAMS ? p.team : null }; log(DUEL ? `The ${teamName(1 - p.team)} heroes are marked: +${k} damage taken until ${pdef(p).name}'s next turn.` : `${raid.short} is marked: +${k} damage taken until ${pdef(p).name}'s next turn.`, 'def'); H.update(); },
+      stun: t => { if (t.t === 'boss') g.boss.stunned = true; else if (t.t === 'minion') t.m.stunned = true;
+        else if (t.t === 'hero') t.p.hero.stunNext = true; // #PvP: a stunned hero can't attack on their next turn
+        else if (t.t === 'ally') { t.a.frozen = true; t.a.ex = true; } // #PvP: a stunned ally sits out its next turn
+        log(`${nameOf(t)} is stunned.`, 'def'); H.update(); },
       buffAlly: (t, a, h) => { if (t.t !== 'ally') return; t.a.atkB += a; t.a.hpB += h; H.update(); },
       transform: async (t, id) => { if (t.t !== 'minion') return; const old = minDef(t.m).name; t.m.id = id; t.m.damage = 0; t.m.atkB = 0; t.m.hpB = 0; log(`${old} is transformed into a ${TK[id].name}!`, 'def'); await H.anim('summon', { ref: t.m.uid }); H.update(); },
       revive: async (p, hp) => { if (!p.hero.dead) return; p.hero.dead = false; p.hero.damage = heroMax(p) - hp; log(`${pdef(p).name} returns to the fight!`, 'win'); await H.anim('heal', { ref: 'hero' + p.idx, amount: hp }); H.update(); },
@@ -6521,7 +6720,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       destroyAlly: async t => { if (t.t !== 'ally') return; t.a.damage = allyMax(t.p, t.a) + 99; await checkDeath(t, {}); },
       destroyArmor: async p => { const slots = Object.keys(p.armor); if (!slots.length) return; const s = slots[Math.floor(rnd() * slots.length)]; const e = p.armor[s]; delete p.armor[s]; p.grave.push(e.c); log(`${C[e.c.id].name} melts away!`, 'loss'); H.update(); },
       freeze: t => { if (t.t !== 'ally') return; t.a.frozen = true; t.a.ex = true; log(`${allyDef(t.a).name} is frozen solid.`, 'loss'); H.update(); },
-      exhaustAllies: () => { allAllies().forEach(t => t.a.ex = true); log('Ink clouds the water — every ally is exhausted.', 'loss'); H.update(); },
+      exhaustAllies: () => { g.players.flatMap(p => p.allies).forEach(a => a.ex = true); log('Ink clouds the water — every ally is exhausted.', 'loss'); H.update(); },
       tutor: async (p, f) => { const i = p.deck.findIndex(c => f(C[c.id])); if (i < 0) { log('Nothing suitable was found.', ''); return; } const c = p.deck.splice(i, 1)[0]; p.hand.push(c); shuffle(p.deck, rnd); log(`${pdef(p).name} finds ${C[c.id].name}.`, 'play'); H.update(); },
       recoverAlly: async p => { const i = p.grave.map(c => C[c.id]).findIndex(d => d.type === 'ally'); if (i < 0) { log('No fallen ally to recover.', ''); return; } const c = p.grave.splice(i, 1)[0]; p.hand.push(c); log(`${C[c.id].name} returns to ${pdef(p).name}'s hand.`, 'play'); H.update(); },
       scoutBoss: async p => {
@@ -6546,12 +6745,15 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 
   function enemyValue(E, t, dmg) {
     const shieldId = E.raid.halvedBy, shielded = shieldId && E.g.boss.minions.some(m => m.id === shieldId); // #102 the Maw halves Nethys's damage
-    if (t.t === 'boss') { const hp = E.bossHp(), B = E.g.boss, d2 = shielded ? Math.ceil(dmg / 2) : dmg; return hp <= d2 ? 1000 : d2 * 1.05 + (B.flying ? (B.ground + dmg >= B.groundMax ? 8 : dmg * 0.4) : 0); }
-    const hp = E.hpOf(t), d = E.minDef(t.m), atk = E.minAtk(t.m), kw = d.kw || [], guard = kw.includes('guardian') || d.id === shieldId;
+    if (t.t === 'boss') { const hp = E.bossHp(), B = E.g.boss, d2 = shielded ? Math.ceil(dmg / 2) : dmg; return hp <= d2 ? (E.race ? 3000 : 1000) : d2 * (E.race ? RB.AI_RACE_BOSS || 1.6 : 1.05) + (B.flying ? (B.ground + dmg >= B.groundMax ? 8 : dmg * 0.4) : 0); } // (#PvP: in a race the boss is the prize)
+    // #PvP: an enemy hero. Finishing one is the best thing a turn can do; otherwise every point of damage counts
+    if (t.t === 'hero') { const hp = E.hpOf(t) + (t.p.hero.shield || 0); if (dmg >= hp) return 1500; return E.race ? dmg * (RB.AI_RACE_HERO || 0.6) + (hp <= 12 ? 2 : 0) : dmg * 1.6 + (hp - dmg <= 10 ? 4 : 0); } // a race is won on the boss
+    const ally = t.t === 'ally', hp = E.hpOf(t), d = ally ? E.allyDef(t.a) : E.minDef(t.m), atk = ally ? E.allyAtk(t.p, t.a) : E.minAtk(t.m), kw = d.kw || [], guard = kw.includes('guardian') || kw.includes(ally ? 'protector' : 'guardian') || d.id === shieldId;
     // #110: Thick Hide soaks 1 of every hit; Ambush and Crushing minions are worth killing first; chipping a Frenzy minion only makes it angrier
     const eff = Math.max(0, dmg - (kw.includes('thickhide') ? 1 : 0));
-    if (eff >= hp) return 10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3 + (kw.includes('ambush') ? 3 : 0) + (kw.includes('crushing') ? 2 : 0);
-    return eff * 0.55 + (guard ? 4 : 0) - (kw.includes('frenzy') && eff > 0 ? 1.5 : 0);
+    const w = ally && E.race ? (RB.AI_RACE_ALLY || 0.5) : 1; // racing teams don't waste much on each other's allies
+    if (eff >= hp) return w * (10 + atk * 2.2 + (guard ? 16 : 0) + hp * 0.3 + (kw.includes('ambush') ? 3 : 0) + (kw.includes('crushing') ? 2 : 0));
+    return w * (eff * 0.55 + (guard ? 4 : 0) - (kw.includes('frenzy') && eff > 0 ? 1.5 : 0));
   }
   function bestEnemy(E, p, dmg, list) {
     let best = null, bs = -1;
@@ -6583,6 +6785,13 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   function danger(E, p) {
     const heroes = E.heroes(), hp = E.heroHp(p);
     if (!heroes.length || hp <= 0 || !DW()) return 0;
+    // #PvP: what the enemy team could swing at us before our next turn, shared among our heroes and allies
+    let foeHit = 0;
+    if (E.teams) {
+      for (const q of E.foesOf(p)) { foeHit += E.heroAtk(q) + (q.weapon ? E.weaponAtk(q) : 0); for (const a of q.allies) foeHit += E.allyAtk(q, a); }
+      foeHit /= Math.max(1, heroes.length + heroes.reduce((n, h) => n + h.allies.length, 0) * 0.5);
+      if (E.duel) { let blk = p.hero.shield || 0; for (const e of Object.values(p.armor)) if (!e.ex) blk += C[e.c.id].def * 0.7; return Math.min(1.5, Math.max(0, foeHit - blk) / hp) * DW(); }
+    }
     const B = E.g.boss, strike = E.strikeNow ? E.strikeNow() : E.raid.strike;
     const taunt = heroes.find(h => h.hero.taunt);
     let pS;
@@ -6592,11 +6801,11 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     else if (E.raid.dungeon) pS = 1 / heroes.length;
     else { const top = Math.max(...heroes.map(h => h.threat)); pS = top > 0 && p.threat >= top ? 0.85 : 1 / heroes.length; }
     const allies = heroes.reduce((n, h) => n + h.allies.length, 0);
-    const mAtk = E.minions().reduce((n, t) => n + E.minAtk(t.m), 0);
+    const mAtk = E.minions().filter(t => t.t === 'minion').reduce((n, t) => n + E.minAtk(t.m), 0);
     const mS = taunt ? (taunt === p ? 1 : 0) : E.raid.dungeon ? 1 / heroes.length : 1 / Math.max(1, heroes.length + allies);
     let block = p.hero.shield || 0;
     for (const e of Object.values(p.armor)) if (!e.ex) block += C[e.c.id].def * 0.7;
-    const incoming = Math.max(0, strike * pS + mAtk * mS + (dangerSoon(E) ? 4 : 0) - block);
+    const incoming = Math.max(0, strike * pS + mAtk * mS + (dangerSoon(E) ? 4 : 0) + foeHit - block);
     return Math.min(1.5, incoming / hp) * DW();
   }
   AI.danger = danger;
@@ -6700,7 +6909,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         }
         if (tags.includes('aoe') || tags.includes('aoeMinion')) {
           const dmg = (d.dmg || 2) + sp; let s = 0;
-          for (const t of E.aoe(tags.includes('aoeMinion') ? E.minions() : E.enemies(), dmg)) s += t.t === 'boss' ? dmg : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
+          for (const t of E.aoe(tags.includes('aoeMinion') ? E.minions() : E.enemies(), dmg)) s += t.t === 'boss' ? dmg : t.t === 'hero' ? dmg * 1.25 + (dmg >= E.hpOf(t) ? 40 : 0) : Math.min(dmg, E.hpOf(t)) * 0.8 + (dmg >= E.hpOf(t) ? 5 : 0);
           if (d.id === 'whirlwind') s += 2 + sp;
           return { s: s + (tags.includes('draw') ? 4 : 0) };
         }
@@ -6761,9 +6970,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const hd = RB.HEROES[p.heroId];
     if (!p.hero.powerUsed && !p.hero.master) {
       const pw = hd.power, tags = pw.tags || [];
-      const bossPct = E.bossHp() / E.g.boss.maxHp;
+      const bossPct = E.duel ? 0.4 : E.bossHp() / E.g.boss.maxHp; // (#PvP: a duel has no boss; use powers freely)
       let s = -1, target = null;
-      if (tags.includes('dmg')) { const b = bestEnemy(E, p, (pw.dmg || 8) + E.spellPower(p)); target = b.t; s = (bossPct < 0.45 || E.g.round >= 6 || (b.t && b.t.t === 'minion' && b.s > 20)) ? 25 : -1; }
+      if (tags.includes('dmg')) { const b = bestEnemy(E, p, (pw.dmg || 8) + E.spellPower(p)); target = b.t; s = (bossPct < 0.45 || E.g.round >= 6 || (b.t && (b.t.t === 'minion' || b.t.t === 'ally') && b.s > 20) || (b.t && b.t.t === 'hero' && b.s >= 1000)) ? 25 : -1; }
       else if (tags.includes('aoe')) { const n = Math.min(RB.AOE_CAP || 5, E.enemies().length); s = (n >= 3 || E.g.round >= 6) ? 18 + n * 4 : -1; }
       else if (tags.includes('heal')) { target = mostWoundedFriendly(E, 'friendly'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 10 ? 30 : -1; }
       else if (tags.includes('healAll')) { let tot = 0; for (const t of E.friendlyChars()) tot += Math.min(6, E.maxHpOf(t) - E.hpOf(t)); s = tot >= 14 ? 30 : -1; }
@@ -6833,9 +7042,11 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         const raisesMinion = who !== 'hero' && E.raid.onAllyDeath && !who.token;
         const allyWorth = who === 'hero' ? 0 : 6 + atk * 1.5 + E.allyMax(p, who) * 0.4;
         for (const t of targets) {
-          const back = lr ? 0 : t.t === 'boss' ? E.raid.retaliation : E.minAtk(t.m);
+          const backOf = () => { if (lr) return 0; if (t.t === 'boss') return E.raid.retaliation; if (t.t === 'minion') return E.minAtk(t.m); if (t.t === 'ally') return E.allyAtk(t.p, t.a) + (E.allyDef(t.a).thorns || 0);
+            const q = t.p; return q.weapon && !q.weapon.ex && E.available(q) >= E.strikeCost(q) ? E.heroAttackValue(q, true) : E.heroAtk(q); }; // #PvP
+          const back = backOf();
           const dies = back >= myHp;
-          const kills = t.t === 'minion' ? atk >= E.hpOf(t) : atk >= E.bossHp();
+          const kills = t.t === 'boss' ? atk >= E.bossHp() : atk >= E.hpOf(t);
           let s = enemyValue(E, t, atk) - back * (who === 'hero' ? 0.9 : 0.45);
           if (dies && who === 'hero') s -= 999;
           if (dies && who !== 'hero') {
@@ -7036,7 +7247,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       if (tags.includes('elusive') && harmful && E.heroHp(p) <= 9) return { p, inst, target: null };
       if (tags.includes('heal')) { const t = E.heroes().filter(h => E.heroHp(h) <= 9).sort((a, b) => E.heroHp(a) - E.heroHp(b))[0]; if (t) return { p, inst, target: E.T.hero(t) }; }
       if (tags.includes('stunAll') && E.minions().filter(t => E.minAtk(t.m) > 0).length >= 2) return { p, inst, target: null };
-      if (tags.includes('stun')) { const m = E.minions().filter(t => E.minAtk(t.m) >= 3).sort((a, b) => E.minAtk(b.m) - E.minAtk(a.m))[0]; if (m) return { p, inst, target: m }; if (E.heroes().some(h => E.heroHp(h) <= 8)) return { p, inst, target: E.T.boss() }; }
+      if (tags.includes('stun')) { const m = E.minions().filter(t => t.t === 'minion' && E.minAtk(t.m) >= 3).sort((a, b) => E.minAtk(b.m) - E.minAtk(a.m))[0]; if (m) return { p, inst, target: m }; if (E.heroes().some(h => E.heroHp(h) <= 8)) return { p, inst, target: E.T.boss() }; }
     }
     return null;
   };
@@ -10271,6 +10482,14 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         ${raids.map(([id, r]) => `<section class="fg-raid"><div class="fg-raidhead"><img alt="" src="${raidArt(id)}"><div><h4>${esc(r.name)}</h4><small>${esc(r.boss || r.short)}</small></div></div>${(r.lore || []).map(t => `<p class="fg-lore">${esc(t)}</p>`).join('')}<ul>${r.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}</ul></section>`).join('')}
         <section><h4>Dungeons</h4><p>Dungeons are run by a dungeon hero instead of a raid boss. It flips cards each turn, marks one hero at random to attack, and levels up as you beat its under-bosses. Your heroes keep their health, cards and allies from one boss to the next.</p></section>
         ${Object.entries(RB.DUNGEONS || {}).map(([id, d]) => `<section class="fg-raid"><div class="fg-raidhead"><img alt="" src="${U.art(d.art, 'raid:' + id)}"><div><h4>${esc(d.name)}</h4><small>${(d.stages || []).map(st => esc(st.main ? d.boss : st.boss)).join(' → ') || esc(d.boss)}</small></div></div>${(d.lore || []).map(t => `<p class="fg-lore">${esc(t)}</p>`).join('')}</section>`).join('')}` },
+      { id: 'pvp', icon: '⚔', title: 'Player vs player', html: `
+        <p>In <b>Play online</b> you can also fight each other. The host picks <b>1v1</b>, <b>2v2</b> or <b>2v2 vs Boss</b>, and everyone chooses the Gold or Silver team. Empty seats can be filled with AI heroes, so you can practise against the computer on your own.</p>
+        <section><h4>Duels in the Arena (1v1 and 2v2)</h4><ul>${RB.ARENA.rules.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)}</li>`).join('')}
+          <li><b>Turns.</b> The teams take turns in turn: Gold, Silver, Gold, Silver. There is no boss turn.</li>
+          <li><b>Attacking.</b> Your hero and allies attack enemy heroes and allies. The defender hits back (an ally with its ATK, a hero with a weapon strike). Their Bulwark allies can cover, and their React cards can answer your attack.</li>
+          <li><b>Boss cards.</b> A card that hits "the boss" hits the weakest enemy hero; a card that hits minions hits enemy allies. A stunned hero can't attack on their next turn, and a stunned ally sits its next turn out.</li></ul></section>
+        <section><h4>2v2 vs Boss</h4><p>Two teams race to bring down a raid boss. The team that lands the <b>killing blow</b> wins, and so does a team whose two rivals have both fallen. The boss attacks both teams. It has the health of a solo raid and fights as if facing one team of two, and it enrages from round ${RB.RACE_ENRAGE || 18}.</p></section>
+        <p>Rewards are gold only: more against real players, a little against the AI, and a bonus for the killing blow in a race.</p>` },
       { id: 'keywords', icon: '✦', title: 'Keywords', html: `<p>Keywords are printed in bold on cards. The small letter shows on allies and minions on the table.</p><ul class="fg-kws">${Object.keys(RB.KEYWORDS).map(kwRow).join('')}</ul>` },
       { id: 'more', icon: '🎒', title: 'Collecting', html: `
         <section><h4>Party play</h4><p>Up to four heroes can join a raid. You take each hero's turn in order, so friends can pass the device around, or play online. The boss grows tougher with each hero: it has more health, reveals an extra card per hero, sees more omens, and its strikes and minions hit harder.</p></section>
@@ -10345,6 +10564,27 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       <div class="un">${esc(o.name)}</div><div class="ua ${o.buffA ? 'buff' : ''}">${o.atk}</div><div class="uh ${o.hp < o.max ? 'hurt' : o.buffH ? 'buff' : ''}">${o.hp}</div></div>`;
   }
   const facColor = { concord: '#5a7ad0', clans: '#c0482a', neutral: '#9a7a44' };
+  // #PvP: which team this screen belongs to (the viewer's, else whoever is acting)
+  function myTeam() { const g = E.g, v = viewerIdx(); return v >= 0 ? g.players[v].team : (g.players[g.turn] || g.players[0]).team; }
+  const teamCls = k => 't' + k;
+  // the enemy team's heroes and allies, shown where the boss usually stands (duels) or under the boss (races)
+  function rivalsHTML(tcls, compact) {
+    const g = E.g, mine = myTeam();
+    return g.players.filter(q => q.team !== mine).map(q => {
+      const qd = E.pdef(q), hp = Math.max(0, E.heroHp(q)), mx = E.heroMax(q), atk = E.heroAtk(q) + (q.weapon && !q.weapon.ex ? E.weaponAtk(q) : 0);
+      const tags = [q.hero.taunt && 'Taunt', q.hero.elusive && 'Shrouded', q.hero.stunNext && 'Stunned', q.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
+      const gear = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
+      const units = q.allies.map(a => { const d = E.allyDef(a); return unitHTML('ally', { ref: a.uid, p: q.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(q, a), hp: E.allyMax(q, a) - a.damage, max: E.allyMax(q, a), kws: d.kw || [], buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: ['foe', a.ex ? 'ex' : '', a.frozen ? 'frozen' : '', tcls(a.uid)] }); }).join('');
+      const who = net && g.cfg.party[q.idx].name ? `<small class="rpl">${esc(g.cfg.party[q.idx].name)}${q.auto ? ' · AI' : ''}</small>` : q.auto ? '<small class="rpl">AI</small>' : '';
+      return `<div class="rival ${teamCls(q.team)} ${q.hero.dead ? 'dead' : ''} ${g.players[g.turn] === q && g.phase !== 'boss' ? 'active' : ''}">
+        <div class="rivalhero${q.hero.dead ? '' : tcls('hero' + q.idx)}" data-ref="hero${q.idx}" data-rival="${q.idx}" tabindex="0" aria-label="${esc(qd.name)}, enemy hero, ${hp} health">
+          <img alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="tags">${tags}</div>
+          ${atk > 0 && !q.hero.dead ? `<div class="hatk" title="Attack">${atk}</div>` : ''}<div class="hhp ${hp <= 8 ? 'low' : ''}">${hp}</div>${q.hero.shield ? `<div class="shield" title="Ward: prevents the next ${q.hero.shield} damage">◈ ${q.hero.shield}</div>` : ''}
+          <div class="hn"><b>${esc(qd.name)}</b>${who}<span class="rvbar"><i style="width:${hp / mx * 100}%"></i></span></div></div>
+        ${compact ? '' : `<div class="rivalmeta"><span class="rhand" title="${q.hand.length} cards in hand">${'<i></i>'.repeat(Math.min(q.hand.length, 10))}<b>${q.hand.length}</b></span>${gear ? `<span class="rgears">${gear}</span>` : ''}</div>`}
+        <div class="minions rallies">${units || `<span class="empty">${q.hero.dead ? 'Fallen.' : 'No allies.'}</span>`}</div></div>`;
+    }).join('');
+  }
 
   function render() {
     if (!E || !root) return;
@@ -10425,7 +10665,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const showHand = seesHand(p);
     const hand = !showHand ? p.hand.map((c, i) => `<div class="hc back" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)"><div class="cardback"></div></div>`).join('') : p.hand.map((c, i) => { const ok = canAct && (E.canPlay(p, c).ok || (!p.resPlayed)); const playable = canAct && E.canPlay(p, c).ok; const hd2 = C[c.id] || {}, hk = hd2.kw || [], handReach = airborne && (hd2.type === 'ally' || hd2.type === 'weapon') && (hk.includes('longrange') || hk.includes('skyward'));
       return `<div class="hc ${playable ? 'play' : ''}${handReach ? ' reach' : ''}" data-uid="${c.uid}" style="transform:rotate(${((i - mid) * 3).toFixed(1)}deg) translateY(${(Math.abs(i - mid) * 5).toFixed(0)}px)" tabindex="0">${U.cardHTML(c.id, { holo: c.holo })}</div>`; }).join('');
-    const status = g.over ? '' : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
+    const status = g.over ? '' : E.teams && !human(active) && g.phase !== 'boss' && active.team !== myTeam() ? `${esc(net && !active.auto ? (E.g.cfg.party[active.idx].name || E.pdef(active).name) : E.pdef(active).name)} (${esc(E.teamName(active.team))} team) is taking a turn…` : g.cfg.bossPlayer ? (g.phase === 'boss' ? `Your turn, ${esc(raid.short)}. Choose your cards and targets.` : `You are ${esc(raid.short)}. ${esc(E.pdef(active).name)} is taking a turn…`) : g.phase === 'boss' ? `${esc(raid.short)} is acting…` : !human(active) ? (net && !active.auto ? `${esc(E.g.cfg.party[active.idx].name || E.pdef(active).name)} is taking their turn…` : `${esc(E.pdef(active).name)} (AI) is acting…`) : view.busy ? 'Resolving…' : p.resPlayed ? 'Resource played this turn.' : 'You may play one card as a resource.';
     // roster
     const vIdx = viewerIdx();
     const roster = g.players.map(q => {
@@ -10434,10 +10674,10 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       const gearIcons = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
       const backs = `<span class="rhand" title="${q.hand.length} cards in hand${q.idx === vIdx ? '' : ' (hidden)'}">${'<i></i>'.repeat(Math.min(q.hand.length, 10))}<b>${q.hand.length}</b></span>`;
       const played = ((view.played || {})[q.idx] || []).map(c => `<img class="rplay ${c.holo ? 'holo' : ''}" alt="" src="${U.cardArt(c.id)}" data-card="${c.id}">`).join('');
-      const tag = (q.idx === vIdx ? ' <span class="youtag">You</span>' : q.auto ? ' <span class="aitag">AI</span>' : '') + (raid.dungeon && g.boss.marked === q.idx && g.phase === 'boss' ? ' <span class="marktag">🎯 Marked</span>' : '');
+      const tag = (E.teams ? ` <span class="teamtag ${teamCls(q.team)}" title="${esc(E.teamName(q.team))} team">${esc(E.teamName(q.team))}</span>` : '') + (q.idx === vIdx ? ' <span class="youtag">You</span>' : q.auto ? ' <span class="aitag">AI</span>' : '') + (raid.dungeon && g.boss.marked === q.idx && g.phase === 'boss' ? ' <span class="marktag">🎯 Marked</span>' : '');
       const who = net && E.g.cfg.party[q.idx].name ? `<div class="rplayer">${esc(E.g.cfg.party[q.idx].name)}</div>` : '';
-      return `<div class="rmember ${q === active && g.phase !== 'boss' ? 'active' : ''} ${q.hero.dead ? 'dead' : ''} ${q === p ? 'viewing' : ''}" data-focus="${q.idx}" title="Click to look at ${esc(qd.name)}'s side of the table"><img class="herochip${q === p ? '' : tcls('hero' + q.idx)}" ${q === p ? '' : `data-ref="hero${q.idx}"`} alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="rbody"><div class="rn">${esc(qd.name)}${tag}</div>${who}<div class="rbar"><i style="width:${pct}%"></i><span>${Math.max(0, E.heroHp(q))}/${E.heroMax(q)}</span></div>
-        <div class="rmeta">${backs}${q.hero.shield ? `<span class="rward">◈ ${q.hero.shield}</span>` : ''}<span>threat ${q.threat}</span>${gearIcons ? `<span class="rgears">${gearIcons}</span>` : ''}</div>
+      return `<div class="rmember ${E.teams ? (q.team === myTeam() ? 'mate' : 'foe') : ''} ${q === active && g.phase !== 'boss' ? 'active' : ''} ${q.hero.dead ? 'dead' : ''} ${q === p ? 'viewing' : ''}" data-focus="${q.idx}" title="Click to look at ${esc(qd.name)}'s side of the table"><img class="herochip${q === p ? '' : tcls('hero' + q.idx)}" ${q === p ? '' : `data-ref="hero${q.idx}"`} alt="" src="${U.cardArt(q.hero.master || q.heroId)}"><div class="rbody"><div class="rn">${esc(qd.name)}${tag}</div>${who}<div class="rbar"><i style="width:${pct}%"></i><span>${Math.max(0, E.heroHp(q))}/${E.heroMax(q)}</span></div>
+        <div class="rmeta">${backs}${q.hero.shield ? `<span class="rward">◈ ${q.hero.shield}</span>` : ''}${E.duel ? '' : `<span>threat ${q.threat}</span>`}${gearIcons ? `<span class="rgears">${gearIcons}</span>` : ''}</div>
         ${chips ? `<div class="rchips">${chips}</div>` : ''}${played ? `<div class="rplayed"><small>Played this turn</small>${played}</div>` : ''}</div></div>`;
     }).join('');
     const logHTML = g.log.slice(-120).map(e => `<div class="${e.cls}">${esc(e.msg)}</div>`).join('');
@@ -10445,10 +10685,14 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     morph(root, `<div class="table">
       <div class="topbar"><span class="raidname">${esc(raid.name)}</span><span class="round">Round ${g.round}${!raid.dungeon && RB.RAID_DIFFS[g.cfg.difficulty] && g.cfg.difficulty !== 'normal' ? ' · ' + RB.RAID_DIFFS[g.cfg.difficulty].name : g.cfg.difficulty === 'heroic' ? ' · Heroic' : ''}</span><span class="sp"></span>
         <button class="btn small ghost narrow-only drawerbtn" data-act="drawer" aria-label="Party and raid log">👥 Party</button>${net && U.chatBtnHTML ? U.chatBtnHTML() : ''}<button class="btn small ghost phone-only menubtn" data-act="menu" aria-label="Menu">☰</button>
-        <span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>
-        <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">Leave raid</button></div>
-      <div class="bossarea ${raid.id}" style="--bt:${raid.theme || '#ff7a4a'}">
-        <div class="bossbar ${barFx}">
+        ${E.duel ? '' : `<span class="bossdeck wide-only" title="Cards left in the boss deck">Boss deck ${B.deck.length} · discard ${B.grave.length}</span>`}
+        <button class="btn small ghost wide-only" data-act="speed" title="${net ? 'Animation speed for everyone in this game' : 'Animation speed'}">Speed: ${speedName()}</button><button class="btn small ghost iconbtn wide-only" data-act="mute" title="${save.settings.muted ? 'Unmute (M)' : 'Mute all sound (M)'}" aria-label="${save.settings.muted ? 'Unmute' : 'Mute'}">${save.settings.muted ? '🔇' : '🔊'}</button><button class="btn small ghost wide-only" data-act="soundpop" title="Sound volume">Volume</button><button class="btn small ghost wide-only" data-act="rulesref">Rules</button><button class="btn small ghost wide-only" data-act="quit">${E.teams ? 'Leave match' : 'Leave raid'}</button></div>
+      ${E.duel ? `<div class="bossarea arena" style="--bt:#d4a64a">
+        <div class="bossbar"><div class="bbname"><i class="orn"></i><b>The Arena</b><span class="teams"><em class="team ${teamCls(myTeam())}">${esc(E.teamName(myTeam()))} (you)</em> vs <em class="team ${teamCls(1 - myTeam())}">${esc(E.teamName(1 - myTeam()))}</em></span><i class="orn r"></i></div>
+          <div class="bossrow"><span class="chip" title="${esc(RB.ARENA.rules.find(r => r.name === 'Dampening').text)}">✚ Healing halved</span><span class="chip ${g.round >= RB.PVP_FATIGUE ? 'hot' : ''}" title="${esc(RB.ARENA.rules.find(r => r.name === 'Arena fatigue').text)}">⌛ ${g.round >= RB.PVP_FATIGUE ? `Fatigue: ${(g.round - RB.PVP_FATIGUE + 1) * (RB.PVP_FATIGUE_STEP || 2)} a turn` : `Fatigue from round ${RB.PVP_FATIGUE}`}</span>${B.mark && B.mark.team != null ? `<span class="evt" style="background:rgba(120,60,10,.5)"><b>Marked</b> +${B.mark.amount} damage to the ${esc(E.teamName(1 - B.mark.team))} heroes</span>` : ''}</div></div>
+        <div class="rivals">${rivalsHTML(tcls, false)}</div>
+      </div>` : `<div class="bossarea ${raid.id}${E.race ? ' racing' : ''}" style="--bt:${raid.theme || '#ff7a4a'}">`}
+        ${E.duel ? '' : `<div class="bossbar ${barFx}">
           <div class="bbname"><i class="orn"></i><b>${esc(raid.short)}</b><span>${esc(raid.boss.split(', ')[1] || raid.name)}</span>${g.cfg.difficulty === 'heroic' ? '<em>Heroic</em>' : g.cfg.difficulty === 'mythic' ? '<em class="mythic">Mythic</em>' : ''}<span class="bhp" title="${bhp} of ${B.maxHp} health (${Math.ceil(hpPct)}%)"><i>❤</i><b>${bhp}</b><small>/ ${B.maxHp}</small></span><i class="orn r"></i></div>
           <div class="hpframe"><span class="cap"></span><div class="hpbar" role="progressbar" aria-label="${esc(raid.short)} health" aria-valuemin="0" aria-valuemax="${B.maxHp}" aria-valuenow="${bhp}"><div class="ghost" style="width:${view.hpGhost}%"></div><div class="fill" style="width:${hpPct}%"></div><div class="gloss"></div>${ticks}</div><span class="cap r"></span></div>
           ${phaseLbls ? `<div class="phaselbls">${phaseLbls}</div>` : ''}
@@ -10460,8 +10704,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
           <div class="bosscard${tcls('boss')}" data-ref="boss" tabindex="0" aria-label="${esc(raid.boss)}, ${E.bossHp()} health"><img alt="" src="${U.art(raid.art, raid.stages ? 'stage:' + raid.id + '-' + B.stage : 'raid:' + raid.id)}"><div class="bframe"></div><div class="bn"><b>${esc(raid.short)}</b><span>${B.minions.length ? `${B.minions.length} minion${B.minions.length > 1 ? 's' : ''} at its side` : 'Stands alone'}</span></div></div>
           <div class="minions right" style="--mn:${minR.length}">${minR.join('')}</div>
         </div>
+        ${E.race ? `<div class="rivals race"><span class="rvlabel"><b>Rival team</b> · ${esc(E.teamName(1 - myTeam()))}<small>Land the killing blow on ${esc(raid.short)} to win, or defeat both rivals.</small></span>${rivalsHTML(tcls, true)}</div>` : ''}
         ${(view.bossPlayed || []).length && view.bossRound === g.round ? `<div class="bossplayed"><small>${esc(raid.short)} played this round:</small>${view.bossPlayed.map(id => `<span class="bpc" data-bc="${id}">${esc(BC[id].name)}</span>`).join('')}</div>` : ''}
-      </div>
+      </div>`}
       <div class="playerzone">${vIdx >= 0 && p.idx !== vIdx ? `<div class="viewbar">Looking at <b>${esc(E.pdef(p).name)}</b>'s side of the table. Their hand stays hidden. <button class="btn small" data-focus="${vIdx}">Back to my hero</button></div>` : ''}<div class="herocol"><div style="width:clamp(150px,13vw,200px)">${heroCard}</div><div class="gearcol">${gear}</div></div>
         <div class="restray"><span class="lbl" title="Lands, quests and locations can always be played as resources. Any other card: only ${RB.SPARE_RES} times a fight.">Resources<small class="spare">${E.g.cfg.noLands ? '' : `spare cards ${E.spareLeft(p)}/${RB.SPARE_RES}`}</small></span><button class="pilechip" data-act="piles" title="Cards left in this hero's deck, and cards in the discard pile. ${U.isPhone() ? 'Tap' : 'Click'} to see the discard pile."><span>Deck <b>${p.deck.length}</b></span><span>Discard <b>${p.grave.length}</b></span></button><span class="avail" title="Ready resources / total">${E.available(p)}<small style="font-size:.6em;color:var(--muted)">/${p.res.length + p.tempRes}</small></span>${resCards}</div>
         <div class="allies">${allies}</div></div>
@@ -10470,7 +10715,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
         <div class="turnctl ${g.cfg.bossPlayer ? 'bossmode' : ''}"><button class="btn primary" data-act="end" ${canAct ? '' : 'disabled'}>End turn</button><button class="btn" data-act="auto" ${canAct ? '' : 'disabled'} title="Let the AI finish this turn for you">Auto-play turn</button>${raid.bail && !g.cfg.bossPlayer ? `<button class="btn bailbtn" data-act="bail" ${canAct && E.canBail(p) ? '' : 'disabled'} title="Pay ${raid.bail.cost} resource to lower the ${esc(raid.counter.name)} by 1. Once per turn.">🪣 Bail water (${raid.bail.cost}◆)</button>` : ''}<div class="hint">${status}</div></div></div>
       ${view.mode ? `<div class="tbar ${view.mode.friendly ? 'friendly' : ''}">${esc(view.mode.label)} <button class="btn small ghost" data-act="cancel" style="margin-left:.6rem">Cancel</button></div>` : ''}
     </div>
-    <div class="side"><div class="roster"><h5>Party<button class="btn small ghost narrow-only drawerx" data-act="drawer">✕ Close</button></h5>${roster}</div><div class="logbox"><h5>Raid log</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
+    <div class="side"><div class="roster"><h5>${E.teams ? 'Heroes' : 'Party'}<button class="btn small ghost narrow-only drawerx" data-act="drawer">✕ Close</button></h5>${roster}</div><div class="logbox"><h5>${E.teams ? 'Battle log' : 'Raid log'}</h5><div class="log" aria-live="polite">${logHTML}</div></div></div>`);
     root.classList.toggle('drawer', !!view.drawer);
     const lb = $('.logbox', root); if (lb) lb.scrollTop = lb.scrollHeight;
     const hEl = $('.hand', root);
@@ -10744,7 +10989,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   }
   const ser = args => args.map(a => a == null ? null : typeof a === 'string' ? { S: a } : (a.hand && a.hero) ? { P: a.idx } : a.t ? { R: E.refId(a) } : (a.c && a.c.uid && !a.id) ? { C: a.c.uid } : a.uid ? { U: a.uid } : null);
   function findRef(ref) {
-    const g = E.g, all = [...E.enemies(), ...g.players.map(q => E.heroT(q)), ...g.players.flatMap(q => q.allies.map(a => E.T.ally(q, a)))];
+    const all = E.allTargets();
     return all.find(t => E.refId(t) === ref) || null;
   }
   function deser(list) {
@@ -10987,6 +11232,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const rg = t.closest('.rgear, .rplay'); if (rg) return show(rg, U.cardHTML(rg.dataset.card));
     const mu = t.closest('.unit.minion'); if (mu) { const m = E.g.boss.minions.find(x => x.uid === mu.dataset.ref); if (m) return show(mu, U.cardHTML(m.id, { atk: E.minAtk(m), hp: E.minMax(m) - m.damage })); }
     if (t.closest('.bosscard')) { showRules(); return true; }
+    const rv = t.closest('[data-rival]'); if (rv && !view.mode) { const q = E.g.players[+rv.dataset.rival]; return show(rv, q.hero.master ? U.cardHTML(q.hero.master) : U.heroCardHTML(q.heroId)); }
     if (acting) return false;
     const hcd = t.closest('.hc[data-uid]'); if (hcd) { const q = fp(), inst = q.hand.find(c => c.uid === hcd.dataset.uid); if (inst) return show(hcd, U.cardHTML(inst.id, { holo: inst.holo })); } // #124
     const au = t.closest('.unit[data-kind=ally]'); if (au) { for (const q of E.g.players) { const a = q.allies.find(x => x.uid === au.dataset.ref); if (a) return show(au, allyCard(q, a)); } }
@@ -11007,8 +11253,9 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
   // #104: the Rules button opens this raid's rules plus the Field Guide chapters that matter mid-fight
   function showRules() {
     const help = U.isPhone() ? 'Tap a card in your hand to see it big and play it. Tap an ally or your hero to attack. Glowing cards and units are ready to use. Tap the boss, a minion or any gear to see its card.' : 'Click a card in your hand to play it or use it as a resource. Click an ally or your hero to attack. Glowing cards and units are ready to use. Hover anything to see its full card.';
-    const here = { id: 'here', icon: '🗺', title: E.raid.dungeon ? 'This dungeon' : 'This raid', html: `<section><h4>${esc(E.raid.name)}</h4><ul>${E.raid.rules.map(r => `<li><b>${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul></section><p class="small">${help}</p>` };
-    const chs = [here].concat(U.guideChapters(['bossturn', 'threat', 'react'].concat(E.raid.dungeon ? [] : ['omens'], ['keywords'])));
+    const raceRules = E.race ? [{ name: 'Boss race', text: `Two teams race to defeat ${E.raid.short}. The team that lands the killing blow wins, and so does a team whose rivals have all fallen. The boss attacks both teams, and you can attack the rival team's heroes and allies too.` }, { name: 'Going second', text: RB.ARENA.rules.find(r => r.name === 'Going second').text }] : [];
+    const here = { id: 'here', icon: '🗺', title: E.duel ? 'The Arena' : E.raid.dungeon ? 'This dungeon' : 'This raid', html: `<section><h4>${esc(E.duel ? 'The Arena' : E.raid.name)}</h4><ul>${raceRules.concat(E.raid.rules).map(r => `<li><b>${esc(r.name)}.</b> ${esc(r.text)}</li>`).join('')}</ul></section><p class="small">${help}</p>` };
+    const chs = [here].concat(U.guideChapters(E.duel ? ['pvp', 'react', 'keywords'] : (E.race ? ['pvp'] : []).concat(['bossturn', 'threat', 'react'], E.raid.dungeon ? [] : ['omens'], ['keywords'])));
     return U.dialog(`${U.guideHTML(chs, 'here')}<div class="acts"><button class="btn primary" data-v="ok">Back to the raid</button></div>`, { dismiss: 'ok', cls: 'wide guidedlg', onMount: o => U.guideWire(o) });
   }
   function onClick(e) {
@@ -11083,6 +11330,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       if (m) return U.preview(U.cardHTML(m.id, { atk: E.minAtk(m), hp: E.minMax(m) - m.damage }), u);
       for (const p of E.g.players) { const a = p.allies.find(x => x.uid === ref); if (a) return U.preview(U.cardHTML(a.id, { atk: E.allyAtk(p, a), hp: E.allyMax(p, a) - a.damage, holo: a.c && a.c.holo }), u); }
     }
+    const rv = t.closest('[data-rival]'); if (rv) { const q = E.g.players[+rv.dataset.rival]; return U.preview(q.hero.master ? U.cardHTML(q.hero.master) : U.heroCardHTML(q.heroId), rv); }
     const hcard = t.closest('.herocard'); if (hcard) { const p = fp(); return U.preview(p.hero.master ? U.cardHTML(p.hero.master) : U.heroCardHTML(p.heroId), hcard); }
     const gs = t.closest('[data-card]'); if (gs && !gs.classList.contains('card')) return U.preview(U.cardHTML(gs.dataset.card), gs);
     const ev = t.closest('[data-bc]'); if (ev) return U.preview(U.cardHTML(ev.dataset.bc), ev);
@@ -11115,7 +11363,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     E.start().then(() => { view.busy = false; afterAction(); if (net) net.ready(); }).catch(err => { console.error(err); view.busy = false; U.toast('Error: ' + err.message); });
   };
   async function leave() {
-    const v = await U.dialog('<h3>Leave the raid?</h3><p>Your progress in this fight will be lost.</p><div class="acts"><button class="btn ghost" data-v="no">Keep fighting</button><button class="btn primary" data-v="yes">Leave</button></div>', { dismiss: 'no' });
+    const v = await U.dialog(`<h3>${E.teams ? 'Leave the match?' : 'Leave the raid?'}</h3><p>Your progress in this fight will be lost.${E.teams && net ? ' The AI takes over your hero.' : ''}</p><div class="acts"><button class="btn ghost" data-v="no">Keep fighting</button><button class="btn primary" data-v="yes">Leave</button></div>`, { dismiss: 'no' });
     if (v === 'yes') { E.g.over = 'abandon'; E = null; if (net) { net.leave(); net = null; return U.title(); } U.setup(); }
   }
   function endScreen() {
@@ -11123,6 +11371,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     if (g.over === 'abandon') return;
     const raid = g.raid;
     if (g.cfg.bossPlayer) return bossEndScreen();
+    if (g.pvp) return pvpEndScreen();
     if (raid.dungeon) return U.dungeonEnd(g, win, cfgLast, E);
     // #119: a party played entirely by the AI earns nothing: no gold, no treasure pack, no win, no unlocks
     if ((g.cfg.party || []).length && g.cfg.party.every(s => s && s.auto)) {
@@ -11154,6 +11403,36 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       if (a.dataset.act === 'title') return U.title();
     };
     el.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.act === 'open') e.target.click(); };
+  }
+  // #PvP: which team won, a little gold (more against real players), no treasure packs
+  function pvpEndScreen() {
+    const g = E.g, raid = g.raid, mine = myTeam(), win = g.winTeam != null && g.winTeam === mine, nobody = g.winTeam == null;
+    const allAi = (g.cfg.party || []).every(s => s && s.auto);
+    const vsHumans = !!(g.cfg.online && (g.cfg.party || []).some((s, i) => s && !s.auto && s.owner && g.players[i] && g.players[i].team !== mine && !g.players[i].wasAi));
+    const killBlow = E.race && g.boss.damage >= g.boss.maxHp;
+    let parts = [];
+    if (!allAi) {
+      parts = vsHumans ? [['Result', win ? 70 : 25]] : [['Result', win ? 30 : 10], ['Against AI opponents', 0]];
+      if (E.race && killBlow && win) parts.push([`Killing blow on ${raid.short}`, vsHumans ? 40 : 20]);
+      const slain = g.players.filter(q => q.team !== mine && q.hero.dead).length; if (slain) parts.push(['Rival heroes defeated', slain * (vsHumans ? 10 : 5)]);
+    }
+    const total = parts.reduce((t, x) => t + x[1], 0);
+    if (total) { save.gold = (save.gold || 0) + total; save.pvpWins = (save.pvpWins || 0) + (win ? 1 : 0); U.persist(); }
+    if (win) { U.sfx.win(); RB.AUDIO.music('victory'); } else { RB.AUDIO.music(null); U.sfx.lose(); }
+    const title = nobody ? 'Nobody wins' : win ? 'Victory' : 'Defeat';
+    const line = nobody ? 'Every hero has fallen.' : E.race ? (killBlow ? `The ${esc(E.teamName(g.winTeam))} team landed the killing blow on ${esc(raid.boss)}.` : `The ${esc(E.teamName(1 - g.winTeam))} team was wiped out.`) : `The ${esc(E.teamName(g.winTeam))} team holds the Arena.`;
+    const mineStats = g.players.filter(q => q.team === mine), dealt = mineStats.reduce((t, q) => t + q.stats.dmg, 0);
+    const stats = `<div class="stats"><div><b>${g.round}</b>rounds</div><div><b>${dealt}</b>damage by your team</div><div><b>${g.players.filter(q => q.team !== mine && q.hero.dead).length}/${g.players.filter(q => q.team !== mine).length}</b>rivals defeated</div>${E.race ? `<div><b>${Math.max(0, E.bossHp())}</b>boss health left</div>` : ''}</div>`;
+    const goldBox = allAi ? `<div class="goldbox"><div class="gtitle">No rewards</div><div class="gnote">The AI played every hero, so this match pays nothing.</div></div>`
+      : `<div class="goldbox"><div class="gtitle">+${total} gold <span>(you have ${save.gold})</span></div><div class="gparts">${parts.map(([k, v]) => v ? `<span>${esc(k)} <b>+${v}</b></span>` : `<span class="gnote">${esc(k)}</span>`).join('')}</div></div>`;
+    const el = U.show('end', `<div class="endscreen ${win ? '' : 'lose'}"><h2>${title}</h2><p class="tagline">${line}</p>${stats}${goldBox}
+      <div class="menu" style="flex-direction:row;justify-content:center"><button class="btn primary" data-act="retry">${cfgLast.online ? 'Back to the lobby' : 'Play again'}</button><button class="btn" data-act="market">Market</button><button class="btn ghost" data-act="title">Title</button></div></div>`);
+    el.onclick = e => {
+      const a = e.target.closest('[data-act]'); if (!a) return;
+      if (a.dataset.act === 'retry') return cfgLast.online ? U.online() : U.battle(JSON.parse(JSON.stringify(cfgLast)));
+      if (a.dataset.act === 'market') return U.market();
+      if (a.dataset.act === 'title') return U.title();
+    };
   }
   function bossEndScreen() {
     const g = E.g, raid = g.raid, bossWon = g.over === 'lose';
@@ -11424,9 +11703,14 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     if (!S.ws && S.code && S.id && !S.lobby) { S.autoJoin = true; connect({ t: 'join', code: S.code, id: S.id }).catch(e => { S.autoJoin = false; forget(); S.err = e.message; draw(); }); }
   };
   const isDungeon = L => L && L.mode === 'dungeon';
+  // #PvP lobby modes
+  const PVPM = { duel1: { name: '1v1', size: 2, what: '1v1 duel' }, duel2: { name: '2v2', size: 4, what: '2v2 duel' }, race: { name: '2v2 vs Boss', size: 4, what: 'boss race' } };
+  const isPvp = L => !!(L && PVPM[L.mode]);
+  const isDuel = L => !!(L && (L.mode === 'duel1' || L.mode === 'duel2'));
+  const TEAMN = k => (RB.TEAM_NAMES && RB.TEAM_NAMES[k]) || ('Team ' + (k + 1));
   const myDungeonLevel = () => RB.dungeonLevel(save.dxp || 0);
   const myDungeonCheck = hid => RB.dungeonDeckCheck(hid, save.decks[hid], RB.landsFor(hid, save.lands[hid]), myDungeonLevel()); // #147
-  function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length); }
+  function botDeck(hid, L) { return isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : isPvp(L) ? RB.buildDeck(hid, null, 2) : RB.buildDeck(hid, null, L.players.length); }
   function heroesOpen() { return Object.values(H).filter(h => U.heroOpen(h.id)); }
   function draw() {
     chatSync();
@@ -11434,7 +11718,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const L = S.lobby;
     let body;
     if (!L) {
-      body = `<p class="lede">Play together with friends on their own computers or phones. One of you creates a party and shares the code; everyone else types it in. Each player controls their own hero. Raids take up to 4 heroes, dungeons up to 3 — and the host can fill empty seats with AI heroes.</p>${S.wantMode ? `<p class="newvault">You'll host a <b>dungeon run</b>: ${esc(RB.DUNGEONS[S.wantMode.id].name)} on ${esc(RB.DUNGEON_MODES[S.wantMode.diff].name)}. You can change it in the lobby.</p>` : ''}
+      body = `<p class="lede">Play together with friends on their own computers or phones. One of you creates a party and shares the code; everyone else types it in. Each player controls their own hero. Raids take up to 4 heroes, dungeons up to 3. You can also fight each other: a <b>1v1</b> or <b>2v2</b> duel in the Arena, or <b>2v2 vs Boss</b>, a race to bring down a raid boss first. The host can fill empty seats with AI heroes.</p>${S.wantMode ? `<p class="newvault">You'll host a <b>dungeon run</b>: ${esc(RB.DUNGEONS[S.wantMode.id].name)} on ${esc(RB.DUNGEON_MODES[S.wantMode.diff].name)}. You can change it in the lobby.</p>` : ''}
         <div class="netform"><label>Your name <input id="netname" maxlength="24" value="${esc(S.name)}"></label></div>
         <div class="netcols"><div class="netbox"><h3 class="sec">Host a game</h3><p>Get a code to share with your friends. You choose a raid or a dungeon in the lobby.</p><button class="btn primary" data-act="create">Create a party</button></div>
         <div class="netbox"><h3 class="sec">Join a game</h3><p>Type the code your friend shared.</p><input id="netcode" class="codein" maxlength="5" placeholder="ABCDE" value="${esc(S.joinCode || '')}"><button class="btn primary" data-act="join">Join</button></div></div>`;
@@ -11443,24 +11727,30 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       const link = location.protocol.startsWith('http') ? `${location.origin}${location.pathname}?join=${L.code}` : '';
       const rows = L.players.map(p => { const h = H[p.hero] || H.aldric;
         const botPick = p.bot && host ? `<select class="botpick" data-bot="${p.id}" aria-label="AI hero">${heroesOpen().map(x => `<option value="${x.id}" ${x.id === p.hero ? 'selected' : ''}>${esc(x.name)} · ${RB.CLASSES[x.cls].name}</option>`).join('')}</select>` : '';
-        return `<div class="netp ${p.id === S.id ? 'me' : ''} ${p.bot ? 'bot' : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.bot ? ' <span class="chip">AI</span>' : ''}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.bot ? 'Starter deck · played by the AI' : p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div>${botPick}<div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online || p.bot ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('')
-        + (host && L.players.length < (L.max || 4) ? `<button class="addseat small" data-act="addbot">+ Add an AI hero to an empty seat</button>` : '');
+        const half = (PVPM[L.mode] || {}).size / 2, other = 1 - (p.team || 0), room = L.players.filter(x => (x.team || 0) === other).length < half;
+        const teamUI = isPvp(L) ? ` <span class="teamtag t${p.team || 0}">${esc(TEAMN(p.team || 0))}</span>${(p.id === S.id || (host && p.bot)) && room ? ` <button class="btn small ghost" data-team="${other}" data-who="${p.id}" title="Move ${p.id === S.id ? 'yourself' : 'this AI hero'} to the ${esc(TEAMN(other))} team">→ ${esc(TEAMN(other))}</button>` : ''}` : '';
+        return `<div class="netp ${p.id === S.id ? 'me' : ''} ${p.bot ? 'bot' : ''} ${isPvp(L) ? 'team t' + (p.team || 0) : ''}"><img alt="" src="${U.cardArt(h.id)}"><div><b>${esc(p.name)}${p.bot ? ' <span class="chip">AI</span>' : ''}${p.id === L.host ? ' <span class="chip">Host</span>' : ''}${p.id === S.id ? ' <span class="chip ok">You</span>' : ''}${teamUI}</b><div class="sub">${esc(h.name)} · ${RB.CLASSES[h.cls].name} · ${p.bot ? 'Starter deck · played by the AI' : p.deckMode === 'auto' ? 'Auto deck' : p.deckMode === 'custom' ? 'Own deck' : 'Starter deck'}</div>${botPick}<div class="sub">${p.ready ? '<span style="color:var(--verd-hi)">Ready</span>' : 'Choosing…'}${p.online || p.bot ? '' : ' · offline'}</div></div>${host && p.id !== S.id ? `<button class="btn small ghost" data-kick="${p.id}">Remove</button>` : ''}</div>`; }).join('')
+        + (host && L.players.length < (L.max || 4) ? (isPvp(L) ? [0, 1].filter(k => L.players.filter(x => (x.team || 0) === k).length < L.max / 2).map(k => `<button class="addseat small" data-act="addbot" data-bteam="${k}">+ Add an AI hero to the ${esc(TEAMN(k))} team</button>`).join('') : `<button class="addseat small" data-act="addbot">+ Add an AI hero to an empty seat</button>`) : '');
       const pick = heroesOpen().map(h => `<button class="${h.id === S.mySeat.hero ? 'on' : ''}" data-hero="${h.id}" title="${esc(h.name)}"><img alt="" src="${U.cardArt(h.id)}"><span>${esc(h.name.replace(/^Ser /, '').split(' ')[0])} · ${RB.CLASSES[h.cls].name}</span></button>`).join('');
-      const D = isDungeon(L), dis = host ? '' : 'disabled';
-      const raids = (D ? Object.values(RB.DUNGEONS) : Object.values(R)).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${dis}>${esc(D ? r.name : r.short)}</button>`).join('');
-      const diffs = D ? Object.entries(RB.DUNGEON_MODES).map(([k, mm]) => `<button class="btn small ${L.diff === k ? '' : 'ghost'}" data-diff="${k}" ${dis} title="${esc(mm.text)}">${mm.name}</button>`).join('')
+      const D = isDungeon(L), P = isPvp(L), DU = isDuel(L), dis = host ? '' : 'disabled';
+      const raids = DU ? '' : (D ? Object.values(RB.DUNGEONS) : Object.values(R)).map(r => `<button class="btn small ${L.raid === r.id ? '' : 'ghost'}" data-raid="${r.id}" ${dis}>${esc(D ? r.name : r.short)}</button>`).join('');
+      const diffs = DU ? '' : D ? Object.entries(RB.DUNGEON_MODES).map(([k, mm]) => `<button class="btn small ${L.diff === k ? '' : 'ghost'}" data-diff="${k}" ${dis} title="${esc(mm.text)}">${mm.name}</button>`).join('')
         : `<button class="btn small ${L.diff === 'normal' ? '' : 'ghost'}" data-diff="normal" ${dis}>Normal</button><button class="btn small ${L.diff === 'heroic' ? '' : 'ghost'}" data-diff="heroic" ${dis}>Heroic</button><button class="btn small ${L.diff === 'mythic' ? '' : 'ghost'}" data-diff="mythic" ${host && U.mythicOpen(L.raid) ? '' : 'disabled'} title="${U.mythicOpen(L.raid) || !host ? 'The hardest way to raid' : 'Beat this raid on Heroic to unlock Mythic'}">Mythic</button>`;
       const dd = D && RB.DUNGEONS[L.raid], dm = D && (RB.DUNGEON_MODES[L.diff] || RB.DUNGEON_MODES.novice);
-      const scale = D && dd ? `<div class="bossscale"><b>${esc(dd.short)} for ${L.players.length} hero${L.players.length > 1 ? 'es' : ''}:</b> ${dd.hp + dd.hpPer * (L.players.length - 1)} health · starts at level ${dm.level} · ${dm.first ? 'goes first' : 'you go first'}</div>` : U.bossScale(L.raid, L.players.length, L.diff);
-      const modeSeg = `<div class="filters"><span class="seg"><button class="${D ? '' : 'on'}" data-mode="raid" ${dis}>Raid</button><button class="${D ? 'on' : ''}" data-mode="dungeon" ${dis || (L.players.length > 3 ? 'disabled title="Dungeons take up to 3 heroes"' : '')}>Dungeon</button></span></div>`;
-      const allReady = L.players.every(p => p.ready);
-      const what = D ? 'dungeon run' : 'raid';
+      const scale = DU ? `<div class="bossscale"><b>The Arena:</b> ${L.mode === 'duel1' ? 'one hero against one' : 'two heroes against two'}. Defeat every enemy hero to win. Healing is halved, and from round ${RB.PVP_FATIGUE || 12} every hero tires. The team that goes second draws an extra card and gets +1 resource on its first turn.</div>`
+        : L.mode === 'race' ? `<div class="bossscale"><b>Boss race:</b> two teams of two race to defeat ${esc((R[L.raid] || {}).short || 'the boss')}. The team that lands the killing blow wins, and so does a team whose rivals all fall. The boss attacks both teams; you can attack the rivals too.</div>`
+        : D && dd ? `<div class="bossscale"><b>${esc(dd.short)} for ${L.players.length} hero${L.players.length > 1 ? 'es' : ''}:</b> ${dd.hp + dd.hpPer * (L.players.length - 1)} health · starts at level ${dm.level} · ${dm.first ? 'goes first' : 'you go first'}</div>` : U.bossScale(L.raid, L.players.length, L.diff);
+      const modeSeg = `<div class="filters"><span class="seg"><button class="${L.mode === 'raid' || !L.mode ? 'on' : ''}" data-mode="raid" ${dis}>Raid</button><button class="${D ? 'on' : ''}" data-mode="dungeon" ${dis || (L.players.length > 3 ? 'disabled title="Dungeons take up to 3 heroes"' : '')}>Dungeon</button></span>
+        <span class="seg pvpseg" title="Player vs player"><button class="${L.mode === 'duel1' ? 'on' : ''}" data-mode="duel1" ${dis || (L.players.length > 2 ? 'disabled title="A 1v1 duel takes 2 heroes"' : '')}>⚔ 1v1</button><button class="${L.mode === 'duel2' ? 'on' : ''}" data-mode="duel2" ${dis}>⚔ 2v2</button><button class="${L.mode === 'race' ? 'on' : ''}" data-mode="race" ${dis}>⚔ 2v2 vs Boss</button></span></div>`;
+      const teamsOk = !P || [0, 1].every(k => L.players.filter(x => (x.team || 0) === k).length === L.max / 2);
+      const allReady = L.players.every(p => p.ready) && teamsOk;
+      const what = P ? PVPM[L.mode].what : D ? 'dungeon run' : 'raid';
       body = `<div class="codebar"><div><div class="sub">Party code</div><div class="bigcode">${L.code}</div></div><button class="btn" data-act="copy">Copy code</button>${link ? `<button class="btn ghost" data-act="copylink">Copy invite link</button>` : ''}<span class="sp"></span><button class="btn ghost small" data-act="leave">Leave lobby</button></div>
         <p class="lede">Send the code to your friends. When everyone has picked a hero, the host starts the ${what}.</p>
         ${L.started ? `<p class="newvault">The last run has finished. ${host ? 'Opening the lobby for the next one…' : 'Waiting for the host to open the lobby again.'}</p>` : ''}
-        <div class="netcols"><div><h3 class="sec">Party (${L.players.length}/${L.max || 4})</h3><div class="netplayers">${rows}</div>
+        <div class="netcols"><div><h3 class="sec">${P ? 'Teams' : 'Party'} (${L.players.length}/${L.max || 4})</h3><div class="netplayers">${rows}</div>
           <h3 class="sec">What to play</h3>${modeSeg}<div class="filters">${raids}</div><div class="filters">${diffs}</div>${scale}
-          ${host ? `<button class="btn primary" data-act="start" ${allReady && !L.started ? '' : 'disabled'}>${allReady ? `Start the ${what}` : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the ${what}.</p>`}</div>
+          ${host ? `<button class="btn primary" data-act="start" ${allReady && !L.started ? '' : 'disabled'}>${allReady ? `Start the ${what}` : !teamsOk ? `Each team needs ${L.max / 2} hero${L.max > 2 ? 'es' : ''} (add AI heroes to fill)` : 'Waiting for everyone to be ready…'}</button>` : `<p class="sub">Waiting for the host to start the ${what}.</p>`}</div>
         <div><h3 class="sec">Your hero</h3><div class="heropick">${pick}</div>
           ${D ? `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'custom' ? '' : 'on'}" data-deck="starter">Dungeon deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>${(() => { const c = myDungeonCheck(S.mySeat.hero); return S.mySeat.deckMode === 'custom' ? (c.ok ? `<p class="dnote ok">My deck: brings <b>${c.extra}</b> of your own cards (your dungeon level ${myDungeonLevel()} allows ${c.allow}).</p>` : `<p class="dnote warn">${esc(c.why)}</p>`) : `<p class="dnote">Dungeon deck: the starter deck plus your best <b>${RB.dungeonSwaps(myDungeonLevel())}</b> cards (your dungeon level is ${myDungeonLevel()}).</p>`; })()}` : `<div class="opts" style="margin-top:.6rem"><span class="seg"><button class="${S.mySeat.deckMode === 'starter' ? 'on' : ''}" data-deck="starter">Starter deck</button><button class="${S.mySeat.deckMode === 'auto' ? 'on' : ''}" data-deck="auto">Auto deck</button><button class="${S.mySeat.deckMode === 'custom' ? 'on' : ''}" data-deck="custom">My deck</button></span></div>`}
           <p class="sub">${S.computing ? 'Building your deck…' : me.ready ? 'Your deck is locked in. Change it any time before the start.' : ''}</p></div></div>`;
@@ -11478,17 +11768,21 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
     const myD = isDungeon(L) && S.mySeat.deckMode === 'custom' && myDungeonCheck(hid).ok; // #147: my deck, within the dungeon level
     if (myD) deck = save.decks[hid].slice();
     else if (isDungeon(L)) deck = RB.dungeonDeck(hid, save.owned, RB.dungeonSwaps(myDungeonLevel()));
-    else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, L.raid, n); S.computing = false; }
+    else if (S.mySeat.deckMode === 'auto') { S.computing = true; draw(); deck = await U.autoDeckFor(hid, isDuel(L) ? 'crypt' : L.raid, isPvp(L) ? 2 : n); S.computing = false; }
     else if (S.mySeat.deckMode === 'custom' && save.decks[hid] && save.decks[hid].length === RB.DECK_SIZE) deck = save.decks[hid].slice();
-    else deck = RB.buildDeck(hid, save.owned, n);
-    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: myD ? RB.landsFor(hid, save.lands[hid]) : isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
+    else deck = RB.buildDeck(hid, save.owned, isPvp(L) ? 2 : n);
+    sendRaw({ t: 'seat', hero: hid, deckMode: S.mySeat.deckMode, deck, lands: myD ? RB.landsFor(hid, save.lands[hid]) : isDungeon(L) ? RB.defaultLands(hid) : S.mySeat.deckMode === 'auto' ? RB.autoSide(hid, isDuel(L) ? 'crypt' : L.raid, save.owned) : S.mySeat.deckMode === 'custom' ? RB.landsFor(hid, save.lands[hid]) : RB.defaultLands(hid), pet: (save.sel.pet && U.ownsCos(save.sel.pet)) ? save.sel.pet : null, name: S.name });
   }
   async function onClick(e) {
     const t = e.target, a = t.closest('[data-act]');
     const nameIn = $('#netname'); if (nameIn) { S.name = nameIn.value.trim() || 'Adventurer'; save.netName = S.name; U.persist(); }
     const hb = t.closest('[data-hero]'); if (hb) { S.mySeat.hero = hb.dataset.hero; draw(); return sendSeat(); }
     const db = t.closest('[data-deck]'); if (db) { S.mySeat.deckMode = db.dataset.deck; draw(); return sendSeat(); }
-    const mb = t.closest('[data-mode]'); if (mb && S.lobby && S.lobby.host === S.id) { const toD = mb.dataset.mode === 'dungeon'; if (toD === isDungeon(S.lobby)) return; return sendRaw(toD ? { t: 'settings', mode: 'dungeon', raid: (U.dungeonState && U.dungeonState.id) || 'thornwood', diff: (U.dungeonState && U.dungeonState.mode) || 'novice' } : { t: 'settings', mode: 'raid', raid: 'crypt', diff: 'normal' }); }
+    const mb = t.closest('[data-mode]'); if (mb && S.lobby && S.lobby.host === S.id) { const want = mb.dataset.mode, L0 = S.lobby; if (want === L0.mode) return;
+      if (want === 'dungeon') return sendRaw({ t: 'settings', mode: 'dungeon', raid: (U.dungeonState && U.dungeonState.id) || 'thornwood', diff: (U.dungeonState && U.dungeonState.mode) || 'novice' });
+      const raidId = R[L0.raid] ? L0.raid : 'crypt', diff = L0.diff === 'heroic' || L0.diff === 'mythic' ? L0.diff : 'normal';
+      return sendRaw({ t: 'settings', mode: want, raid: raidId, diff: want === 'race' && diff === 'mythic' && !U.mythicOpen(raidId) ? 'normal' : diff }); }
+    const tb = t.closest('[data-team]'); if (tb && S.lobby) return sendRaw({ t: 'team', team: +tb.dataset.team, id: tb.dataset.who });
     const rb = t.closest('[data-raid]'); if (rb) { const L0 = S.lobby || {}; sendRaw(Object.assign({ t: 'settings', raid: rb.dataset.raid }, !isDungeon(L0) && L0.diff === 'mythic' && !U.mythicOpen(rb.dataset.raid) ? { diff: 'heroic' } : {})); setTimeout(sendSeat, 300); return; }
     const df = t.closest('[data-diff]'); if (df) return sendRaw({ t: 'settings', diff: df.dataset.diff });
     const kb = t.closest('[data-kick]'); if (kb) return sendRaw({ t: 'kick', id: kb.dataset.kick });
@@ -11508,7 +11802,7 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
       case 'addbot': {
         const L = S.lobby, used = L.players.map(p => p.hero);
         const hid = (heroesOpen().find(h => !used.includes(h.id)) || H.aldric).id;
-        return sendRaw({ t: 'addbot', hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : RB.buildDeck(hid, null, L.players.length + 1) });
+        return sendRaw({ t: 'addbot', hero: hid, name: 'AI ' + H[hid].name.replace(/^Ser /, '').split(' ')[0], deck: isDungeon(L) ? RB.dungeonDeck(hid, null, 0) : isPvp(L) ? RB.buildDeck(hid, null, 2) : RB.buildDeck(hid, null, L.players.length + 1), team: a.dataset.bteam != null ? +a.dataset.bteam : undefined });
       }
     }
   }
