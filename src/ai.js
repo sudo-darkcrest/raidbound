@@ -42,6 +42,7 @@
   // ward and ready armor. The boss strikes the hero with the most threat (damage dealt this round), so a hero who is
   // already top threat, or alone, expects the strike; minions pick at random among heroes and allies.
   const DW = () => (RB.AI_DANGER != null ? RB.AI_DANGER : 1);
+  const armed = (E, p) => !p.hero.ex && ((p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p)) || E.heroAtk(p) > 0);
   function danger(E, p) {
     const heroes = E.heroes(), hp = E.heroHp(p);
     if (!heroes.length || hp <= 0 || !DW()) return 0;
@@ -190,7 +191,7 @@
         if (tags.includes('draw')) return { s: p.hand.length <= 5 ? 8 + (tags.includes('buff') ? 1 : 0) : 3 };
         if (tags.includes('summon')) return { s: 10 };
         if (tags.includes('buff') && d.target === 'ally') { const t = E.T.ally; const own = p.allies.filter(a => true); if (!own.length) return { s: -1 }; const a = own.reduce((x, y) => E.allyAtk(p, y) > E.allyAtk(p, x) ? y : x); return { s: 9, target: t(p, a) }; }
-        if (tags.includes('buff')) return { s: E.canAttackWith(p, 'hero') || p.weapon ? 4 : -1 };
+        if (tags.includes('buff')) return { s: armed(E, p) || p.weapon ? 4 : -1 };
         if (tags.includes('ramp')) { const big = p.hand.some(c => C[c.id].type !== 'quest' && C[c.id].cost > E.available(p) && C[c.id].cost <= E.available(p) + 2 - d.cost); return { s: big ? 12 : -1 }; }
         if (tags.includes('stunAll')) return { s: nMin >= 2 ? 6 + nMin : -1 };
         if (tags.includes('mark')) { const attackers = p.allies.filter(a => !a.ex && !a.sick).length + (p.weapon ? 1 : 0); return { s: attackers >= 2 && !E.guardians().length ? 4 + attackers * 2 : -1 }; }
@@ -215,8 +216,8 @@
       const heroDmg = E.heroMax(p) - E.heroHp(p), tags = d.tags || [];
       if (d.id === 'moonwell') { target = mostWoundedFriendly(E, 'friendlyHero'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 3 ? 7 : -1; }
       else if (d.ltarget) { target = (E.targetsFor(d.ltarget, p) || [])[0] || null; s = target ? 4 : -1; }
-      else if (d.id === 'ashenforge') s = E.canAttackWith(p, 'hero') ? 5 : -1;
-      else if (d.id === 'spireforge') s = p.hero.ex ? 8 : (E.canAttackWith(p, 'hero') ? 4 : -1);
+      else if (d.id === 'ashenforge') s = armed(E, p) ? 5 : -1;
+      else if (d.id === 'spireforge') s = p.hero.ex ? 8 : (armed(E, p) ? 4 : -1);
       else if (d.id === 'emberanvil') s = p.allies.length ? 6 : -1;
       else if (d.id === 'emptythrone') s = p.grave.some(c => C[c.id].type === 'ally') && p.hand.length <= 7 ? 6 : -1;
       else if (d.id === 'lighthouse') s = 4 + (heroDmg >= 2 ? 2 : 0);
@@ -281,7 +282,7 @@
       else if (d.aiUse) s = d.aiUse(E, p);
       else if (tags.includes('ramp')) s = p.hand.some(c => C[c.id].cost === E.available(p) + 1) ? 7 : -1;
       else if (tags.includes('draw')) s = d.use.cost ? (E.available(p) >= d.use.cost + 0 ? 3 : -1) : 4;
-      else if (tags.includes('buff')) s = d.id === 'warhorn' ? (p.allies.filter(a => !a.ex && !a.sick).length >= 2 ? 5 : -1) : (E.canAttackWith(p, 'hero') ? 4 : -1);
+      else if (tags.includes('buff')) s = d.id === 'warhorn' ? (p.allies.filter(a => !a.ex && !a.sick).length >= 2 ? 5 : -1) : (armed(E, p) ? 4 : -1);
       if (s > 0) acts.push({ s, go: () => E.useItem(p, e, target) });
     }
     // attacks
@@ -293,9 +294,12 @@
         const targets = E.attackTargets(p, who);
         if (!targets.length) continue;
         let atk, myHp, lr;
+        let basicOnly = false;
         if (who === 'hero') {
           const useW = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p);
           atk = E.heroAttackValue(p, useW); myHp = E.heroHp(p); lr = useW && (C[p.weapon.c.id].kw || []).includes('longrange');
+          // a basic attack spends the hero's swing: don't waste it while a weapon could still be used this turn
+          if (!useW) { basicOnly = true; if ((p.weapon && !p.weapon.ex) || p.hand.some(c => C[c.id].type === 'weapon' && E.canPlay(p, c).ok)) continue; }
         } else { atk = E.allyAtk(p, who); myHp = E.allyMax(p, who) - who.damage; lr = E.allyKw(p, who, 'longrange'); }
         let best = null, bs = -1;
         // does a fallen ally come back for the boss (the Crypt's Grave Harvest)? then a lost trade also hands the boss a minion
@@ -315,6 +319,7 @@
             if (raisesMinion) s -= 15;                // its corpse becomes a Risen Thrall for the boss
           }
           if (who === 'hero' && myHp - back < 8 && back > 0) s -= 6;
+          if (basicOnly && !kills && back > 0) s -= 2; // chip damage that costs health is rarely worth it
           if (s > bs) { bs = s; best = t; }
         }
         if (best && bs > 0) acts.push({ s: Math.min(bs, 12) * 0.6 + 1, go: () => E.attack(p, who, best) });

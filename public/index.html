@@ -5433,6 +5433,7 @@ globalThis.RB.WEB_BUILD = true;
       { name: 'Dampening', text: 'All healing in the Arena is halved (rounded up).' },
       { name: 'Going second', text: 'Heroes on the team that goes second draw an extra card and get +1 resource on their first turn.' },
       { name: 'Raid-only cards', text: 'Mythic raid cards do nothing in the Arena. They can still be played as resources.' }] };
+  RB.BASIC_ATK = { warrior: 2, rogue: 2, ranger: 2, paladin: 2, mage: 1, priest: 1 }; // a hero's basic attack, by class
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
@@ -5529,6 +5530,8 @@ globalThis.RB.WEB_BUILD = true;
     const gearSum = (p, key) => gear(p).reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
     const strikeCost = p => p.weapon ? Math.max(0, (C[p.weapon.c.id].strike || 0) - (geared(p) ? gearSum(p, 'gearedStrike') : 0)) : 0;
     const weaponAtk = p => p.weapon ? C[p.weapon.c.id].atk + (p.weapon.atkB || 0) + (geared(p) ? (C[p.weapon.c.id].gearedAtk || 0) : 0) + (deep(p) ? (C[p.weapon.c.id].deepAtk || 0) : 0) + itemSum(p, 'wpnAtk') + (g.boss && g.boss.enrage ? (C[p.weapon.c.id].enrageAtk || 0) : 0) : 0;
+    // Basic attack: every hero can attack without a weapon (and without paying anything): fighters for 2, casters for 1
+    const basicAtk = p => { const hd = pdef(p), cls = hd.cls || (HEROES[p.heroId] || {}).cls; return hd.basicAtk != null ? hd.basicAtk : (RB.BASIC_ATK[cls] != null ? RB.BASIC_ATK[cls] : 1); };
     const heroAtk = p => p.hero.tempAtk + (p.hero.permAtk || 0) + gear(p).reduce((s, e) => s + (C[e.c.id].heroAtk || 0), 0) + (geared(p) ? gearSum(p, 'gearedHeroAtk') : 0) + (p.hero.master ? (C[p.hero.master].heroAtk || 0) : 0);
     const allyDef = a => def(a.id);
     const allyAtk = (p, a) => { const d = allyDef(a); return Math.max(0, (d.atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk') + (geared(p) ? itemSum(p, 'gearedAllyAtk') + (d.gearedBuff || 0) : 0) + (hasKw(d, 'longrange') ? itemSum(p, 'volleyAllyAtk') : 0) + (d.atkPerArmor ? Math.min(d.atkPerArmor, Object.keys(p.armor).length) : 0) + (hasKw(d, 'frenzy') ? a.damage : 0) + p.allies.reduce((s, x) => s + (x !== a ? (allyDef(x).auraAtk || 0) : 0), 0)); };
@@ -6062,12 +6065,11 @@ globalThis.RB.WEB_BUILD = true;
       if (!isActive(p) || g.over) return false;
       if (who === 'hero') {
         if (p.hero.ex || p.hero.dead) return false;
-        const w = p.weapon && !p.weapon.ex && available(p) >= strikeCost(p);
-        return w || heroAtk(p) > 0;
+        return true; // a basic attack needs no weapon and no resources
       }
       const a = who; return p.allies.includes(a) && !a.ex && !a.sick && !a.frozen && allyAtk(p, a) > 0;
     }
-    function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? weaponAtk(p) : 0); }
+    function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? weaponAtk(p) : basicAtk(p)); }
     async function attack(p, who, target) { return asP(p, () => attack0(p, who, target)); }
     async function attack0(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
@@ -6076,7 +6078,7 @@ globalThis.RB.WEB_BUILD = true;
       if (who === 'hero') {
         const useW = p.weapon && !p.weapon.ex && available(p) >= strikeCost(p);
         if (useW) { const wd = C[p.weapon.c.id]; atk = heroAttackValue(p, true); pay(p, strikeCost(p)); p.weapon.ex = true; p.wAttacks = (p.wAttacks || 0) + 1; longrange = hasKw(wd, 'longrange'); onAttack = wd.onAttack; wname = ` with ${wd.name}`; }
-        if (!useW) atk = heroAttackValue(p, false);
+        if (!useW) { atk = heroAttackValue(p, false); wname = ' (basic attack)'; }
         const ram = perkIs(p, 'firstAtk'); if (ram && !p.hero.petUsed) { p.hero.petUsed = true; atk += ram.n; log(`${petName(p)} charges in with ${pdef(p).name}: +${ram.n} damage.`, 'def'); }
         p.hero.ex = true;
         ironHide = (HEROES[p.heroId].ironHide && !p.hero.master) ? HEROES[p.heroId].ironHide : 0;
@@ -6589,7 +6591,7 @@ globalThis.RB.WEB_BUILD = true;
           else if (q.k === 'bossDmg') await dmg(T.boss(), q.n, { p, kind: 'effect' });
         }
         if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
-      flipCount, markedHero, stageNow, attackTargets, volleyAttack, coverOptions, reactOptions, reactMatch,
+      basicAtk, flipCount, markedHero, stageNow, attackTargets, volleyAttack, coverOptions, reactOptions, reactMatch,
       // #PvP
       pvp: PV, duel: DUEL, race: RACE, teams: TEAMS, teamName, mates, foesOf, allAlive, pov,
       allTargets: () => [...(DUEL ? [] : [T.boss(), ...g.boss.minions.map(T.minion)]), ...g.players.map(T.hero), ...g.players.flatMap(q => q.allies.map(a => T.ally(q, a)))],
@@ -6784,6 +6786,7 @@ globalThis.RB.WEB_BUILD = true;
   // ward and ready armor. The boss strikes the hero with the most threat (damage dealt this round), so a hero who is
   // already top threat, or alone, expects the strike; minions pick at random among heroes and allies.
   const DW = () => (RB.AI_DANGER != null ? RB.AI_DANGER : 1);
+  const armed = (E, p) => !p.hero.ex && ((p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p)) || E.heroAtk(p) > 0);
   function danger(E, p) {
     const heroes = E.heroes(), hp = E.heroHp(p);
     if (!heroes.length || hp <= 0 || !DW()) return 0;
@@ -6932,7 +6935,7 @@ globalThis.RB.WEB_BUILD = true;
         if (tags.includes('draw')) return { s: p.hand.length <= 5 ? 8 + (tags.includes('buff') ? 1 : 0) : 3 };
         if (tags.includes('summon')) return { s: 10 };
         if (tags.includes('buff') && d.target === 'ally') { const t = E.T.ally; const own = p.allies.filter(a => true); if (!own.length) return { s: -1 }; const a = own.reduce((x, y) => E.allyAtk(p, y) > E.allyAtk(p, x) ? y : x); return { s: 9, target: t(p, a) }; }
-        if (tags.includes('buff')) return { s: E.canAttackWith(p, 'hero') || p.weapon ? 4 : -1 };
+        if (tags.includes('buff')) return { s: armed(E, p) || p.weapon ? 4 : -1 };
         if (tags.includes('ramp')) { const big = p.hand.some(c => C[c.id].type !== 'quest' && C[c.id].cost > E.available(p) && C[c.id].cost <= E.available(p) + 2 - d.cost); return { s: big ? 12 : -1 }; }
         if (tags.includes('stunAll')) return { s: nMin >= 2 ? 6 + nMin : -1 };
         if (tags.includes('mark')) { const attackers = p.allies.filter(a => !a.ex && !a.sick).length + (p.weapon ? 1 : 0); return { s: attackers >= 2 && !E.guardians().length ? 4 + attackers * 2 : -1 }; }
@@ -6957,8 +6960,8 @@ globalThis.RB.WEB_BUILD = true;
       const heroDmg = E.heroMax(p) - E.heroHp(p), tags = d.tags || [];
       if (d.id === 'moonwell') { target = mostWoundedFriendly(E, 'friendlyHero'); s = target && E.maxHpOf(target) - E.hpOf(target) >= 3 ? 7 : -1; }
       else if (d.ltarget) { target = (E.targetsFor(d.ltarget, p) || [])[0] || null; s = target ? 4 : -1; }
-      else if (d.id === 'ashenforge') s = E.canAttackWith(p, 'hero') ? 5 : -1;
-      else if (d.id === 'spireforge') s = p.hero.ex ? 8 : (E.canAttackWith(p, 'hero') ? 4 : -1);
+      else if (d.id === 'ashenforge') s = armed(E, p) ? 5 : -1;
+      else if (d.id === 'spireforge') s = p.hero.ex ? 8 : (armed(E, p) ? 4 : -1);
       else if (d.id === 'emberanvil') s = p.allies.length ? 6 : -1;
       else if (d.id === 'emptythrone') s = p.grave.some(c => C[c.id].type === 'ally') && p.hand.length <= 7 ? 6 : -1;
       else if (d.id === 'lighthouse') s = 4 + (heroDmg >= 2 ? 2 : 0);
@@ -7023,7 +7026,7 @@ globalThis.RB.WEB_BUILD = true;
       else if (d.aiUse) s = d.aiUse(E, p);
       else if (tags.includes('ramp')) s = p.hand.some(c => C[c.id].cost === E.available(p) + 1) ? 7 : -1;
       else if (tags.includes('draw')) s = d.use.cost ? (E.available(p) >= d.use.cost + 0 ? 3 : -1) : 4;
-      else if (tags.includes('buff')) s = d.id === 'warhorn' ? (p.allies.filter(a => !a.ex && !a.sick).length >= 2 ? 5 : -1) : (E.canAttackWith(p, 'hero') ? 4 : -1);
+      else if (tags.includes('buff')) s = d.id === 'warhorn' ? (p.allies.filter(a => !a.ex && !a.sick).length >= 2 ? 5 : -1) : (armed(E, p) ? 4 : -1);
       if (s > 0) acts.push({ s, go: () => E.useItem(p, e, target) });
     }
     // attacks
@@ -7035,9 +7038,12 @@ globalThis.RB.WEB_BUILD = true;
         const targets = E.attackTargets(p, who);
         if (!targets.length) continue;
         let atk, myHp, lr;
+        let basicOnly = false;
         if (who === 'hero') {
           const useW = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p);
           atk = E.heroAttackValue(p, useW); myHp = E.heroHp(p); lr = useW && (C[p.weapon.c.id].kw || []).includes('longrange');
+          // a basic attack spends the hero's swing: don't waste it while a weapon could still be used this turn
+          if (!useW) { basicOnly = true; if ((p.weapon && !p.weapon.ex) || p.hand.some(c => C[c.id].type === 'weapon' && E.canPlay(p, c).ok)) continue; }
         } else { atk = E.allyAtk(p, who); myHp = E.allyMax(p, who) - who.damage; lr = E.allyKw(p, who, 'longrange'); }
         let best = null, bs = -1;
         // does a fallen ally come back for the boss (the Crypt's Grave Harvest)? then a lost trade also hands the boss a minion
@@ -7057,6 +7063,7 @@ globalThis.RB.WEB_BUILD = true;
             if (raisesMinion) s -= 15;                // its corpse becomes a Risen Thrall for the boss
           }
           if (who === 'hero' && myHp - back < 8 && back > 0) s -= 6;
+          if (basicOnly && !kills && back > 0) s -= 2; // chip damage that costs health is rarely worth it
           if (s > bs) { bs = s; best = t; }
         }
         if (best && bs > 0) acts.push({ s: Math.min(bs, 12) * 0.6 + 1, go: () => E.attack(p, who, best) });
@@ -10473,7 +10480,7 @@ globalThis.RB.WEB_BUILD = true;
         ${fgEx(fgU(ca('treant'), 'Ironbark Treant', '3 ATK · 7 health') + fgA('attacks') + fgU(ca('thrall'), 'Risen Thrall', '2 ATK · 2 health') + fgA('result') + fgU('', 'Thrall falls', 'Treant keeps 2 damage', 'ok'), 'Both sides hit at once. The Treant wins, but carries 2 damage into the next turn.')}</section>
         <section><h4>Hitting everything at once</h4><p>A card or power that hits <b>each enemy</b> reaches at most <b>5 targets</b>. If there are more, it always hits the boss, then the minions it hurts most: Guardians first, then the ones it can finish off, then the hardest hitters. If the same card also hits the boss or a target you chose, it reaches 4 others. Party-wide heals and wards still reach everyone, and the boss's own hit-all cards have no limit. To keep that fair, a boss can have at most <b>7 minions</b> on the table at once.</p></section>
         <section><h4>Volley and melee</h4><p><b>Volley</b> attackers take nothing back. Melee attackers that hit the boss also take its <b>retaliation</b> (Cold Hands, Molten Scales, Coral Hide). Only Volley and <b>Skyward</b> attackers can reach a boss in the air (abilities always can). Skyward is just that: a Skyward ally still takes the hit back.</p></section>
-        <section><h4>Your hero's weapon</h4><p>Heroes attack with an equipped weapon by paying its strike cost. When your hero is attacked, a ready weapon can also <b>strike back</b> if you can pay for it.</p></section>
+        <section><h4>Your hero's attack</h4><p>Your hero can attack once per turn. With an equipped weapon you pay its strike cost and hit for the weapon's attack. Without one (or when you can't pay), your hero makes a free <b>basic attack</b>: 2 damage for warriors, paladins, rangers and rogues, 1 for mages and priests. When your hero is attacked, a ready weapon can also <b>strike back</b> if you can pay for it.</p></section>
         <section><h4>Armor, wards and healing</h4><p><b>Armor</b> can block when your hero is hit, if you have enough ready resources to pay its cost; it then exhausts until your turn. A <b>ward</b> (◈) is a shield from a card: it prevents the next damage and then fades. <b>Healing</b> removes damage but never raises health above the maximum.</p>
         ${fgEx(fgU('', '6 damage', 'boss strike', 'bad') + fgA('ward 4') + fgU('', '2 left') + fgA('armor blocks 2') + fgU(ca('aldric'), 'Ser Aldric', 'takes 0', 'ok'), 'Wards go first, then armor. Stack them and a big hit can vanish completely.')}</section>` },
       { id: 'bossturn', icon: '💀', title: "The boss's turn", html: `
@@ -10602,7 +10609,7 @@ globalThis.RB.WEB_BUILD = true;
   function rivalsHTML(tcls, compact) {
     const g = E.g, mine = myTeam();
     return g.players.filter(q => q.team !== mine).map(q => {
-      const qd = E.pdef(q), hp = Math.max(0, E.heroHp(q)), mx = E.heroMax(q), atk = E.heroAtk(q) + (q.weapon && !q.weapon.ex ? E.weaponAtk(q) : 0);
+      const qd = E.pdef(q), hp = Math.max(0, E.heroHp(q)), mx = E.heroMax(q), atk = q.weapon && !q.weapon.ex ? E.heroAttackValue(q, true) : E.heroAttackValue(q, false);
       const tags = [q.hero.taunt && 'Taunt', q.hero.elusive && 'Shrouded', q.hero.stunNext && 'Stunned', q.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
       const gear = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
       const units = q.allies.map(a => { const d = E.allyDef(a); return unitHTML('ally', { ref: a.uid, p: q.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(q, a), hp: E.allyMax(q, a) - a.damage, max: E.allyMax(q, a), kws: d.kw || [], buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: ['foe', a.ex ? 'ex' : '', a.frozen ? 'frozen' : '', tcls(a.uid)] }); }).join('');
@@ -10656,7 +10663,7 @@ globalThis.RB.WEB_BUILD = true;
     const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley and Skyward attackers, and abilities, can reach him. The ones that can are glowing. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
-    const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? E.weaponAtk(p) : 0);
+    const heroAtk = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p) ? E.heroAttackValue(p, true) : E.heroAttackValue(p, false); // weapon if it can be paid for, else the basic attack
     const heroCan = canAct && E.canAttackWith(p, 'hero');
     // #112: while the boss is in the air, light up whatever can reach him and dim the rest
     const airborne = !!(B.flying && raid.flight && !g.over);
@@ -11216,7 +11223,7 @@ globalThis.RB.WEB_BUILD = true;
     const items = [];
     if (E.canAttackWith(p, 'hero')) {
       const useW = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p);
-      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${E.strikeCost(p)}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
+      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${E.strikeCost(p)}) · ${E.heroAttackValue(p, true)} damage` : ` (basic attack, free) · ${E.heroAttackValue(p, false)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
     } else if (!p.hero.ex) items.push({ why: p.weapon ? (p.weapon.ex ? 'Your weapon has already been used this round.' : `You need ${E.strikeCost(p)} ready resource${E.strikeCost(p) === 1 ? '' : 's'} to strike with your weapon.`) : 'Your hero needs a weapon (or an attack bonus) to attack.' });
     else items.push({ why: 'Your hero has already attacked this turn.' });
     if (!p.hero.powerUsed && !p.hero.master) items.push({ label: `Use ${esc(HE[p.heroId].power.name)} (once per game)`, go: () => usePower(p) });

@@ -49,7 +49,7 @@
   function rivalsHTML(tcls, compact) {
     const g = E.g, mine = myTeam();
     return g.players.filter(q => q.team !== mine).map(q => {
-      const qd = E.pdef(q), hp = Math.max(0, E.heroHp(q)), mx = E.heroMax(q), atk = E.heroAtk(q) + (q.weapon && !q.weapon.ex ? E.weaponAtk(q) : 0);
+      const qd = E.pdef(q), hp = Math.max(0, E.heroHp(q)), mx = E.heroMax(q), atk = q.weapon && !q.weapon.ex ? E.heroAttackValue(q, true) : E.heroAttackValue(q, false);
       const tags = [q.hero.taunt && 'Taunt', q.hero.elusive && 'Shrouded', q.hero.stunNext && 'Stunned', q.hero.master && 'Master'].filter(Boolean).map(t => `<span>${t}</span>`).join('');
       const gear = [q.weapon, ...Object.values(q.armor), ...q.items].filter(Boolean).map(e => `<img class="rgear" alt="" src="${U.cardArt(e.c.id)}" data-card="${e.c.id}">`).join('');
       const units = q.allies.map(a => { const d = E.allyDef(a); return unitHTML('ally', { ref: a.uid, p: q.idx, name: d.name, img: U.cardArt(a.id), atk: E.allyAtk(q, a), hp: E.allyMax(q, a) - a.damage, max: E.allyMax(q, a), kws: d.kw || [], buffA: a.atkB + a.tmp > 0, buffH: a.hpB > 0, uc: facColor[d.fac || 'neutral'], cls: ['foe', a.ex ? 'ex' : '', a.frozen ? 'frozen' : '', tcls(a.uid)] }); }).join('');
@@ -103,7 +103,7 @@
     const flight = B.flying && raid.flight ? `<span class="chip flying" title="${esc(raid.short)} is in the air. Only Volley and Skyward attackers, and abilities, can reach him. The ones that can are glowing. Deal ${B.groundMax} damage to bring him crashing down (he is stunned when he lands). Otherwise he lands by himself after ${raid.flight.turns} boss turns."><b>⇡ In the air</b><span class="gbar"><i style="width:${Math.min(100, B.ground / Math.max(1, B.groundMax) * 100)}%"></i></span>Ground ${B.ground}/${B.groundMax} · lands in ${Math.max(1, raid.flight.turns - B.flyTurns)}</span>` : '';
     // player
     const hd = E.pdef(p), dead = p.hero.dead;
-    const heroAtk = E.heroAtk(p) + (p.weapon && !p.weapon.ex ? E.weaponAtk(p) : 0);
+    const heroAtk = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p) ? E.heroAttackValue(p, true) : E.heroAttackValue(p, false); // weapon if it can be paid for, else the basic attack
     const heroCan = canAct && E.canAttackWith(p, 'hero');
     // #112: while the boss is in the air, light up whatever can reach him and dim the rest
     const airborne = !!(B.flying && raid.flight && !g.over);
@@ -663,7 +663,7 @@
     const items = [];
     if (E.canAttackWith(p, 'hero')) {
       const useW = p.weapon && !p.weapon.ex && E.available(p) >= E.strikeCost(p);
-      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${E.strikeCost(p)}) · ${E.heroAttackValue(p, true)} damage` : ` · ${E.heroAtk(p)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
+      items.push({ label: `Attack${useW ? ` with ${esc(C[p.weapon.c.id].name)} (pay ${E.strikeCost(p)}) · ${E.heroAttackValue(p, true)} damage` : ` (basic attack, free) · ${E.heroAttackValue(p, false)} damage`}`, go: () => startTargeting('Attack: choose an enemy', E.attackTargets(), false, t => doAct('attack', p, 'hero', t)) });
     } else if (!p.hero.ex) items.push({ why: p.weapon ? (p.weapon.ex ? 'Your weapon has already been used this round.' : `You need ${E.strikeCost(p)} ready resource${E.strikeCost(p) === 1 ? '' : 's'} to strike with your weapon.`) : 'Your hero needs a weapon (or an attack bonus) to attack.' });
     else items.push({ why: 'Your hero has already attacked this turn.' });
     if (!p.hero.powerUsed && !p.hero.master) items.push({ label: `Use ${esc(HE[p.heroId].power.name)} (once per game)`, go: () => usePower(p) });

@@ -31,6 +31,7 @@
       { name: 'Dampening', text: 'All healing in the Arena is halved (rounded up).' },
       { name: 'Going second', text: 'Heroes on the team that goes second draw an extra card and get +1 resource on their first turn.' },
       { name: 'Raid-only cards', text: 'Mythic raid cards do nothing in the Arena. They can still be played as resources.' }] };
+  RB.BASIC_ATK = { warrior: 2, rogue: 2, ranger: 2, paladin: 2, mage: 1, priest: 1 }; // a hero's basic attack, by class
   RB.newGame = function (cfg, hooks) {
     hooks = hooks || {};
     const rnd = cfg.seed != null ? RB.ART.rng(cfg.seed) : Math.random;
@@ -127,6 +128,8 @@
     const gearSum = (p, key) => gear(p).reduce((s, e) => s + (C[e.c.id][key] || 0), 0);
     const strikeCost = p => p.weapon ? Math.max(0, (C[p.weapon.c.id].strike || 0) - (geared(p) ? gearSum(p, 'gearedStrike') : 0)) : 0;
     const weaponAtk = p => p.weapon ? C[p.weapon.c.id].atk + (p.weapon.atkB || 0) + (geared(p) ? (C[p.weapon.c.id].gearedAtk || 0) : 0) + (deep(p) ? (C[p.weapon.c.id].deepAtk || 0) : 0) + itemSum(p, 'wpnAtk') + (g.boss && g.boss.enrage ? (C[p.weapon.c.id].enrageAtk || 0) : 0) : 0;
+    // Basic attack: every hero can attack without a weapon (and without paying anything): fighters for 2, casters for 1
+    const basicAtk = p => { const hd = pdef(p), cls = hd.cls || (HEROES[p.heroId] || {}).cls; return hd.basicAtk != null ? hd.basicAtk : (RB.BASIC_ATK[cls] != null ? RB.BASIC_ATK[cls] : 1); };
     const heroAtk = p => p.hero.tempAtk + (p.hero.permAtk || 0) + gear(p).reduce((s, e) => s + (C[e.c.id].heroAtk || 0), 0) + (geared(p) ? gearSum(p, 'gearedHeroAtk') : 0) + (p.hero.master ? (C[p.hero.master].heroAtk || 0) : 0);
     const allyDef = a => def(a.id);
     const allyAtk = (p, a) => { const d = allyDef(a); return Math.max(0, (d.atk || 0) + a.atkB + a.tmp + itemSum(p, 'allyAtk') + (geared(p) ? itemSum(p, 'gearedAllyAtk') + (d.gearedBuff || 0) : 0) + (hasKw(d, 'longrange') ? itemSum(p, 'volleyAllyAtk') : 0) + (d.atkPerArmor ? Math.min(d.atkPerArmor, Object.keys(p.armor).length) : 0) + (hasKw(d, 'frenzy') ? a.damage : 0) + p.allies.reduce((s, x) => s + (x !== a ? (allyDef(x).auraAtk || 0) : 0), 0)); };
@@ -660,12 +663,11 @@
       if (!isActive(p) || g.over) return false;
       if (who === 'hero') {
         if (p.hero.ex || p.hero.dead) return false;
-        const w = p.weapon && !p.weapon.ex && available(p) >= strikeCost(p);
-        return w || heroAtk(p) > 0;
+        return true; // a basic attack needs no weapon and no resources
       }
       const a = who; return p.allies.includes(a) && !a.ex && !a.sick && !a.frozen && allyAtk(p, a) > 0;
     }
-    function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? weaponAtk(p) : 0); }
+    function heroAttackValue(p, useWeapon) { return heroAtk(p) + (useWeapon && p.weapon ? weaponAtk(p) : basicAtk(p)); }
     async function attack(p, who, target) { return asP(p, () => attack0(p, who, target)); }
     async function attack0(p, who, target) {
       if (!canAttackWith(p, who)) return { ok: false, why: 'That character can\'t attack right now.' };
@@ -674,7 +676,7 @@
       if (who === 'hero') {
         const useW = p.weapon && !p.weapon.ex && available(p) >= strikeCost(p);
         if (useW) { const wd = C[p.weapon.c.id]; atk = heroAttackValue(p, true); pay(p, strikeCost(p)); p.weapon.ex = true; p.wAttacks = (p.wAttacks || 0) + 1; longrange = hasKw(wd, 'longrange'); onAttack = wd.onAttack; wname = ` with ${wd.name}`; }
-        if (!useW) atk = heroAttackValue(p, false);
+        if (!useW) { atk = heroAttackValue(p, false); wname = ' (basic attack)'; }
         const ram = perkIs(p, 'firstAtk'); if (ram && !p.hero.petUsed) { p.hero.petUsed = true; atk += ram.n; log(`${petName(p)} charges in with ${pdef(p).name}: +${ram.n} damage.`, 'def'); }
         p.hero.ex = true;
         ironHide = (HEROES[p.heroId].ironHide && !p.hero.master) ? HEROES[p.heroId].ironHide : 0;
@@ -1187,7 +1189,7 @@
           else if (q.k === 'bossDmg') await dmg(T.boss(), q.n, { p, kind: 'effect' });
         }
         if (D && cfg.dungeonFirst) { log(`${raid.short} acts first!`, 'boss'); await bossTurn(); } else await startHeroTurn(); },
-      flipCount, markedHero, stageNow, attackTargets, volleyAttack, coverOptions, reactOptions, reactMatch,
+      basicAtk, flipCount, markedHero, stageNow, attackTargets, volleyAttack, coverOptions, reactOptions, reactMatch,
       // #PvP
       pvp: PV, duel: DUEL, race: RACE, teams: TEAMS, teamName, mates, foesOf, allAlive, pov,
       allTargets: () => [...(DUEL ? [] : [T.boss(), ...g.boss.minions.map(T.minion)]), ...g.players.map(T.hero), ...g.players.flatMap(q => q.allies.map(a => T.ally(q, a)))],
