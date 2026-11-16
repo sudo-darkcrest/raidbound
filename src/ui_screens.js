@@ -158,7 +158,7 @@
 
   /* ---------------- auto deck (#23) ---------------- */
   U.autoDeckFor = async function (hid, raidId, partySize) {
-    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0), 'r3'].join('|'); // r3: 40-card decks (#151)
+    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0), 'r4'].join('|'); // r4: cost mix + the plain starter in the running (r3: 40-card decks, #151)
     save.autoDecks = save.autoDecks || {};
     if (save.autoDecks[key]) return save.autoDecks[key];
     const ov = document.createElement('div'); ov.className = 'overlay';

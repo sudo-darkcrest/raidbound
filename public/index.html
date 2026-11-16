@@ -7351,15 +7351,40 @@ globalThis.RB.WEB_BUILD = true;
   }
   const poolFor = (heroId, owned) => Object.values(C).filter(d => !RB.isResCard(d) && RB.legalFor(heroId, d) && (owned ? (owned[d.id] || 0) > 0 : d.set === 'core' || d.set === 'starter'));
   const copiesOf = (d, owned) => Math.min(RB.maxCopies(d), owned ? owned[d.id] || 0 : 2);
+  // Auto decks keep a mix of cheap and expensive cards: cheap ones get the early turns going and make good resource
+  // fodder; a deck stuffed with big cards just sits in hand. (Only for decks the game builds; player decks have no limits.)
+  RB.CURVE = { lowMax: 2, lowMin: 15, highMin: 5, highMax: 8 }; // at least 15 cards costing 2 or less, at most 8 costing 5 or more
+  const band = d => (d.cost || 0) <= RB.CURVE.lowMax ? 'low' : (d.cost || 0) >= RB.CURVE.highMin ? 'high' : 'mid';
+  const curveCount = deck => { const n = { low: 0, mid: 0, high: 0 }; deck.forEach(id => { if (!RB.isResCard(C[id])) n[band(C[id])]++; }); return n; };
+  RB.curveOk = deck => { const n = curveCount(deck); return n.low >= RB.CURVE.lowMin && n.high <= RB.CURVE.highMax; };
+  // swap the weakest cards of the wrong cost for the best cards of the right cost until the deck fits the limits
+  RB.fixCurve = function (deck, pool, sc, owned) {
+    deck = deck.slice();
+    const cnt = id => deck.filter(x => x === id).length;
+    const swap = (fromBands, toBands) => {
+      const outs = deck.map((id, i) => ({ i, d: C[id] })).filter(x => !RB.isResCard(x.d) && fromBands.includes(band(x.d))).sort((a, b) => sc(a.d) - sc(b.d));
+      const ins = pool.filter(d => toBands.includes(band(d)) && d.type !== 'master' && cnt(d.id) < copiesOf(d, owned)).sort((a, b) => sc(b) - sc(a));
+      if (!outs.length || !ins.length) return false;
+      deck[outs[0].i] = ins[0].id; return true;
+    };
+    for (let guard = 0; guard < 60; guard++) {
+      const n = curveCount(deck);
+      if (n.high > RB.CURVE.highMax) { if (!swap(['high'], n.low < RB.CURVE.lowMin ? ['low'] : ['low', 'mid'])) break; continue; }
+      if (n.low < RB.CURVE.lowMin) { if (!swap(n.high > 0 ? ['high', 'mid'] : ['mid'], ['low'])) break; continue; }
+      break;
+    }
+    return deck;
+  };
   // fast heuristic pick (instant)
-  RB.autoDeck = function (heroId, raidId, owned, partySize) {
+  RB.autoDeck = function (heroId, raidId, owned, partySize) { const pool = poolFor(heroId, owned), sc = d => RB.cardScore(d, raidId) + (partySize > 1 && (d.tags || []).includes('revive') ? 4 : 0); return RB.fixCurve(autoDeck0(heroId, raidId, owned, partySize), pool, sc, owned); };
+  function autoDeck0(heroId, raidId, owned, partySize) {
     const pool = poolFor(heroId, owned), want = shape(heroId), deck = [];
     const sc = d => RB.cardScore(d, raidId) + (partySize > 1 && (d.tags || []).includes('revive') ? 4 : 0);
     const add = (list, n) => { const opts = []; list.forEach(d => { for (let k = 0; k < copiesOf(d, owned); k++) opts.push({ id: d.id, s: sc(d) - k * 0.5 }); }); opts.sort((a, b) => b.s - a.s); for (const o of opts) { if (n <= 0) break; if (deck.length >= RB.DECK_SIZE) break; if (C[o.id].type === 'master' && deck.some(x => C[x].type === 'master')) continue; deck.push(o.id); n--; } };
     for (const [t, n] of Object.entries(want)) add(pool.filter(d => (d.type === 'location' ? 'quest' : d.type) === t), n);
     if (deck.length < RB.DECK_SIZE) { const counts = {}; deck.forEach(id => counts[id] = (counts[id] || 0) + 1); add(pool.filter(d => (counts[d.id] || 0) < copiesOf(d, owned)).map(d => d), RB.DECK_SIZE - deck.length); }
     return deck.slice(0, RB.DECK_SIZE);
-  };
+  }
   // The ten resource cards to go with an auto deck: the best location and the two best quests this hero can use
   // (from the cards owned, or the core set), then the hero's usual lands.
   RB.autoSide = function (heroId, raidId, owned) {
@@ -7386,6 +7411,8 @@ globalThis.RB.WEB_BUILD = true;
       await tick();
       return s / games;
     }
+    const scR = d => RB.cardScore(d, raidId);
+    if (opts.alternatives) opts.alternatives = opts.alternatives.map(a => RB.curveOk(a) ? a : RB.fixCurve(a, pool, scR, owned)); // auto decks always keep the cost mix
     let best = deck.slice(), bestS = await evaluate(best);
     const base = bestS;
     for (const alt of opts.alternatives || []) { const s = await evaluate(alt); if (s > bestS) { best = alt.slice(); bestS = s; } }
@@ -7396,6 +7423,7 @@ globalThis.RB.WEB_BUILD = true;
       if (!outs.length || !ins.length) break;
       const out = outs[Math.floor(Math.random() * Math.min(5, outs.length))], inn = ins[Math.floor(Math.random() * Math.min(6, ins.length))];
       const cand = best.slice(); cand[out.ix] = inn.id;
+      if (!RB.curveOk(cand) && RB.curveOk(best)) continue; // never trade the cost mix away
       const s = await evaluate(cand);
       if (s > bestS + 0.5) { best = cand; bestS = s; }
       if (opts.onProgress) opts.onProgress((i + 1) / iters, bestS, base);
@@ -7411,8 +7439,9 @@ globalThis.RB.WEB_BUILD = true;
   };
   // the deck the "Auto deck" button uses: best of the starter and the scored pick, then tuned by test raids
   RB.bestDeck = async function (heroId, raidId, owned, partySize, opts) {
-    const auto = RB.autoDeck(heroId, raidId, owned, partySize), starter = RB.buildDeck(heroId, owned, partySize);
-    return RB.polishDeck(heroId, raidId, auto, owned, partySize, Object.assign({ games: 20, iters: 24, alternatives: [starter] }, opts || {}));
+    // (the plain starter deck is always in the running, so the Auto deck is never worse than what the hero starts with)
+    const auto = RB.autoDeck(heroId, raidId, owned, partySize), starter = RB.buildDeck(heroId, owned, partySize), plain = RB.buildDeck(heroId, null, partySize);
+    return RB.polishDeck(heroId, raidId, auto, owned, partySize, Object.assign({ games: 20, iters: 24, alternatives: [starter, plain] }, opts || {}));
   };
 })(globalThis.RB);
 
@@ -10159,7 +10188,7 @@ globalThis.RB.WEB_BUILD = true;
 
   /* ---------------- auto deck (#23) ---------------- */
   U.autoDeckFor = async function (hid, raidId, partySize) {
-    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0), 'r3'].join('|'); // r3: 40-card decks (#151)
+    const key = [hid, raidId, partySize, Object.values(save.owned).reduce((a, b) => a + b, 0), 'r4'].join('|'); // r4: cost mix + the plain starter in the running (r3: 40-card decks, #151)
     save.autoDecks = save.autoDecks || {};
     if (save.autoDecks[key]) return save.autoDecks[key];
     const ov = document.createElement('div'); ov.className = 'overlay';
