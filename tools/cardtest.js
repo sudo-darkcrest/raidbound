@@ -17,7 +17,8 @@ function fillSlots(h, deck) {
 }
 const grp = d => d.type === 'location' ? 'quest' : d.type;
 const seeds = Array.from({ length: N }, (_, i) => 20000 + i * 37);
-const DIFF = { crypt: 'heroic', molten: 'heroic', tide: 'normal' };
+// Nov 15 2026: heroes start with no resources, so Heroic is nearly unwinnable for starter decks; measure on Normal (DIFF=old for the old setup)
+const DIFF = process.env.DIFF === 'old' ? { crypt: 'heroic', molten: 'heroic', tide: 'normal' } : { crypt: 'normal', molten: 'normal', tide: 'normal' };
 async function winrate(hero, raid, deck) {
   let w = 0, dmg = 0;
   for (const seed of seeds) {
