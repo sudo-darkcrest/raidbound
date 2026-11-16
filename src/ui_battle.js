@@ -640,7 +640,7 @@
     } else {
       items.push({ label: `Play ${esc(d.name)} · ${d.cost} ◆`, disabled: !chk.ok, go: () => playWithTarget(p, inst) });
       if (!chk.ok) items.push({ why: chk.why });
-      const spare = E.spareLeft(p); // #125: only three cards that aren't lands may become resources in a fight
+      const spare = E.spareLeft(p); // #125: only RB.SPARE_RES cards that aren't lands may become resources in a fight
       items.push({ label: `Use as a resource (${spare} of ${RB.SPARE_RES} left)`, disabled: p.resPlayed || !spare, go: () => doAct('playResource', p, inst) });
       if (p.resPlayed) items.push({ why: 'You already played a resource this turn.' });
       else if (!spare) items.push({ why: `You have already turned ${RB.SPARE_RES} cards into resources this fight. From now on only lands, quests and locations can be played as resources.` });

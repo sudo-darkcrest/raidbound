@@ -288,7 +288,7 @@
   /* ---------- #125 lands: dedicated resource cards. A land is only ever played as a resource (one a turn, like any
      resource) and does one small thing as it arrives. Every deck carries RB.LAND_COUNT of them on top of its RB.DECK_SIZE (40) cards. ---------- */
   RB.LAND_COUNT = 10;   // lands in every deck
-  RB.SPARE_RES = 3;     // other cards (not lands, quests or locations) a hero may turn into resources in one fight
+  RB.SPARE_RES = 4;     // other cards (not lands, quests or locations) a hero may turn into resources in one fight
   const hero1 = (E, p) => E.T.hero(p);
   const LAND_FX = {
     heal1: ['Your hero heals 1.', async (E, p) => E.heal(hero1(E, p), 1)],

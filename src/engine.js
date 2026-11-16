@@ -550,7 +550,7 @@
     async function playResource0(p, inst) {
       if (!isActive(p) || p.resPlayed) return false;
       const i = p.hand.indexOf(inst); if (i < 0) return false;
-      if (!canResource(p, inst)) return false; // #125: only three cards that aren't lands, quests or locations per fight
+      if (!canResource(p, inst)) return false; // #125: only RB.SPARE_RES (4) cards that aren't lands, quests or locations per fight
       p.hand.splice(i, 1);
       const d = C[inst.id];
       if (d.type === 'land') {

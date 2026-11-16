@@ -1544,3 +1544,4 @@ body:has(> .overlay:not(.clear)) .cfloat { z-index: 40; }
 .netp [data-team] { margin-left: .3rem; padding: .05rem .4rem; font-size: .7rem; }
 .filters .seg.pvpseg { margin-left: .5rem; }
 .filters .seg.pvpseg button { color: #ffd8b0; }
+.revealrow.top { margin: .2rem 0 1rem; }

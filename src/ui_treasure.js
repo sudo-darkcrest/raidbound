@@ -62,6 +62,7 @@
     packEl.classList.add('tear');
     setTimeout(() => {
       const el = U.show('end', `<div class="endscreen"><h2 style="font-size:clamp(2.4rem,5vw,4rem)${PS ? `;color:${PS.col}` : ''}">${booster ? (style === 'core' && size === 20 ? 'Grand Core Booster' : `${PS.name} ${size > 5 ? `${size}-card pack` : 'booster'}`) : (heroic === 'mythic' ? 'Mythic Treasure' : 'Treasure')}</h2><p class="tagline">${PS ? `${esc(PS.theme)} · ` : ''}${U.isPhone() ? 'Tap' : 'Click'} each card to reveal it.</p>
+        ${cards.length >= 20 ? '<div class="revealrow top"><button class="btn primary" data-act="all">Reveal all</button></div>' : ''}
         <div class="packcards${cards.length > 5 ? ' many' : ''}${cards.length > 10 ? ' lots' : ''}">${cards.map((c, i) => `<div class="flip ${C[c.id].rarity === 'e' ? 'epic' : ''}" data-i="${i}" style="animation-delay:${Math.min(i, 12) * 0.08}s" tabindex="0" role="button" aria-label="Reveal card ${i + 1}"><div class="inner"><div class="face"><div class="cardback" style="--cw:100%;width:100%"></div></div><div class="face front">${U.cardHTML(c.id, { holo: c.holo })}</div></div></div>`).join('')}</div>
         <div class="revealrow"><button class="btn primary" data-act="all">Reveal all</button></div>
         <div id="lootnote"></div>
